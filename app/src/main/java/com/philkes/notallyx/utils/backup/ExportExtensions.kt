@@ -50,6 +50,7 @@ import com.philkes.notallyx.utils.MIME_TYPE_ZIP
 import com.philkes.notallyx.utils.SUBFOLDER_AUDIOS
 import com.philkes.notallyx.utils.SUBFOLDER_FILES
 import com.philkes.notallyx.utils.SUBFOLDER_IMAGES
+import com.philkes.notallyx.utils.copyToLarge
 import com.philkes.notallyx.utils.createChannelIfNotExists
 import com.philkes.notallyx.utils.createFileSafe
 import com.philkes.notallyx.utils.createReportBugIntent
@@ -60,15 +61,17 @@ import com.philkes.notallyx.utils.getExternalImagesDirectory
 import com.philkes.notallyx.utils.getLogFileUri
 import com.philkes.notallyx.utils.listZipFiles
 import com.philkes.notallyx.utils.log
+import com.philkes.notallyx.utils.md5Hash
 import com.philkes.notallyx.utils.recreateDir
 import com.philkes.notallyx.utils.security.decryptDatabase
 import com.philkes.notallyx.utils.security.getInitializedCipherForDecryption
+import com.philkes.notallyx.utils.verifyCrc
 import com.philkes.notallyx.utils.wrapWithChooser
 import java.io.File
+import java.io.File.createTempFile
 import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
-import java.io.OutputStream
 import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -99,56 +102,61 @@ val BACKUP_TIMESTAMP_FORMATTER = SimpleDateFormat("yyyyMMdd-HHmmssSSS", Locale.E
 private const val ON_SAVE_BACKUP_FILE = "NotallyX_AutoBackup"
 private const val PERIODIC_BACKUP_FILE_PREFIX = "NotallyX_Backup_"
 
-fun ContextWrapper.createBackup(): Result {
-    val app = applicationContext as Application
-    val preferences = NotallyXPreferences.getInstance(app)
-    val (_, maxBackups) = preferences.periodicBackups.value
-    val path = preferences.backupsFolder.value
+private val periodicBackupMutex = Mutex()
 
-    if (path != EMPTY_PATH) {
-        val uri = path.toUri()
-        val folder =
-            requireBackupFolder(
-                path,
-                "Periodic Backup failed, because auto-backup path '$path' is invalid",
-            ) ?: return Result.success()
-        try {
-            val backupFilePrefix = PERIODIC_BACKUP_FILE_PREFIX
-            val name =
-                "$backupFilePrefix${BACKUP_TIMESTAMP_FORMATTER.format(System.currentTimeMillis())}"
-            log(TAG, msg = "Creating '$uri/$name.zip'...")
-            val zipUri = folder.createFileSafe(MIME_TYPE_ZIP, name, ".zip").uri
-            val exportedNotes = app.exportAsZip(zipUri, password = preferences.backupPassword.value)
-            log(TAG, msg = "Exported $exportedNotes notes")
-            val backupFiles = folder.listZipFiles(backupFilePrefix)
-            log(TAG, msg = "Found ${backupFiles.size} backups")
-            val backupsToBeDeleted = backupFiles.drop(maxBackups)
-            if (backupsToBeDeleted.isNotEmpty()) {
-                log(
-                    TAG,
-                    msg =
-                        "Deleting ${backupsToBeDeleted.size} oldest backups (maxBackups: $maxBackups): ${backupsToBeDeleted.joinToString { "'${it.name.toString()}'" }}",
+suspend fun ContextWrapper.createBackup(): Result {
+    return periodicBackupMutex.withLock {
+        val app = applicationContext as Application
+        val preferences = NotallyXPreferences.getInstance(app)
+        val (_, maxBackups) = preferences.periodicBackups.value
+        val path = preferences.backupsFolder.value
+
+        if (path != EMPTY_PATH) {
+            val uri = path.toUri()
+            val folder =
+                requireBackupFolder(
+                    path,
+                    "Periodic Backup failed, because auto-backup path '$path' is invalid",
+                ) ?: return@withLock Result.success()
+            try {
+                val backupFilePrefix = PERIODIC_BACKUP_FILE_PREFIX
+                val name =
+                    "$backupFilePrefix${BACKUP_TIMESTAMP_FORMATTER.format(System.currentTimeMillis())}"
+                log(TAG, msg = "Creating '$uri/$name.zip'...")
+                val zipUri = folder.createFileSafe(MIME_TYPE_ZIP, name, ".zip").uri
+                val exportedNotes =
+                    app.exportAsZip(zipUri, password = preferences.backupPassword.value)
+                log(TAG, msg = "Exported $exportedNotes notes")
+                val backupFiles = folder.listZipFiles(backupFilePrefix)
+                log(TAG, msg = "Found ${backupFiles.size} backups")
+                val backupsToBeDeleted = backupFiles.drop(maxBackups)
+                if (backupsToBeDeleted.isNotEmpty()) {
+                    log(
+                        TAG,
+                        msg =
+                            "Deleting ${backupsToBeDeleted.size} oldest backups (maxBackups: $maxBackups): ${backupsToBeDeleted.joinToString { "'${it.name.toString()}'" }}",
+                    )
+                }
+                backupsToBeDeleted.forEach {
+                    if (it.exists()) {
+                        it.delete()
+                    }
+                }
+                log(TAG, msg = "Finished backup to '$zipUri'")
+                preferences.periodicBackupLastExecution.save(Date().time)
+                return@withLock Result.success(
+                    Data.Builder().putString(OUTPUT_DATA_BACKUP_URI, zipUri.path!!).build()
+                )
+            } catch (e: Exception) {
+                log(TAG, msg = "Failed creating backup to '$path'", throwable = e)
+                tryPostErrorNotification(e)
+                return Result.success(
+                    Data.Builder().putString(OUTPUT_DATA_EXCEPTION, e.message).build()
                 )
             }
-            backupsToBeDeleted.forEach {
-                if (it.exists()) {
-                    it.delete()
-                }
-            }
-            log(TAG, msg = "Finished backup to '$zipUri'")
-            preferences.periodicBackupLastExecution.save(Date().time)
-            return Result.success(
-                Data.Builder().putString(OUTPUT_DATA_BACKUP_URI, zipUri.path!!).build()
-            )
-        } catch (e: Exception) {
-            log(TAG, msg = "Failed creating backup to '$path'", throwable = e)
-            tryPostErrorNotification(e)
-            return Result.success(
-                Data.Builder().putString(OUTPUT_DATA_EXCEPTION, e.message).build()
-            )
         }
+        return@withLock Result.success()
     }
-    return Result.success()
 }
 
 fun ContextWrapper.autoBackupOnSaveFileExists(backupPath: String): Boolean {
@@ -166,7 +174,7 @@ suspend fun ContextWrapper.autoBackupOnSave(
     password: String,
     savedNote: BaseNote?,
 ) {
-    autoBackupOnSaveMutex.withLock {
+    return autoBackupOnSaveMutex.withLock {
         Log.d(
             TAG,
             "Starting Auto Backup${savedNote?.let { " for Note id: ${it.id} title: ${it.title}" } ?: ""}...",
@@ -175,7 +183,7 @@ suspend fun ContextWrapper.autoBackupOnSave(
             requireBackupFolder(
                 backupPath,
                 "Auto backup on note save (${savedNote?.let { "id: '${savedNote.id}, title: '${savedNote.title}'" }}) failed, because auto-backup path '$backupPath' is invalid",
-            ) ?: return
+            ) ?: return@withLock
         try {
             var changedNote = savedNote
             var backupFile = folder.findFile("$ON_SAVE_BACKUP_FILE.zip")
@@ -197,7 +205,7 @@ suspend fun ContextWrapper.autoBackupOnSave(
             } else {
                 Log.d(TAG, "Creating partial backup for Note ${changedNote.id}")
                 // Only add changed note to existing backup ZIP
-                val (_, file) = copyDatabase()
+                val (_, databaseFile) = copyDatabase()
                 val files =
                     with(changedNote) {
                         images.map {
@@ -218,7 +226,7 @@ suspend fun ContextWrapper.autoBackupOnSave(
                                     File(getExternalAudioDirectory(), it.name),
                                 )
                             } +
-                            BackupFile(null, file)
+                            BackupFile(null, databaseFile)
                     }
                 try {
                     exportToZip(backupFile.uri, files, password)
@@ -242,7 +250,7 @@ suspend fun ContextWrapper.autoBackupOnSave(
                 )
             } catch (logException: Exception) {
                 tryPostErrorNotification(logException)
-                return
+                return@withLock
             }
             tryPostErrorNotification(e)
         }
@@ -303,9 +311,10 @@ fun ContextWrapper.exportAsZip(
     compress: Boolean = false,
     password: String = PASSWORD_EMPTY,
     backupProgress: MutableLiveData<Progress>? = null,
+    retryOnFail: Boolean = true,
 ): Int {
     backupProgress?.postValue(BackupProgress(indeterminate = true))
-    val tempFile = File.createTempFile("export", "tmp", cacheDir)
+    val tempFile = createTempFile("export", "tmp", cacheDir)
     try {
         val zipFile =
             ZipFile(tempFile, if (password != PASSWORD_EMPTY) password.toCharArray() else null)
@@ -367,16 +376,45 @@ fun ContextWrapper.exportAsZip(
                     )
                 }
             }
-
-        zipFile.close()
+        if (!zipFile.isValidZipFile || !zipFile.verifyCrc(databaseCopy)) {
+            log(TAG, stackTrace = "ZipFile '${zipFile.file}' is not a valid ZIP!")
+            if (retryOnFail) {
+                zipFile.file.delete()
+                log(TAG, stackTrace = "Retrying to export ZIP to $fileUri...")
+                return exportAsZip(fileUri, compress, password, backupProgress, false)
+            } else {
+                throw IOException(
+                    "exportAsZip failed because created '${zipFile.file}' is not a valid ZIP!"
+                )
+            }
+        }
         contentResolver.openOutputStream(fileUri)?.use { outputStream ->
             FileInputStream(zipFile.file).use { inputStream ->
-                inputStream.copyTo(outputStream)
+                inputStream.copyToLarge(outputStream)
                 outputStream.flush()
             }
-            zipFile.file.delete()
-            databaseCopy.delete()
         }
+        if (!md5Hash(fileUri).contentEquals(zipFile.file.md5Hash())) {
+            log(TAG, stackTrace = "Exported zipFile '$fileUri' has wrong MD5 hash!")
+            if (retryOnFail) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    try {
+                        contentResolver.delete(fileUri, null)
+                    } catch (e: Exception) {
+                        log(TAG, msg = "Deleting $fileUri failed", throwable = e)
+                    }
+                }
+                zipFile.file.delete()
+                log(TAG, stackTrace = "Retrying to export ZIP to $fileUri...")
+                return exportAsZip(fileUri, compress, password, backupProgress, false)
+            } else {
+                throw IOException(
+                    "exportAsZip failed because created '$fileUri' has wrong MD5 hash!"
+                )
+            }
+        }
+        zipFile.file.delete()
+        databaseCopy.delete()
         backupProgress?.postValue(BackupProgress(inProgress = false))
         return totalNotes
     } finally {
@@ -395,10 +433,40 @@ fun Context.exportToZip(
         extractZipToDirectory(zipInputStream, tempDir, password)
         files.forEach { file ->
             val targetFile = File(tempDir, "${file.first?.let { "$it/" } ?: ""}${file.second.name}")
-            file.second.copyTo(targetFile, overwrite = true)
+            file.second.copyToLarge(targetFile, overwrite = true)
         }
         val zipOutputStream = contentResolver.openOutputStream(zipUri, "w") ?: return false
-        createZipFromDirectory(tempDir, zipOutputStream, password)
+        val tempZipFile = createTempFile("tempZip", ".zip")
+        try {
+            tempZipFile.deleteOnExit()
+            val zipFile =
+                ZipFile(
+                    tempZipFile,
+                    if (password != PASSWORD_EMPTY) password.toCharArray() else null,
+                )
+            val zipParameters =
+                ZipParameters().apply {
+                    this.isEncryptFiles = password != PASSWORD_EMPTY
+                    this.compressionLevel = CompressionLevel.NO_COMPRESSION
+                    this.encryptionMethod = EncryptionMethod.AES
+                    this.isIncludeRootFolder = false
+                }
+            zipFile.addFolder(tempDir, zipParameters)
+            if (!zipFile.isValidZipFile) {
+                throw IOException("ZipFile '${zipFile.file}' is not a valid ZIP!")
+            }
+            val databaseFile = files.find { it.second.name == DATABASE_NAME }
+            databaseFile?.let {
+                if (!zipFile.verifyCrc(it.second)) {
+                    throw IOException("ZipFile '${zipFile.file}' CRC verification failed!")
+                }
+            }
+            tempZipFile.inputStream().use { inputStream ->
+                inputStream.copyToLarge(zipOutputStream)
+            }
+        } finally {
+            tempZipFile.delete()
+        }
     } finally {
         tempDir.deleteRecursively()
     }
@@ -406,39 +474,14 @@ fun Context.exportToZip(
 }
 
 private fun extractZipToDirectory(zipInputStream: InputStream, outputDir: File, password: String) {
-    val tempZipFile = File.createTempFile("extractedZip", null, outputDir)
+    val tempZipFile = createTempFile("extractedZip", null, outputDir)
     try {
-        tempZipFile.outputStream().use { zipOutputStream -> zipInputStream.copyTo(zipOutputStream) }
+        tempZipFile.outputStream().use { zipOutputStream ->
+            zipInputStream.copyToLarge(zipOutputStream)
+        }
         val zipFile =
             ZipFile(tempZipFile, if (password != PASSWORD_EMPTY) password.toCharArray() else null)
         zipFile.extractAll(outputDir.absolutePath)
-    } finally {
-        tempZipFile.delete()
-    }
-}
-
-private fun createZipFromDirectory(
-    sourceDir: File,
-    zipOutputStream: OutputStream,
-    password: String = PASSWORD_EMPTY,
-    compress: Boolean = false,
-) {
-    val tempZipFile = File.createTempFile("tempZip", ".zip")
-    try {
-        tempZipFile.deleteOnExit()
-        val zipFile =
-            ZipFile(tempZipFile, if (password != PASSWORD_EMPTY) password.toCharArray() else null)
-        val zipParameters =
-            ZipParameters().apply {
-                isEncryptFiles = password != PASSWORD_EMPTY
-                if (!compress) {
-                    compressionLevel = CompressionLevel.NO_COMPRESSION
-                }
-                encryptionMethod = EncryptionMethod.AES
-                isIncludeRootFolder = false
-            }
-        zipFile.addFolder(sourceDir, zipParameters)
-        tempZipFile.inputStream().use { inputStream -> inputStream.copyTo(zipOutputStream) }
     } finally {
         tempZipFile.delete()
     }
@@ -462,7 +505,7 @@ fun ContextWrapper.copyDatabase(
         Pair(database, decryptedFile)
     } else {
         val dbFile = File(cacheDir, DATABASE_NAME + suffix)
-        databaseFile.copyTo(dbFile, overwrite = true)
+        databaseFile.copyToLarge(dbFile, overwrite = true)
         Pair(database, dbFile)
     }
 }

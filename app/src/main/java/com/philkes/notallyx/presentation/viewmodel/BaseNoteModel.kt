@@ -377,11 +377,13 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val exportedNotes =
                 withContext(Dispatchers.IO) {
+                    app.log(TAG, msg = "Exporting backup to '$uri'...")
                     return@withContext app.exportAsZip(
-                        uri,
-                        password = preferences.backupPassword.value,
-                        backupProgress = progress,
-                    )
+                            uri,
+                            password = preferences.backupPassword.value,
+                            backupProgress = progress,
+                        )
+                        .also { app.log(TAG, msg = "Finished exporting backup to '$uri'") }
                 }
             val message = app.getQuantityString(R.plurals.exported_notes, exportedNotes)
             app.showToast(message)
