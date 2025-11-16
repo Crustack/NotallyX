@@ -9,6 +9,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.Observer
 import com.philkes.notallyx.R
+import com.philkes.notallyx.presentation.format
 import com.philkes.notallyx.presentation.merge
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
 import com.philkes.notallyx.utils.createObserverSkipFirst
@@ -19,7 +20,6 @@ import com.philkes.notallyx.utils.toPreservedString
 import java.security.SecureRandom
 import java.util.Date
 import javax.crypto.Cipher
-import org.ocpsoft.prettytime.PrettyTime
 
 /**
  * Every Preference can be observed like a [NotNullLiveData].
@@ -302,15 +302,15 @@ enum class Theme(override val textResId: Int) : StaticTextProvider {
 enum class DateFormat : TextProvider {
     NONE,
     RELATIVE,
+    ABSOLUTE_SHORT,
+    TIMESTAMP_SHORT,
     ABSOLUTE;
 
     override fun getText(context: Context): String {
-        val date = Date(System.currentTimeMillis() - 86400000)
-        return when (this) {
-            NONE -> context.getString(R.string.none)
-            RELATIVE -> PrettyTime().format(date)
-            ABSOLUTE -> java.text.DateFormat.getDateInstance(java.text.DateFormat.FULL).format(date)
+        if (this == NONE) {
+            return context.getString(R.string.none)
         }
+        return Date(System.currentTimeMillis() - 86400000).format(this)
     }
 }
 

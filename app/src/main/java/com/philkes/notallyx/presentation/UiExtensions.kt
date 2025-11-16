@@ -595,10 +595,23 @@ fun Context.displayEditLabelDialog(
 }
 
 private fun formatTimestamp(timestamp: Long, dateFormat: DateFormat): String {
-    val date = Date(timestamp)
+    return Date(timestamp).format(dateFormat)
+}
+
+fun Date.format(dateFormat: DateFormat): String {
     return when (dateFormat) {
-        DateFormat.RELATIVE -> PrettyTime().format(date)
-        else -> java.text.DateFormat.getDateInstance(java.text.DateFormat.FULL).format(date)
+        DateFormat.NONE -> ""
+        DateFormat.RELATIVE -> PrettyTime().format(this)
+        DateFormat.ABSOLUTE ->
+            java.text.DateFormat.getDateInstance(java.text.DateFormat.FULL).format(this)
+        DateFormat.ABSOLUTE_SHORT ->
+            java.text.DateFormat.getDateInstance(java.text.DateFormat.SHORT).format(this)
+        DateFormat.TIMESTAMP_SHORT ->
+            java.text.DateFormat.getDateTimeInstance(
+                    java.text.DateFormat.SHORT,
+                    java.text.DateFormat.SHORT,
+                )
+                .format(this)
     }
 }
 
