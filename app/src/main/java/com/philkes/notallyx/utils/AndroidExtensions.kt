@@ -359,7 +359,7 @@ fun Context.createReportBugIntent(
     }
 
     val url =
-        "https://github.com/PhilKes/NotallyX/issues/new?labels=bug&projects=&template=bug_report.yml${
+        "https://github.com/Crustack/NotallyX/issues/new?labels=bug&projects=&template=bug_report.yml${
             title.asQueryParam("title")
         }&version=${BuildConfig.VERSION_NAME}&android-version=${Build.VERSION.SDK_INT}${
             stackTrace.asQueryParam("logs")

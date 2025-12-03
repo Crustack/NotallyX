@@ -732,7 +732,7 @@ class SettingsFragment : Fragment() {
                                         Intent(
                                                 Intent.ACTION_VIEW,
                                                 Uri.parse(
-                                                    "https://github.com/PhilKes/NotallyX/issues/new?labels=enhancement&template=feature_request.md"
+                                                    "https://github.com/Crustack/NotallyX/issues/new?labels=enhancement&template=feature_request.md"
                                                 ),
                                             )
                                             .wrapWithChooser(requireContext())
@@ -773,7 +773,7 @@ class SettingsFragment : Fragment() {
                 openLink("https://play.google.com/store/apps/details?id=com.philkes.notallyx")
             }
             Documentation.setOnClickListener { openLink("https://philkes.github.io/NotallyX") }
-            SourceCode.setOnClickListener { openLink("https://github.com/PhilKes/NotallyX") }
+            SourceCode.setOnClickListener { openLink("https://github.com/Crustack/NotallyX") }
             Libraries.setOnClickListener {
                 val libraries =
                     arrayOf(

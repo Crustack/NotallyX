@@ -13,8 +13,8 @@ There are many ways to contribute to NotallyX, regardless of your technical skil
 
 ### For Everyone
 
-- **Report bugs**: If you find a bug, report it on [GitHub Issues](https://github.com/PhilKes/NotallyX/issues/new/choose)
-- **Suggest features**: Have an idea for a new feature? Share it on [GitHub Issues](https://github.com/PhilKes/NotallyX/issues/new/choose)
+- **Report bugs**: If you find a bug, report it on [GitHub Issues](https://github.com/Crustack/NotallyX/issues/new/choose)
+- **Suggest features**: Have an idea for a new feature? Share it on [GitHub Issues](https://github.com/Crustack/NotallyX/issues/new/choose)
 - **Improve documentation**: Help improve this documentation by suggesting changes or additions
 - **Spread the word**: Share NotallyX with others who might find it useful
 - **Translate the app**: Help make NotallyX available in more languages, see `Contributing Translations` below
@@ -32,7 +32,7 @@ If you want to contribute code to NotallyX, follow these steps:
 
 ### Setting Up the Development Environment
 
-1. **Fork the repository**: Go to [NotallyX on GitHub](https://github.com/PhilKes/NotallyX) and click the "Fork" button
+1. **Fork the repository**: Go to [NotallyX on GitHub](https://github.com/Crustack/NotallyX) and click the "Fork" button
 2. **Clone your fork**: 
    ```bash
    git clone https://github.com/YOUR_USERNAME/NotallyX.git
@@ -90,13 +90,13 @@ If you want to contribute code to NotallyX, follow these steps:
 
 To contribute translations:
 
-1. Download the current [translations.xlsx](https://github.com/PhilKes/NotallyX/raw/refs/heads/main/app/translations.xlsx) file
+1. Download the current [translations.xlsx](https://github.com/Crustack/NotallyX/raw/refs/heads/main/app/translations.xlsx) file
 2. Open it in Excel/LibreOffice and add missing translations
    - Missing translations are marked in red
    - You can filter by key or any language column values
    - Non-translatable strings are hidden and marked in gray, do not add translations for them
    - For plurals, some languages need/have more quantity strings than others
-3. Open an [Update Translations Issue](https://github.com/PhilKes/NotallyX/issues/new?assignees=&labels=translations&projects=&template=translation.md&title=%3CINSERT+LANGUAGE+HERE%3E+translations+update)
+3. Open an [Update Translations Issue](https://github.com/Crustack/NotallyX/issues/new?assignees=&labels=translations&projects=&template=translation.md&title=%3CINSERT+LANGUAGE+HERE%3E+translations+update)
 4. The project maintainer will create a Pull Request to add your updated translations
 
 ## Bug Reports and Feature Requests

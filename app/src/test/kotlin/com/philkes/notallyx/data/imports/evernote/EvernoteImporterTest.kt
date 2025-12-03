@@ -108,7 +108,7 @@ class EvernoteImporterTest {
                                 "A very italic",
                                 "Outdated stuff",
                                 "System.out.println(\"Super useful code\");",
-                                "https://github.com/PhilKes/NotallyX",
+                                "https://github.com/Crustack/NotallyX",
                             )
                     },
                     "Text formatting",

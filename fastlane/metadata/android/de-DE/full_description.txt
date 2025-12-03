@@ -50,5 +50,5 @@ Es gibt keine Werbung, Tracker oder Analytics jeglicher Art. Alle Notizen werden
 
 Aufgrund eines Bugs seitens Xiaomi könnten einige MiUI-Geräte möglicherweise nicht auf die Textformatierungsoptionen zugreifen.
 
-https://github.com/PhilKes/NotallyX
+https://github.com/Crustack/NotallyX
 

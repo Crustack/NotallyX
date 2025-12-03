@@ -56,9 +56,9 @@
 ---
 
 ### Bug Reports / Feature-Requests
-If you find any bugs or want to propose a new Feature/Enhancement, feel free to [create a new Issue](https://github.com/PhilKes/NotallyX/issues/new/choose)
+If you find any bugs or want to propose a new Feature/Enhancement, feel free to [create a new Issue](https://github.com/Crustack/NotallyX/issues/new/choose)
 
-When using the app and an unknown error occurs, causing the app to crash you will see a dialog (see showcase video in https://github.com/PhilKes/NotallyX/pull/171) from which you can immediately create a bug report on Github with the crash details pre-filled.
+When using the app and an unknown error occurs, causing the app to crash you will see a dialog (see showcase video in https://github.com/Crustack/NotallyX/pull/171) from which you can immediately create a bug report on Github with the crash details pre-filled.
 
 
 #### Beta Releases
@@ -66,7 +66,7 @@ When using the app and an unknown error occurs, causing the app to crash you wil
 I occasionally release BETA versions of the app during development, since its very valuable for me to get feedback before publicly releasing a new version.
 These BETA releases have another `applicationId` as the release versions, thats why when you install a BETA version it will show up on your device as a separate app called `NotallyX BETA`.
 BETA versions also have their own data, they do not use the data of your NotallyX app
-You can download the most recent BETA release [here on Github](https://github.com/PhilKes/NotallyX/releases/tag/beta)
+You can download the most recent BETA release [here on Github](https://github.com/Crustack/NotallyX/releases/tag/beta)
 
 #### APK Signing Certifcate Fingerprint
 
@@ -89,6 +89,6 @@ Before submitting your proposed changes as a Pull-Request, make sure all tests a
 ### Attribution
 The original Notally project was developed by [OmGodse](https://github.com/OmGodse) under the [GPL 3.0 License](https://github.com/OmGodse/Notally/blob/master/LICENSE.md).
 
-In accordance to GPL 3.0, this project is licensed under the same [GPL 3.0 License](https://github.com/PhilKes/NotallyX/blob/master/LICENSE.md).
+In accordance to GPL 3.0, this project is licensed under the same [GPL 3.0 License](https://github.com/Crustack/NotallyX/blob/master/LICENSE.md).
 
 

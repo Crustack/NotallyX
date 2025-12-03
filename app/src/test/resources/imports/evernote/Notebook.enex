@@ -468,7 +468,7 @@
   <note>
     <content>
       <![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd"><en-note><div><b>This text needs to be fat</b></div><div><br/></div><div><i>A very italic</i></div><div><br/></div><div><s>Outdated stuff</s></div><div><br/></div><div><span style="--en-fontfamily: monospace; font-family: &quot;Source Code Pro&quot;,monospace">System.out.println("Super useful code");</span></div><div><br/></div><div><a href="https://github.com/PhilKes/NotallyX">https://github.com/PhilKes/NotallyX</a></div><div><br/></div><div><br/></div><div><br/></div><div><br/></div><div>I want to format this</div></en-note>      ]]>
+<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd"><en-note><div><b>This text needs to be fat</b></div><div><br/></div><div><i>A very italic</i></div><div><br/></div><div><s>Outdated stuff</s></div><div><br/></div><div><span style="--en-fontfamily: monospace; font-family: &quot;Source Code Pro&quot;,monospace">System.out.println("Super useful code");</span></div><div><br/></div><div><a href="https://github.com/Crustack/NotallyX">https://github.com/Crustack/NotallyX</a></div><div><br/></div><div><br/></div><div><br/></div><div><br/></div><div>I want to format this</div></en-note>      ]]>
     </content>
     <created>20241024T074430Z</created>
     <note-attributes>

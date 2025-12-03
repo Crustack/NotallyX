@@ -17,7 +17,7 @@ const config: Config = {
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'PhilKes', // Usually your GitHub org/user name.
+  organizationName: 'Crustack', // Usually your GitHub org/user name.
   projectName: 'NotallyX', // Usually your repo name.
   deploymentBranch: 'gh-pages', // Usually your repo name.
 
@@ -41,7 +41,7 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/PhilKes/NotallyX/blob/main/documentation',
+            'https://github.com/Crustack/NotallyX/blob/main/documentation',
         },
         blog: {
           showReadingTime: true,
@@ -93,7 +93,7 @@ const config: Config = {
           className: "header--kofi-link",
         },
         {
-          href: 'https://github.com/PhilKes/NotallyX',
+          href: 'https://github.com/Crustack/NotallyX',
           position: 'right',
           className: "header--github-link",
           "aria-label": "GitHub repository",

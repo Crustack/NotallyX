@@ -49,4 +49,4 @@ There are no ads, trackers or analytics of any kind. All your notes are stored c
 
 Due to a bug on Xiaomi's part, some MiUI devices might not be able to access the text formatting options.
 
-https://github.com/PhilKes/NotallyX
+https://github.com/Crustack/NotallyX

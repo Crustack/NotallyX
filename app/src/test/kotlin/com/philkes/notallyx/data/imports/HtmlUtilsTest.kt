@@ -38,7 +38,7 @@ class HtmlUtilsTest {
                 <br />
               </div>
               <div>
-                <a href="https://github.com/PhilKes/NotallyX">https://github.com/PhilKes/NotallyX</a>
+                <a href="https://github.com/Crustack/NotallyX">https://github.com/Crustack/NotallyX</a>
               </div>
               <div>
                 <br />
@@ -71,7 +71,7 @@ class HtmlUtilsTest {
 
             System.out.println("Super useful code");
 
-            https://github.com/PhilKes/NotallyX
+            https://github.com/Crustack/NotallyX
 
 
 
@@ -91,9 +91,9 @@ class HtmlUtilsTest {
                     it.monospace
             }
             .anyMatch {
-                body.substringOfSpan(it) == "https://github.com/PhilKes/NotallyX" &&
+                body.substringOfSpan(it) == "https://github.com/Crustack/NotallyX" &&
                     it.link &&
-                    it.linkData.equals("https://github.com/PhilKes/NotallyX")
+                    it.linkData.equals("https://github.com/Crustack/NotallyX")
             }
     }
 
@@ -128,7 +128,7 @@ class HtmlUtilsTest {
             <p dir="ltr" style="line-height:1.38;margin-top:0.0pt;margin-bottom:0.0pt;">
             <span
                 style="font-size:16.0pt;font-family:'Google Sans';color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">
-            https://github.com/PhilKes/NotallyX</span>
+            https://github.com/Crustack/NotallyX</span>
             </p>
             <br/>
             <br/>
@@ -160,7 +160,7 @@ class HtmlUtilsTest {
 
             System.out.println("Super useful code");
 
-            https://github.com/PhilKes/NotallyX
+            https://github.com/Crustack/NotallyX
 
 
 
@@ -175,9 +175,9 @@ class HtmlUtilsTest {
             .anyMatch { body.substringOfSpan(it) == "This text needs to be fat" && it.bold }
             .anyMatch { body.substringOfSpan(it) == "A very italic" && it.italic }
             .anyMatch {
-                body.substringOfSpan(it) == "https://github.com/PhilKes/NotallyX" &&
+                body.substringOfSpan(it) == "https://github.com/Crustack/NotallyX" &&
                     it.link &&
-                    it.linkData.equals("https://github.com/PhilKes/NotallyX")
+                    it.linkData.equals("https://github.com/Crustack/NotallyX")
             }
     }
 }
