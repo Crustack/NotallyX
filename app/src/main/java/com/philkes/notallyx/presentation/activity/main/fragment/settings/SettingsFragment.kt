@@ -772,7 +772,7 @@ class SettingsFragment : Fragment() {
             Rate.setOnClickListener {
                 openLink("https://play.google.com/store/apps/details?id=com.philkes.notallyx")
             }
-            Documentation.setOnClickListener { openLink("https://philkes.github.io/NotallyX") }
+            Documentation.setOnClickListener { openLink("https://crustack.github.io/NotallyX") }
             SourceCode.setOnClickListener { openLink("https://github.com/Crustack/NotallyX") }
             Libraries.setOnClickListener {
                 val libraries =
@@ -933,7 +933,7 @@ class SettingsFragment : Fragment() {
     }
 
     private fun openDocsLink(docPath: String) {
-        openLink("https://philkes.github.io/NotallyX/docs/$docPath")
+        openLink("https://crustack.github.io/NotallyX/docs/$docPath")
     }
 
     private fun askForUriPermissions(uri: Uri) {

@@ -1,7 +1,7 @@
 <h2 align="center">
     <img src="fastlane/metadata/android/en-US/images/icon.png" alt="icon" width="90"/>
     <br />
-    <b><a href="https://philkes.github.io/NotallyX/">NotallyX | Minimalistic note taking app</a></b>
+    <b><a href="https://crustack.github.io/NotallyX/">NotallyX | Minimalistic note taking app</a></b>
     <p>
         <center>
             <a href="https://ko-fi.com/philkes"><img alt='Donate' height='30' src='documentation/static/img/kofi_donate.svg' /></a>
@@ -32,7 +32,7 @@
 ### Features
 [Notally](https://github.com/OmGodse/Notally), but eXtended
 
-<h4><a href="https://philkes.github.io/NotallyX/">See Documentation</a></h4>
+<h4><a href="https://crustack.github.io/NotallyX/">See Documentation</a></h4>
 
 * Create **rich text** notes with support for bold, italics, mono space and strike-through
 * Create **task lists** and order them with subtasks (+ auto-sort checked items to the end)
