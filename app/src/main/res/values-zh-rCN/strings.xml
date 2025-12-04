@@ -45,6 +45,9 @@
     <string name="biometrics_failure">未能通过生物特征/PIN验证身份</string>
     <string name="biometrics_no_support">本设备上没有生物特征功能可用</string>
     <string name="biometrics_not_setup">你的设备还未设置生物特征/PIN认证</string>
+    <string name="biometrics_setup_failure">设置生物特征/PIN 锁失败</string>
+    <string name="biometrics_setup_failure_decrypt">解密数据库失败。请用 \'%1$s\'报告错误</string>
+    <string name="biometrics_setup_failure_encrypt">加密数据库失败。请用 \'%1$s\'报告错误</string>
     <string name="biometrics_setup_success">已启用生物特征/PIN锁</string>
     <string name="bold">粗体</string>
     <string name="calculating">计算中…</string>
@@ -82,7 +85,9 @@
     <string name="convert_to_text_note">转换到文本笔记</string>
     <string name="copied_link">链接已复制到剪贴板</string>
     <string name="copy">复制</string>
-    <string name="crash_message">发生了意外错误。抱歉造成不变</string>
+    <string name="crash_export_backup_failed">导出备份不幸失败。请用\'%1$s\'按钮报告崩溃</string>
+    <string name="crash_export_backup_message">你可以单击 \'%1$s\' 试着创建笔记的备份。假如崩溃导致数据损坏，备份可能失败。如果是那样，请用 \'%1$s\' 按钮报告崩溃</string>
+    <string name="crash_message">发生了意外错误。抱歉造成不便</string>
     <string name="create_github_issue">在Github发布议题</string>
     <string name="creation_date">创建时间</string>
     <string name="custom">自定义</string>
@@ -142,7 +147,7 @@
     <string name="error_while_renaming_file">重命名文件时出错</string>
     <string name="error_while_renaming_image">重命名图片时出错</string>
     <string name="evernote">Evernote</string>
-    <string name="evernote_help">为了从Evernote导入你的笔记，你必须将你的Evernote 笔记本以 ENEX 格式导出。单击”帮助“获取更多信息。如果你已经有 ENEX 文件，单击”导入“并选中它</string>
+    <string name="evernote_help">要从Evernote导入你的笔记，你必须将你的Evernote 笔记本以 ENEX 格式导出。单击”帮助“获取更多信息。如果你已经有 ENEX 文件，单击”导入“并选中它</string>
     <string name="every">每</string>
     <string name="export">导出</string>
     <string name="export_backup">导出备份</string>
@@ -231,6 +236,7 @@
     <string name="next">下一个</string>
     <string name="no_auto_sort">无账户</string>
     <string name="none">无</string>
+    <string name="not_exists">%1$s\'不存在</string>
     <string name="note">笔记</string>
     <string name="notes">笔记</string>
     <string name="notes_sorted_by">笔记排序方式</string>
@@ -241,7 +247,7 @@
     <string name="paused">已暂停</string>
     <string name="pin">置于顶部</string>
     <string name="pinned">已置顶</string>
-    <string name="plain_text_files">Markdown/纯文本文件</string>
+    <string name="plain_text_files">纯文本文件</string>
     <string name="plain_text_files_help">为了从纯文本（单文件或文件夹）导入笔记，单击“导入”。每个文件被导入为单独的笔记，文件的名称变成笔记的标题。如果文本内容以清单语法开头（如   Markdown ’- [x]’, NotallyX 语法 ’[✓]’, 或 ’*’, ’-’），它将被转换为清单笔记。</string>
     <string name="play">播放</string>
     <string name="please_grant_notally_alarm">请授予 NotallyX 发送提醒的权限</string>
@@ -259,10 +265,11 @@
     <string name="reminders">提醒</string>
     <string name="remove_link">删除链接</string>
     <string name="repetition">重复</string>
-    <string name="repetition_custom">定制重复</string>
+    <string name="repetition_custom">自定义重复</string>
     <string name="repetition_value_hint">值</string>
     <string name="report_bug">报告错误</string>
-    <string name="report_crash">报告问题/错误</string>
+    <string name="report_bug_stacktrace_too_long">崩溃日志过长无法用它自动预填充 Github issue，因此崩溃日志已复制到剪贴板中。单击 \'%1$s\' 时，浏览器会打开来创建崩溃问题的 Gihub issue。重要的是将自动复制的崩溃日志粘贴到 Github issue 的“（可选）相关日志输出”信息栏中。</string>
+    <string name="report_crash">报告错误，附带崩溃日志</string>
     <string name="reset_settings">重置设置</string>
     <string name="reset_settings_message">所有设置都将重置为默认值</string>
     <string name="reset_settings_success">成功地重置了所有设置</string>
@@ -325,6 +332,7 @@
     <string name="updated_link">更新了链接</string>
     <string name="view">视图</string>
     <string name="view_file">查看文件</string>
+    <string name="view_logs">查看日志文件</string>
     <string name="view_note">查看笔记</string>
     <string name="weekly">一周</string>
     <string name="weeks">周</string>
