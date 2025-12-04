@@ -47,6 +47,6 @@ See [Android Translations Converter](https://github.com/Crustack/android-transla
 | 🇹🇷 Turkish | 23% (73/315) |
 | 🇺🇦 Ukrainian | 20% (65/315) |
 | 🇻🇳 Vietnamese | 33% (107/315) |
-| 🇨🇳 Chinese (Simplified) | 96% (304/315) |
+| 🇨🇳 Chinese (Simplified) | 99% (312/315) |
 | 🇹🇼 Chinese (Traditional) | 93% (294/315) |
 <!-- translations:end -->
