@@ -173,7 +173,9 @@ class EditNoteActivity : EditActivity(Type.NOTE), AddNoteActions {
             val selectionStart = it.getInt(EXTRA_SELECTION_START, -1)
             val selectionEnd = it.getInt(EXTRA_SELECTION_END, -1)
             if (selectionStart > -1) {
-                binding.EnterBody.focusAndSelect(selectionStart, selectionEnd)
+                binding.EnterBody.postOnAnimation {
+                    binding.EnterBody.focusAndSelect(selectionStart, selectionEnd)
+                }
             }
         }
     }
