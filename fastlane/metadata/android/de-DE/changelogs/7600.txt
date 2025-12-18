@@ -1,0 +1,3 @@
+- Markdown-Import/Export
+- Datumsformat mit vollständigem Zeitstempel hinzugefügt
+- Suchbegriff in der Notiz bei Verwendung der Suche hervorgehoben

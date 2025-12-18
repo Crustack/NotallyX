@@ -1,0 +1,3 @@
+- Markdown Import/Export
+- Add DateFormat with full timestamp
+- Highlight search term in note when using Search

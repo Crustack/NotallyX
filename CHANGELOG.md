@@ -1,5 +1,19 @@
 # Changelog
 
+## [v7.6.0](https://github.com/Crustack/NotallyX/tree/v7.6.0) (2025-12-18)
+
+[Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.5.3...v7.6.0)
+
+### Added Features
+
+- Add DateFormat with timestamp [\#723](https://github.com/Crustack/NotallyX/issues/723)
+- Markdown Import/Export [\#713](https://github.com/Crustack/NotallyX/issues/713)
+- Highlight searched term inside notes when selected from search results [\#158](https://github.com/Crustack/NotallyX/issues/158)
+
+### Fixed Bugs
+
+- Cursor position reset when screen rotates [\#731](https://github.com/Crustack/NotallyX/issues/731)
+
 ## [v7.5.3](https://github.com/Crustack/NotallyX/tree/v7.5.3) (2025-11-05)
 
 [Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.5.2...v7.5.3)
