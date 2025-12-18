@@ -77,9 +77,11 @@ class MarkdownUtilsTest {
         val (body, spans) = parseBodyAndSpansFromMarkdown(input)
 
         val expectedBody = buildString {
-            append("Title\n")
+            append("# Title\n")
             append("This has bold, italic, code, strike, and a link.\n")
-            append("Also an image inline: Alt text and nested bolditalic.\n")
+            append(
+                "Also an image inline: ![Alt text](https://example.com/image.png)\n and nested bolditalic.\n"
+            )
             append("Next line.")
         }
         assertEquals(expectedBody, body)
