@@ -189,10 +189,10 @@
     <string name="imported_files">Файлы импортированы</string>
     <string name="imported_notes">Заметки импортированы</string>
     <plurals name="imported_notes">
-        <item quantity="one">Заметки импортированы</item>
-        <item quantity="few">Заметки импортированы</item>
-        <item quantity="many">Заметки импортированы</item>
-        <item quantity="other">Заметки импортированы</item>
+        <item quantity="one">Импортирована %1$s заметка</item>
+        <item quantity="few">Импортированы %1$s заметки</item>
+        <item quantity="many">Импортировано %1$s заметок</item>
+        <item quantity="other">Импортировано %1$s заметок</item>
     </plurals>
     <string name="importing_backup">Импорт резервной копии</string>
     <string name="insert_an_sd_card_audio">Вставьте SD-карту для записи аудио</string>
