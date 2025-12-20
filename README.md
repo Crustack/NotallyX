@@ -75,7 +75,12 @@ If you wish to verify your downloaded .apk file, here is the app's certificate S
 
 ### Translations
 
-All translations are crowd sourced.
+All translations are crowd sourced. Please help to translate on the [Weblate](https://toolate.othing.xyz/projects/notallyx/).
+
+<a href="https://toolate.othing.xyz/projects/notallyx/">
+<img src="https://toolate.othing.xyz/widget/notallyx/multi-auto.svg" alt="Translation status" />
+</a>
+
 For details on how to contribute translations and what languages are available, see [TRANSLATIONS](./TRANSLATIONS.md)
 
 ### Contributing
