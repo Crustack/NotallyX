@@ -326,4 +326,20 @@
     <string name="yearly">Anual</string>
     <string name="years">Ani</string>
     <string name="your_notes_associated">Notele atașate la această etichetă nu vor fi șterse</string>
+    <string name="always_show_search_bar">Afișează întotdeauna bara de căutare extinsă</string>
+    <string name="always_show_search_bar_hint">Activând această opțiune, bara de căutare va fi afișată întotdeauna în layout, în loc să se utilizeze o pictogramă de căutare în bara de sus</string>
+    <string name="biometrics_setup_failure">Nu s-a reușit configurarea blocării biometrice/PIN</string>
+    <string name="biometrics_setup_failure_decrypt">Decriptarea bazei de date a eșuat.\nVă rugăm să utilizați „%1$s” pentru a raporta eroarea</string>
+    <string name="biometrics_setup_failure_encrypt">Criptarea bazei de date a eșuat.\nVă rugăm să folosiți „%1$s” pentru a raporta eroarea</string>
+    <string name="crash_export_backup_failed">Din păcate, exportarea copiei de rezervă a eșuat.\nVă rugăm să folosiți butonul „%1$s” pentru a raporta eroarea</string>
+    <string name="crash_export_backup_message">Puteți încerca să creați o copie de rezervă a notițelor apăsând pe „%1$s”.\nAceastă acțiune ar putea eșua dacă eroarea a dus la date deteriorate sau corupte. În acest caz, vă rugăm să utilizați butonul „%2$s” pentru a raporta eroarea</string>
+    <string name="documentation">Documentație</string>
+    <plurals name="exported_notes">
+        <item quantity="one">S-a exportat o notiță</item>
+        <item quantity="few">S-au exportat %1$s notițe</item>
+        <item quantity="other">S-au exportat %1$s de notițe</item>
+    </plurals>
+    <string name="not_exists">„%1$s” nu există</string>
+    <string name="report_bug_stacktrace_too_long">Jurnalele de erori sunt prea lungi pentru a fi completate automat în problema raportată pe GitHub; prin urmare, acestea au fost copiate în clipboard.\nCând apăsați pe „%1$s”, browserul se va deschide pentru a crea o problemă pe GitHub referitoare la eroarea apărută. Este important să lipiți jurnalele de eroare (copiate automat) în câmpul „(Optional) Relevant log output” al problemei GitHub.</string>
+    <string name="view_logs">Vizualizare jurnal</string>
 </resources>
