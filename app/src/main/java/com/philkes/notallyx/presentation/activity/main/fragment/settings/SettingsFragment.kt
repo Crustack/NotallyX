@@ -147,7 +147,16 @@ class SettingsFragment : Fragment() {
         exportBackupActivityResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
-                    result.data?.data?.let { uri -> model.exportBackup(uri) }
+                    result.data?.data?.let { uri ->
+                        model.exportBackup(uri) {
+                            // Continue with pending biometric action (enable/disable) after export
+                            pendingBiometricContinuation?.invoke()
+                            pendingBiometricContinuation = null
+                        }
+                    }
+                } else {
+                    // User canceled export picker; do not keep a stale continuation around
+                    pendingBiometricContinuation = null
                 }
             }
         chooseBackupFolderActivityResultLauncher =
@@ -842,70 +851,98 @@ class SettingsFragment : Fragment() {
         )
     }
 
+    // Holds a continuation to run (enable/disable biometric) after user-triggered export completes
+    private var pendingBiometricContinuation: (() -> Unit)? = null
+
     private fun showEnableBiometricLock() {
-        showBiometricOrPinPrompt(
-            false,
-            setupLockActivityResultLauncher,
-            R.string.enable_lock_title,
-            R.string.enable_lock_description,
-            onSuccess = { cipher ->
-                val app = (requireActivity().application as NotallyXApplication)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    lifecycleScope.launch {
-                        try {
-                            model.enableBiometricLock(cipher)
-                        } catch (e: EncryptionException) {
-                            app.log(TAG, throwable = e)
-                            showErrorDialog(
-                                e,
-                                R.string.biometrics_setup_failure,
-                                getString(
-                                    R.string.biometrics_setup_failure_encrypt,
-                                    getString(R.string.report_bug),
-                                ),
-                            )
-                            return@launch
+        showBiometricBackupAdvice {
+            showBiometricOrPinPrompt(
+                false,
+                setupLockActivityResultLauncher,
+                R.string.enable_lock_title,
+                R.string.enable_lock_description,
+                onSuccess = { cipher ->
+                    val app = (requireActivity().application as NotallyXApplication)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        lifecycleScope.launch {
+                            try {
+                                model.enableBiometricLock(cipher)
+                            } catch (e: EncryptionException) {
+                                app.log(TAG, throwable = e)
+                                showErrorDialog(
+                                    e,
+                                    R.string.biometrics_setup_failure,
+                                    getString(
+                                        R.string.biometrics_setup_failure_encrypt,
+                                        getString(R.string.report_bug),
+                                    ),
+                                )
+                                return@launch
+                            }
+                            app.locked.value = false
+                            showToast(R.string.biometrics_setup_success)
                         }
-                        app.locked.value = false
-                        showToast(R.string.biometrics_setup_success)
                     }
-                }
-            },
-        ) {
-            showBiometricsNotSetupDialog()
+                },
+            ) {
+                showBiometricsNotSetupDialog()
+            }
         }
     }
 
     private fun showDisableBiometricLock() {
-        showBiometricOrPinPrompt(
-            true,
-            disableLockActivityResultLauncher,
-            R.string.disable_lock_title,
-            R.string.disable_lock_description,
-            model.preferences.iv.value!!,
-            onSuccess = { cipher ->
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    val app = (requireActivity().application as NotallyXApplication)
-                    lifecycleScope.launch {
-                        try {
-                            model.disableBiometricLock(cipher)
-                        } catch (e: DecryptionException) {
-                            app.log(TAG, throwable = e)
-                            showErrorDialog(
-                                e,
-                                R.string.biometrics_setup_failure,
-                                getString(
-                                    R.string.biometrics_setup_failure_decrypt,
-                                    getString(R.string.report_bug),
-                                ),
-                            )
-                            return@launch
+        showBiometricBackupAdvice {
+            showBiometricOrPinPrompt(
+                true,
+                disableLockActivityResultLauncher,
+                R.string.disable_lock_title,
+                R.string.disable_lock_description,
+                model.preferences.iv.value!!,
+                onSuccess = { cipher ->
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        val app = (requireActivity().application as NotallyXApplication)
+                        lifecycleScope.launch {
+                            try {
+                                model.disableBiometricLock(cipher)
+                            } catch (e: DecryptionException) {
+                                app.log(TAG, throwable = e)
+                                showErrorDialog(
+                                    e,
+                                    R.string.biometrics_setup_failure,
+                                    getString(
+                                        R.string.biometrics_setup_failure_decrypt,
+                                        getString(R.string.report_bug),
+                                    ),
+                                )
+                                return@launch
+                            }
+                            showToast(R.string.biometrics_disable_success)
                         }
-                        showToast(R.string.biometrics_disable_success)
                     }
-                }
-            },
-        ) {}
+                },
+            ) {}
+        }
+    }
+
+    private fun showBiometricBackupAdvice(onContinue: () -> Unit) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setMessage(R.string.biometric_backup_advice)
+            .setPositiveButton(R.string.export) { _, _ ->
+                // After export finishes, continue with biometric action
+                pendingBiometricContinuation = onContinue
+                val intent =
+                    Intent(Intent.ACTION_CREATE_DOCUMENT)
+                        .apply {
+                            type = MIME_TYPE_ZIP
+                            addCategory(Intent.CATEGORY_OPENABLE)
+                            putExtra(Intent.EXTRA_TITLE, "NotallyX Backup.zip")
+                        }
+                        .wrapWithChooser(requireContext())
+                exportBackupActivityResultLauncher.launch(intent)
+            }
+            .setNeutralButton(R.string.continue_) { _, _ -> onContinue() }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     private fun showBiometricsNotSetupDialog() {

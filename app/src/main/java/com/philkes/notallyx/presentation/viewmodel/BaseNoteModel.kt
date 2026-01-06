@@ -373,7 +373,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun exportBackup(uri: Uri) {
+    fun exportBackup(uri: Uri, onComplete: (() -> Unit)? = null) {
         viewModelScope.launch {
             val exportedNotes =
                 withContext(Dispatchers.IO) {
@@ -387,6 +387,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 }
             val message = app.getQuantityString(R.plurals.exported_notes, exportedNotes)
             app.showToast(message)
+            onComplete?.invoke()
         }
     }
 

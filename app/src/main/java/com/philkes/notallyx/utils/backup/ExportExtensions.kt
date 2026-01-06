@@ -50,6 +50,7 @@ import com.philkes.notallyx.utils.MIME_TYPE_ZIP
 import com.philkes.notallyx.utils.SUBFOLDER_AUDIOS
 import com.philkes.notallyx.utils.SUBFOLDER_FILES
 import com.philkes.notallyx.utils.SUBFOLDER_IMAGES
+import com.philkes.notallyx.utils.ZipVerificationException
 import com.philkes.notallyx.utils.copyToLarge
 import com.philkes.notallyx.utils.createChannelIfNotExists
 import com.philkes.notallyx.utils.createFileSafe
@@ -65,7 +66,7 @@ import com.philkes.notallyx.utils.md5Hash
 import com.philkes.notallyx.utils.recreateDir
 import com.philkes.notallyx.utils.security.decryptDatabase
 import com.philkes.notallyx.utils.security.getInitializedCipherForDecryption
-import com.philkes.notallyx.utils.verifyCrc
+import com.philkes.notallyx.utils.verify
 import com.philkes.notallyx.utils.wrapWithChooser
 import java.io.File
 import java.io.File.createTempFile
@@ -199,9 +200,9 @@ suspend fun ContextWrapper.autoBackupOnSave(
                 } else backupFile
             if (changedNote == null) {
                 // Export all notes
-                Log.d(TAG, "Creating full backup")
+                Log.d(TAG, "Creating full backup ${backupFile.uri}")
                 exportAsZip(backupFile.uri, password = password)
-                Log.d(TAG, "Finished full backup")
+                Log.d(TAG, "Finished full backup ${backupFile.uri}")
             } else {
                 Log.d(TAG, "Creating partial backup for Note ${changedNote.id}")
                 // Only add changed note to existing backup ZIP
@@ -228,10 +229,7 @@ suspend fun ContextWrapper.autoBackupOnSave(
                             } +
                             BackupFile(null, databaseFile)
                     }
-                try {
-                    exportToZip(backupFile.uri, files, password)
-                    Log.d(TAG, "Finished partial backup for Note ${changedNote.id}")
-                } catch (e: ZipException) {
+                suspend fun handleZipException(e: Throwable, backupFile: DocumentFile) {
                     log(
                         TAG,
                         msg =
@@ -239,6 +237,14 @@ suspend fun ContextWrapper.autoBackupOnSave(
                     )
                     backupFile.delete()
                     autoBackupOnSave(backupPath, password, savedNote)
+                }
+                try {
+                    exportToZip(backupFile.uri, files, password)
+                    Log.d(TAG, "Finished partial backup for Note ${changedNote.id}")
+                } catch (e: ZipException) {
+                    handleZipException(e, backupFile)
+                } catch (e: ZipVerificationException) {
+                    handleZipException(e, backupFile)
                 }
             }
         } catch (e: Exception) {
@@ -324,7 +330,9 @@ fun ContextWrapper.exportAsZip(
                 if (!compress) {
                     compressionLevel = CompressionLevel.NO_COMPRESSION
                 }
-                encryptionMethod = EncryptionMethod.AES
+                if (isEncryptFiles) {
+                    encryptionMethod = EncryptionMethod.AES
+                }
             }
 
         val (databaseOriginal, databaseCopy) = copyDatabase()
@@ -376,8 +384,10 @@ fun ContextWrapper.exportAsZip(
                     )
                 }
             }
-        if (!zipFile.isValidZipFile || !zipFile.verifyCrc(databaseCopy)) {
-            log(TAG, stackTrace = "ZipFile '${zipFile.file}' is not a valid ZIP!")
+        try {
+            zipFile.verify(databaseCopy)
+        } catch (e: ZipVerificationException) {
+            log(TAG, throwable = e)
             if (retryOnFail) {
                 zipFile.file.delete()
                 log(TAG, stackTrace = "Retrying to export ZIP to $fileUri...")
@@ -394,7 +404,10 @@ fun ContextWrapper.exportAsZip(
                 outputStream.flush()
             }
         }
-        if (!md5Hash(fileUri).contentEquals(zipFile.file.md5Hash())) {
+        // Guard against null/IO issues when immediately reopening fileUri via SAF
+        val sourceMd5 = runCatching { zipFile.file.md5Hash() }.getOrNull()
+        val targetMd5 = runCatching { md5Hash(fileUri) }.getOrNull()
+        if (sourceMd5 == null || targetMd5 == null || !targetMd5.contentEquals(sourceMd5)) {
             log(TAG, stackTrace = "Exported zipFile '$fileUri' has wrong MD5 hash!")
             if (retryOnFail) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -409,7 +422,7 @@ fun ContextWrapper.exportAsZip(
                 return exportAsZip(fileUri, compress, password, backupProgress, false)
             } else {
                 throw IOException(
-                    "exportAsZip failed because created '$fileUri' has wrong MD5 hash!"
+                    "exportAsZip failed because created '$fileUri' has wrong or unverifiable MD5 hash!"
                 )
             }
         }
@@ -448,7 +461,9 @@ fun Context.exportToZip(
                 ZipParameters().apply {
                     this.isEncryptFiles = password != PASSWORD_EMPTY
                     this.compressionLevel = CompressionLevel.NO_COMPRESSION
-                    this.encryptionMethod = EncryptionMethod.AES
+                    if (isEncryptFiles) {
+                        this.encryptionMethod = EncryptionMethod.AES
+                    }
                     this.isIncludeRootFolder = false
                 }
             zipFile.addFolder(tempDir, zipParameters)
@@ -456,11 +471,7 @@ fun Context.exportToZip(
                 throw IOException("ZipFile '${zipFile.file}' is not a valid ZIP!")
             }
             val databaseFile = files.find { it.second.name == DATABASE_NAME }
-            databaseFile?.let {
-                if (!zipFile.verifyCrc(it.second)) {
-                    throw IOException("ZipFile '${zipFile.file}' CRC verification failed!")
-                }
-            }
+            databaseFile?.let { zipFile.verify(it.second) }
             tempZipFile.inputStream().use { inputStream ->
                 inputStream.copyToLarge(zipOutputStream)
             }
@@ -900,6 +911,7 @@ fun LockedActivity<*>.exportNote(
     mimeType: ExportMimeType,
     exportToFileResultLauncher: ActivityResultLauncher<Intent>,
 ) {
+    baseModel.selectedExportMimeType = mimeType
     val suggestedName =
         (note.title.ifBlank { getString(R.string.note) }) + "." + mimeType.fileExtension
     val intent =

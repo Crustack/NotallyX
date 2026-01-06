@@ -43,9 +43,12 @@
     <string name="behaviour">Chování</string>
     <string name="biometric_lock">Uzamknout aplikaci pomocí biometrických údajů zařízení nebo kódu PIN</string>
     <string name="biometrics_disable_success">Biometrický zámek/PIN byl vypnut</string>
-    <string name="biometrics_failure">Ověření pomocí biometrických údajů / kódu PIN selhalo</string>
+    <string name="biometrics_failure">Ověření pomocí biometrických údajů/kódu PIN selhalo</string>
     <string name="biometrics_no_support">Na tomto zařízení nejsou biometrické funkce dostupné</string>
     <string name="biometrics_not_setup">Biometrické údaje/PIN ještě nejsou na tomto zařízení nastaveny</string>
+    <string name="biometrics_setup_failure">Nepodařilo se nastavit biometrické/PIN zabezpečení </string>
+    <string name="biometrics_setup_failure_decrypt">Dešifrování databáze se nezdařilo.\nPro nahlášení chyby použijte \'%1$s\'.  </string>
+    <string name="biometrics_setup_failure_encrypt">Šifrování databáze se nezdařilo.\nPro nahlášení chyby použijte \'%1$s\'.  </string>
     <string name="biometrics_setup_success">Biometrický/PIN zámek byl aktivován </string>
     <string name="bold">Tučně</string>
     <string name="calculating">Probíhá výpočet…</string>
@@ -85,6 +88,8 @@
     <string name="convert_to_text_note">Převést na textovou poznámku</string>
     <string name="copied_link">Odkaz zkopírován do schránky</string>
     <string name="copy">Kopírovat</string>
+    <string name="crash_export_backup_failed">Bohužel se nepodařilo exportovat zálohu.     \nK nahlášení pádu aplikace použijte tlačítko \'%1$s\'.</string>
+    <string name="crash_export_backup_message">Zálohu poznámek lze zkusit vytvořit kliknutím na \'%1$s\'.\nPokud pád aplikace způsobil poškození dat, záloha se nemusí podařit. V takovém případě použijte \'%2$s\' k nahlášení pádu. </string>
     <string name="crash_message">Došlo k neočekávané chybě. \nOmluvte prosím vzniklé nepříjemnosti. </string>
     <string name="create_github_issue">Vytvořit GitHub issue </string>
     <string name="creation_date">Datum vytvoření</string>
@@ -239,6 +244,7 @@
     <string name="next">Další</string>
     <string name="no_auto_sort">Neřadit automaticky</string>
     <string name="none">Žádné</string>
+    <string name="not_exists">\'%1$s\' neexistuje</string>
     <string name="note">Poznámka</string>
     <string name="notes">Poznámky</string>
     <string name="notes_sorted_by">Poznámky řazeny dle</string>
@@ -270,6 +276,7 @@
     <string name="repetition_custom">Vlastní opakování</string>
     <string name="repetition_value_hint">Hodnota</string>
     <string name="report_bug">Nahlásit problém/chybu</string>
+    <string name="report_bug_stacktrace_too_long">Záznamy o pádu aplikace jsou příliš dlouhé, a proto je nelze automaticky vložit do GitHub issue. Byly tedy zkopírovány do schránky.\nPo kliknutí na \'%1$s\' se v prohlížeči otevře stránka pro vytvoření GitHub issue k tomuto pádu aplikace. Je důležité vložit automaticky zkopírované záznamy o pádu do pole \'(Optional) Relevant log output\' v GitHub issue. </string>
     <string name="report_crash">Nahlásit chybu spolu s protokoly o pádu.\n\n</string>
     <string name="reset_settings">Resetovat nastavení</string>
     <string name="reset_settings_message">Všechna nastavení budou obnovena na výchozí hodnotu.</string>
@@ -335,6 +342,7 @@
     <string name="updated_link">Upravit odkaz</string>
     <string name="view">Rozložení</string>
     <string name="view_file">Zobrazit soubor</string>
+    <string name="view_logs">Zobrazit log soubor </string>
     <string name="view_note">Zobrazit poznámku…</string>
     <string name="weekly">Týdně</string>
     <string name="weeks">Týdny</string>

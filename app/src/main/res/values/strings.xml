@@ -41,6 +41,7 @@
     <string name="backup_periodic">Periodic Backups</string>
     <string name="backup_periodic_hint">By enabling this, backups are automatically created in the configured Backups Folder.\nThis may not work if you have power saving mode enabled</string>
     <string name="behaviour">Behaviour</string>
+    <string name="biometric_backup_advice">It is advised to export a full backup of all notes before dis-/enabling biometric lock, in case the encryption via biometric lock fails</string>
     <string name="biometric_lock">Lock app with device biometric or PIN</string>
     <string name="biometrics_disable_success">Biometric/PIN lock has been disabled</string>
     <string name="biometrics_failure">Failed to authenticate via Biometric/PIN</string>

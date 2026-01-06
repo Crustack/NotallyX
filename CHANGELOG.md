@@ -1,5 +1,19 @@
 # Changelog
 
+## [v7.6.1](https://github.com/Crustack/NotallyX/tree/v7.6.1) (2026-01-06)
+
+[Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.6.0...v7.6.1)
+
+### Fixed Bugs
+
+- Not a valid ZIP Exception for backups with password set [\#773](https://github.com/Crustack/NotallyX/issues/773)
+- selectedExportMimeType not initialized for in Note Export [\#772](https://github.com/Crustack/NotallyX/issues/772)
+- Auto Backup failed [\#749](https://github.com/Crustack/NotallyX/issues/749)
+
+**Closed issues:**
+
+- Auto Backup failed [\#764](https://github.com/Crustack/NotallyX/issues/764)
+
 ## [v7.6.0](https://github.com/Crustack/NotallyX/tree/v7.6.0) (2025-12-18)
 
 [Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.5.3...v7.6.0)

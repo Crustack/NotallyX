@@ -230,55 +230,76 @@ fun File.listFilesRecursive(filter: FileFilter? = null): List<File> {
 const val MIME_TYPE_ZIP = "application/zip"
 const val MIME_TYPE_JSON = "application/json"
 
-fun ZipFile.verifyCrc(databaseFile: File): Boolean {
+class ZipVerificationException(message: String, cause: Throwable? = null) :
+    RuntimeException(message, cause)
+
+fun ZipFile.verify(databaseFile: File) {
+    if (!isValidZipFile) {
+        throw ZipVerificationException("ZipFile '${file}' is not a valid ZIP!")
+    }
+    if (isEncrypted) {
+        verifyEncryptedArchive()
+    } else {
+        verifyCrc(databaseFile)
+    }
+}
+
+private fun ZipFile.verifyCrc(databaseFile: File) {
     val dbEntry =
         fileHeaders.find { it.fileName == DATABASE_NAME }
-            ?: throw RuntimeException("Database file missing in ZIP")
-
+            ?: throw ZipVerificationException("Database file missing in ZipFile '${file}'")
     // Compare CRC
-    val originalCrc =
-        CRC32()
-            .apply {
-                File(databaseFile.path).inputStream().use { fis ->
-                    val buffer = ByteArray(256 * 1024)
-                    var read: Int
-                    while (fis.read(buffer).also { read = it } != -1) update(buffer, 0, read)
-                }
-            }
-            .value
-
+    val originalCrc = calculateCrc(File(databaseFile.path).inputStream()).value
     if (dbEntry.crc != originalCrc) {
-        return false
+        throw ZipVerificationException(
+            "ZipFile '${file}' contains mismatched CRC for '${DATABASE_NAME}'!"
+        )
     }
 
     for (fileHeader in fileHeaders) {
         // Directories have no CRC
-        if (fileHeader.isDirectory) continue
-
-        if (fileHeader == dbEntry) {
-            continue
-        }
-
+        if (fileHeader.isDirectory || fileHeader == dbEntry) continue
         // Get expected CRC from ZIP metadata
         val expected = fileHeader.crc
-
         // Compute actual CRC
-        val crc = CRC32()
-        getInputStream(fileHeader).use { input ->
+        val actual = calculateCrc(this.getInputStream(fileHeader)).value
+        if (expected != actual) {
+            throw ZipVerificationException(
+                "ZipFile '${file}' contains mismatched CRC for '${fileHeader.fileName}'!"
+            )
+        }
+    }
+}
+
+private fun calculateCrc(inputStream: InputStream): CRC32 =
+    CRC32().apply {
+        inputStream.use { input ->
             val buffer = ByteArray(1024 * 64)
             var read: Int
             while (input.read(buffer).also { read = it } != -1) {
-                crc.update(buffer, 0, read)
+                update(buffer, 0, read)
             }
         }
+    }
 
-        val actual = crc.value
-
-        if (expected != actual) {
-            return false // CRC mismatch → corrupted
+private fun ZipFile.verifyEncryptedArchive() {
+    for (fh in fileHeaders) {
+        if (fh.isDirectory) continue
+        try {
+            getInputStream(fh).use { input ->
+                val buffer = ByteArray(64 * 1024)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read == -1) break // fully read → MAC verified
+                }
+            }
+        } catch (e: Exception) {
+            throw ZipVerificationException(
+                "ZipFile '${file}' contains corrupt encrypted files!",
+                e,
+            ) // wrong password or corrupted entry
         }
     }
-    return true
 }
 
 fun Context.md5Hash(uri: Uri): ByteArray? {
