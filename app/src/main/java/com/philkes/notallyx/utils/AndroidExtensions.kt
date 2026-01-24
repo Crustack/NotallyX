@@ -533,7 +533,13 @@ fun Context.toReadablePath(uri: Uri): String {
     if (uri.authority == "com.android.externalstorage.documents") {
         return toReadable(uri.path!!)
     }
-    val documentFile = DocumentFile.fromTreeUri(this, uri)
+
+    val documentFile =
+        try {
+            DocumentFile.fromTreeUri(this, uri)
+        } catch (_: Exception) {
+            null
+        }
     return documentFile?.name?.let { "${uri.authority}/$it" }
         ?: uri.path?.let { toReadable(it) }
         ?: uri.toString()
