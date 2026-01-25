@@ -1,5 +1,7 @@
 package com.philkes.notallyx.data.model
 
+import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
+
 data class SpanRepresentation(
     var start: Int,
     var end: Int,
@@ -18,4 +20,6 @@ data class SpanRepresentation(
     fun isEqualInSize(representation: SpanRepresentation): Boolean {
         return start == representation.start && end == representation.end
     }
+
+    fun isInsideBounds(): Boolean = start < MAX_BODY_CHAR_LENGTH && end <= MAX_BODY_CHAR_LENGTH
 }

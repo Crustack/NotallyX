@@ -27,10 +27,11 @@ import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EX
 import com.philkes.notallyx.presentation.add
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.view.note.image.ImageAdapter
-import com.philkes.notallyx.utils.getExternalImagesDirectory
+import com.philkes.notallyx.utils.SUBFOLDER_IMAGES
+import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import com.philkes.notallyx.utils.getUriForFile
+import com.philkes.notallyx.utils.resolveAttachmentFile
 import com.philkes.notallyx.utils.wrapWithChooser
-import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import kotlinx.coroutines.Dispatchers
@@ -91,7 +92,7 @@ class ViewImageActivity : LockedActivity<ActivityViewImageBinding>() {
                 val images = ArrayList<FileAttachment>(original.size)
                 original.filterNotTo(images) { image -> deletedImages.contains(image) }
 
-                val mediaRoot = application.getExternalImagesDirectory()
+                val mediaRoot = application.getCurrentImagesDirectory()
                 val adapter = ImageAdapter(mediaRoot, images)
                 binding.MainListView.adapter = adapter
                 setupToolbar(binding, adapter)
@@ -192,8 +193,7 @@ class ViewImageActivity : LockedActivity<ActivityViewImageBinding>() {
     }
 
     private fun share(image: FileAttachment) {
-        val mediaRoot = application.getExternalImagesDirectory()
-        val file = if (mediaRoot != null) File(mediaRoot, image.localName) else null
+        val file = application.resolveAttachmentFile(SUBFOLDER_IMAGES, image.localName)
         if (file != null && file.exists()) {
             val uri = getUriForFile(file)
             val intent =
@@ -214,8 +214,7 @@ class ViewImageActivity : LockedActivity<ActivityViewImageBinding>() {
     }
 
     private fun saveToDevice(image: FileAttachment) {
-        val mediaRoot = application.getExternalImagesDirectory()
-        val file = if (mediaRoot != null) File(mediaRoot, image.localName) else null
+        val file = application.resolveAttachmentFile(SUBFOLDER_IMAGES, image.localName)
         if (file != null && file.exists()) {
             val intent =
                 Intent(Intent.ACTION_CREATE_DOCUMENT)
@@ -233,14 +232,8 @@ class ViewImageActivity : LockedActivity<ActivityViewImageBinding>() {
     private fun writeImageToUri(uri: Uri) {
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
-                val mediaRoot = application.getExternalImagesDirectory()
-                val file =
-                    if (mediaRoot != null)
-                        File(
-                            mediaRoot,
-                            requireNotNull(currentImage, { "currentImage is null" }).localName,
-                        )
-                    else null
+                val ci = requireNotNull(currentImage) { "currentImage is null" }
+                val file = application.resolveAttachmentFile(SUBFOLDER_IMAGES, ci.localName)
                 if (file != null && file.exists()) {
                     val output = contentResolver.openOutputStream(uri) as FileOutputStream
                     output.channel.truncate(0)

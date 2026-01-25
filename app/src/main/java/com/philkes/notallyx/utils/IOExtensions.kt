@@ -16,6 +16,7 @@ import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.isImage
 import com.philkes.notallyx.presentation.view.misc.Progress
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.progress.DeleteAttachmentProgress
 import com.philkes.notallyx.presentation.widget.WidgetProvider
 import java.io.File
@@ -34,13 +35,167 @@ const val SUBFOLDER_IMAGES = "Images"
 const val SUBFOLDER_FILES = "Files"
 const val SUBFOLDER_AUDIOS = "Audios"
 
-fun ContextWrapper.getExternalImagesDirectory() = getExternalMediaDirectory(SUBFOLDER_IMAGES)
+private fun ContextWrapper.getExternalImagesDirectory() =
+    getExternalMediaDirectory(SUBFOLDER_IMAGES)
 
-fun ContextWrapper.getExternalAudioDirectory() = getExternalMediaDirectory(SUBFOLDER_AUDIOS)
+private fun ContextWrapper.getExternalAudioDirectory() = getExternalMediaDirectory(SUBFOLDER_AUDIOS)
 
-fun ContextWrapper.getExternalFilesDirectory() = getExternalMediaDirectory(SUBFOLDER_FILES)
+private fun ContextWrapper.getExternalFilesDirectory() = getExternalMediaDirectory(SUBFOLDER_FILES)
 
 fun ContextWrapper.getExternalMediaDirectory() = getExternalMediaDirectory("")
+
+// Private (internal) storage roots for attachments when biometric lock is enabled and
+// dataInPublicFolder is disabled.
+fun ContextWrapper.getPrivateAttachmentsRoot(): File {
+    val root = File(filesDir, "attachments")
+    if (!root.exists()) root.mkdir()
+    return root
+}
+
+fun ContextWrapper.getPrivateImagesDirectory(): File {
+    val dir = File(getPrivateAttachmentsRoot(), SUBFOLDER_IMAGES)
+    if (!dir.exists()) dir.mkdir()
+    return dir
+}
+
+fun ContextWrapper.getPrivateFilesDirectory(): File {
+    val dir = File(getPrivateAttachmentsRoot(), SUBFOLDER_FILES)
+    if (!dir.exists()) dir.mkdir()
+    return dir
+}
+
+fun ContextWrapper.getPrivateAudioDirectory(): File {
+    val dir = File(getPrivateAttachmentsRoot(), SUBFOLDER_AUDIOS)
+    if (!dir.exists()) dir.mkdir()
+    return dir
+}
+
+private fun ContextWrapper.isDataInPublicEnabled(): Boolean {
+    return NotallyXPreferences.getInstance(this).dataInPublicFolder.value
+}
+
+fun ContextWrapper.getCurrentImagesDirectory(): File {
+    return if (isDataInPublicEnabled()) getExternalImagesDirectory()
+    else getPrivateImagesDirectory()
+}
+
+fun ContextWrapper.getCurrentFilesDirectory(): File {
+    return if (isDataInPublicEnabled()) getExternalFilesDirectory() else getPrivateFilesDirectory()
+}
+
+fun ContextWrapper.getCurrentAudioDirectory(): File {
+    return if (isDataInPublicEnabled()) getExternalAudioDirectory() else getPrivateAudioDirectory()
+}
+
+fun ContextWrapper.getCurrentMediaRoot(): File {
+    return if (isDataInPublicEnabled()) getExternalMediaDirectory() else getPrivateAttachmentsRoot()
+}
+
+fun ContextWrapper.getAlternateImagesDirectory(): File {
+    return if (isDataInPublicEnabled()) getExternalImagesDirectory()
+    else getPrivateImagesDirectory()
+}
+
+fun ContextWrapper.getAlternateFilesDirectory(): File {
+    return if (isDataInPublicEnabled()) getExternalFilesDirectory() else getPrivateFilesDirectory()
+}
+
+fun ContextWrapper.getAlternateAudioDirectory(): File {
+    return if (isDataInPublicEnabled()) getExternalAudioDirectory() else getPrivateAudioDirectory()
+}
+
+/**
+ * Resolve an attachment file location by checking the current-mode directory first, then fallback.
+ */
+fun ContextWrapper.resolveAttachmentFile(subfolder: String, localName: String): File? {
+    val current =
+        when (subfolder) {
+            SUBFOLDER_IMAGES -> getCurrentImagesDirectory()
+            SUBFOLDER_FILES -> getCurrentFilesDirectory()
+            SUBFOLDER_AUDIOS -> getCurrentAudioDirectory()
+            else -> null
+        }
+    val alt =
+        when (subfolder) {
+            SUBFOLDER_IMAGES -> getAlternateImagesDirectory()
+            SUBFOLDER_FILES -> getAlternateFilesDirectory()
+            SUBFOLDER_AUDIOS -> getAlternateAudioDirectory()
+            else -> null
+        }
+    val inCurrent = current?.let { File(it, localName) }
+    if (inCurrent != null && inCurrent.exists()) return inCurrent
+    val inAlt = alt?.let { File(it, localName) }
+    if (inAlt != null && inAlt.exists()) return inAlt
+    return inCurrent ?: inAlt
+}
+
+/**
+ * Move all attachment files between public and private storage to match current mode. If
+ * [toPrivate] is true, move from external app media to private dirs; else the opposite.
+ */
+fun ContextWrapper.migrateAllAttachments(toPrivate: Boolean): Pair<Int, Int> {
+    var moved = 0
+    var failed = 0
+    val sources = listOf(SUBFOLDER_IMAGES, SUBFOLDER_FILES, SUBFOLDER_AUDIOS)
+    sources.forEach { sub ->
+        val (srcRoot, dstRoot) =
+            if (toPrivate) {
+                val src =
+                    when (sub) {
+                        SUBFOLDER_IMAGES -> getExternalImagesDirectory()
+                        SUBFOLDER_FILES -> getExternalFilesDirectory()
+                        SUBFOLDER_AUDIOS -> getExternalAudioDirectory()
+                        else -> null
+                    }
+                val dst =
+                    when (sub) {
+                        SUBFOLDER_IMAGES -> getPrivateImagesDirectory()
+                        SUBFOLDER_FILES -> getPrivateFilesDirectory()
+                        SUBFOLDER_AUDIOS -> getPrivateAudioDirectory()
+                        else -> null
+                    }
+                Pair(src, dst)
+            } else {
+                val src =
+                    when (sub) {
+                        SUBFOLDER_IMAGES -> getPrivateImagesDirectory()
+                        SUBFOLDER_FILES -> getPrivateFilesDirectory()
+                        SUBFOLDER_AUDIOS -> getPrivateAudioDirectory()
+                        else -> null
+                    }
+                val dst =
+                    when (sub) {
+                        SUBFOLDER_IMAGES -> getExternalImagesDirectory()
+                        SUBFOLDER_FILES -> getExternalFilesDirectory()
+                        SUBFOLDER_AUDIOS -> getExternalAudioDirectory()
+                        else -> null
+                    }
+                Pair(src, dst)
+            }
+        if (srcRoot == null || dstRoot == null) return@forEach
+        srcRoot.listFiles()?.forEach { file ->
+            try {
+                val target = File(dstRoot, file.name)
+                file.copyTo(target, overwrite = true)
+                if (file.delete()) {
+                    moved++
+                } else {
+                    // try overwrite move on legacy devices
+                    //                    if (file.renameTo(target)) moved++ else failed++
+                    failed++
+                }
+            } catch (t: Throwable) {
+                Log.e(
+                    TAG,
+                    "Failed to move '${file.absolutePath}' to ${if(toPrivate) "private" else "public"} folder '${dstRoot.absolutePath}'",
+                    t,
+                )
+                failed++
+            }
+        }
+    }
+    return Pair(moved, failed)
+}
 
 fun Context.getTempAudioFile(): File {
     return File(externalCacheDir, "Temp.m4a")
@@ -177,24 +332,23 @@ fun ContextWrapper.getLogFile(): File {
     return File(getLogsDir(), "$APP_LOG_FILE_NAME.txt")
 }
 
-private fun ContextWrapper.getExternalMediaDirectory(name: String): File? {
-    return externalMediaDirs.firstOrNull()?.let { getDirectory(it, name) }
+private fun ContextWrapper.getExternalMediaDirectory(name: String): File {
+    return getDirectory(
+        requireNotNull(externalMediaDirs.firstOrNull()) {
+            "External media directory does not exist"
+        },
+        name,
+    )
 }
 
-private fun getDirectory(dir: File, name: String): File? {
-    var file: File? = null
-    try {
-        file = File(dir, name)
-        if (file.exists()) {
-            if (!file.isDirectory) {
-                file.delete()
-                file.createDirectory()
-            }
-        } else file.createDirectory()
-    } catch (exception: Exception) {
-        exception.printStackTrace()
-    }
-
+private fun getDirectory(dir: File, name: String): File {
+    val file = File(dir, name)
+    if (file.exists()) {
+        if (!file.isDirectory) {
+            file.delete()
+            file.createDirectory()
+        }
+    } else file.createDirectory()
     return file
 }
 

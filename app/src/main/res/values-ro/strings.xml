@@ -87,7 +87,7 @@
     <string name="daily">Zilnic</string>
     <string name="dark">Întunecată</string>
     <string name="data_in_public">Stocarea datelor într-un dosar public</string>
-    <string name="data_in_public_message">Prin activarea acestei opțiuni, baza de date internă a aplicației va fi mutată în dosarul public al aplicației (Android/media/com.philkes.notallyx).\n\nÎn combinație cu aplicațiile de sincronizare a fișierelor, aceasta poate fi utilizată pentru a sincroniza datele NotallyX între mai multe dispozitive.</string>
+    <string name="data_in_public_message">Prin activarea acestei opțiuni, baza de date internă a aplicației și fișierele atașate vor fi mutate în dosarul public al aplicației (Android/media/com.philkes.notallyx). În combinație cu aplicațiile de sincronizare a fișierelor, aceasta poate fi utilizată pentru a sincroniza datele NotallyX între mai multe dispozitive.</string>
     <string name="date">Data</string>
     <string name="date_format">Formatul datei</string>
     <string name="date_format_apply_in_note_view">Se aplică și în vizualizarea notei</string>

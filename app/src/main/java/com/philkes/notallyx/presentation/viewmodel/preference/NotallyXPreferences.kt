@@ -155,6 +155,17 @@ class NotallyXPreferences private constructor(private val context: Context) {
     val dataInPublicFolder =
         BooleanPreference("dataOnExternalStorage", preferences, false, R.string.data_in_public)
 
+    /**
+     * Tracks app-internal data schema/migration steps. 0 = initial state, no migrations run yet See
+     * [DataSchemaMigrations.kt]
+     */
+    val dataSchemaId = IntPreference("dataSchemaId", preferences, 0, 0, Integer.MAX_VALUE)
+
+    fun setDataSchemaId(value: Int) {
+        preferences.edit(true) { putInt(dataSchemaId.key, value) }
+        dataSchemaId.refresh()
+    }
+
     fun getWidgetData(id: Int) = preferences.getLong("widget:$id", 0)
 
     fun getWidgetNoteType(id: Int) =

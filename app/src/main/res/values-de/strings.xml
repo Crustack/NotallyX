@@ -94,7 +94,7 @@
     <string name="daily">Täglich</string>
     <string name="dark">Dunkel</string>
     <string name="data_in_public">Daten in öffentlichen Ordner auslagern</string>
-    <string name="data_in_public_message">Wird dies aktiviert, wird die app-interne Datenbank in einen öffentlichen Ordner ausgelagert (Android/media/com.philkes.notallyx). In Kombination mit Datei-Synchronisations Apps kann dies genutzt werden um NotallyX Daten zwischen mehrere Geräte zu synchronisieren.</string>
+    <string name="data_in_public_message">Wird dies aktiviert, werden die app-interne Datenbank und angehängte Dateien in einen öffentlichen Ordner ausgelagert (Android/media/com.philkes.notallyx). In Kombination mit Datei-Synchronisations Apps kann dies genutzt werden um NotallyX Daten zwischen mehrere Geräte zu synchronisieren.</string>
     <string name="date">Datum</string>
     <string name="date_format">Datumsformat</string>
     <string name="date_format_apply_in_note_view">Auch in Notiz-Ansicht anwenden</string>

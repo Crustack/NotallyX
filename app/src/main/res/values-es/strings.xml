@@ -94,7 +94,7 @@
     <string name="daily">Diariamente</string>
     <string name="dark">Oscuro</string>
     <string name="data_in_public">Guardar datos en carpeta pública</string>
-    <string name="data_in_public_message">Al habilitar esta opción, la base de datos interna de la aplicación se moverá al directorio público de la aplicación (Android/media/com.philkes.notallyx).\nEn combinación con aplicaciones de sincronización de archivos, esta opción se puede utilizar para sincronizar datos de NotallyX entre varios dispositivos.</string>
+    <string name="data_in_public_message">Al habilitar esta opción, la base de datos interna de la aplicación y los archivos adjuntos se moverán al directorio público de la aplicación (Android/media/com.philkes.notallyx). En combinación con aplicaciones de sincronización de archivos, esta opción se puede utilizar para sincronizar datos de NotallyX entre varios dispositivos.</string>
     <string name="date">Fecha</string>
     <string name="date_format">Formato de fecha</string>
     <string name="date_format_apply_in_note_view">Aplicar también en la vista de nota</string>

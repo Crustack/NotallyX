@@ -95,7 +95,7 @@
     <string name="daily">Diariamente</string>
     <string name="dark">Escuro</string>
     <string name="data_in_public">Armazenar dados em pasta pública</string>
-    <string name="data_in_public_message">Ao ativar esta opção, o banco de dados interno do aplicativo será movido para a pasta pública do aplicativo (Android/media/com.philkes.notallyx).\nEm combinação com aplicativos de sincronização de arquivos, isso pode ser usado para sincronizar os dados do NotallyX entre vários dispositivos.</string>
+    <string name="data_in_public_message">Ao ativar esta opção, o banco de dados interno do aplicativo e os arquivos anexados serão movidos para a pasta pública do aplicativo (Android/media/com.philkes.notallyx). Em combinação com aplicativos de sincronização de arquivos, isso pode ser usado para sincronizar os dados do NotallyX entre vários dispositivos.</string>
     <string name="date">Data</string>
     <string name="date_format">Formato de data</string>
     <string name="date_format_apply_in_note_view">Também aplicar na visualização da nota</string>

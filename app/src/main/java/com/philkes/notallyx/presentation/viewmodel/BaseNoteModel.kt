@@ -77,9 +77,10 @@ import com.philkes.notallyx.utils.cancelNoteReminders
 import com.philkes.notallyx.utils.copyToLarge
 import com.philkes.notallyx.utils.deleteAttachments
 import com.philkes.notallyx.utils.getBackupDir
-import com.philkes.notallyx.utils.getExternalImagesDirectory
+import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import com.philkes.notallyx.utils.getExternalMediaDirectory
 import com.philkes.notallyx.utils.log
+import com.philkes.notallyx.utils.migrateAllAttachments
 import com.philkes.notallyx.utils.scheduleNoteReminders
 import com.philkes.notallyx.utils.security.DecryptionException
 import com.philkes.notallyx.utils.security.EncryptionException
@@ -136,7 +137,8 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     val preferences = NotallyXPreferences.getInstance(app)
 
-    val imageRoot = app.getExternalImagesDirectory()
+    val imageRoot
+        get() = app.getCurrentImagesDirectory()
 
     val importProgress = MutableLiveData<ImportProgress>()
     val progress = MutableLiveData<Progress>()
@@ -199,7 +201,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             if (previousNotes.isNotEmpty() || previousLabels.isNotEmpty()) {
                 database.withTransaction {
                     labelDao.insert(previousLabels)
-                    baseNoteDao.insert(previousNotes)
+                    baseNoteDao.insertSafe(app, previousNotes)
                     app.clearAllLabels()
                     app.clearAllFolders()
                 }
@@ -275,6 +277,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         "Moving '${internalDatabaseFiles.map { it.name }}' to public '$targetDirectory' folder failed"
                     )
                 }
+                app.migrateAllAttachments(toPrivate = false)
             }
             savePreference(preferences.dataInPublicFolder, true)
             callback?.invoke()
@@ -297,6 +300,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         "Moving public '${externalDatabaseFiles.map { it.name }}' to internal '$targetDirectory' folder failed"
                     )
                 }
+                app.migrateAllAttachments(toPrivate = true)
             }
             savePreference(preferences.dataInPublicFolder, false)
             callback?.invoke()

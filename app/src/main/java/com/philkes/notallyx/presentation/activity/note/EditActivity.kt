@@ -41,6 +41,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Folder
@@ -99,6 +100,7 @@ import com.philkes.notallyx.utils.mergeSkipFirst
 import com.philkes.notallyx.utils.observeSkipFirst
 import com.philkes.notallyx.utils.shareNote
 import com.philkes.notallyx.utils.showColorSelectDialog
+import com.philkes.notallyx.utils.textMaxLengthFilter
 import com.philkes.notallyx.utils.wrapWithChooser
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -735,6 +737,9 @@ abstract class EditActivity(private val type: Type) :
             }
             value?.let { toggleCanEdit(it) }
         }
+        val textMaxLengthFilter = application.textMaxLengthFilter()
+        binding.EnterTitle.filters = textMaxLengthFilter
+        binding.EnterBody.filters = textMaxLengthFilter
     }
 
     open fun setStateFromModel(savedInstanceState: Bundle?) {
@@ -792,7 +797,11 @@ abstract class EditActivity(private val type: Type) :
                 ?: IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
                     ?.let { listOf(it) }
         if (string != null) {
-            notallyModel.body = Editable.Factory.getInstance().newEditable(string)
+            if (string.length > MAX_BODY_CHAR_LENGTH) {
+                showToast(getString(R.string.note_text_too_long_truncated, MAX_BODY_CHAR_LENGTH))
+            }
+            notallyModel.body =
+                Editable.Factory.getInstance().newEditable(string.take(MAX_BODY_CHAR_LENGTH))
         }
         if (title != null) {
             notallyModel.title = title
@@ -831,7 +840,11 @@ abstract class EditActivity(private val type: Type) :
         val title =
             intent.getStringExtra(Intent.EXTRA_SUBJECT) ?: intent.data?.let { getFileName(it) }
         if (text != null) {
-            notallyModel.body = Editable.Factory.getInstance().newEditable(text)
+            if (text.length > MAX_BODY_CHAR_LENGTH) {
+                showToast(getString(R.string.note_text_too_long_truncated, MAX_BODY_CHAR_LENGTH))
+            }
+            notallyModel.body =
+                Editable.Factory.getInstance().newEditable(text.take(MAX_BODY_CHAR_LENGTH))
         }
         if (title != null) {
             notallyModel.title = title

@@ -22,7 +22,7 @@ import com.philkes.notallyx.presentation.view.misc.ItemListener
 import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesView
-import com.philkes.notallyx.utils.getExternalImagesDirectory
+import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import java.util.Collections
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -59,7 +59,7 @@ open class PickNoteActivity : LockedActivity<ActivityPickNoteBinding>(), ItemLis
                         labelTagsHiddenInOverview.value,
                         imagesHiddenInOverview.value,
                     ),
-                    application.getExternalImagesDirectory(),
+                    application.getCurrentImagesDirectory(),
                     this@PickNoteActivity,
                 )
             }

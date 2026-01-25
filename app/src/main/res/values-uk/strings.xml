@@ -95,7 +95,7 @@
     <string name="daily">Щодня</string>
     <string name="dark">Темна</string>
     <string name="data_in_public">Зберігання даних у публічній папці</string>
-    <string name="data_in_public_message">Увімкнувши цю опцію, внутрішню базу даних застосунку буде переміщено до публічної папки застосунку (Android/media/com.philkes.notallyx).\nУ поєднанні з застосунками для синхронізації файлів це можна використовувати для синхронізації даних NotallyX між кількома пристроями.</string>
+    <string name="data_in_public_message">Увімкнувши цю опцію, внутрішню базу даних застосунку та прикріплені файли буде переміщено до публічної папки застосунку (Android/media/com.philkes.notallyx). У поєднанні з застосунками для синхронізації файлів це можна використовувати для синхронізації даних NotallyX між кількома пристроями.</string>
     <string name="date">Дата</string>
     <string name="date_format">Формат дати</string>
     <string name="date_format_apply_in_note_view">Застосовувати також у режимі перегляду нотатки</string>

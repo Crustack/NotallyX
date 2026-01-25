@@ -5,7 +5,7 @@ import android.content.Intent
 import android.media.MediaPlayer
 import android.os.IBinder
 import com.philkes.notallyx.data.model.Audio
-import com.philkes.notallyx.utils.getExternalAudioDirectory
+import com.philkes.notallyx.utils.getCurrentAudioDirectory
 import com.philkes.notallyx.utils.log
 import java.io.File
 
@@ -46,7 +46,7 @@ class AudioPlayService : Service() {
 
     fun initialise(audio: Audio) {
         if (state == IDLE) {
-            val audioRoot = application.getExternalAudioDirectory()
+            val audioRoot = application.getCurrentAudioDirectory()
             if (audioRoot != null) {
                 try {
                     val file = File(audioRoot, audio.name)

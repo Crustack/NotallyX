@@ -87,7 +87,7 @@
     <string name="daily">每天</string>
     <string name="dark">深色</string>
     <string name="data_in_public">將資料儲存在公共資料夾中</string>
-    <string name="data_in_public_message">啟用此功能，應用程式的內部資料庫將被移至應用程式的外部儲存（Android / Media / Com.Philkes.notallyX）中。與檔案同步應用程式組合，這可用於同步多個裝置之間的資料。</string>
+    <string name="data_in_public_message">啟用此功能，應用程式的內部資料庫和附件將被移至應用程式的公開資料夾（Android/media/com.philkes.notallyx）中。與檔案同步應用程式組合，這可用於同步多個裝置之間的資料。</string>
     <string name="date">日期</string>
     <string name="date_format">日期格式</string>
     <string name="date_format_apply_in_note_view">也應用於筆記檢視</string>

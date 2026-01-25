@@ -20,6 +20,7 @@ import androidx.core.view.children
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
@@ -57,7 +58,10 @@ import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel.Companion.CURRE
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.START_VIEW_DEFAULT
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.START_VIEW_UNLABELED
+import com.philkes.notallyx.presentation.viewmodel.progress.MigrationProgress
+import com.philkes.notallyx.utils.LATEST_DATA_SCHEMA
 import com.philkes.notallyx.utils.backup.exportNotes
+import com.philkes.notallyx.utils.runMigrations
 import com.philkes.notallyx.utils.shareNote
 import com.philkes.notallyx.utils.showColorSelectDialog
 import kotlinx.coroutines.Dispatchers
@@ -102,12 +106,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
 
         preferences.alwaysShowSearchBar.observe(this) { invalidateOptionsMenu() }
 
-        val fragmentIdToLoad = intent.getIntExtra(EXTRA_FRAGMENT_TO_OPEN, -1)
-        if (fragmentIdToLoad != -1) {
-            navController.navigate(fragmentIdToLoad, intent.extras)
-        } else if (savedInstanceState == null) {
-            navigateToStartView()
-        }
+        checkForMigrations(savedInstanceState)
 
         onBackPressedDispatcher.addCallback(
             this,
@@ -130,6 +129,38 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         onBackPressedDispatcher.addCallback(this, actionModeCancelCallback)
 
         baseModel.progress.setupProgressDialog(this)
+    }
+
+    private fun checkForMigrations(savedInstanceState: Bundle?) {
+        // Run migrations first (blocking dialog), then proceed with initial navigation
+        val proceed: () -> Unit = {
+            val fragmentIdToLoad = intent.getIntExtra(EXTRA_FRAGMENT_TO_OPEN, -1)
+            if (fragmentIdToLoad != -1) {
+                navController.navigate(fragmentIdToLoad, intent.extras)
+            } else if (savedInstanceState == null) {
+                navigateToStartView()
+            }
+        }
+        if (preferences.dataSchemaId.value < LATEST_DATA_SCHEMA) {
+            val migrationProgress = MutableLiveData<MigrationProgress>()
+            migrationProgress.setupProgressDialog(this)
+            lifecycleScope.launch {
+                // Initial title
+                migrationProgress.postValue(
+                    MigrationProgress(R.string.migrating_data, indeterminate = true)
+                )
+                application.runMigrations { titleId ->
+                    migrationProgress.postValue(MigrationProgress(titleId, indeterminate = true))
+                }
+                // Dismiss
+                migrationProgress.postValue(
+                    MigrationProgress(R.string.migrating_data, inProgress = false)
+                )
+                proceed()
+            }
+        } else {
+            proceed()
+        }
     }
 
     private fun configureEdgeToEdgeInsets() {

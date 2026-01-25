@@ -23,6 +23,10 @@ class PreviewImageVH(
     }
 
     fun bind(file: File?) {
+        if (file?.exists() == false) {
+            binding.Message.visibility = View.VISIBLE
+            return
+        }
         binding.Message.visibility = View.GONE
 
         Glide.with(binding.ImageView)

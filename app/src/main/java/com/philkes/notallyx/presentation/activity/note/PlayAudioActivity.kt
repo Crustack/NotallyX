@@ -23,10 +23,9 @@ import com.philkes.notallyx.presentation.activity.LockedActivity
 import com.philkes.notallyx.presentation.add
 import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.setCancelButton
-import com.philkes.notallyx.presentation.view.note.audio.AudioControlView
 import com.philkes.notallyx.utils.audio.AudioPlayService
 import com.philkes.notallyx.utils.audio.LocalBinder
-import com.philkes.notallyx.utils.getExternalAudioDirectory
+import com.philkes.notallyx.utils.getCurrentAudioDirectory
 import com.philkes.notallyx.utils.getUriForFile
 import com.philkes.notallyx.utils.wrapWithChooser
 import java.io.File
@@ -180,7 +179,7 @@ class PlayAudioActivity : LockedActivity<ActivityPlayAudioBinding>() {
     }
 
     private fun share() {
-        val audioRoot = application.getExternalAudioDirectory()
+        val audioRoot = application.getCurrentAudioDirectory()
         val file = if (audioRoot != null) File(audioRoot, audio.name) else null
         if (file != null && file.exists()) {
             val uri = getUriForFile(file)
@@ -209,7 +208,7 @@ class PlayAudioActivity : LockedActivity<ActivityPlayAudioBinding>() {
     }
 
     private fun saveToDevice() {
-        val audioRoot = application.getExternalAudioDirectory()
+        val audioRoot = application.getCurrentAudioDirectory()
         val file = if (audioRoot != null) File(audioRoot, audio.name) else null
         if (file != null && file.exists()) {
             val intent =
@@ -231,7 +230,7 @@ class PlayAudioActivity : LockedActivity<ActivityPlayAudioBinding>() {
     private fun writeAudioToUri(uri: Uri) {
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
-                val audioRoot = application.getExternalAudioDirectory()
+                val audioRoot = application.getCurrentAudioDirectory()
                 val file = if (audioRoot != null) File(audioRoot, audio.name) else null
                 if (file != null && file.exists()) {
                     val output = contentResolver.openOutputStream(uri) as FileOutputStream

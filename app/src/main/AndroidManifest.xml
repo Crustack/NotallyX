@@ -191,6 +191,14 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
+        <receiver
+            android:name=".utils.backup.CleanupMissingAttachmentsReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.philkes.notallyx.action.CLEANUP_MISSING_ATTACHMENTS" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

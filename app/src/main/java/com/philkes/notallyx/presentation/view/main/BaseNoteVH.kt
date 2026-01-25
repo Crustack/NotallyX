@@ -290,42 +290,45 @@ class BaseNoteVH(
     private fun setImages(images: List<FileAttachment>, mediaRoot: File?) {
         binding.apply {
             if (images.isNotEmpty() && !preferences.hideImages) {
-                ImageView.visibility = VISIBLE
                 Message.visibility = GONE
-
                 val image = images[0]
                 val file = if (mediaRoot != null) File(mediaRoot, image.localName) else null
+                if (file?.exists() == true) {
+                    ImageView.visibility = VISIBLE
+                    Glide.with(ImageView)
+                        .load(file)
+                        .centerCrop()
+                        .transition(DrawableTransitionOptions.withCrossFade())
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .listener(
+                            object : RequestListener<Drawable> {
 
-                Glide.with(ImageView)
-                    .load(file)
-                    .centerCrop()
-                    .transition(DrawableTransitionOptions.withCrossFade())
-                    .diskCacheStrategy(DiskCacheStrategy.NONE)
-                    .listener(
-                        object : RequestListener<Drawable> {
+                                override fun onLoadFailed(
+                                    e: GlideException?,
+                                    model: Any?,
+                                    target: Target<Drawable>?,
+                                    isFirstResource: Boolean,
+                                ): Boolean {
+                                    Message.visibility = VISIBLE
+                                    return false
+                                }
 
-                            override fun onLoadFailed(
-                                e: GlideException?,
-                                model: Any?,
-                                target: Target<Drawable>?,
-                                isFirstResource: Boolean,
-                            ): Boolean {
-                                Message.visibility = VISIBLE
-                                return false
+                                override fun onResourceReady(
+                                    resource: Drawable?,
+                                    model: Any?,
+                                    target: Target<Drawable>?,
+                                    dataSource: DataSource?,
+                                    isFirstResource: Boolean,
+                                ): Boolean {
+                                    return false
+                                }
                             }
-
-                            override fun onResourceReady(
-                                resource: Drawable?,
-                                model: Any?,
-                                target: Target<Drawable>?,
-                                dataSource: DataSource?,
-                                isFirstResource: Boolean,
-                            ): Boolean {
-                                return false
-                            }
-                        }
-                    )
-                    .into(ImageView)
+                        )
+                        .into(ImageView)
+                } else {
+                    ImageView.visibility = GONE
+                    Message.visibility = VISIBLE
+                }
                 if (images.size > 1) {
                     ImageViewMore.apply {
                         text = images.size.toString()
@@ -335,7 +338,7 @@ class BaseNoteVH(
                     ImageViewMore.visibility = GONE
                 }
             } else {
-                ImageView.visibility = GONE
+                ImageLayout.visibility = GONE
                 Message.visibility = GONE
                 ImageViewMore.visibility = GONE
                 Glide.with(ImageView).clear(ImageView)

@@ -97,7 +97,7 @@
     <string name="daily">Denně</string>
     <string name="dark">Tmavé</string>
     <string name="data_in_public">Uložit data do veřejné složky</string>
-    <string name="data_in_public_message">Pokud tuto možnost povolíte, interní databáze aplikace bude přesunuta do veřejné složky aplikace (Android/media/com.philkes.notallyx). V kombinaci s aplikacemi pro synchronizaci souborů to může být použito k synchronizaci dat NotallyX mezi více zařízeními.</string>
+    <string name="data_in_public_message">Pokud tuto možnost povolíte, interní databáze aplikace a připojené soubory budou přesunuty do veřejné složky aplikace (Android/media/com.philkes.notallyx). V kombinaci s aplikacemi pro synchronizaci souborů to může být použito k synchronizaci dat NotallyX mezi více zařízeními.</string>
     <string name="date">Datum</string>
     <string name="date_format">Formát data</string>
     <string name="date_format_apply_in_note_view">Použít také v poznámkách</string>

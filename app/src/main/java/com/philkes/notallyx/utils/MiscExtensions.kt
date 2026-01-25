@@ -44,6 +44,13 @@ fun CharSequence?.findWebUrls(): Collection<Pair<Int, Int>> {
     } ?: listOf()
 }
 
+/** Calculates the character limit for a given MB size (in worst case). */
+fun Double.charLimit(): Int {
+    val totalBytes = (this * 1024 * 1024).toInt()
+    val minChars = totalBytes / 4 // Every character is an Emoji/Complex
+    return minChars
+}
+
 fun String.findAllOccurrences(
     search: String,
     caseSensitive: Boolean = false,

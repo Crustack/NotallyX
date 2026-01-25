@@ -30,7 +30,7 @@ class ImageVH(private val binding: RecyclerImageBinding) : RecyclerView.ViewHold
 
     fun bind(file: File?) {
         binding.SSIV.recycle()
-        if (file != null) {
+        if (file?.exists() == true) {
             binding.Message.visibility = View.GONE
             val source = ImageSource.uri(Uri.fromFile(file))
             binding.SSIV.setImage(source)

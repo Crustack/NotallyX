@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.SharedPreferences
 import android.database.Cursor
+import android.database.sqlite.SQLiteBlobTooBigException
 import android.database.sqlite.SQLiteDatabase
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
@@ -37,9 +38,9 @@ import com.philkes.notallyx.utils.cancelNoteReminders
 import com.philkes.notallyx.utils.clearDirectory
 import com.philkes.notallyx.utils.copyToFile
 import com.philkes.notallyx.utils.determineMimeTypeAndExtension
-import com.philkes.notallyx.utils.getExternalAudioDirectory
-import com.philkes.notallyx.utils.getExternalFilesDirectory
-import com.philkes.notallyx.utils.getExternalImagesDirectory
+import com.philkes.notallyx.utils.getCurrentAudioDirectory
+import com.philkes.notallyx.utils.getCurrentFilesDirectory
+import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import com.philkes.notallyx.utils.getFileName
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.mimeTypeToFileExtension
@@ -127,9 +128,12 @@ suspend fun ContextWrapper.importZip(
                 var total = baseNoteCursor.count
                 var counter = 1
                 importingBackup?.postValue(ImportProgress(0, total))
+                val originalIds = ArrayList<Long>(baseNoteCursor.count)
                 val baseNotes =
                     baseNoteCursor.toList { cursor ->
-                        val baseNote = cursor.toBaseNote()
+                        val baseNote = cursor.toBaseNote(database)
+                        val originalId = cursor.getLong(cursor.getColumnIndexOrThrow("id"))
+                        originalIds.add(originalId)
                         importingBackup?.postValue(ImportProgress(counter++, total))
                         baseNote
                     }
@@ -145,9 +149,9 @@ suspend fun ContextWrapper.importZip(
                 )
 
                 val current = AtomicInteger(1)
-                val imageRoot = getExternalImagesDirectory()
-                val fileRoot = getExternalFilesDirectory()
-                val audioRoot = getExternalAudioDirectory()
+                val imageRoot = getCurrentImagesDirectory()
+                val fileRoot = getCurrentFilesDirectory()
+                val audioRoot = getCurrentAudioDirectory()
                 baseNotes.forEach { baseNote ->
                     importFiles(
                         baseNote.images,
@@ -192,7 +196,7 @@ suspend fun ContextWrapper.importZip(
 
                 val notallyDatabase =
                     NotallyDatabase.getDatabase(this@importZip, observePreferences = false).value
-                notallyDatabase.getCommonDao().importBackup(baseNotes, labels)
+                notallyDatabase.getCommonDao().importBackup(baseNotes, originalIds, labels)
                 val reminders = notallyDatabase.getBaseNoteDao().getAllReminders()
                 cancelNoteReminders(reminders)
                 scheduleNoteReminders(reminders)
@@ -246,7 +250,7 @@ private fun Cursor.toLabel(): Label {
     return Label(value)
 }
 
-private fun Cursor.toBaseNote(): BaseNote {
+private fun Cursor.toBaseNote(sourceDb: SQLiteDatabase): BaseNote {
     val typeTmp = getString(getColumnIndexOrThrow("type"))
     val folderTmp = getString(getColumnIndexOrThrow("folder"))
     val color =
@@ -262,7 +266,25 @@ private fun Cursor.toBaseNote(): BaseNote {
             getLongOrNull(modifiedTimestampIndex) ?: timestamp
         }
     val labelsTmp = getString(getColumnIndexOrThrow("labels"))
-    val body = getString(getColumnIndexOrThrow("body"))
+    val id = getLong(getColumnIndexOrThrow("id"))
+    val body =
+        try {
+            getString(getColumnIndexOrThrow("body"))
+        } catch (_: SQLiteBlobTooBigException) {
+            // Fall back to truncated read from source DB to avoid cursor window overflow
+            val cursor =
+                sourceDb.rawQuery(
+                    "SELECT substr(body, 1, ?) AS body FROM BaseNote WHERE id = ?",
+                    arrayOf(
+                        com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
+                            .toString(),
+                        id.toString(),
+                    ),
+                )
+            val value = if (cursor.moveToFirst()) cursor.getString(0) else ""
+            cursor.close()
+            value
+        }
     val spansTmp = getString(getColumnIndexOrThrow("spans"))
     val itemsTmp = getString(getColumnIndexOrThrow("items"))
 
@@ -277,7 +299,7 @@ private fun Cursor.toBaseNote(): BaseNote {
     val folder = Folder.valueOfOrDefault(folderTmp)
 
     val labels = Converters.jsonToLabels(labelsTmp)
-    val spans = Converters.jsonToSpans(spansTmp)
+    val spans = Converters.jsonToSpans(spansTmp).filter { it.isInsideBounds() }
     val items = Converters.jsonToItems(itemsTmp)
 
     val imagesIndex = getColumnIndex("images")
@@ -478,7 +500,7 @@ suspend fun ContextWrapper.importFile(
     uri: Uri,
     proposedMimeType: String? = null,
 ): Pair<FileAttachment?, FileError?> {
-    val filesRoot = getExternalFilesDirectory()
+    val filesRoot = getCurrentFilesDirectory()
     requireNotNull(filesRoot) { "filesRoot is null" }
     return importFile(uri, filesRoot, FileType.ANY, proposedMimeType = proposedMimeType)
 }
@@ -487,7 +509,7 @@ suspend fun ContextWrapper.importImage(
     uri: Uri,
     proposedMimeType: String? = null,
 ): Pair<FileAttachment?, FileError?> {
-    val imagesRoot = getExternalImagesDirectory()
+    val imagesRoot = getCurrentImagesDirectory()
     requireNotNull(imagesRoot) { "imagesRoot is null" }
     return importFile(uri, imagesRoot, FileType.IMAGE, proposedMimeType = proposedMimeType)
 }
@@ -498,7 +520,7 @@ suspend fun ContextWrapper.importAudio(original: File, deleteOriginalFile: Boole
         Regenerate because the directory may have been deleted between the time of activity creation
         and audio recording
         */
-        val audioRoot = getExternalAudioDirectory()
+        val audioRoot = getCurrentAudioDirectory()
         requireNotNull(audioRoot) { "audioRoot is null" }
 
         /*

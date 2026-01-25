@@ -34,6 +34,7 @@ import com.philkes.notallyx.presentation.viewmodel.preference.ListItemSort
 import com.philkes.notallyx.presentation.viewmodel.preference.TextSize
 import com.philkes.notallyx.utils.changehistory.EditTextState
 import com.philkes.notallyx.utils.copyToClipBoard
+import com.philkes.notallyx.utils.textMaxLengthFilter
 
 class ListItemVH(
     val binding: RecyclerListItemBinding,
@@ -49,7 +50,7 @@ class ListItemVH(
         val body = textSize.editBodySize
         binding.EditText.apply {
             setTextSize(TypedValue.COMPLEX_UNIT_SP, body)
-
+            filters = context.textMaxLengthFilter()
             textWatcher =
                 createListTextWatcherWithHistory(
                     listManager,

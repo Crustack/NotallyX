@@ -55,15 +55,17 @@ import com.philkes.notallyx.utils.copyToLarge
 import com.philkes.notallyx.utils.createChannelIfNotExists
 import com.philkes.notallyx.utils.createFileSafe
 import com.philkes.notallyx.utils.createReportBugIntent
+import com.philkes.notallyx.utils.getCurrentAudioDirectory
+import com.philkes.notallyx.utils.getCurrentFilesDirectory
+import com.philkes.notallyx.utils.getCurrentImagesDirectory
+import com.philkes.notallyx.utils.getCurrentMediaRoot
 import com.philkes.notallyx.utils.getExportedPath
-import com.philkes.notallyx.utils.getExternalAudioDirectory
-import com.philkes.notallyx.utils.getExternalFilesDirectory
-import com.philkes.notallyx.utils.getExternalImagesDirectory
 import com.philkes.notallyx.utils.getLogFileUri
 import com.philkes.notallyx.utils.listZipFiles
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.md5Hash
 import com.philkes.notallyx.utils.recreateDir
+import com.philkes.notallyx.utils.resolveAttachmentFile
 import com.philkes.notallyx.utils.security.decryptDatabase
 import com.philkes.notallyx.utils.security.getInitializedCipherForDecryption
 import com.philkes.notallyx.utils.verify
@@ -212,19 +214,19 @@ suspend fun ContextWrapper.autoBackupOnSave(
                         images.map {
                             BackupFile(
                                 SUBFOLDER_IMAGES,
-                                File(getExternalImagesDirectory(), it.localName),
+                                File(getCurrentImagesDirectory(), it.localName),
                             )
                         } +
                             files.map {
                                 BackupFile(
                                     SUBFOLDER_FILES,
-                                    File(getExternalFilesDirectory(), it.localName),
+                                    File(getCurrentFilesDirectory(), it.localName),
                                 )
                             } +
                             audios.map {
                                 BackupFile(
                                     SUBFOLDER_AUDIOS,
-                                    File(getExternalAudioDirectory(), it.name),
+                                    File(getCurrentAudioDirectory(), it.name),
                                 )
                             } +
                             BackupFile(null, databaseFile)
@@ -338,10 +340,6 @@ fun ContextWrapper.exportAsZip(
         val (databaseOriginal, databaseCopy) = copyDatabase()
         zipFile.addFile(databaseCopy, zipParameters.copy(DATABASE_NAME))
 
-        val imageRoot = getExternalImagesDirectory()
-        val fileRoot = getExternalFilesDirectory()
-        val audioRoot = getExternalAudioDirectory()
-
         val totalNotes = databaseOriginal.getBaseNoteDao().count()
         val images = databaseOriginal.getBaseNoteDao().getAllImages().toFileAttachments()
         val files = databaseOriginal.getBaseNoteDao().getAllFiles().toFileAttachments()
@@ -350,32 +348,43 @@ fun ContextWrapper.exportAsZip(
         backupProgress?.postValue(BackupProgress(0, totalAttachments))
 
         val counter = AtomicInteger(0)
+        val missingAttachments = ArrayList<String>()
         images.export(
             zipFile,
             zipParameters,
-            imageRoot,
             SUBFOLDER_IMAGES,
             this,
             backupProgress,
             totalAttachments,
             counter,
+            missingAttachments,
         )
         files.export(
             zipFile,
             zipParameters,
-            fileRoot,
             SUBFOLDER_FILES,
             this,
             backupProgress,
             totalAttachments,
             counter,
+            missingAttachments,
         )
         audios
             .asSequence()
             .flatMap { string -> Converters.jsonToAudios(string) }
             .forEach { audio ->
                 try {
-                    backupFile(zipFile, zipParameters, audioRoot, SUBFOLDER_AUDIOS, audio.name)
+                    if (
+                        !backupAttachmentFile(
+                            this,
+                            zipFile,
+                            zipParameters,
+                            SUBFOLDER_AUDIOS,
+                            audio.name,
+                        )
+                    ) {
+                        missingAttachments.add("Audio: ${audio.name}")
+                    }
                 } catch (exception: Exception) {
                     log(TAG, throwable = exception)
                 } finally {
@@ -429,6 +438,10 @@ fun ContextWrapper.exportAsZip(
         zipFile.file.delete()
         databaseCopy.delete()
         backupProgress?.postValue(BackupProgress(inProgress = false))
+        // Post skipped attachments notification if any were missing
+        if (missingAttachments.isNotEmpty()) {
+            postSkippedAttachmentsNotification(missingAttachments)
+        }
         return totalNotes
     } finally {
         tempFile.delete()
@@ -444,10 +457,13 @@ fun Context.exportToZip(
     try {
         val zipInputStream = contentResolver.openInputStream(zipUri) ?: return false
         extractZipToDirectory(zipInputStream, tempDir, password)
-        files.forEach { file ->
-            val targetFile = File(tempDir, "${file.first?.let { "$it/" } ?: ""}${file.second.name}")
-            file.second.copyToLarge(targetFile, overwrite = true)
-        }
+        files
+            .filter { it.second.exists() }
+            .forEach { file ->
+                val targetFile =
+                    File(tempDir, "${file.first?.let { "$it/" } ?: ""}${file.second.name}")
+                file.second.copyToLarge(targetFile, overwrite = true)
+            }
         val zipOutputStream = contentResolver.openOutputStream(zipUri, "w") ?: return false
         val tempZipFile = createTempFile("tempZip", ".zip")
         try {
@@ -528,16 +544,25 @@ private fun List<String>.toFileAttachments(): Sequence<FileAttachment> {
 private fun Sequence<FileAttachment>.export(
     zipFile: ZipFile,
     zipParameters: ZipParameters,
-    fileRoot: File?,
     subfolder: String,
     context: ContextWrapper,
     backupProgress: MutableLiveData<Progress>?,
     total: Int,
     counter: AtomicInteger,
+    missingDisplayNames: MutableList<String>,
 ) {
     forEach { file ->
         try {
-            backupFile(zipFile, zipParameters, fileRoot, subfolder, file.localName)
+            if (!backupAttachmentFile(context, zipFile, zipParameters, subfolder, file.localName)) {
+                val typePrefix =
+                    when (subfolder) {
+                        SUBFOLDER_IMAGES -> "Image"
+                        SUBFOLDER_FILES -> "File"
+                        else -> subfolder
+                    }
+                val display = file.originalName.ifBlank { file.localName }
+                missingDisplayNames.add("$typePrefix: $display")
+            }
         } catch (exception: Exception) {
             context.log(TAG, throwable = exception)
         } finally {
@@ -584,16 +609,74 @@ fun WorkManager.scheduleAutoBackup(context: ContextWrapper, periodInDays: Long) 
     }
 }
 
-private fun backupFile(
+// Try to backup attachment by resolving it according to current/private/public directories.
+// Returns true if the file was found and added to the zip, false if missing.
+private fun backupAttachmentFile(
+    context: ContextWrapper,
     zipFile: ZipFile,
     zipParameters: ZipParameters,
-    root: File?,
     folder: String,
     name: String,
-) {
-    val file = if (root != null) File(root, name) else null
-    if (file != null && file.exists()) {
+): Boolean {
+    val file = context.resolveAttachmentFile(folder, name)
+    return if (file != null && file.exists()) {
         zipFile.addFile(file, zipParameters.copy("$folder/$name"))
+        true
+    } else {
+        false
+    }
+}
+
+private fun ContextWrapper.postSkippedAttachmentsNotification(missingAttachments: List<String>) {
+    getSystemService<NotificationManager>()?.let { manager ->
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            manager.createChannelIfNotExists(NOTIFICATION_CHANNEL_ID)
+        }
+        val maxToShow = 10
+        val lines = missingAttachments.take(maxToShow)
+        val more = missingAttachments.size - lines.size
+        val bigText = buildString {
+            append(getString(R.string.auto_backup_skipped_files, missingAttachments.size))
+            append(" (${getCurrentMediaRoot()})")
+            append('\n')
+            lines.forEachIndexed { idx, name ->
+                if (idx > 0) append('\n')
+                append("• ")
+                append(name)
+            }
+            if (more > 0) {
+                append('\n')
+                append("+")
+                append(more)
+                append(" …")
+            }
+        }
+
+        val cleanupIntent =
+            Intent(this, CleanupMissingAttachmentsReceiver::class.java).apply {
+                action = CleanupMissingAttachmentsReceiver.ACTION_CLEANUP_MISSING_ATTACHMENTS
+            }
+        val cleanupPendingIntent =
+            PendingIntent.getBroadcast(
+                this,
+                0,
+                cleanupIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+
+        val notification =
+            NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+                .setSmallIcon(R.drawable.export)
+                .setContentTitle(getString(R.string.backup))
+                .setContentText(
+                    getString(R.string.auto_backup_skipped_files, missingAttachments.size) +
+                        " (${getCurrentMediaRoot()})"
+                )
+                .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .addAction(R.drawable.delete, getString(R.string.clean_up), cleanupPendingIntent)
+                .build()
+        manager.notify(NOTIFICATION_ID + 1, notification)
     }
 }
 
@@ -651,7 +734,7 @@ fun exportPdfFile(
     val html =
         note.toHtml(
             NotallyXPreferences.getInstance(app).showDateCreated(),
-            app.getExternalImagesDirectory(),
+            app.getCurrentImagesDirectory(),
         )
     app.printPdf(
         tempFile,
@@ -737,7 +820,7 @@ fun exportPlainTextFile(
                     ExportMimeType.HTML ->
                         note.toHtml(
                             NotallyXPreferences.getInstance(app).showDateCreated(),
-                            app.getExternalImagesDirectory(),
+                            app.getCurrentImagesDirectory(),
                         )
 
                     ExportMimeType.MD -> note.toMarkdown()

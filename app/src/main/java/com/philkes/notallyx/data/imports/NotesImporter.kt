@@ -7,6 +7,7 @@ import androidx.core.net.toUri
 import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
 import com.philkes.notallyx.data.imports.evernote.EvernoteImporter
 import com.philkes.notallyx.data.imports.google.GoogleKeepImporter
 import com.philkes.notallyx.data.imports.txt.JsonImporter
@@ -14,8 +15,10 @@ import com.philkes.notallyx.data.imports.txt.PlainTextImporter
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Label
+import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel
 import com.philkes.notallyx.utils.MIME_TYPE_ZIP
+import com.philkes.notallyx.utils.NoteSplitUtils
 import com.philkes.notallyx.utils.backup.importAudio
 import com.philkes.notallyx.utils.backup.importFile
 import com.philkes.notallyx.utils.backup.importImage
@@ -61,7 +64,17 @@ class NotesImporter(private val app: Application, private val database: NotallyD
                 importFiles(images, it, NotallyModel.FileType.IMAGE, progress, totalFiles, counter)
                 importAudios(audios, it, progress, totalFiles, counter)
             }
-            database.getBaseNoteDao().insert(notes)
+            // Insert notes with split handling for oversized text notes
+            val dao = database.getBaseNoteDao()
+            notes.forEach { note ->
+                if (note.type == Type.NOTE && note.body.length > MAX_BODY_CHAR_LENGTH) {
+                    // Split into parts, preserving spans and adding navigation links
+                    NoteSplitUtils.splitAndInsertForImport(note, dao)
+                } else {
+                    // Regular insert; ensure id is auto-generated
+                    dao.insert(note.copy(id = 0))
+                }
+            }
             progress?.postValue(ImportProgress(inProgress = false))
             return notes.size
         } finally {
