@@ -83,6 +83,13 @@
     <string name="clear_data_message">All Notes, Images, Files, Audios will be permanently deleted</string>
     <string name="clear_formatting">Clear formatting</string>
     <string name="cleared_data">All Data has been cleared</string>
+    <string name="cleared_data">All Data has been cleared</string>
+    <string name="cloud_sync">Cloud Sync</string>
+    <string name="backend_url">Backend URL</string>
+    <string name="backend_url_title">Set Backend URL</string>
+    <string name="sync_now">Sync Now</string>
+    <string name="sync_success">Sync Successful</string>
+    <string name="sync_failed">Sync Failed</string>
     <string name="color">Color</string>
     <string name="color_exists">This color already exists!</string>
     <string name="content_density">Content density</string>

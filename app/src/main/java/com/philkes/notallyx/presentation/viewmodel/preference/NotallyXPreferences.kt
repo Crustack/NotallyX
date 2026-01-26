@@ -108,6 +108,12 @@ class NotallyXPreferences private constructor(private val context: Context) {
             R.string.max_labels_to_display,
         )
 
+    val backendUrl =
+        StringPreference("backendUrl", preferences, "", R.string.backend_url)
+
+    val lastSync =
+        LongPreference("lastSyncTimestamp", preferences, 0L)
+
     val backupsFolder =
         StringPreference("autoBackup", preferences, EMPTY_PATH, R.string.auto_backups_folder)
     val backupOnSave =

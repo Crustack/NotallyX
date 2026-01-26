@@ -105,6 +105,28 @@
             style="@style/PreferenceHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="@string/cloud_sync" />
+
+        <include
+            android:id="@+id/BackendUrl"
+            layout="@layout/preference" />
+
+        <TextView
+            android:id="@+id/SyncNow"
+            style="@style/Preference"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/sync_now" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/listDivider" />
+
+        <TextView
+            style="@style/PreferenceHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:text="@string/backup" />
 
         <TextView

@@ -68,7 +68,10 @@ import com.philkes.notallyx.utils.showErrorDialog
 import com.philkes.notallyx.utils.viewLogs
 import com.philkes.notallyx.utils.wrapWithChooser
 import java.util.Date
-import kotlinx.coroutines.launch
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequest
+import androidx.work.WorkManager
+import com.philkes.notallyx.data.sync.SyncWorker
 
 class SettingsFragment : Fragment() {
 
@@ -712,6 +715,53 @@ class SettingsFragment : Fragment() {
                     .setPositiveButton(R.string.delete_all) { _, _ -> model.deleteAll() }
                     .setCancelButton()
                     .show()
+            }
+
+            BackendUrl.apply {
+                Title.setText(R.string.backend_url_title)
+                root.setOnClickListener {
+                    val currentValue = backendUrl.value
+                    val dialogBinding = DialogInputBinding.inflate(layoutInflater)
+                    dialogBinding.EditText.setText(currentValue)
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle(R.string.backend_url_title)
+                        .setView(dialogBinding.root)
+                        .setCancelButton()
+                        .setPositiveButton(R.string.save) { dialog, _ ->
+                            val newValue = dialogBinding.EditText.text.toString().trim()
+                            model.savePreference(backendUrl, newValue)
+                            // Trigger Sync
+                            if (newValue.isNotEmpty()) {
+                                WorkManager.getInstance(requireContext())
+                                    .enqueueUniqueWork(
+                                        SyncWorker.TAG,
+                                        ExistingWorkPolicy.REPLACE,
+                                        SyncWorker.getSyncWorkRequest(newValue)
+                                    )
+                                showToast("Sync started")
+                            }
+                            dialog.dismiss()
+                        }
+                        .showAndFocus(dialogBinding.EditText, allowFullSize = true)
+                }
+            }
+            backendUrl.observe(viewLifecycleOwner) { value ->
+                binding.BackendUrl.Value.text = if (value.isEmpty()) getString(R.string.not_set) else value
+            }
+
+            SyncNow.setOnClickListener {
+                val url = backendUrl.value
+                if (url.isEmpty()) {
+                    showToast("Backend URL not set")
+                } else {
+                    WorkManager.getInstance(requireContext())
+                        .enqueueUniqueWork(
+                            SyncWorker.TAG,
+                            ExistingWorkPolicy.REPLACE,
+                            SyncWorker.getSyncWorkRequest(url)
+                        )
+                    showToast("Sync started")
+                }
             }
         }
     }
