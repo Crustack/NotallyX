@@ -93,6 +93,7 @@ import com.philkes.notallyx.utils.viewFile
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import javax.crypto.Cipher
+import kotlin.collections.map
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -272,9 +273,18 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                     it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
                 }
                 val notallyDatabase = NotallyDatabase.getFreshDatabase(app, true)
-                if (!notallyDatabase.ping()) {
+                val ping =
+                    try {
+                        notallyDatabase.ping()
+                    } catch (e: Exception) {
+                        throw RuntimeException(
+                            "Moving internal '${internalDatabaseFiles.map { it.name }}' to public '$targetDirectory' folder failed",
+                            e,
+                        )
+                    }
+                if (!ping) {
                     throw RuntimeException(
-                        "Moving '${internalDatabaseFiles.map { it.name }}' to public '$targetDirectory' folder failed"
+                        "Moving internal '${internalDatabaseFiles.map { it.name }}' to public '$targetDirectory' folder failed"
                     )
                 }
                 app.migrateAllAttachments(toPrivate = false)
@@ -295,7 +305,16 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                     it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
                 }
                 val notallyDatabase = NotallyDatabase.getFreshDatabase(app, false)
-                if (!notallyDatabase.ping()) {
+                val ping =
+                    try {
+                        notallyDatabase.ping()
+                    } catch (e: Exception) {
+                        throw RuntimeException(
+                            "Moving public '${externalDatabaseFiles.map { it.name }}' to internal '$targetDirectory' folder failed",
+                            e,
+                        )
+                    }
+                if (!ping) {
                     throw RuntimeException(
                         "Moving public '${externalDatabaseFiles.map { it.name }}' to internal '$targetDirectory' folder failed"
                     )

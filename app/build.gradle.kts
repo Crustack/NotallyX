@@ -269,6 +269,7 @@ dependencies {
     }
     implementation("org.commonmark:commonmark:0.27.0")
     implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.27.0")
+    implementation("com.github.luben:zstd-jni:1.5.7-6@aar")
 
     androidTestImplementation("androidx.room:room-testing:$roomVersion")
     androidTestImplementation("androidx.work:work-testing:2.9.1")
@@ -282,4 +283,5 @@ dependencies {
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
     testImplementation("org.mockito:mockito-core:5.13.0")
     testImplementation("org.robolectric:robolectric:4.15.1")
+    testImplementation("com.github.luben:zstd-jni:1.5.7-6")
 }

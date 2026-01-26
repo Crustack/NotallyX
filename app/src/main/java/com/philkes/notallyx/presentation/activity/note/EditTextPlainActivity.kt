@@ -226,11 +226,11 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
     private fun convertToTextNote() {
         lifecycleScope.launch {
             // Save the current note
-            saveNote(checkAutoSave = false)
+            val noteId = saveNote(checkAutoSave = false)
 
             // Create a new intent to open the note in EditNoteActivity
             val intent = Intent(this@EditTextPlainActivity, EditNoteActivity::class.java)
-            intent.putExtra(EXTRA_SELECTED_BASE_NOTE, notallyModel.id)
+            intent.putExtra(EXTRA_SELECTED_BASE_NOTE, noteId)
             startActivity(intent)
             finish()
         }

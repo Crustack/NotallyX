@@ -8,6 +8,8 @@
     <string name="adding_files">Ajout des fichiers</string>
     <string name="adding_images">Ajout des images</string>
     <string name="all">Tous</string>
+    <string name="always_show_search_bar">Toujours afficher la barre de recherche étendue</string>
+    <string name="always_show_search_bar_hint">En activant cette option, la barre de recherche sera toujours affichée dans l’interface, au lieu d\'utiliser une icône de recherche dans la barre supérieure</string>
     <string name="appearance">Apparence</string>
     <string name="archive">Archiver</string>
     <string name="archived">Éléments archivés</string>
@@ -24,6 +26,7 @@
     <string name="auto_backup_last">Dernière sauvegarde</string>
     <string name="auto_backup_on_save">Sauvegarde automatique après avoir quitté la note</string>
     <string name="auto_backup_on_save_hint">En activant cette option, une sauvegarde (\"NotallyX_AutoBackup.zip\") est automatiquement créée dans le \"Dossier des sauvegardes\" configuré, à chaque fois qu\'une note est enregistrée.\nAttention, cela pourrait affecter les performances.</string>
+    <string name="auto_backup_skipped_files">%1$d fichiers/images joints manquants ont été ignorés</string>
     <string name="auto_backups_folder">Dossier des sauvegardes</string>
     <string name="auto_backups_folder_hint">Dossier dans lequel toutes les sauvegardes automatiques seront stockées.</string>
     <string name="auto_backups_folder_rechoose">Vous devez re-sélectionner votre dossier de sauvegarde afin que NotallyX ait l\'autorisation d\'y écrire.\nVous pouvez également appuyer sur Annuler pour ignorer l\'importation du chemin du dossier de sauvegarde.</string>
@@ -38,11 +41,15 @@
     <string name="backup_periodic">Sauvegardes périodiques</string>
     <string name="backup_periodic_hint">En activant cette option, des sauvegardes sont automatiquement créées dans le Dossier de sauvegardes configuré.\nCela peut ne pas fonctionner si le mode économie d\'énergie est activé. </string>
     <string name="behaviour">Comportement</string>
+    <string name="biometric_backup_advice">Il est conseillé d\'exporter une sauvegarde complète de toutes vos notes avant d\'activer ou de désactiver le verrouillage biométrique, au cas où le chiffrement via ce dernier échouerait</string>
     <string name="biometric_lock">Verrouiller l\'application avec la biométrie ou le code PIN de l\'appareil</string>
     <string name="biometrics_disable_success">Le verrouillage biométrique/code PIN a été désactivé</string>
     <string name="biometrics_failure">Échec de l\'authentification biométrique/code PIN</string>
     <string name="biometrics_no_support">Aucune fonction biométrique n\'est disponible sur cet appareil</string>
     <string name="biometrics_not_setup">Aucun verrouillage biométrique/code PIN n\'est paramétré sur cet appareil</string>
+    <string name="biometrics_setup_failure">Échec de la configuration du verrouillage par Biométrie/PIN</string>
+    <string name="biometrics_setup_failure_decrypt">Échec du déchiffrement de la base de données.\nVeuillez utiliser \'%1$s\' pour signaler l\'erreur</string>
+    <string name="biometrics_setup_failure_encrypt">Échec du chiffrement de la base de données.\nVeuillez utiliser \'%1$s\' pour signaler l\'erreur.</string>
     <string name="biometrics_setup_success">Le verrouillage biométrique/code PIN a été activé</string>
     <string name="bold">Gras</string>
     <string name="calculating">Calcul…</string>
@@ -67,6 +74,9 @@
     <string name="choose_another_folder">Choisir un autre dossier</string>
     <string name="choose_folder">Choisir un dossier</string>
     <string name="choose_other_app">Choisissez l\'application depuis laquelle importer</string>
+    <string name="clean_up">Nettoyage</string>
+    <string name="cleanup_finished_summary">%1$d pièces jointes manquantes ont été supprimées de %2$d notes</string>
+    <string name="cleanup_finished_title">Nettoyage terminé</string>
     <string name="clear">Effacer</string>
     <string name="clear_data">Supprimer les données</string>
     <string name="clear_data_message">Toutes les notes, images, fichiers et audios seront supprimés définitivement</string>
@@ -80,6 +90,8 @@
     <string name="convert_to_text_note">Convertir en note simple</string>
     <string name="copied_link">Lien copié dans le presse-papier</string>
     <string name="copy">Copier</string>
+    <string name="crash_export_backup_failed">Malheureusement, l\'exportation de la sauvegarde a échoué.\nVeuillez utiliser le bouton \'%1$s\' pour signaler le plantage</string>
+    <string name="crash_export_backup_message">Vous pouvez essayer de créer une sauvegarde de vos notes en cliquant sur \'%1$s\'.\nCela peut échouer si le plantage a entraîné des données corrompues ou endommagées. Dans ce cas, veuillez utiliser le bouton \'%2$s\' pour signaler le plantage</string>
     <string name="crash_message">Une erreur inattendue s\'est produite.\nDésolé pour le désagrément.</string>
     <string name="create_github_issue">Créer une issue Github</string>
     <string name="creation_date">Crée</string>
@@ -122,6 +134,7 @@
     <string name="disallow_screenshots">Bloquer les captures d’écran</string>
     <string name="discard">Supprimer</string>
     <string name="display_text">Texte à afficher</string>
+    <string name="documentation">Documentation</string>
     <string name="donate">Faire un don</string>
     <string name="drag_handle">Poignée de glissement</string>
     <string name="edit">Modifier</string>
@@ -148,6 +161,10 @@
     <string name="export_settings_failure">Échec de l\'exportation des paramètres, avez-vous choisi un chemin invalide \?</string>
     <string name="export_settings_message">Tous les paramètres seront exportés dans un fichier JSON, qui pourra être utilisé pour réimporter les paramètres enregistrés.\n\nVeuillez noter que cela n\'inclut pas les paramètres chiffrés, tels que le mot de passe de sauvegarde automatique ou la clé de chiffrement biométrique.</string>
     <string name="export_settings_success">Paramètres exportés avec succès</string>
+    <plurals name="exported_notes">
+        <item quantity="one">%1$s note exportée</item>
+        <item quantity="other">%1$s notes exportées</item>
+    </plurals>
     <string name="exporting_backup">Exportation de la sauvegarde</string>
     <string name="extracted_files">Fichiers extraits</string>
     <string name="filter">Filtrer</string>
@@ -211,6 +228,9 @@
     <string name="max_lines_to_display">Nombre maximum de lignes à afficher pour une note</string>
     <string name="max_lines_to_display_title">Nombre maximum de lignes à afficher pour un titre</string>
     <string name="medium">Moyenne</string>
+    <string name="migrating_data">Migration des données… </string>
+    <string name="migration_moving_attachments">Déplacement des pièces jointes…</string>
+    <string name="migration_splitting_notes">Division des notes trop volumineuses…</string>
     <string name="minutes">Minutes</string>
     <string name="modified_date">Modifié</string>
     <string name="monospace">Chasse fixe</string>
@@ -225,9 +245,16 @@
     <string name="next">Suivant</string>
     <string name="no_auto_sort">Aucun tri automatique</string>
     <string name="none">Aucune </string>
+    <string name="not_exists">\'%1$s\' n’existe pas</string>
     <string name="note">Note</string>
+    <string name="note_text_too_long_truncated">Texte trop long, tronqué à %1$d caractères</string>
+    <string name="note_too_big_truncating">La note est trop volumineuse pour être sauvegardée ; elle a été tronquée à %1$s caractères (au lieu de %2$s)</string>
     <string name="notes">Notes</string>
     <string name="notes_sorted_by">Notes triées par</string>
+    <plurals name="notes_too_big_truncating">
+        <item quantity="one">%1$s note est trop volumineuse pour être sauvegardée ; elle a été tronquée à %2$s caractères </item>
+        <item quantity="other">%1$s notes sont trop volumineuses pour être sauvegardées ; elles ont été tronquées à %2$s caractères</item>
+    </plurals>
     <string name="open_link">Ouvrir le lien</string>
     <string name="open_note">Ouvrir la note</string>
     <string name="others">Autres</string>
@@ -256,6 +283,7 @@
     <string name="repetition_custom">Répétition personnalisée</string>
     <string name="repetition_value_hint">Valeur</string>
     <string name="report_bug">Signaler bug</string>
+    <string name="report_bug_stacktrace_too_long">Les journaux de plantage sont trop longs pour pré-remplir automatiquement le ticket GitHub. Par conséquent, ils ont été copiés dans votre presse-papiers.\nLorsque vous cliquerez sur « %1$s », votre navigateur s\'ouvrira pour créer une issue GitHub relative à votre plantage. Il est important de coller les journaux de plantage, qui sont copiés automatiquement, dans le champ « (Optional) Relevant log output » de l’issue GitHub.</string>
     <string name="report_crash">Signaler un bug avec rapport de plantage</string>
     <string name="reset_settings">Réinitialiser les paramètres</string>
     <string name="reset_settings_message">Tous les paramètres seront réinitialisés à leur valeur par défaut</string>
@@ -319,6 +347,7 @@
     <string name="updated_link">Lien mis à jour</string>
     <string name="view">Vue</string>
     <string name="view_file">Voir le fichier</string>
+    <string name="view_logs">Voir le fichier journal</string>
     <string name="view_note">Voir la note…</string>
     <string name="weekly">Toutes les semaines</string>
     <string name="weeks">Semaines</string>

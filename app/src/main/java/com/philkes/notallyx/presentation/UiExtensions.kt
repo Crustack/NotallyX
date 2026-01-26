@@ -349,7 +349,7 @@ fun StylableEditTextWithHistory.createTextWatcherWithHistory(
 
         override fun afterTextChanged(s: Editable?) {
             val textAfter = requireNotNull(s, { "afterTextChanged: Editable is null" }).clone()
-            if (textAfter.hasNotChanged(stateBefore.text)) {
+            if (textAfter.hasNotChanged(stateBefore.getEditableText())) {
                 return
             }
             updateModel.invoke(textAfter)

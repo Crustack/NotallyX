@@ -176,10 +176,11 @@ abstract class EditActivity(private val type: Type) :
         }
     }
 
-    open suspend fun saveNote(checkAutoSave: Boolean = true) {
+    open suspend fun saveNote(checkAutoSave: Boolean = true): Long {
         updateModel()
-        notallyModel.saveNote(checkAutoSave)
-        WidgetProvider.sendBroadcast(application, longArrayOf(notallyModel.id))
+        return notallyModel.saveNote(checkAutoSave).also {
+            WidgetProvider.sendBroadcast(application, longArrayOf(it))
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

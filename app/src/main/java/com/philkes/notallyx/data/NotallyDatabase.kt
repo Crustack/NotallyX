@@ -45,12 +45,7 @@ abstract class NotallyDatabase : RoomDatabase() {
         getBaseNoteDao().query(SimpleSQLiteQuery("pragma wal_checkpoint(FULL)"))
     }
 
-    fun ping(): Boolean =
-        try {
-            getBaseNoteDao().query(SimpleSQLiteQuery("SELECT 1")) == 1
-        } catch (e: Exception) {
-            false
-        }
+    fun ping() = getBaseNoteDao().query(SimpleSQLiteQuery("SELECT 1")) == 1
 
     private var biometricLockObserver: Observer<BiometricLock>? = null
     private var dataInPublicFolderObserver: Observer<Boolean>? = null

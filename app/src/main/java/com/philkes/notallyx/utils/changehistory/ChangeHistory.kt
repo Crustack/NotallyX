@@ -4,7 +4,10 @@ import android.util.Log
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
 import kotlin.IllegalStateException
 
-class ChangeHistory {
+class ChangeHistory(
+    /** Maximum number of changes to keep in memory. Oldest entries are evicted when full. */
+    private val maxSize: Int = 1000
+) {
     private val changeStack = ArrayList<Change>()
     var stackPointer = NotNullLiveData(-1)
 
@@ -19,9 +22,19 @@ class ChangeHistory {
     }
 
     fun push(change: Change) {
+        // Drop all redo entries after current pointer
         popRedos()
+        // If full, evict the oldest entry and shift the pointer accordingly
+        var newStackPointer = stackPointer.value
+        if (changeStack.size >= maxSize) {
+            if (changeStack.isNotEmpty()) {
+                changeStack.removeAt(0)
+                // Shift pointer left because we removed the head
+                newStackPointer = (newStackPointer - 1).coerceAtLeast(-1)
+            }
+        }
         changeStack.add(change)
-        stackPointer.value += 1
+        stackPointer.value = newStackPointer + 1
         Log.d(TAG, "addChange: $change")
     }
 

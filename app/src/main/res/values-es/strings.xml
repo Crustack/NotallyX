@@ -40,6 +40,7 @@
     <string name="backup_periodic">Copias de seguridad periódicas</string>
     <string name="backup_periodic_hint">Al habilitar esta opción, las copias de seguridad se crean automáticamente en el directorio de copias de seguridad configurada.\nEs posible que esto no funcione si tiene habilitado el modo de ahorro de energía.</string>
     <string name="behaviour">Comportamiento</string>
+    <string name="biometric_backup_advice">Se aconseja exportar una copia de respaldo completa de todas las notas antes de (des)habilitar el bloqueo biométrico, para el caso de que el cifrado biométrico falle</string>
     <string name="biometric_lock">Bloquear aplicación con dispositivo biométrico o con PIN</string>
     <string name="biometrics_disable_success">El bloqueo biométrico/PIN ha sido deshabilitado</string>
     <string name="biometrics_failure">Falló la autenticación biómetrica/PIN</string>
@@ -94,7 +95,7 @@
     <string name="daily">Diariamente</string>
     <string name="dark">Oscuro</string>
     <string name="data_in_public">Guardar datos en carpeta pública</string>
-    <string name="data_in_public_message">Al habilitar esta opción, la base de datos interna de la aplicación y los archivos adjuntos se moverán al directorio público de la aplicación (Android/media/com.philkes.notallyx). En combinación con aplicaciones de sincronización de archivos, esta opción se puede utilizar para sincronizar datos de NotallyX entre varios dispositivos.</string>
+    <string name="data_in_public_message">Al habilitar esta opción, la base de datos interna de la aplicación se moverá al directorio público de la aplicación (Android/media/com.philkes.notallyx).\nEn combinación con aplicaciones de sincronización de archivos, esta opción se puede utilizar para sincronizar datos de NotallyX entre varios dispositivos.</string>
     <string name="date">Fecha</string>
     <string name="date_format">Formato de fecha</string>
     <string name="date_format_apply_in_note_view">Aplicar también en la vista de nota</string>

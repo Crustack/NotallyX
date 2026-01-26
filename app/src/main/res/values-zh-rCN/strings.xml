@@ -40,6 +40,7 @@
     <string name="backup_periodic">定期备份</string>
     <string name="backup_periodic_hint">启用此选项后将自动在配置的备份文件夹中创建备份文件。如果你启用了节能模式，这可能无法正常工作</string>
     <string name="behaviour">行为</string>
+    <string name="biometric_backup_advice">建议在禁用/开启生物特征锁前导出所有笔记的完整备份，以防通过生物特征锁的加密失败</string>
     <string name="biometric_lock">使用生物识别或PIN解锁应用</string>
     <string name="biometrics_disable_success">已停用生物特征/Pin 锁</string>
     <string name="biometrics_failure">未能通过生物特征/PIN验证身份</string>
@@ -88,7 +89,7 @@
     <string name="crash_export_backup_failed">导出备份不幸失败。请用  \'%1$s\' 按钮报告崩溃</string>
     <string name="crash_export_backup_message">你可以单击  \'%1$s\' 试着创建笔记备份。如果崩溃造成数据损坏/破坏，创建备份可能失败。如果出现这种情况，用  \'%2$s\' 按钮报告崩溃</string>
     <string name="crash_message">发生了意外错误。抱歉造成不变</string>
-    <string name="create_github_issue">在Github发布议题</string>
+    <string name="create_github_issue">在Github创建问题</string>
     <string name="creation_date">创建时间</string>
     <string name="custom">自定义</string>
     <string name="daily">每天</string>
