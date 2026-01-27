@@ -5,4 +5,3 @@
 * Fix Links öffnen
 
 * Fix abgehakte Elemente löschen
-
