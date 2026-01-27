@@ -129,6 +129,9 @@ interface BaseNoteDao {
 
     @Query("SELECT * FROM BaseNote WHERE id = :id") fun get(id: Long): BaseNote?
 
+    @Query("SELECT * FROM BaseNote WHERE title = :title")
+    fun getByTitle(title: String): List<BaseNote>
+
     @Query("SELECT images FROM BaseNote WHERE id = :id") fun getImages(id: Long): String
 
     @Query("SELECT images FROM BaseNote") fun getAllImages(): List<String>

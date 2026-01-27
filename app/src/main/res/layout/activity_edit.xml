@@ -124,7 +124,8 @@
                     android:paddingBottom="6dp"
                     android:text="@string/date"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textColor="?android:textColorHint" />
+                    android:textColor="?android:textColorHint"
+                    android:alpha="@fraction/alpha_secondary" />
 
 
                 <androidx.recyclerview.widget.RecyclerView
@@ -134,6 +135,16 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/LabelGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="24dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="24dp"
+                    android:paddingBottom="8dp"
+                    android:alpha="@fraction/alpha_secondary" />
 
                 <View
                     android:layout_width="match_parent"
@@ -211,13 +222,6 @@
                     android:overScrollMode="never"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/LabelGroup"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingStart="24dp"
-                    android:paddingTop="16dp"
-                    android:paddingEnd="24dp" />
 
             </LinearLayout>
 

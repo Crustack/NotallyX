@@ -98,6 +98,7 @@ import com.philkes.notallyx.utils.getUriForFile
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.mergeSkipFirst
 import com.philkes.notallyx.utils.observeSkipFirst
+import com.philkes.notallyx.utils.openNote
 import com.philkes.notallyx.utils.shareNote
 import com.philkes.notallyx.utils.showColorSelectDialog
 import com.philkes.notallyx.utils.textMaxLengthFilter
@@ -950,6 +951,14 @@ abstract class EditActivity(private val type: Type) :
                 }
                 resetIdleTimer()
             }
+        }
+    }
+
+    override fun duplicate() {
+        lifecycleScope.launch {
+            saveNote(true)
+            val duplicateId = baseModel.duplicateNote(notallyModel.getBaseNote())
+            openNote(duplicateId, notallyModel.type, clearBackStack = true)
         }
     }
 

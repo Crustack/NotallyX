@@ -75,7 +75,7 @@ suspend fun ContextWrapper.importZip(
 ) {
     importingBackup?.postValue(ImportProgress(indeterminate = true))
     try {
-        val importedNotes =
+        val result =
             withContext(Dispatchers.IO) {
                 val stream =
                     requireNotNull(
@@ -196,14 +196,19 @@ suspend fun ContextWrapper.importZip(
 
                 val notallyDatabase =
                     NotallyDatabase.getDatabase(this@importZip, observePreferences = false).value
-                notallyDatabase.getCommonDao().importBackup(baseNotes, originalIds, labels)
+                val importResult =
+                    notallyDatabase.getCommonDao().importBackup(baseNotes, originalIds, labels)
                 val reminders = notallyDatabase.getBaseNoteDao().getAllReminders()
                 cancelNoteReminders(reminders)
                 scheduleNoteReminders(reminders)
-                baseNotes.size
+                importResult
             }
         databaseFolder.clearDirectory()
-        val message = getQuantityString(R.plurals.imported_notes, importedNotes)
+        val baseMsg = getQuantityString(R.plurals.imported_notes, result.inserted)
+        val message =
+            if (result.duplicates > 0)
+                "$baseMsg (${getQuantityString(R.plurals.duplicates, result.duplicates)})"
+            else baseMsg
         showToast(message)
     } catch (e: ZipException) {
         if (e.type == ZipException.Type.WRONG_PASSWORD) {

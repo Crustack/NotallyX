@@ -629,6 +629,9 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                     val pinned = menu.addPinned(MenuItem.SHOW_AS_ACTION_ALWAYS)
                     menu.addLabels(MenuItem.SHOW_AS_ACTION_ALWAYS)
                     menu.addDelete(MenuItem.SHOW_AS_ACTION_ALWAYS)
+                    menu.add(R.string.duplicate, R.drawable.content_copy) {
+                        baseModel.duplicateSelectedBaseNotes()
+                    }
                     menu.add(R.string.archive, R.drawable.archive) { moveNotes(Folder.ARCHIVED) }
                     menu.addChangeColor()
                     val share = menu.addShare()
@@ -645,6 +648,9 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                         moveNotes(Folder.NOTES)
                     }
                     menu.addDelete(MenuItem.SHOW_AS_ACTION_ALWAYS)
+                    menu.add(R.string.duplicate, R.drawable.content_copy) {
+                        baseModel.duplicateSelectedBaseNotes()
+                    }
                     menu.addExportMenu(MenuItem.SHOW_AS_ACTION_ALWAYS)
                     val pinned = menu.addPinned()
                     menu.addLabels()

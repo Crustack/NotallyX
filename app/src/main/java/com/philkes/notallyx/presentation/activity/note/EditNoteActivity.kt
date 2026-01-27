@@ -1,6 +1,5 @@
 package com.philkes.notallyx.presentation.activity.note
 
-import android.app.Activity
 import android.content.Intent
 import android.graphics.Typeface
 import android.net.Uri
@@ -53,6 +52,7 @@ import com.philkes.notallyx.presentation.view.note.action.AddNoteBottomSheet
 import com.philkes.notallyx.utils.LinkMovementMethod
 import com.philkes.notallyx.utils.copyToClipBoard
 import com.philkes.notallyx.utils.findAllOccurrences
+import com.philkes.notallyx.utils.openNote
 import com.philkes.notallyx.utils.wrapWithChooser
 
 class EditNoteActivity : EditActivity(Type.NOTE), AddNoteActions {
@@ -486,18 +486,7 @@ class EditNoteActivity : EditActivity(Type.NOTE), AddNoteActions {
     }
 
     private fun URLSpan.navigateToNote() {
-        val noteId = url.getNoteIdFromUrl()
-        val noteType = url.getNoteTypeFromUrl()
-        when (noteType) {
-            Type.NOTE -> goToActivity(EditNoteActivity::class.java, noteId)
-            Type.LIST -> goToActivity(EditListActivity::class.java, noteId)
-        }
-    }
-
-    private fun goToActivity(activity: Class<out Activity>, noteId: Long) {
-        val intent = Intent(this, activity)
-        intent.putExtra(EXTRA_SELECTED_BASE_NOTE, noteId)
-        startActivity(intent)
+        openNote(this.url.getNoteIdFromUrl(), this.url.getNoteTypeFromUrl())
     }
 
     private fun Intent?.getPickedNoteData(): Triple<String, String, Boolean> {

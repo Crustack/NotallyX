@@ -208,6 +208,20 @@ fun Fragment.showErrorDialog(
         .show()
 }
 
+fun Activity.openNote(noteId: Long, noteType: Type, clearBackStack: Boolean = false) {
+    val activity =
+        when (noteType) {
+            Type.NOTE -> EditNoteActivity::class.java
+            Type.LIST -> EditListActivity::class.java
+        }
+    val intent = Intent(this, activity)
+    if (clearBackStack) {
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    }
+    intent.putExtra(EXTRA_SELECTED_BASE_NOTE, noteId)
+    startActivity(intent)
+}
+
 fun Activity.showErrorDialog(
     throwable: Throwable,
     titleResId: Int,

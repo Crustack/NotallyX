@@ -67,7 +67,9 @@ import com.philkes.notallyx.utils.security.showBiometricOrPinPrompt
 import com.philkes.notallyx.utils.showErrorDialog
 import com.philkes.notallyx.utils.viewLogs
 import com.philkes.notallyx.utils.wrapWithChooser
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.launch
 
 class SettingsFragment : Fragment() {
@@ -412,7 +414,7 @@ class SettingsFragment : Fragment() {
                         .apply {
                             type = MIME_TYPE_ZIP
                             addCategory(Intent.CATEGORY_OPENABLE)
-                            putExtra(Intent.EXTRA_TITLE, "NotallyX Backup.zip")
+                            putExtra(Intent.EXTRA_TITLE, buildBackupTitle())
                         }
                         .wrapWithChooser(requireContext())
                 exportBackupActivityResultLauncher.launch(intent)
@@ -935,7 +937,7 @@ class SettingsFragment : Fragment() {
                         .apply {
                             type = MIME_TYPE_ZIP
                             addCategory(Intent.CATEGORY_OPENABLE)
-                            putExtra(Intent.EXTRA_TITLE, "NotallyX Backup.zip")
+                            putExtra(Intent.EXTRA_TITLE, buildBackupTitle())
                         }
                         .wrapWithChooser(requireContext())
                 exportBackupActivityResultLauncher.launch(intent)
@@ -943,6 +945,12 @@ class SettingsFragment : Fragment() {
             .setNeutralButton(R.string.continue_) { _, _ -> onContinue() }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    private fun buildBackupTitle(): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault())
+        val ts = sdf.format(Date())
+        return "NotallyX Backup $ts.zip"
     }
 
     private fun showBiometricsNotSetupDialog() {

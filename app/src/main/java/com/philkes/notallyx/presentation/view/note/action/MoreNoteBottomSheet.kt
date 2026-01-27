@@ -37,6 +37,10 @@ class MoreNoteBottomSheet(
                     }
                     false
                 },
+                Action(R.string.duplicate, R.drawable.content_copy) { _ ->
+                    callbacks.duplicate()
+                    true
+                },
                 Action(R.string.change_color, R.drawable.change_color) { _ ->
                     callbacks.changeColor()
                     true
@@ -59,6 +63,8 @@ interface MoreActions {
     fun export(mimeType: ExportMimeType)
 
     fun changeColor()
+
+    fun duplicate()
 
     fun changeReminders()
 

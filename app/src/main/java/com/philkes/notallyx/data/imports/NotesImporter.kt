@@ -16,6 +16,7 @@ import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.Type
+import com.philkes.notallyx.data.model.toText
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel
 import com.philkes.notallyx.utils.MIME_TYPE_ZIP
 import com.philkes.notallyx.utils.NoteSplitUtils
@@ -25,13 +26,15 @@ import com.philkes.notallyx.utils.backup.importImage
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 
+data class ImportResult(val inserted: Int, val duplicates: Int)
+
 class NotesImporter(private val app: Application, private val database: NotallyDatabase) {
 
     suspend fun import(
         uri: Uri,
         importSource: ImportSource,
         progress: MutableLiveData<ImportProgress>? = null,
-    ): Int {
+    ): ImportResult {
         val tempDir = File(app.cacheDir, IMPORT_CACHE_FOLDER)
         if (!tempDir.exists()) {
             tempDir.mkdirs()
@@ -64,19 +67,28 @@ class NotesImporter(private val app: Application, private val database: NotallyD
                 importFiles(images, it, NotallyModel.FileType.IMAGE, progress, totalFiles, counter)
                 importAudios(audios, it, progress, totalFiles, counter)
             }
-            // Insert notes with split handling for oversized text notes
+            // Insert notes with split handling for oversized text notes, skipping duplicates
             val dao = database.getBaseNoteDao()
+            var insertedCount = 0
+            val totalCandidates = notes.size
             notes.forEach { note ->
-                if (note.type == Type.NOTE && note.body.length > MAX_BODY_CHAR_LENGTH) {
-                    // Split into parts, preserving spans and adding navigation links
-                    NoteSplitUtils.splitAndInsertForImport(note, dao)
-                } else {
-                    // Regular insert; ensure id is auto-generated
-                    dao.insert(note.copy(id = 0))
+                val dup = findDuplicateId(note)
+                if (dup == null) {
+                    if (note.type == Type.NOTE && note.body.length > MAX_BODY_CHAR_LENGTH) {
+                        // Split into parts, preserving spans and adding navigation links
+                        NoteSplitUtils.splitAndInsertForImport(note, dao)
+                    } else {
+                        // Regular insert; ensure id is auto-generated
+                        dao.insert(note.copy(id = 0))
+                    }
+                    insertedCount++
                 }
             }
             progress?.postValue(ImportProgress(inProgress = false))
-            return notes.size
+            return ImportResult(
+                inserted = insertedCount,
+                duplicates = (totalCandidates - insertedCount),
+            )
         } finally {
             tempDir.deleteRecursively()
         }
@@ -137,6 +149,27 @@ class NotesImporter(private val app: Application, private val database: NotallyD
     companion object {
         private const val TAG = "NotesImporter"
         const val IMPORT_CACHE_FOLDER = "imports"
+    }
+
+    private fun findDuplicateId(note: com.philkes.notallyx.data.model.BaseNote): Long? {
+        val dao = database.getBaseNoteDao()
+        val titleMatches = dao.getByTitle(note.title)
+        if (titleMatches.isEmpty()) return null
+        val target = normalizeContent(note)
+        return titleMatches
+            .firstOrNull { existing ->
+                existing.type == note.type && normalizeContent(existing) == target
+            }
+            ?.id
+    }
+
+    private fun normalizeContent(note: com.philkes.notallyx.data.model.BaseNote): String {
+        val raw = if (note.type == Type.NOTE) note.body else note.items.toText()
+        return raw.replace("\r\n", "\n")
+            .replace("\r", "\n")
+            .trim()
+            .replace("\n+".toRegex(), "\n")
+            .replace("[\t ]+".toRegex(), " ")
     }
 }
 

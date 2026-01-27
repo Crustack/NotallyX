@@ -115,6 +115,7 @@
             android:textIsSelectable="false"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
+            android:alpha="@fraction/alpha_secondary"
             app:layout_constraintTop_toBottomOf="@id/TitleLayout" />
 
         <LinearLayout

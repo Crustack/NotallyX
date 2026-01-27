@@ -40,6 +40,7 @@ import com.philkes.notallyx.data.model.Header
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.SearchResult
+import com.philkes.notallyx.data.model.deepCopy
 import com.philkes.notallyx.data.model.toNoteIdReminders
 import com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment.Companion.EXTRA_SHOW_IMPORT_BACKUPS_FOLDER
 import com.philkes.notallyx.presentation.getQuantityString
@@ -93,7 +94,6 @@ import com.philkes.notallyx.utils.viewFile
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import javax.crypto.Cipher
-import kotlin.collections.map
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -433,7 +433,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
 
         viewModelScope.launch(exceptionHandler) {
-            val importedNotes =
+            val result =
                 withContext(Dispatchers.IO) {
                     val stream =
                         requireNotNull(
@@ -442,9 +442,12 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         )
                     val (baseNotes, labels) = stream.readAsBackup()
                     commonDao.importBackup(baseNotes, labels)
-                    baseNotes.size
                 }
-            val message = app.getQuantityString(R.plurals.imported_notes, importedNotes)
+            val baseMsg = app.getQuantityString(R.plurals.imported_notes, result.inserted)
+            val message =
+                if (result.duplicates > 0)
+                    "$baseMsg (${app.getQuantityString(R.plurals.duplicates, result.duplicates)})"
+                else baseMsg
             app.showToast(message)
         }
     }
@@ -461,11 +464,14 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
 
         viewModelScope.launch(exceptionHandler) {
-            val importedNotes =
+            val result =
                 withContext(Dispatchers.IO) {
                     NotesImporter(app, database).import(uri, importSource, importProgress)
                 }
-            val message = app.getQuantityString(R.plurals.imported_notes, importedNotes)
+            val baseMsg = app.getQuantityString(R.plurals.imported_notes, result.inserted)
+            val message =
+                if (result.duplicates > 0) "$baseMsg (${result.duplicates} duplicates skipped)"
+                else baseMsg
             app.showToast(message)
         }
     }
@@ -698,6 +704,37 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             attachments.addAll(files)
             attachments.addAll(audios)
             withContext(Dispatchers.IO) { app.deleteAttachments(attachments, ids) }
+        }
+    }
+
+    suspend fun duplicateNote(note: BaseNote) = duplicateNotes(listOf(note)).first()
+
+    suspend fun duplicateNotes(notes: Collection<BaseNote>): List<Long> {
+        val now = System.currentTimeMillis()
+        val copies: List<BaseNote> =
+            notes.map { original ->
+                original
+                    .deepCopy()
+                    .copy(
+                        id = 0L,
+                        title =
+                            if (original.title.isNotEmpty())
+                                "${original.title} (${app.getString(R.string.copy)})"
+                            else app.getString(R.string.copy),
+                        timestamp = now,
+                        modifiedTimestamp = now,
+                    )
+            }
+        return withContext(Dispatchers.IO) { baseNoteDao.insert(copies) }
+    }
+
+    fun duplicateSelectedBaseNotes() {
+        if (actionMode.isEmpty()) return
+        val selected = actionMode.selectedNotes.values.toList()
+        viewModelScope.launch {
+            duplicateNotes(selected)
+            actionMode.close(true)
+            app.showToast(app.getQuantityString(R.plurals.duplicates, selected.size))
         }
     }
 
