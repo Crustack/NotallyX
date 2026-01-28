@@ -12,6 +12,8 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.text.Editable
+import android.text.Spanned
+import android.text.style.URLSpan
 import android.util.Log
 import android.util.TypedValue
 import android.view.MenuItem
@@ -92,6 +94,7 @@ import com.philkes.notallyx.utils.FileError
 import com.philkes.notallyx.utils.backup.exportNote
 import com.philkes.notallyx.utils.changeStatusAndNavigationBarColor
 import com.philkes.notallyx.utils.changehistory.ChangeHistory
+import com.philkes.notallyx.utils.findWebUrls
 import com.philkes.notallyx.utils.getFileName
 import com.philkes.notallyx.utils.getMimeType
 import com.philkes.notallyx.utils.getUriForFile
@@ -802,8 +805,19 @@ abstract class EditActivity(private val type: Type) :
             if (string.length > MAX_BODY_CHAR_LENGTH) {
                 showToast(getString(R.string.note_text_too_long_truncated, MAX_BODY_CHAR_LENGTH))
             }
-            notallyModel.body =
-                Editable.Factory.getInstance().newEditable(string.take(MAX_BODY_CHAR_LENGTH))
+            val text = string.take(MAX_BODY_CHAR_LENGTH)
+            val editable =
+                Editable.Factory.getInstance().newEditable(text).apply {
+                    findWebUrls().forEach { (urlStart, urlEnd) ->
+                        setSpan(
+                            URLSpan(text.substring(urlStart, urlEnd)),
+                            urlStart,
+                            urlEnd,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                        )
+                    }
+                }
+            notallyModel.body = editable
         }
         if (title != null) {
             notallyModel.title = title
