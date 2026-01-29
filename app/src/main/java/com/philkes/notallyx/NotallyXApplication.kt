@@ -61,7 +61,8 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
         }
         preferences.theme.observeForeverWithPrevious { (oldTheme, theme) ->
             when (theme) {
-                Theme.DARK ->
+                Theme.DARK,
+                Theme.SUPER_DARK ->
                     AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 
                 Theme.LIGHT ->

@@ -294,8 +294,9 @@ enum class NotesView(override val textResId: Int) : StaticTextProvider {
 }
 
 enum class Theme(override val textResId: Int) : StaticTextProvider {
-    DARK(R.string.dark),
     LIGHT(R.string.light),
+    DARK(R.string.dark),
+    SUPER_DARK(R.string.super_dark),
     FOLLOW_SYSTEM(R.string.follow_system),
 }
 

@@ -260,11 +260,9 @@ class WidgetProvider : AppWidgetProvider() {
                                 )
                             }
                             val preferences = NotallyXPreferences.getInstance(context)
-                            if (color != BaseNote.COLOR_DEFAULT) {
-                                val (backgroundColor, _) =
-                                    context.extractWidgetColors(color, preferences)
-                                setInt(R.id.Layout, "setBackgroundColor", backgroundColor)
-                            }
+                            val (backgroundColor, _) =
+                                context.extractWidgetColors(color, preferences)
+                            setInt(R.id.Layout, "setBackgroundColor", backgroundColor)
                         }
                     manager.updateAppWidget(id, view)
                     manager.notifyAppWidgetViewDataChanged(id, R.id.ListView)
@@ -329,11 +327,12 @@ class WidgetProvider : AppWidgetProvider() {
                 if (color == BaseNote.COLOR_DEFAULT) {
                     val id =
                         when (preferences.theme.value) {
-                            Theme.DARK -> R.color.md_theme_surface_dark
-                            Theme.LIGHT -> R.color.md_theme_surface
+                            Theme.DARK -> R.color.ContainerDark
+                            Theme.SUPER_DARK -> R.color.ContainerSuperDark
+                            Theme.LIGHT -> R.color.ContainerLight
                             Theme.FOLLOW_SYSTEM -> {
-                                if (isSystemInDarkMode()) R.color.md_theme_surface_dark
-                                else R.color.md_theme_surface
+                                if (isSystemInDarkMode()) R.color.ContainerDark
+                                else R.color.ContainerLight
                             }
                         }
                     ContextCompat.getColor(this, id)

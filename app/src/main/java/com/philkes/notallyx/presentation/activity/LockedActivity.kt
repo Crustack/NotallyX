@@ -23,6 +23,7 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
+import com.philkes.notallyx.presentation.viewmodel.preference.Theme
 import com.philkes.notallyx.utils.security.showBiometricOrPinPrompt
 import kotlinx.coroutines.launch
 
@@ -40,7 +41,10 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         notallyXApplication = (application as NotallyXApplication)
         preferences = NotallyXPreferences.getInstance(application)
-
+        when (preferences.theme.value) {
+            Theme.SUPER_DARK -> theme.applyStyle(R.style.AppTheme_SuperDark, true)
+            else -> theme.applyStyle(R.style.AppTheme, true)
+        }
         biometricAuthenticationActivityResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == Activity.RESULT_OK) {
