@@ -148,7 +148,7 @@
     <string name="error_while_renaming_file">Fehler beim Umbenennen der Datei</string>
     <string name="error_while_renaming_image">Fehler beim Umbenennen des Bildes</string>
     <string name="evernote">Evernote</string>
-    <string name="evernote_help">Um deine Notizen aus Evernote zu importieren, musst du dein Evernote-Notizbuch als ENEX exportieren. Klicke auf „Hilfe“, um weitere Informationen zu erhalten.\n\nWenn du bereits eine ENEX-Datei hast, klicke auf „Importieren“ und wähle sie aus..\n\nFalls du schon ein ENEX Datei hast, klicke Import und wähle es aus.</string>
+    <string name="evernote_help">Um deine Notizen aus Evernote zu importieren, musst du dein Evernote-Notizbuch als ENEX exportieren. Klicke auf „Hilfe“, um weitere Informationen zu erhalten.\n\nWenn du bereits eine ENEX-Datei hast, klicke auf „Importieren“ und wähle sie aus.</string>
     <string name="every">Alle</string>
     <string name="export">Exportieren</string>
     <string name="export_backup">Sicherung exportieren</string>
@@ -355,4 +355,10 @@
         <item quantity="one">%1$s Notiz ist zum Speichern zu groß, sie wurde auf %2$s Zeichen gekürzt</item>
         <item quantity="other">%1$s Notizen sind zum Speichern zu groß, sie wurden auf %2$s Zeichen gekürzt</item>
     </plurals>
+    <string name="duplicate">Duplikat</string>
+    <plurals name="duplicates">
+        <item quantity="one">%1$d Duplikat</item>
+        <item quantity="other">%1$d Duplikate</item>
+    </plurals>
+    <string name="super_dark">Extrem dunkel</string>
 </resources>
