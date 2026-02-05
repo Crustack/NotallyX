@@ -1,0 +1,7 @@
+- Hyperlinks werden jetzt beim Teilen von URLs zur App automatisch erstellt
+- Benutzeroberfläche des Editors für eine bessere Übersicht optimiert
+- Wiederherstellung von Backups verbessert, um Duplikate zu vermeiden
+- Neue Funktion zum schnellen Duplizieren von Notizen hinzugefügt
+- Abstürze beim PDF-Export behoben
+- Fehler beim automatischen Backup und Sichtbarkeit privater Bilder in der Galerie behoben
+- Stabilitäts- und Speicheroptimierungen für sehr große Notizen und lange Bearbeitungszeiten

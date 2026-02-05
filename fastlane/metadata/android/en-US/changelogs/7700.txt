@@ -1,0 +1,8 @@
+- Backup files now include the export date and time
+- Refined the note editor UI for a cleaner look
+- Improved backup restoration to prevent duplicate notes
+- Added custom background color options for widgets
+- New button to quickly create a copy of a note
+- Fixed crashes when exporting notes as PDF
+- Fixed auto-backup failures and private images appearing in the gallery
+- Significant stability and memory improvements for large notes and long editing sessions

@@ -1,5 +1,29 @@
 # Changelog
 
+## [v7.7.0](https://github.com/Crustack/NotallyX/tree/v7.7.0) (2026-01-30)
+
+[Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.6.1...v7.7.0)
+
+### Added Features
+
+- Create hyperlink when sharing url to NotallyX [\#811](https://github.com/Crustack/NotallyX/issues/811)
+- Backup export with datetime [\#790](https://github.com/Crustack/NotallyX/issues/790)
+- Making time of modification less visible on edit screen [\#780](https://github.com/Crustack/NotallyX/issues/780)
+- Moving label name \(pill\) higher and making it less visible on edit note screen [\#779](https://github.com/Crustack/NotallyX/issues/779)
+- Restoring a backup duplicates notes [\#759](https://github.com/Crustack/NotallyX/issues/759)
+- Feature request: Please add an option to change the background colour of the widget. [\#705](https://github.com/Crustack/NotallyX/issues/705)
+- Button to make a copy of note [\#493](https://github.com/Crustack/NotallyX/issues/493)
+
+### Fixed Bugs
+
+- Widget fails to be set on the screen of Android 13, LineageOS 20-20240705. Not possible to set the widget. [\#813](https://github.com/Crustack/NotallyX/issues/813)
+- Exporting note as PDF works but resolving URI crashes [\#786](https://github.com/Crustack/NotallyX/issues/786)
+- Archived notes are no longer linked after restore [\#785](https://github.com/Crustack/NotallyX/issues/785)
+- Auto Backup failed / Images leaked to gallery [\#784](https://github.com/Crustack/NotallyX/issues/784)
+- SQLiteBlobTooBigException: Row too big to fit into CursorWindow [\#739](https://github.com/Crustack/NotallyX/issues/739)
+- App opens but won't let me access my notes [\#734](https://github.com/Crustack/NotallyX/issues/734)
+- Unbound Memory Allocation while editing Notes [\#633](https://github.com/Crustack/NotallyX/issues/633)
+
 ## [v7.6.1](https://github.com/Crustack/NotallyX/tree/v7.6.1) (2026-01-06)
 
 [Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.6.0...v7.6.1)
