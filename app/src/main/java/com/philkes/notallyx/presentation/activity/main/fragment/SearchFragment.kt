@@ -48,6 +48,9 @@ class SearchFragment : NotallyFragment() {
         getObservable().observe(viewLifecycleOwner) { items ->
             model.actionMode.updateSelected(items?.filterIsInstance<BaseNote>()?.map { it.id })
         }
+        model.searchResults?.isLoading?.observe(viewLifecycleOwner) { isLoading ->
+            binding?.LoadingProgress?.isVisible = isLoading
+        }
     }
 
     override fun getBackground() = R.drawable.search
