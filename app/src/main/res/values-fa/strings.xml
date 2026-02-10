@@ -1,3 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="about">درباره</string>
+    <string name="add_images">افزودن فرتور</string>
+    <string name="add_item">افزودن تاگ</string>
+    <string name="add_label">افزودن برچسب</string>
+    <string name="add_reminder">افزودن یادآور</string>
+    <string name="adding_files">افزودن پرونده</string>
+    <string name="adding_images">فرتورها را می‌افزاید</string>
+    <string name="all">همه</string>
+    <string name="always_show_search_bar">جستجو را همیشه گسترانده نشان ده</string>
 </resources>
