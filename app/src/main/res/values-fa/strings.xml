@@ -9,4 +9,16 @@
     <string name="adding_images">فرتورها را می‌افزاید</string>
     <string name="all">همه</string>
     <string name="always_show_search_bar">جستجو را همیشه گسترانده نشان ده</string>
+    <string name="always_show_search_bar_hint">با کارا کردن این، به جای نمادک جستجو در بالا، نوار جستجو همیشه در چیدمان نمایش داده خواهد شد</string>
+    <string name="appearance">نمایه</string>
+    <string name="archive">بایگانی</string>
+    <string name="archived">بایگانی شدگان</string>
+    <plurals name="archived_selected_notes">
+        <item quantity="one">%1$d یادداشت بایگانی شد</item>
+        <item quantity="other">%1$d یادداشت بایگانی شد</item>
+    </plurals>
+    <string name="ascending">فرازی</string>
+    <string name="attach_file">پیوست پرونده</string>
+    <string name="audio_recordings">آوانگاره ها</string>
+    <string name="auto_backup">پشتیبان‌گیری‌های خودکار</string>
 </resources>
