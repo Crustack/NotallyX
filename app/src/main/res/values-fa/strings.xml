@@ -179,4 +179,26 @@
     <string name="unknown_name">نام ناشناخته</string>
     <string name="unlabeled">بدون برچسب</string>
     <string name="view">نمایش</string>
+    <string name="auto_backup_error_message">ایرنگی هنگام پشتیبان‌گیری خودکار رخ داد.\n%1$s\nلطفا پیکربندی‌های خود را بررسی کنید یا آک را گزارش کنید</string>
+    <string name="auto_backup_failed">پشتیبان‌گیری خودکار NotallyX ناکام بود</string>
+    <string name="auto_backups_folder">پوشه پشتیبان‌ها</string>
+    <string name="auto_backups_folder_hint">پوشه‌‌ای که همه‌ پشتیان‌گیری‌های خودکار در آن سِتَنجیده می‌شوند.\nاگر می‌خواهید که از ویر-ابری/WebDAV برای پشتیبان‌هایتان بهره گیرید، لطفا دبیزه‌ها را بخوانید (\"%1$s\" را بپرماسید)</string>
+    <string name="auto_backups_folder_set">نخست یک پوشه پشتیبان‌گیری در بالا بگمارید</string>
+    <string name="backup_password">گذرواژه پشتیبان</string>
+    <string name="biometrics_disable_success">کوپله‌ی بایومتریک/شناسه ناکارا شده است</string>
+    <string name="biometrics_failure">اُستوانش کیستی با بایومتریک/شناسه ناکام بود</string>
+    <string name="biometrics_not_setup">بایومتریک/شناسه هنوز روی این دستگاه کار گذاشته نشده است</string>
+    <string name="biometrics_setup_success">کوپله‌ی بایومتریک/شناسه کارا شده است</string>
+    <plurals name="cant_add_files">
+        <item quantity="one">نمی‌توان %1$d پرونده را افزود</item>
+        <item quantity="other">نمی‌توان %1$d پرونده را افزود</item>
+    </plurals>
+    <plurals name="cant_add_images">
+        <item quantity="one">نمی‌توان %1$d فرتور را افزود</item>
+        <item quantity="other">نمی‌توان %1$d فرتور را افزود</item>
+    </plurals>
+    <string name="cant_load_file">نمی‌توان پرونده را بارگرفت.شاید جابجا یا فروسِتُرده شده باشد</string>
+    <string name="cant_load_image">نمی‌توان فرتور را بارگرفت.شاید جابجا یا فروسِتُرده شده باشد</string>
+    <string name="change_color_message">رنگی را برگزینید یا یکی بسازید.\nهمچنین می‌توانید با فشردن هر رنگ آن را ویرایش کنید.</string>
+    <string name="choose_other_app">برگزینید که درون‌بری از کدام برنامه انجام شود</string>
 </resources>
