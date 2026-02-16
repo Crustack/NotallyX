@@ -269,10 +269,13 @@ fun SortedList<ListItem>.deleteCheckedItems() {
 
 fun MutableList<ListItem>.deleteCheckedItems(): Set<Int> {
     return mapIndexed { index, listItem -> Pair(index, listItem) }
-        .filter { it.second.checked }
-        .sortedBy { it.second.isChild }
-        .onEach { remove(it.second) }
-        .map { it.first }
+        .filter { (_, item) -> item.checked }
+        .sortedBy { (_, item) -> item.isChild }
+        .onEach { (_, item) ->
+            removeFromParent(item)
+            remove(item)
+        }
+        .map { (index, _) -> index }
         .toSet()
 }
 

@@ -153,6 +153,21 @@ class ListManagerAddDeleteTest : ListManagerTestBase() {
     }
 
     @Test
+    fun `delete unchecked child from otherwise unchecked parent`() {
+        setSorting(ListItemSort.NO_AUTO_SORT)
+        listManager.changeIsChild(2, true)
+        listManager.changeIsChild(3, true)
+        listManager.changeChecked(2, true)
+
+        listManager.deleteCheckedItems()
+
+        items.assertOrder("A", "B", "D", "E", "F")
+        "B".assertChildren("D")
+        "B".assertIsNotChecked()
+        "D".assertIsNotChecked()
+    }
+
+    @Test
     fun `delete checked items with auto-sort enabled`() {
         setSorting(ListItemSort.AUTO_SORT_BY_CHECKED)
         listManager.changeIsChild(3, true)

@@ -33,7 +33,6 @@
         android:singleLine="false"
         android:gravity="center"
         android:maxLines="2"
-        android:textColor="@android:color/black"
         android:textIsSelectable="true"
         android:textSize="14sp"
         android:textStyle="bold"
@@ -63,7 +62,6 @@
                 android:scrollbars="vertical|horizontal"
                 android:scrollHorizontally="false"
                 android:singleLine="false"
-                android:textColor="@android:color/black"
                 android:textIsSelectable="true"
                 android:textSize="14sp" />
         </HorizontalScrollView>
