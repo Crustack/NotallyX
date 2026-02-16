@@ -6,6 +6,9 @@
     <files-path
         name="logs"
         path="/logs" />
+    <files-path
+        name="attachments"
+        path="/attachments" />
     <external-media-path
       name="."
       path="." />
