@@ -34,6 +34,7 @@ import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EX
 import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
 import com.philkes.notallyx.presentation.activity.note.EditListActivity
 import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
+import com.philkes.notallyx.presentation.activity.note.reminders.RemindersActivity
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.hideKeyboard
 import com.philkes.notallyx.presentation.movedToResId
@@ -146,6 +147,24 @@ abstract class NotallyFragment : Fragment(), ItemListener {
                             Type.LIST -> goToActivity(EditListActivity::class.java, item)
                         }
                     }
+                }
+            }
+        }
+    }
+
+    override fun onReminderClick(position: Int) {
+        if (model.actionMode.isEnabled()) {
+            onClick(position)
+            return
+        }
+        if (position != -1) {
+            notesAdapter?.getItem(position)?.let { item ->
+                if (item is BaseNote) {
+                    val intent =
+                        Intent(requireContext(), RemindersActivity::class.java).apply {
+                            putExtra(RemindersActivity.NOTE_ID, item.id)
+                        }
+                    startActivity(intent)
                 }
             }
         }

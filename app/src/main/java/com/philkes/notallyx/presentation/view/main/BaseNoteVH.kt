@@ -1,5 +1,6 @@
 package com.philkes.notallyx.presentation.view.main
 
+import android.graphics.Paint
 import android.graphics.drawable.Drawable
 import android.util.TypedValue
 import android.view.View.GONE
@@ -24,7 +25,8 @@ import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.data.model.hasUpcomingNotification
+import com.philkes.notallyx.data.model.findNextNotificationDate
+import com.philkes.notallyx.data.model.toText
 import com.philkes.notallyx.databinding.RecyclerBaseNoteBinding
 import com.philkes.notallyx.presentation.applySpans
 import com.philkes.notallyx.presentation.bindLabels
@@ -41,6 +43,7 @@ import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
 import com.philkes.notallyx.presentation.viewmodel.preference.TextSize
 import java.io.File
+import java.util.Date
 
 data class BaseNoteVHPreferences(
     val textSize: TextSize,
@@ -84,6 +87,12 @@ class BaseNoteVH(
             root.setOnClickListener { listener.onClick(absoluteAdapterPosition) }
 
             root.setOnLongClickListener {
+                listener.onLongClick(absoluteAdapterPosition)
+                return@setOnLongClickListener true
+            }
+
+            ReminderChip.setOnClickListener { listener.onReminderClick(absoluteAdapterPosition) }
+            ReminderChip.setOnLongClickListener {
                 listener.onLongClick(absoluteAdapterPosition)
                 return@setOnLongClickListener true
             }
@@ -159,7 +168,7 @@ class BaseNoteVH(
         }
         setColor(baseNote.color)
 
-        binding.RemindersView.isVisible = baseNote.reminders.any { it.hasUpcomingNotification() }
+        setupReminderChip(baseNote)
     }
 
     private fun bindNote(baseNote: BaseNote, keyword: String) {
@@ -396,5 +405,25 @@ class BaseNoteVH(
                 0,
                 0,
             )
+    }
+
+    private fun setupReminderChip(baseNote: BaseNote) {
+        val now = Date(System.currentTimeMillis())
+        val mostRecentNotificationDate =
+            baseNote.reminders.findNextNotificationDate()
+                ?: baseNote.reminders.maxOfOrNull { it.dateTime }
+        if (mostRecentNotificationDate == null) {
+            binding.ReminderChip.visibility = GONE
+            return
+        }
+        binding.ReminderChip.apply {
+            visibility = VISIBLE
+            text = mostRecentNotificationDate.toText()
+            val isElapsed = mostRecentNotificationDate < now
+            alpha = if (isElapsed) 0.5f else 1.0f
+            paintFlags =
+                if (isElapsed) paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+                else paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+        }
     }
 }

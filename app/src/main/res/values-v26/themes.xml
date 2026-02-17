@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="FileChip" parent="Widget.Material3.Chip.Assist">
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:paddingBottom">16dp</item>
+        <item name="android:paddingVertical">0dp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodySmall</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="chipIconSize">20dp</item>
+        <item name="chipIconTint">?attr/colorOnSurface</item>
+        <item name="chipStrokeColor">?attr/colorOnSurface</item>
+        <item name="chipStartPadding">4dp</item>
+        <item name="chipMinTouchTargetSize">20dp</item>
+        <item name="textStartPadding">2dp</item>
+        <item name="android:clickable">false</item>
+    </style>
+</resources>
