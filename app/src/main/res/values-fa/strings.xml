@@ -201,4 +201,37 @@
     <string name="cant_load_image">نمی‌توان فرتور را بارگرفت.شاید جابجا یا فروسِتُرده شده باشد</string>
     <string name="change_color_message">رنگی را برگزینید یا یکی بسازید.\nهمچنین می‌توانید با فشردن هر رنگ آن را ویرایش کنید.</string>
     <string name="choose_other_app">برگزینید که درون‌بری از کدام برنامه انجام شود</string>
+    <string name="updated_link">پیوند بروزشده</string>
+    <string name="upcoming">پیش رو</string>
+    <string name="unpin">رها کردن</string>
+    <string name="unlock">گشودن کوپله با بایومتریک/شناسه</string>
+    <plurals name="unarchived_selected_notes">
+        <item quantity="one">%1$d یادداشت وابایگانی شد</item>
+        <item quantity="other">%1$d یادداشت وابایگانی شد</item>
+    </plurals>
+    <string name="to_record_audio">برای آوانگاری، به NotallyX هیشتن دسترسی به میکروفون خود را بدهید. پَرماسیدن پیکربندی‌ها &gt; پروانه‌ها و روشن کردن میکروفن</string>
+    <string name="theme_use_dynamic_colors">بکارگیری رنگ پس‌زمینه دستگاه</string>
+    <string name="theme">پوسته</string>
+    <string name="text_default">پیش‌گزیده</string>
+    <string name="tap_to_set_up">برای گماردن بِپَرماسید</string>
+    <string name="tap_for_more_options">برای گزینه‌های بیشتر بپَرماسید</string>
+    <string name="start_view">نمای آغازین</string>
+    <string name="notes_sorted_by">چیدمان یادداشت‌ها</string>
+    <string name="please_grant_notally_alarm">لطفا به NotallyX هیشتن فرستادن یادآور‌ را بدهید</string>
+    <string name="please_grant_notally_audio">لطفا به NotallyX هیشتن آوانگاری را بدهید. آوانگاره‌ها هرگز از دستگاه شما بیرون نخواهند رفت</string>
+    <string name="please_grant_notally_notification">لطفا به NotallyX هیشتن فرستادن آگاهنده را بدهید</string>
+    <string name="please_grant_notally_notification_auto_backup">اگر پشتیبان‌گیری خودکاری ناکام باشد، آگاهنده‌ای دریافت خواهید کرد؛اگر به NotallyX هیشتن فرستادن آگاهنده را بدهید</string>
+    <string name="read_only">تنها خواندنی</string>
+    <string name="redo">باز انجام</string>
+    <string name="report_bug">گزارش آک</string>
+    <string name="reset_settings_success">همه پیکربندی‌ها بازنشانی شدند</string>
+    <plurals name="restored_selected_notes">
+        <item quantity="one">%1$d یادداشت بازیابی شد</item>
+        <item quantity="other">%1$d یادداشت بازیابی شدند</item>
+    </plurals>
+    <string name="single_file">پرونده تکی</string>
+    <string name="skip">بتاییدن</string>
+    <string name="something_went_wrong">اشکالی پیش آمد. لطفا دوباره بیازمایید.</string>
+    <string name="sort_direction">سوی چینش</string>
+    <string name="source_code">بن‌مایه‌ی دستور</string>
 </resources>
