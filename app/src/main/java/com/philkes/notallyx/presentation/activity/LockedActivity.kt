@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.viewbinding.ViewBinding
+import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
@@ -40,10 +41,16 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         notallyXApplication = (application as NotallyXApplication)
-        preferences = NotallyXPreferences.getInstance(application)
-        when (preferences.theme.value) {
-            Theme.SUPER_DARK -> theme.applyStyle(R.style.AppTheme_SuperDark, true)
-            else -> theme.applyStyle(R.style.AppTheme, true)
+        preferences = NotallyXPreferences.getInstance(notallyXApplication)
+        if (preferences.useDynamicColors.value) {
+            if (DynamicColors.isDynamicColorAvailable()) {
+                DynamicColors.applyToActivitiesIfAvailable(notallyXApplication)
+            }
+        } else {
+            when (preferences.theme.value) {
+                Theme.SUPER_DARK -> theme.applyStyle(R.style.AppTheme_SuperDark, true)
+                else -> theme.applyStyle(R.style.AppTheme, true)
+            }
         }
         biometricAuthenticationActivityResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
