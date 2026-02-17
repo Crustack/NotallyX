@@ -13,6 +13,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.philkes.notallyx.data.dao.BaseNoteDao
+import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
 import com.philkes.notallyx.data.dao.CommonDao
 import com.philkes.notallyx.data.dao.LabelDao
 import com.philkes.notallyx.data.model.BaseNote
@@ -143,6 +144,18 @@ abstract class NotallyDatabase : RoomDatabase() {
                         Migration7,
                         Migration8,
                         Migration9,
+                    )
+                    .addCallback(
+                        object : RoomDatabase.Callback() {
+                            override fun onOpen(db: SupportSQLiteDatabase) {
+                                super.onOpen(db)
+                                // Safety repair for legacy/externally-imported rows that can exceed
+                                // CursorWindow limits and crash note list loading.
+                                db.execSQL(
+                                    "UPDATE BaseNote SET body = substr(body, 1, $MAX_BODY_CHAR_LENGTH) WHERE length(body) > $MAX_BODY_CHAR_LENGTH"
+                                )
+                            }
+                        }
                     )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 System.loadLibrary("sqlcipher")
