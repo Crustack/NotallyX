@@ -33,7 +33,7 @@ import java.io.File
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @TypeConverters(Converters::class)
-@Database(entities = [BaseNote::class, Label::class], version = 9)
+@Database(entities = [BaseNote::class, Label::class], version = 10)
 abstract class NotallyDatabase : RoomDatabase() {
 
     abstract fun getLabelDao(): LabelDao
@@ -144,18 +144,7 @@ abstract class NotallyDatabase : RoomDatabase() {
                         Migration7,
                         Migration8,
                         Migration9,
-                    )
-                    .addCallback(
-                        object : RoomDatabase.Callback() {
-                            override fun onOpen(db: SupportSQLiteDatabase) {
-                                super.onOpen(db)
-                                // Safety repair for legacy/externally-imported rows that can exceed
-                                // CursorWindow limits and crash note list loading.
-                                db.execSQL(
-                                    "UPDATE BaseNote SET body = substr(body, 1, $MAX_BODY_CHAR_LENGTH) WHERE length(body) > $MAX_BODY_CHAR_LENGTH"
-                                )
-                            }
-                        }
+                        Migration10,
                     )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 System.loadLibrary("sqlcipher")
@@ -292,6 +281,16 @@ abstract class NotallyDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
                     "ALTER TABLE `BaseNote` ADD COLUMN `viewMode` TEXT NOT NULL DEFAULT '${NoteViewMode.EDIT.name}'"
+                )
+            }
+        }
+
+        object Migration10 : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // One-shot repair for legacy/imported oversized notes that can trigger
+                // SQLiteBlobTooBigException during list queries.
+                db.execSQL(
+                    "UPDATE BaseNote SET body = substr(body, 1, $MAX_BODY_CHAR_LENGTH) WHERE length(body) > $MAX_BODY_CHAR_LENGTH"
                 )
             }
         }
