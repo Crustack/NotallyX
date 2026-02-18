@@ -14,8 +14,9 @@
     <string name="archive">Архивировать</string>
     <string name="archived">Архив</string>
     <plurals name="archived_selected_notes">
-        <item quantity="few">Архивировано %1$d заметки</item>
         <item quantity="one">Архивирована %1$d заметка</item>
+        <item quantity="few">Архивировано %1$d заметки</item>
+        <item quantity="many">Архивировано %1$d заметок</item>
         <item quantity="other">Архивировано %1$d заметок</item>
     </plurals>
     <string name="ascending">По возрастанию</string>
@@ -28,7 +29,7 @@
     <string name="auto_backup_on_save">Создавать резервную копию при выходе (авто)</string>
     <string name="auto_backup_on_save_hint">При включении этой функции в папке резервных копий (Папка резервных копий) автоматически создаётся архив NotallyX_AutoBackup.zip при выходе из заметки.\nЭто может повлиять на производительность</string>
     <string name="auto_backups_folder">Папка резервных копий</string>
-    <string name="auto_backups_folder_hint">Папка, в которой будут храниться резервные копии</string>
+    <string name="auto_backups_folder_hint">Папка, в которой будут храниться резервные копии.\nЕсли вы хотите использовать облачное хранилище или WebDAV для резервного копирования, посмотрите документацию (нажмите «%1$s»)</string>
     <string name="auto_backups_folder_rechoose">Необходимо повторно указать папку для резервных копий для доступа NotallyX.\nМожно отменить и пропустить импорт папки резервных копий</string>
     <string name="auto_backups_folder_set">Сначала укажите папку для резервных копий</string>
     <string name="auto_save_after_idle_time">Автосохранение заметки после указанного времени бездействия</string>
@@ -51,13 +52,15 @@
     <string name="calculating">Вычисление…</string>
     <string name="cancel">Отменить</string>
     <plurals name="cant_add_files">
-        <item quantity="few">Невозможно добавить %1$d файла</item>
         <item quantity="one">Невозможно добавить %1$d файл</item>
+        <item quantity="few">Невозможно добавить %1$d файла</item>
+        <item quantity="many">Невозможно добавить %1$d файлов</item>
         <item quantity="other">Невозможно добавить %1$d файлов</item>
     </plurals>
     <plurals name="cant_add_images">
-        <item quantity="few">Невозможно добавить %1$d изображения</item>
         <item quantity="one">Невозможно добавить %1$d изображение</item>
+        <item quantity="few">Невозможно добавить %1$d изображения</item>
+        <item quantity="many">Невозможно добавить %1$d изображений</item>
         <item quantity="other">Невозможно добавить %1$d изображений</item>
     </plurals>
     <string name="cant_find_folder">Папка не найдена. Возможно, она была перемещена или удалена</string>
@@ -65,7 +68,7 @@
     <string name="cant_load_file">Файл не загружен. Возможно, он был перемещён или удалён</string>
     <string name="cant_load_image">Изображение не загружено. Проверьте, не было ли оно удалено</string>
     <string name="cant_open_link">Невозможно открыть ссылку</string>
-    <string name="change_color">Изменить цвет</string>
+    <string name="change_color">Сменить цвет</string>
     <string name="change_color_message">Выберите цвет или создайте новый.\nЦвет можно изменить долгим нажатием.</string>
     <string name="change_note">Изменить заметку</string>
     <string name="check_all_items">Выделить всё</string>
@@ -113,8 +116,9 @@
     <string name="delete_selected_notes">Удалить выбранные заметки\?</string>
     <string name="deleted">Удалённые</string>
     <plurals name="deleted_selected_notes">
-        <item quantity="few">Удалено %1$d заметки</item>
         <item quantity="one">Удалена %1$d заметка</item>
+        <item quantity="few">Удалено %1$d заметки</item>
+        <item quantity="many">Удалено %1$d заметок</item>
         <item quantity="other">Удалено %1$d заметок</item>
     </plurals>
     <string name="deleting_files">Удаление файлов</string>
@@ -147,18 +151,19 @@
     <string name="error_while_renaming_file">Ошибка переименования файла</string>
     <string name="error_while_renaming_image">Ошибка переименования изображения</string>
     <string name="evernote">Evernote</string>
-    <string name="evernote_help">Чтобы импортировать заметки из Evernote, экспортируйте блокнот в формате ENEX. Нажмите \"Помощь\" для инструкций.\n\nЕсли файл ENEX уже готов, выберите \"Импорт\"</string>
+    <string name="evernote_help">Чтобы импортировать заметки из Evernote, экспортируйте блокнот в формате ENEX. Посмотрите «Помощь» для инструкций.\n\nЕсли у вас уже есть файл ENEX, нажмите «Импорт» и выберите его.</string>
     <string name="every">Каждый</string>
     <string name="export">Экспорт</string>
     <string name="export_backup">Экспорт резервной копии</string>
     <string name="export_settings">Экспорт настроек</string>
-    <string name="export_settings_failure">Не удалось экспортировать настройки. Возможно, указан недопустимый путь</string>
-    <string name="export_settings_message">Все настройки будут сохранены в JSON-файл для последующего импорта.\n\nОбратите внимание: зашифрованные данные (пароль авторезерва и биометрический ключ) не экспортируются.</string>
+    <string name="export_settings_failure">Не удалось экспортировать настройки, может вы указали недопустимый путь?</string>
+    <string name="export_settings_message">Все настройки будут сохранены в JSON-файл для последующего импорта.\n\nОбратите внимание: зашифрованные данные (пароль авторезерва и биометрический ключ) не экспортируются</string>
     <string name="export_settings_success">Настройки успешно экспортированы</string>
     <plurals name="exported_notes">
-        <item quantity="few">Экспортировано %1$d заметки</item>
-        <item quantity="one">Экспортирована %1$d заметка</item>
-        <item quantity="other">Экспортировано %1$d заметок</item>
+        <item quantity="one">Экспортирована %1$s заметка</item>
+        <item quantity="few">Экспортировано %1$s заметки</item>
+        <item quantity="many">Экспортировано %1$s заметок</item>
+        <item quantity="other">Экспортировано %1$s заметок</item>
     </plurals>
     <string name="exporting_backup">Экспорт резервной копии</string>
     <string name="extracted_files">Файлы извлечены</string>
@@ -166,12 +171,12 @@
     <string name="folder">Папка</string>
     <string name="follow_system">Как в системе</string>
     <string name="google_keep">Google Keep</string>
-    <string name="google_keep_help">Для импорта из Google Keep скачайте архив Takeout (только данные \"Keep\"). Нажмите \"Помощь\" для подробностей.\n\nЕсли архив уже есть, выберите его через \"Импорт\"</string>
+    <string name="google_keep_help">Для импорта из Google Keep скачайте ZIP архив Google Takeout. Выберете только данные «Keep». Смотрите в «Справке» для подробностей.\n\nЕсли у вас уже есть ZIP архив Takeout, нажмите «Импорт» и выберите этот ZIP файл.</string>
     <string name="grid">Сетка</string>
     <string name="help">Помощь</string>
     <string name="hours">Часов</string>
     <string name="image_format_not_supported">Формат изображения не поддерживается</string>
-    <string name="images_hidden_in_overview">Если эта функция включена, изображения заметок будут скрыты из общего списка.</string>
+    <string name="images_hidden_in_overview">Если включено, то изображения заметок будут скрыты из общего списка</string>
     <string name="images_hidden_in_overview_title">Скрыть изображения в общем списке</string>
     <string name="import_action">Импорт</string>
     <string name="import_backup">Импорт резервной копии</string>
@@ -179,13 +184,14 @@
     <string name="import_other">Импорт заметок из других приложений</string>
     <string name="import_settings">Импорт настроек</string>
     <string name="import_settings_failure">Не удалось импортировать настройки. Вы выбрали правильный файл\?</string>
-    <string name="import_settings_message">Для импорта настроек выберите корректный JSON-файл настроек NotallyX. </string>
+    <string name="import_settings_message">Для импорта настроек выберите правильный JSON-файл настроек NotallyX</string>
     <string name="import_settings_success">Настройки успешно импортированы</string>
     <string name="imported_files">Файлы импортированы</string>
     <string name="imported_notes">Заметки импортированы</string>
     <plurals name="imported_notes">
-        <item quantity="few">Импортировано %1$s заметки</item>
         <item quantity="one">Импортирована %1$s заметка</item>
+        <item quantity="few">Импортированы %1$s заметки</item>
+        <item quantity="many">Импортировано %1$s заметок</item>
         <item quantity="other">Импортировано %1$s заметок</item>
     </plurals>
     <string name="importing_backup">Импорт резервной копии</string>
@@ -202,7 +208,7 @@
     <string name="italic">Курсив</string>
     <string name="item">Пункт</string>
     <string name="json_files">JSON файлы</string>
-    <string name="json_files_help">Для импорта заметок из JSON-файлов (отдельный файл или папка) нажмите \"Импорт\". Каждый корректный JSON-файл будет преобразован в отдельную заметку, где имя файла станет её заголовком</string>
+    <string name="json_files_help">Для импорта заметок из JSON-файлов (отдельный файл или папка) нажмите «Импорт». Каждый правильный JSON-файл будет преобразован в отдельную заметку, где имя файла станет её заголовком.</string>
     <string name="label_exists">Метка уже существует</string>
     <string name="label_visibility">Скрыть/показать метку в панели навигации</string>
     <string name="labels">Метки</string>
@@ -231,8 +237,9 @@
     <string name="months">Месяцы</string>
     <string name="more">Ещё %1$d</string>
     <plurals name="more_files">
-        <item quantity="few">...ещё %1$d файла</item>
         <item quantity="one">...ещё %1$d файл</item>
+        <item quantity="few">...ещё %1$d файла</item>
+        <item quantity="many">...ещё %1$d файлов</item>
         <item quantity="other">...ещё %1$d файлов</item>
     </plurals>
     <string name="new_color">Новый цвет</string>
@@ -253,16 +260,16 @@
     <string name="plain_text_files_help">Для импорта заметок из текстовых файлов (отдельный файл или папка) нажмите \"Импорт\". Каждый файл станет отдельной заметкой — имя файла будет её заголовком. Если текст начинается с элементов списка (например, Markdown \"- [x]\", синтаксис NotallyX \"[~/\", или \"*\", ~), он преобразуется в заметку-список.</string>
     <string name="play">Играть</string>
     <string name="please_grant_notally_alarm">Разрешите NotallyX отправлять напоминания</string>
-    <string name="please_grant_notally_audio">Разрешите доступ к микрофону.\nЗаписи остаются на вашем устройстве</string>
+    <string name="please_grant_notally_audio">Разрешите для NotallyX доступ к микрофону чтобы записывать звук. Записи остаются на вашем устройстве</string>
     <string name="please_grant_notally_notification">Разрешите отправку уведомлений</string>
-    <string name="please_grant_notally_notification_auto_backup">При сбое авторезервирования вы получите уведомление, если разрешите их отправку. </string>
+    <string name="please_grant_notally_notification_auto_backup">При сбое авторезервирования вы получите уведомление, если разрешите для NotallyX их отправку</string>
     <string name="previous">Предыдущий</string>
     <string name="rate">Оценить приложение</string>
     <string name="read_only">Только чтение</string>
     <string name="ready_to_record">Готово к записи</string>
     <string name="record_audio">Запись аудио</string>
     <string name="recording">Запись…</string>
-    <string name="redo">Вернуть</string>
+    <string name="redo">Повторить</string>
     <string name="reminder_no_repetition">Без повтора</string>
     <string name="reminders">Напоминания</string>
     <string name="remove_link">Удалить ссылку</string>
@@ -277,11 +284,12 @@
     <string name="restart_app">Перезапустить приложение</string>
     <string name="restore">Восстановить</string>
     <plurals name="restored_selected_notes">
-        <item quantity="few">Восстановлено %1$d заметки</item>
         <item quantity="one">Восстановлена %1$d заметка</item>
+        <item quantity="few">Восстановлено %1$d заметки</item>
+        <item quantity="many">Восстановлено %1$d заметок</item>
         <item quantity="other">Восстановлено %1$d заметок</item>
     </plurals>
-    <string name="resume">Повторить</string>
+    <string name="resume">Продолжить</string>
     <string name="save">Сохранить</string>
     <string name="save_recording">Сохранить аудиозапись\?</string>
     <string name="save_to_device">Сохранить на устройстве</string>
@@ -299,7 +307,7 @@
     <string name="single_note_or_list">Одна заметка или список</string>
     <string name="skip">Пропустить</string>
     <string name="small">Маленький</string>
-    <string name="something_went_wrong">Что-то пошло не так. Пожалуйста, повторите попытку</string>
+    <string name="something_went_wrong">Что-то пошло не так. Пожалуйста, повторите попытку.</string>
     <string name="something_went_wrong_audio">Что-то пошло не так. Аудиозапись могла быть перемещена или удалена.\n\nОшибка: (%1$d, %2$d)</string>
     <string name="sort_direction">Порядок сортировки</string>
     <string name="source_code">Исходный код</string>
@@ -319,12 +327,13 @@
     <string name="to_record_audio">Чтобы записывать аудиозаписи, разрешите NotallyX доступ к микрофону</string>
     <string name="unarchive">Разархивировать</string>
     <plurals name="unarchived_selected_notes">
-        <item quantity="few">Извлечено %1$d заметки</item>
-        <item quantity="one">Извлечено %1$d заметка</item>
-        <item quantity="other">Извлечено %1$d заметок</item>
+        <item quantity="one">Разархивирована %1$d заметка</item>
+        <item quantity="few">Разархивировано %1$d заметки</item>
+        <item quantity="many">Разархивировано %1$d заметок</item>
+        <item quantity="other">Разархивировано %1$d заметок</item>
     </plurals>
     <string name="uncheck_all_items">Очистить выбор</string>
-    <string name="undo">Вернуть</string>
+    <string name="undo">Откатить</string>
     <string name="unknown_error">Неизвестная ошибка</string>
     <string name="unknown_name">Неизвестное имя</string>
     <string name="unlabeled">Без названия</string>
@@ -335,11 +344,19 @@
     <string name="updated_link">Обновить ссылку</string>
     <string name="view">Вид</string>
     <string name="view_file">Посмотреть файл</string>
-    <string name="view_note">Посмотреть заметку…</string>
+    <string name="view_note">Посмотреть заметку</string>
     <string name="weekly">Еженедельный</string>
     <string name="weeks">Недели</string>
     <string name="wrong_password">Неверный пароль</string>
     <string name="yearly">Ежегодный</string>
     <string name="years">Года</string>
     <string name="your_notes_associated">Ваши заметки, связанные с этой меткой, не будут удалены</string>
+    <string name="biometrics_setup_failure">Не удалось установить биометрическую блокировку или ПИН</string>
+    <string name="biometrics_setup_failure_decrypt">Не удалось расшифровать базу данных.\nИспользуйте \'%1$s\', чтобы сообщить об ошибке</string>
+    <string name="biometrics_setup_failure_encrypt">Не удалось зашифровать базу данных.\nИспользуйте \'%1$s\', чтобы сообщить об ошибке</string>
+    <string name="crash_export_backup_failed">К сожалению, не удалось экспортировать резервную копию.\nИспользуйте кнопку «%1$s», чтобы сообщить о сбое</string>
+    <string name="crash_export_backup_message">Вы можете попытаться создать резервную копию заметок, нажав \'%1$s\'.\nЭто может не сработать, если сбой приведёт к повреждению данных. В этом случае нажмите кнопку \'%2$s\', чтобы сообщить о сбое</string>
+    <string name="not_exists">\'%1$s\' не существует</string>
+    <string name="report_bug_stacktrace_too_long">Журнал сбоев слишком большой, чтобы автоматически предварительно заполнить им отчёт на Github, поэтому журнал сбоев был скопирован в буфер обмена.\nКогда вы нажмете «%1$s», ваш обозреватель откроется, чтобы создать задачу на Github для вашего сбоя. Важно, чтобы вы вставили автоматически скопированные журнал сбоев в поле «(Optional) Relevant log output».</string>
+    <string name="view_logs">Просмотреть файл журнала</string>
 </resources>

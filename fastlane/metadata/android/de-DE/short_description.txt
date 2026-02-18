@@ -1,1 +1,1 @@
-Simple und minimalistische Open-Source Notizen App
+Eine einfache und minimalistische Open-Source-Notiz-App

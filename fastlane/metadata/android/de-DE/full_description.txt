@@ -1,34 +1,33 @@
-NotallyX ist eine minimalistische Notiz-App mit einfachen Design und nützlichen Funktionen.
+NotallyX ist eine minimalistische Notiz-App mit einfachem Design und leistungsstarken Funktionen.
 
 <b>Organisation</b>
 
-• Erstelle Notizen mit Unterstützung für alle Fettdruck, Kursivschrift, Monospace, etc.
-• Erstelle Listen und ordnen sie mit Unteraufgaben
-• Füge Erinnerungen mit Benachrichtigungen zu wichtigen Notizen hinzu
-• Ergänze deine Notizen mit beliebigen Dateien sowie Vorschauen für Bilder
-• Sortiere Notizen nach Titel, Datum der letzten Änderung oder Erstellungsdatum
-• Ordne die Notizen entweder in einer Listen- oder Gitteransicht an
-• Farbmarkierung, anheften und beschrifte deine Notizen für eine schnelle Organisation
-• Füge anklickbare Links zu Notizen hinzu, mit Unterstützung für Telefonnummern, E-Mail-Adressen und URLs
-• Buttons um erledigte Aufgaben schnell und einfach zu entfernen
-• Die Möglichkeit Änderungen rückgängig zu machen
-• Umfangreiche Einstellungen, um Ansichten nach deinen Wünschen anzupassen
-• Teile Notizen schnell per Text
-• Sperre deine Notizen per Biometrie/PIN Lock
-• Konfigurierbare automatische Backups
-• Erstelle Audio-Notizen
-• Adaptives Android App-Icon
-• Unterstützung für Geräte ab Android Lollipop
+• Rich-Text-Notizen mit Unterstützung für Fettdruck, Kursivschrift, Monospace und mehr erstellen
+• Aufgabenlisten erstellen und mit Unteraufgaben ordnen
+• Erinnerungen mit Benachrichtigungen für wichtige Notizen festlegen
+• Notizen mit beliebigen Dateitypen wie Bildern, PDFs usw. ergänzen
+• Notizen nach Titel, Datum der letzten Änderung oder Erstellungsdatum sortieren
+• Notizen entweder in einer Liste oder einem Raster anzeigen
+• Notizen zur schnellen Organisation mit Farben versehen, anheften und beschriften
+• Klickbare Links zu Notizen hinzufügen, mit Unterstützung für Telefonnummern, E-Mail-Adressen und Web-URLs
+• Aktionen zum schnellen Entfernen erledigter Aufgaben
+• Aktionen rückgängig machen/wiederherstellen
+• Umfangreiche Einstellungen zum Anpassen der Ansicht an deine Vorlieben
+• Notizen schnell als Text teilen
+• Notizen per Biometrie/PIN sperren
+• Konfigurierbare automatische Sicherungen
+• Sprachnotizen erstellen
+• Adaptives Android-App-Symbol
+• Unterstützung für Lollipop-Geräte und höher
 
 <b>Komfort</b>
 
 • Dunkelmodus
 • Vollständig kostenlos (+ keine Werbung!)
 • Einstellbare Schriftgröße
-• Automatisches Speichern und automatische Backups
-• Füge Notizen und Listen per Widgets zum Home-Screen hinzu
-• Importiert deine Notizen von anderen Apps wie z.B. Evernote, Google Notizen oder einfache Textdateien
-
+• Automatisches Speichern und automatische Sicherungen
+• Notizen und Listen per Widgets zum Startbildschirm hinzufügen
+• Notizen von anderen Apps wie z.B. Evernote, Google Notizen oder einfache Textdateien importieren
 
 <b>Datenschutz</b>
 
@@ -36,19 +35,18 @@ Es gibt keine Werbung, Tracker oder Analytics jeglicher Art. Alle Notizen werden
 
 <b>Optionale Berechtigungen</b>
 
-• Benachrichtigungen anzeigen: Falls ein Backup fehlschlägt oder eine Notiz-Erinnerung geschickt wird.
+• Benachrichtigungen anzeigen, Vordergrunddienst ausführen: Um eine Benachrichtigung anzuzeigen, wenn eine Sicherung fehlschlägt oder Erinnerungen ausgelöst werden
 
-• Exakten Alarm einstellen: Um für Notiz-Erinnerungen Benachrichtigungen zu exakten Zeitpunkten einzustellen.
+• Genaue Alarme planen: Um Erinnerungsbenachrichtigungen zu genauen Zeitpunkten zu planen
 
-• Verhindern, dass das Telefon in den Ruhemodus wechselt, beim Start ausführen: Bei automat. Backups, um sicherzustellen, dass Backups weiterhin erstellt werden, auch wenn das Telefon neu gestartet wird.
+• Telefon nicht in den Ruhezustand versetzen, beim Start ausführen: Wird von der automatischen Sicherungsfunktion verwendet, um sicherzustellen, dass Sicherungen auch dann weiterhin durchgeführt werden, wenn dein Telefon neu gestartet wird
 
-• Audios aufnehmen: Wenn ein Audio-Notiz aufgenommen wird.
+• Audio aufnehmen: Beim Aufnehmen einer Sprachnotiz.
 
-• Biometrie verwenden: Falls die Biometrische/PIN Sperre Option aktiviert ist, um die App zu entsperren.
+• Biometrie verwenden: Wenn die Einstellung für die Biometrie-/PIN-App-Sperre aktiviert ist, um die App zu entsperren.
 
 <b>Hinweis</b>
 
-Aufgrund eines Bugs seitens Xiaomi könnten einige MiUI-Geräte möglicherweise nicht auf die Textformatierungsoptionen zugreifen.
+Aufgrund eines Fehlers seitens Xiaomi können einige MiUI-Geräte möglicherweise nicht auf die Textformatierungsoptionen zugreifen.
 
 https://github.com/Crustack/NotallyX
-
