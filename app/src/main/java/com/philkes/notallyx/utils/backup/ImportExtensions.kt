@@ -15,6 +15,7 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
 import com.philkes.notallyx.data.imports.ImportProgress
 import com.philkes.notallyx.data.imports.ImportStage
 import com.philkes.notallyx.data.model.Audio
@@ -121,8 +122,28 @@ suspend fun ContextWrapper.importZip(
                     SQLiteDatabase.openDatabase(dbFile.path, null, SQLiteDatabase.OPEN_READONLY)
 
                 val labelCursor = database.query("Label", null, null, null, null, null, null)
-                val baseNoteCursor = database.query("BaseNote", null, null, null, null, null, null)
-
+                val columns =
+                    arrayOf(
+                        "id",
+                        "type",
+                        "folder",
+                        "color",
+                        "title",
+                        "pinned",
+                        "timestamp",
+                        "modifiedTimestamp",
+                        "labels",
+                        "SUBSTR(body, 1, ${MAX_BODY_CHAR_LENGTH}) AS body",
+                        "spans",
+                        "items",
+                        "images",
+                        "files",
+                        "audios",
+                        "reminders",
+                        "viewMode",
+                    )
+                val baseNoteCursor =
+                    database.query("BaseNote", columns, null, null, null, null, null)
                 val labels = labelCursor.toList { cursor -> cursor.toLabel() }
 
                 var total = baseNoteCursor.count
@@ -137,7 +158,6 @@ suspend fun ContextWrapper.importZip(
                         importingBackup?.postValue(ImportProgress(counter++, total))
                         baseNote
                     }
-
                 delay(1000)
 
                 total =

@@ -3,6 +3,7 @@ package com.philkes.notallyx.presentation.activity
 import android.app.Activity
 import android.app.KeyguardManager
 import android.content.Intent
+import android.database.sqlite.SQLiteBlobTooBigException
 import android.hardware.biometrics.BiometricPrompt.BIOMETRIC_ERROR_HW_NOT_PRESENT
 import android.hardware.biometrics.BiometricPrompt.BIOMETRIC_ERROR_NO_BIOMETRICS
 import android.os.Build
@@ -15,18 +16,28 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.viewbinding.ViewBinding
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
+import com.philkes.notallyx.presentation.setupProgressDialog
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.Theme
+import com.philkes.notallyx.presentation.viewmodel.progress.MigrationProgress
+import com.philkes.notallyx.utils.log
+import com.philkes.notallyx.utils.secondsBetween
 import com.philkes.notallyx.utils.security.showBiometricOrPinPrompt
+import com.philkes.notallyx.utils.splitOversizedNotes
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
 
@@ -40,6 +51,8 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setupGlobalExceptionHandler()
+        initViewModel()
         notallyXApplication = (application as NotallyXApplication)
         preferences = NotallyXPreferences.getInstance(notallyXApplication)
         if (preferences.useDynamicColors.value) {
@@ -61,6 +74,53 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
                 }
             }
     }
+
+    open fun initViewModel() {
+        baseModel.startObserving()
+    }
+
+    private fun setupGlobalExceptionHandler() {
+        val previousHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            if (
+                throwable is SQLiteBlobTooBigException ||
+                    throwable.cause is SQLiteBlobTooBigException
+            ) {
+                lifecycleScope.launch {
+                    EXCEPTION_HANDLER_MUTEX.withLock {
+                        val time = System.currentTimeMillis()
+                        if (!isExceptionAlreadyBeingHandled(time)) {
+                            EXCEPTION_HANDLER_MUTEX_LAST_TIMESTAMP = time
+                            val migrationProgress =
+                                MutableLiveData<MigrationProgress>().apply {
+                                    setupProgressDialog(this@LockedActivity)
+                                    postValue(
+                                        MigrationProgress(
+                                            R.string.migration_splitting_notes,
+                                            indeterminate = true,
+                                        )
+                                    )
+                                }
+                            log(
+                                TAG,
+                                msg =
+                                    "SQLiteBlobTooBigException occurred, trying to fix broken notes...",
+                            )
+                            withContext(Dispatchers.IO) { application.splitOversizedNotes() }
+                            migrationProgress.postValue(
+                                MigrationProgress(R.string.migrating_data, inProgress = false)
+                            )
+                        }
+                    }
+                }
+            } else {
+                previousHandler?.uncaughtException(thread, throwable)
+            }
+        }
+    }
+
+    private fun isExceptionAlreadyBeingHandled(time: Long): Boolean =
+        EXCEPTION_HANDLER_MUTEX_LAST_TIMESTAMP?.let { it.secondsBetween(time) < 20 } ?: false
 
     override fun onResume() {
         if (preferences.isLockEnabled) {
@@ -152,5 +212,11 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
                 false
             }
         } ?: false
+    }
+
+    companion object {
+        private const val TAG = "LockedActivity"
+        private val EXCEPTION_HANDLER_MUTEX = Mutex()
+        private var EXCEPTION_HANDLER_MUTEX_LAST_TIMESTAMP: Long? = null
     }
 }

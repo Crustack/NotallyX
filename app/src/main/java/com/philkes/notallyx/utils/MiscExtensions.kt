@@ -3,6 +3,7 @@ package com.philkes.notallyx.utils
 import android.util.Patterns
 import java.util.Calendar
 import java.util.Locale
+import kotlin.math.abs
 
 fun CharSequence.truncate(limit: Int): CharSequence {
     return if (length > limit) {
@@ -110,3 +111,7 @@ fun now(): Calendar =
         set(Calendar.SECOND, 0)
         set(Calendar.MILLISECOND, 0)
     }
+
+typealias TimeMillis = Long
+
+fun TimeMillis.secondsBetween(other: TimeMillis): Long = abs(this - other) / 1000

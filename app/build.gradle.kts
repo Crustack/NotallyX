@@ -33,12 +33,6 @@ android {
             debugSymbolLevel = "FULL"
         }
     }
-    packaging {
-        jniLibs {
-            useLegacyPackaging = false
-            keepDebugSymbols += "**/*.so"
-        }
-    }
     ksp {
         arg("room.generateKotlin", "true")
         arg("room.schemaLocation", "$projectDir/schemas")

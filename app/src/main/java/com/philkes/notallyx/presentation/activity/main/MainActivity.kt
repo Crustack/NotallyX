@@ -131,9 +131,12 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         baseModel.progress.setupProgressDialog(this)
     }
 
+    override fun initViewModel() {}
+
     private fun checkForMigrations(savedInstanceState: Bundle?) {
         // Run migrations first (blocking dialog), then proceed with initial navigation
         val proceed: () -> Unit = {
+            baseModel.startObserving()
             val fragmentIdToLoad = intent.getIntExtra(EXTRA_FRAGMENT_TO_OPEN, -1)
             if (fragmentIdToLoad != -1) {
                 navController.navigate(fragmentIdToLoad, intent.extras)

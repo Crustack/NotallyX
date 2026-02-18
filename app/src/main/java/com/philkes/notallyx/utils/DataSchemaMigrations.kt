@@ -61,7 +61,7 @@ private fun Application.moveAttachments(preferences: NotallyXPreferences) {
  * end of each truncated note that points to the next note. The link text is included in the body
  * and must also fit within the size limit.
  */
-private suspend fun Application.splitOversizedNotes() {
+suspend fun Application.splitOversizedNotes() {
     log(
         TAG,
         "Running migration 2: Splitting notes exceeding the body size limit (limit: $MAX_BODY_CHAR_LENGTH characters)",
@@ -87,8 +87,14 @@ private suspend fun Application.splitOversizedNotes() {
                     e,
                 )
                 repaired += 1
-                truncateBodyAndFixSpans(dao, id)
-                dao.get(id)
+                try {
+                    truncateBodyAndFixSpans(dao, id)
+                    dao.get(id)
+                } catch (e: SQLiteBlobTooBigException) {
+                    log(TAG, "Note (id: $id) could not be repaired. Deleting...", e)
+                    dao.delete(id)
+                    null
+                }
             }
         if (original == null) return@forEach
         if (original.type != Type.NOTE) return@forEach
