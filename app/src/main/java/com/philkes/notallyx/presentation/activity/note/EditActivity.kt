@@ -456,6 +456,9 @@ abstract class EditActivity(private val type: Type) :
             add(R.string.search, R.drawable.search, MenuItem.SHOW_AS_ACTION_ALWAYS) {
                 startSearch()
             }
+            add(R.string.reminders, R.drawable.notifications, MenuItem.SHOW_AS_ACTION_ALWAYS) {
+                changeReminders()
+            }
             pinMenuItem =
                 add(R.string.pin, R.drawable.pin, MenuItem.SHOW_AS_ACTION_ALWAYS) { pin() }
             bindPinned()
