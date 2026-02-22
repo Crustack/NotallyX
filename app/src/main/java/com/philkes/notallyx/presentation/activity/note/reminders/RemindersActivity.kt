@@ -41,7 +41,9 @@ import com.philkes.notallyx.presentation.view.main.reminder.ReminderListener
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel
 import com.philkes.notallyx.utils.canScheduleAlarms
 import com.philkes.notallyx.utils.now
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 import kotlinx.coroutines.launch
 
 class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderListener {
@@ -238,8 +240,18 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
                             value == 1 && unit == RepetitionTimeUnit.WEEKS ->
                                 Weekly.isChecked = true
 
-                            value == 1 && unit == RepetitionTimeUnit.MONTHS ->
+                            value == 1 && unit == RepetitionTimeUnit.MONTHS && occurrence == null ->
                                 Monthly.isChecked = true
+
+                            value == 1 &&
+                                unit == RepetitionTimeUnit.MONTHS &&
+                                occurrence != null -> {
+                                MonthlyAdvanced.apply {
+                                    visibility = View.VISIBLE
+                                    text = toText(this@RemindersActivity)
+                                    isChecked = true
+                                }
+                            }
 
                             value == 1 && unit == RepetitionTimeUnit.YEARS ->
                                 Yearly.isChecked = true
@@ -266,6 +278,7 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
                             R.id.Weekly -> Repetition(1, RepetitionTimeUnit.WEEKS)
                             R.id.Monthly -> Repetition(1, RepetitionTimeUnit.MONTHS)
                             R.id.Yearly -> Repetition(1, RepetitionTimeUnit.YEARS)
+                            R.id.MonthlyAdvanced -> reminder?.repetition?.copy()
                             R.id.Custom -> reminder?.repetition?.copy()
                             else -> null
                         }
@@ -284,9 +297,86 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
             None.setOnCheckedEnableButton(positiveButton)
             Daily.setOnCheckedEnableButton(positiveButton)
             Weekly.setOnCheckedEnableButton(positiveButton)
-            Monthly.setOnCheckedEnableButton(positiveButton)
+            Monthly.setOnClickListener {
+                dialog.dismiss()
+                showMonthlyAdvancedRepetitionDialog(reminder, calendar, onRepetitionSelected)
+            }
+            MonthlyAdvanced.setOnClickListener {
+                dialog.dismiss()
+                showMonthlyAdvancedRepetitionDialog(reminder, calendar, onRepetitionSelected)
+            }
             Yearly.setOnCheckedEnableButton(positiveButton)
         }
+    }
+
+    private fun showMonthlyAdvancedRepetitionDialog(
+        reminder: Reminder? = null,
+        calendar: Calendar,
+        onRepetitionSelected: (Repetition?) -> Unit,
+    ) {
+        val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
+        val dayOfWeekStr = SimpleDateFormat("EEEE", Locale.getDefault()).format(calendar.time)
+        val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
+        val isLastDayOfMonth = dayOfMonth == calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
+
+        val monthlyOptionText =
+            if (isLastDayOfMonth) {
+                getString(R.string.of_the_month_last, getString(R.string.day))
+            } else {
+                "$dayOfMonth. ${getString(R.string.of_the_month, getString(R.string.day))}"
+            }
+
+        val options =
+            arrayOf(
+                monthlyOptionText,
+                "1. ${getString(R.string.of_the_month, dayOfWeekStr)}",
+                "2. ${getString(R.string.of_the_month, dayOfWeekStr)}",
+                "3. ${getString(R.string.of_the_month, dayOfWeekStr)}",
+                "4. ${getString(R.string.of_the_month, dayOfWeekStr)}",
+                getString(R.string.of_the_month_last, dayOfWeekStr),
+            )
+
+        var selectedIndex = 0
+        reminder?.repetition?.let {
+            if (it.unit == RepetitionTimeUnit.MONTHS && it.value == 1) {
+                selectedIndex =
+                    when (it.occurrence) {
+                        null -> 0
+                        1 -> 1
+                        2 -> 2
+                        3 -> 3
+                        4 -> 4
+                        -1 -> 5
+                        else -> 0
+                    }
+            }
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.monthly)
+            .setSingleChoiceItems(options, selectedIndex) { dialog, which ->
+                val repetition =
+                    when (which) {
+                        0 -> Repetition(1, RepetitionTimeUnit.MONTHS)
+                        1 -> Repetition(1, RepetitionTimeUnit.MONTHS, 1, dayOfWeek)
+                        2 -> Repetition(1, RepetitionTimeUnit.MONTHS, 2, dayOfWeek)
+                        3 -> Repetition(1, RepetitionTimeUnit.MONTHS, 3, dayOfWeek)
+                        4 -> Repetition(1, RepetitionTimeUnit.MONTHS, 4, dayOfWeek)
+                        5 -> Repetition(1, RepetitionTimeUnit.MONTHS, -1, dayOfWeek)
+                        else -> Repetition(1, RepetitionTimeUnit.MONTHS)
+                    }
+                onRepetitionSelected(repetition)
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.back) { dialog, _ ->
+                dialog.dismiss()
+                showRepetitionDialog(
+                    reminder,
+                    calendar,
+                    onRepetitionSelected = onRepetitionSelected,
+                )
+            }
+            .show()
     }
 
     private fun showCustomRepetitionDialog(
@@ -325,7 +415,19 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
                             R.id.Years -> RepetitionTimeUnit.YEARS
                             else -> null
                         }
-                    onRepetitionSelected(selectedTimeUnit?.let { Repetition(value, it) })
+                    onRepetitionSelected(
+                        selectedTimeUnit?.let {
+                            if (it == RepetitionTimeUnit.MONTHS && value == 1) {
+                                showMonthlyAdvancedRepetitionDialog(
+                                    reminder,
+                                    calendar,
+                                    onRepetitionSelected,
+                                )
+                                return@setPositiveButton
+                            }
+                            Repetition(value, it)
+                        }
+                    )
                 }
                 .setBackgroundInsetBottom(0)
                 .setBackgroundInsetTop(0)

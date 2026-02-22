@@ -45,6 +45,13 @@
         android:text="@string/yearly" />
 
     <RadioButton
+        android:id="@+id/MonthlyAdvanced"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:text="@string/monthly" />
+
+    <RadioButton
         android:id="@+id/Custom"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

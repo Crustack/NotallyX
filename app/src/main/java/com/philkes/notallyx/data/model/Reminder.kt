@@ -12,7 +12,13 @@ data class Reminder(
     var isNotificationVisible: Boolean = false,
 ) : Parcelable
 
-@Parcelize data class Repetition(var value: Int, var unit: RepetitionTimeUnit) : Parcelable
+@Parcelize
+data class Repetition(
+    var value: Int,
+    var unit: RepetitionTimeUnit,
+    var occurrence: Int? = null,
+    var dayOfWeek: Int? = null,
+) : Parcelable
 
 enum class RepetitionTimeUnit {
     MINUTES,
