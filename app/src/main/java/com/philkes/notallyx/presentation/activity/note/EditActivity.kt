@@ -456,8 +456,10 @@ abstract class EditActivity(private val type: Type) :
             add(R.string.search, R.drawable.search, MenuItem.SHOW_AS_ACTION_ALWAYS) {
                 startSearch()
             }
-            add(R.string.reminders, R.drawable.notifications, MenuItem.SHOW_AS_ACTION_ALWAYS) {
-                changeReminders()
+            if (notallyModel.folder == Folder.NOTES) {
+                add(R.string.reminders, R.drawable.notifications, MenuItem.SHOW_AS_ACTION_ALWAYS) {
+                    changeReminders()
+                }
             }
             pinMenuItem =
                 add(R.string.pin, R.drawable.pin, MenuItem.SHOW_AS_ACTION_ALWAYS) { pin() }
@@ -1027,9 +1029,18 @@ abstract class EditActivity(private val type: Type) :
     }
 
     override fun changeReminders() {
-        val intent = Intent(this, RemindersActivity::class.java)
-        intent.putExtra(RemindersActivity.NOTE_ID, notallyModel.id)
-        startActivity(intent)
+        lifecycleScope.launch {
+            val noteId =
+                if (notallyModel.id != 0L) {
+                    notallyModel.id
+                } else {
+                    notallyModel.id = saveNote(false)
+                    notallyModel.id
+                }
+            val intent = Intent(this@EditActivity, RemindersActivity::class.java)
+            intent.putExtra(RemindersActivity.NOTE_ID, noteId)
+            startActivity(intent)
+        }
     }
 
     override fun changeLabels() {
