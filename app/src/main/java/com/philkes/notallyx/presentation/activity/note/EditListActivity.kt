@@ -241,11 +241,13 @@ class EditListActivity : EditActivity(Type.LIST), MoreListActions {
                         endSearch()
                     }
                 },
-            ) { _ ->
-                if (isInSearchMode() && search.results.value > 0) {
-                    updateSearchResults(search.query)
-                }
-            }
+                { _ ->
+                    if (isInSearchMode() && search.results.value > 0) {
+                        updateSearchResults(search.query)
+                    }
+                },
+                { items -> updateJumpButtonsVisibility(items) },
+            )
         adapter =
             ListItemAdapter(
                 colorInt,

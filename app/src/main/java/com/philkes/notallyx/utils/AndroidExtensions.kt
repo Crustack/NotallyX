@@ -246,6 +246,9 @@ fun Activity.showErrorDialog(
         .show()
 }
 
+val Activity.isInLandscapeMode
+    get() = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
 private const val MAX_LOGS_FILE_SIZE_KB: Long = 2048
 
 private fun Context.logToFile(

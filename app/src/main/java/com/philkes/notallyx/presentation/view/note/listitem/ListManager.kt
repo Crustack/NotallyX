@@ -3,7 +3,6 @@ package com.philkes.notallyx.presentation.view.note.listitem
 import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
 import androidx.recyclerview.widget.RecyclerView
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.check
@@ -48,6 +47,7 @@ class ListManager(
     private val inputMethodManager: InputMethodManager?,
     private val endSearch: (() -> Unit)?,
     val refreshSearch: ((refocusView: View?) -> Unit)?,
+    val onItemSizeChanged: ((items: Int) -> Unit)?,
 ) {
     lateinit var adapter: ListItemAdapter
     var checkedAdapter: CheckedListItemAdapter? = null
@@ -151,6 +151,7 @@ class ListManager(
                 inputMethodManager?.let { viewHolder.focusEditText(inputMethodManager = it) }
             }
         }
+        onItemSizeChanged?.invoke(items.size + (itemsChecked?.size() ?: 0))
     }
 
     /**
@@ -201,6 +202,7 @@ class ListManager(
         if (pushChange && result) {
             changeHistory.push(ListDeleteChange(stateBefore, getState(), this))
         }
+        onItemSizeChanged?.invoke(items.size + (itemsChecked?.size() ?: 0))
         return result
     }
 
@@ -372,6 +374,7 @@ class ListManager(
         if (pushChange) {
             changeHistory.push(DeleteCheckedChange(stateBefore, getState(), this))
         }
+        onItemSizeChanged?.invoke(items.size + (itemsChecked?.size() ?: 0))
     }
 
     fun findParent(item: ListItem) = items.findParent(item) ?: itemsChecked?.findParent(item)

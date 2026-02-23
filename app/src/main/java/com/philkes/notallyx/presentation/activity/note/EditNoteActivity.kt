@@ -162,6 +162,7 @@ class EditNoteActivity : EditActivity(Type.NOTE), AddNoteActions {
             notallyModel.body = text
             if (textChanged) {
                 updateSearchResults(search.query)
+                updateJumpButtonsVisibility()
             }
         }
     }
