@@ -330,15 +330,9 @@ fun Reminder.toRepetitionText(context: Context): String {
         val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
         val isLastDayOfMonth = dayOfMonth == calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
 
-        val prefix =
-            if (rep.value == 1) ""
-            else
-                "${context.getString(R.string.every)} ${rep.value} ${context.getString(R.string.months)}"
-        val postfix =
-            if (isLastDayOfMonth)
-                context.getString(R.string.of_the_month_last, context.getString(R.string.day))
-            else context.getString(R.string.of_the_month, "$dayOfMonth.")
-        return "$prefix $postfix"
+        return if (isLastDayOfMonth)
+            context.getString(R.string.of_the_month_last, context.getString(R.string.day))
+        else context.getString(R.string.of_the_month, "$dayOfMonth.")
     }
     return rep.toText(context)
 }
@@ -347,10 +341,6 @@ fun Repetition.toText(context: Context): String {
     if (unit == RepetitionTimeUnit.MONTHS && occurrence != null && dayOfWeek != null) {
         val dayOfWeekStr =
             SimpleDateFormat("EEEE", Locale.getDefault())
-                .apply {
-                    val cal = Calendar.getInstance()
-                    cal.set(Calendar.DAY_OF_WEEK, dayOfWeek!!)
-                }
                 .format(
                     Calendar.getInstance().apply { set(Calendar.DAY_OF_WEEK, dayOfWeek!!) }.time
                 )
@@ -451,13 +441,19 @@ fun Reminder.nextNotification(from: Date = Date()): Date? {
             next.add(Calendar.MONTH, rep.value)
         }
     }
+    val calendar = dateTime.toCalendar()
+    val field = repetition!!.unit.toCalendarField()
+    val value = repetition!!.value
 
-    val timeDifferenceMillis: Long = from.time - dateTime.time
-    val intervalsPassed = timeDifferenceMillis / rep.toMillis()
-    val unitsUntilNext = ((rep.value) * (intervalsPassed + 1)).toInt()
-    val reminderStart = dateTime.toCalendar()
-    reminderStart.add(rep.unit.toCalendarField(), unitsUntilNext)
-    return reminderStart.time
+    // If from is exactly at dateTime, we want the next one
+    while (true) {
+        calendar.add(field, value)
+        if (calendar.time.after(from)) {
+            break
+        }
+    }
+
+    return calendar.time
 }
 
 private fun findOccurrenceInMonth(

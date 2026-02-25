@@ -150,16 +150,14 @@ class ReminderRepetitionTest {
     }
 
     @Test
-    fun `nextNotification for Advanced Monthly - 1st Sunday when 1st is Monday`() {
-        // Oct 2023: 1st is Sunday.
-        // Nov 2023: 1st is Wednesday. 1st Sunday is Nov 5th.
-        val start = createDate(2023, Calendar.OCTOBER, 1, 10, 0)
+    fun `nextNotification for Advanced Monthly - 1st Sunday when 2nd is Monday`() {
+        val start = createDate(2023, Calendar.OCTOBER, 2, 10, 0)
         val repetition =
             Repetition(1, RepetitionTimeUnit.MONTHS, occurrence = 1, dayOfWeek = Calendar.SUNDAY)
         val reminder = Reminder(1, start, repetition)
 
         // From Oct 2nd
-        val from = createDate(2023, Calendar.OCTOBER, 2, 9, 0)
+        val from = createDate(2023, Calendar.OCTOBER, 2, 11, 0)
         val expected = createDate(2023, Calendar.NOVEMBER, 5, 10, 0)
         assertEquals(expected, reminder.nextNotification(from))
     }
