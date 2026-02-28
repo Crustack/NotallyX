@@ -9,11 +9,16 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.Observer
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.model.Folder
+import com.philkes.notallyx.data.model.NoteViewMode
+import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.presentation.format
 import com.philkes.notallyx.presentation.merge
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
 import com.philkes.notallyx.utils.createObserverSkipFirst
+import com.philkes.notallyx.utils.deserializeEnums
 import com.philkes.notallyx.utils.fromCamelCaseToEnumName
+import com.philkes.notallyx.utils.serializeEnums
 import com.philkes.notallyx.utils.toCamelCase
 import com.philkes.notallyx.utils.toPreservedByteArray
 import com.philkes.notallyx.utils.toPreservedString
@@ -44,7 +49,7 @@ abstract class BasePreference<T>(
 
     protected abstract fun getValue(sharedPreferences: SharedPreferences): T
 
-    private fun getData(): NotNullLiveData<T> {
+    fun getData(): NotNullLiveData<T> {
         if (data == null) {
             data = NotNullLiveData(value)
         }
@@ -162,6 +167,33 @@ class StringSetPreference(
     override fun SharedPreferences.Editor.put(value: Set<String>) {
         putStringSet(key, value)
     }
+}
+
+class EnumListPreference<T>(
+    private val key: String,
+    sharedPreferences: SharedPreferences,
+    private val enumClass: Class<T>,
+    defaultValue: List<T>,
+    titleResId: Int? = null,
+) : BasePreference<List<T>>(sharedPreferences, defaultValue, titleResId) where T : Enum<T> {
+
+    override fun getValue(sharedPreferences: SharedPreferences): List<T> {
+        return sharedPreferences.getString(key, null)?.let { enumClass.deserializeEnums(it) }
+            ?: defaultValue
+    }
+
+    override fun SharedPreferences.Editor.put(value: List<T>) {
+        putString(key, value.serializeEnums())
+    }
+}
+
+inline fun <reified T> createEnumListPreference(
+    sharedPreferences: SharedPreferences,
+    key: String,
+    defaultValue: List<T>,
+    titleResId: Int? = null,
+): EnumListPreference<T> where T : Enum<T> {
+    return EnumListPreference(key, sharedPreferences, T::class.java, defaultValue, titleResId)
 }
 
 inline fun <reified T> createEnumPreference(
@@ -364,7 +396,67 @@ enum class ListItemSort(override val textResId: Int) : StaticTextProvider {
 
 enum class BiometricLock(override val textResId: Int) : StaticTextProvider {
     ENABLED(R.string.enabled),
-    DISABLED(R.string.disabled),
+    DISABLED(R.string.disabled);
+
+    override fun getText(context: Context): String = context.getString(textResId)
+}
+
+enum class EditAction(override val textResId: Int, val drawableResId: Int, val itemId: Int) :
+    StaticTextProvider {
+    SEARCH(R.string.search, R.drawable.search, 1001),
+    PIN(R.string.pin, R.drawable.pin, 1002),
+    REMINDERS(R.string.reminders, R.drawable.notifications, 1003),
+    LABELS(R.string.labels, R.drawable.label, 1004),
+    CHANGE_COLOR(R.string.change_color, R.drawable.change_color, 1005),
+    DUPLICATE(R.string.duplicate, R.drawable.content_copy, 1006),
+    EXPORT(R.string.export, R.drawable.export, 1007),
+    SHARE(R.string.share, R.drawable.share, 1008),
+    DELETE(R.string.delete, R.drawable.delete, 1009),
+    ARCHIVE(R.string.archive, R.drawable.archive, 1010),
+    TOGGLE_VIEW_MODE(R.string.edit, R.drawable.visibility, 1011),
+    CONVERT(R.string.convert_to_list_note, R.drawable.convert_to_text, 1012),
+    DELETE_FOREVER(R.string.delete_forever, R.drawable.delete, 1014),
+    RESTORE(R.string.restore, R.drawable.restore, 1015);
+
+    fun getTitleAndIcon(
+        pinned: Boolean,
+        viewMode: NoteViewMode?,
+        folder: Folder? = null,
+        type: Type? = null,
+    ): Pair<Int, Int> {
+        val icon =
+            when (this) {
+                PIN -> if (pinned) R.drawable.unpin else R.drawable.pin
+                ARCHIVE ->
+                    if (folder == Folder.ARCHIVED) R.drawable.unarchive else R.drawable.archive
+                RESTORE ->
+                    if (folder == Folder.ARCHIVED) R.drawable.unarchive else R.drawable.restore
+                TOGGLE_VIEW_MODE ->
+                    if (viewMode == NoteViewMode.READ_ONLY) R.drawable.edit
+                    else R.drawable.visibility
+                else -> drawableResId
+            }
+        val title =
+            when (this) {
+                PIN -> if (pinned) R.string.unpin else R.string.pin
+                ARCHIVE -> if (folder == Folder.ARCHIVED) R.string.unarchive else R.string.archive
+                RESTORE -> if (folder == Folder.ARCHIVED) R.string.unarchive else R.string.restore
+                TOGGLE_VIEW_MODE ->
+                    if (viewMode == NoteViewMode.READ_ONLY) R.string.edit else R.string.read_only
+                CONVERT ->
+                    if (type == Type.LIST) R.string.convert_to_text_note
+                    else R.string.convert_to_list_note
+                else -> textResId
+            }
+        return title to icon
+    }
+}
+
+enum class EditListAction(override val textResId: Int, val drawableResId: Int) :
+    StaticTextProvider {
+    DELETE_CHECKED(R.string.delete_checked_items, R.drawable.delete_all),
+    CHECK_ALL(R.string.check_all_items, R.drawable.checkbox_checked),
+    UNCHECK_ALL(R.string.uncheck_all_items, R.drawable.checkbox_unchecked),
 }
 
 object Constants {

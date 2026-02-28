@@ -4,15 +4,12 @@ import android.os.Bundle
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SortedList
-import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.presentation.addIconButton
 import com.philkes.notallyx.presentation.hideKeyboardOnFocusedItem
 import com.philkes.notallyx.presentation.setOnNextAction
 import com.philkes.notallyx.presentation.showKeyboardOnFocusedItem
-import com.philkes.notallyx.presentation.view.note.action.MoreListActions
 import com.philkes.notallyx.presentation.view.note.action.MoreListBottomSheet
 import com.philkes.notallyx.presentation.view.note.listitem.HighlightText
 import com.philkes.notallyx.presentation.view.note.listitem.ListManager
@@ -26,6 +23,7 @@ import com.philkes.notallyx.presentation.view.note.listitem.sorting.ListItemPare
 import com.philkes.notallyx.presentation.view.note.listitem.sorting.SortedItemsList
 import com.philkes.notallyx.presentation.view.note.listitem.splitByChecked
 import com.philkes.notallyx.presentation.view.note.listitem.toMutableList
+import com.philkes.notallyx.presentation.viewmodel.preference.EditListAction
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.autoSortByCheckedEnabled
 import com.philkes.notallyx.utils.findAllOccurrences
@@ -33,7 +31,7 @@ import com.philkes.notallyx.utils.indices
 import com.philkes.notallyx.utils.mapIndexed
 import java.util.concurrent.atomic.AtomicInteger
 
-class EditListActivity : EditActivity(Type.LIST), MoreListActions {
+class EditListActivity : EditActivity(Type.LIST) {
 
     private var adapter: ListItemAdapter? = null
     private var adapterChecked: CheckedListItemAdapter? = null
@@ -88,33 +86,40 @@ class EditListActivity : EditActivity(Type.LIST), MoreListActions {
             }
     }
 
-    override fun deleteChecked() {
+    fun handleListAction(action: EditListAction) {
+        when (action) {
+            EditListAction.DELETE_CHECKED -> deleteChecked()
+            EditListAction.CHECK_ALL -> checkAll()
+            EditListAction.UNCHECK_ALL -> uncheckAll()
+        }
+    }
+
+    private fun deleteChecked() {
         listManager.deleteCheckedItems()
     }
 
-    override fun checkAll() {
+    private fun checkAll() {
         listManager.changeCheckedForAll(true)
     }
 
-    override fun uncheckAll() {
+    private fun uncheckAll() {
         listManager.changeCheckedForAll(false)
     }
 
-    override fun initBottomMenu() {
-        super.initBottomMenu()
-        binding.BottomAppBarRight.apply {
-            removeAllViews()
-            addToggleViewMode()
-            addIconButton(R.string.tap_for_more_options, R.drawable.more_vert, marginStart = 0) {
-                MoreListBottomSheet(
-                        this@EditListActivity,
-                        createNoteTypeActions() + createFolderActions(),
-                        colorInt,
-                    )
-                    .show(supportFragmentManager, MoreListBottomSheet.TAG)
-            }
-        }
-        setBottomAppBarColor(colorInt)
+    override fun openMoreOptionsBottomSheet() {
+        val prefs = NotallyXPreferences.getInstance(this@EditListActivity)
+        val topActions = prefs.getSafeEditNoteActivityTopActions()
+        val bottomAction = prefs.editNoteActivityBottomAction.value
+
+        MoreListBottomSheet(
+                notallyModel,
+                colorInt,
+                ::handleAction,
+                ::handleListAction,
+                topActions,
+                bottomAction,
+            )
+            .show(supportFragmentManager, MoreListBottomSheet.TAG)
     }
 
     private fun SortedList<ListItem>.highlightSearch(

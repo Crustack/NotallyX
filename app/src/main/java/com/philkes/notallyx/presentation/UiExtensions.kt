@@ -225,11 +225,12 @@ fun Menu.add(
     drawable: Int,
     showAsAction: Int = MenuItem.SHOW_AS_ACTION_IF_ROOM,
     groupId: Int = Menu.NONE,
+    itemId: Int = Menu.NONE,
     order: Int = Menu.NONE,
     onClick: (item: MenuItem) -> Unit,
 ): MenuItem {
     val menuItem =
-        add(groupId, Menu.NONE, order, title).setIcon(drawable).setOnMenuItemClickListener { item ->
+        add(groupId, itemId, order, title).setIcon(drawable).setOnMenuItemClickListener { item ->
             onClick(item)
             item.isChecked = true
             return@setOnMenuItemClickListener false

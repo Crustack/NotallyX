@@ -15,7 +15,6 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
-import com.davemorrissey.labs.subscaleview.ImageSource.uri
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.NoteViewMode
@@ -151,7 +150,6 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
             add(R.string.search, R.drawable.search, MenuItem.SHOW_AS_ACTION_ALWAYS) {
                 startSearch()
             }
-            // Pin action removed
         }
 
         search.results.mergeSkipFirst(search.resultPos).observe(this) { (amount, pos) ->

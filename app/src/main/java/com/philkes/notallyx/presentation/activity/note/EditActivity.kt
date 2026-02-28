@@ -76,10 +76,10 @@ import com.philkes.notallyx.presentation.showKeyboard
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
 import com.philkes.notallyx.presentation.view.note.ErrorAdapter
-import com.philkes.notallyx.presentation.view.note.action.Action
+import com.philkes.notallyx.presentation.view.note.action.ActionSelectionBottomSheet
 import com.philkes.notallyx.presentation.view.note.action.AddActions
 import com.philkes.notallyx.presentation.view.note.action.AddBottomSheet
-import com.philkes.notallyx.presentation.view.note.action.MoreActions
+import com.philkes.notallyx.presentation.view.note.action.ExportBottomSheet
 import com.philkes.notallyx.presentation.view.note.action.MoreNoteBottomSheet
 import com.philkes.notallyx.presentation.view.note.audio.AudioAdapter
 import com.philkes.notallyx.presentation.view.note.preview.PreviewFileAdapter
@@ -87,7 +87,9 @@ import com.philkes.notallyx.presentation.view.note.preview.PreviewImageAdapter
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
+import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 import com.philkes.notallyx.presentation.viewmodel.preference.ListItemSort
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
 import com.philkes.notallyx.presentation.widget.WidgetProvider
 import com.philkes.notallyx.utils.FileError
@@ -114,7 +116,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 abstract class EditActivity(private val type: Type) :
-    LockedActivity<ActivityEditBinding>(), AddActions, MoreActions {
+    LockedActivity<ActivityEditBinding>(), AddActions {
     private lateinit var audioAdapter: AudioAdapter
     private lateinit var fileAdapter: PreviewFileAdapter
     private lateinit var recordAudioActivityResultLauncher: ActivityResultLauncher<Intent>
@@ -125,7 +127,7 @@ abstract class EditActivity(private val type: Type) :
     private lateinit var attachFilesActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var exportFileActivityResultLauncher: ActivityResultLauncher<Intent>
 
-    private lateinit var pinMenuItem: MenuItem
+    private var pinMenuItem: MenuItem? = null
     protected var search = Search()
 
     internal val notallyModel: NotallyModel by viewModels()
@@ -139,7 +141,7 @@ abstract class EditActivity(private val type: Type) :
     protected var colorInt: Int = -1
     protected var inputMethodManager: InputMethodManager? = null
 
-    protected lateinit var toggleViewMode: ImageButton
+    protected lateinit var toggleViewModeButton: ImageButton
     protected val canEdit
         get() = notallyModel.viewMode.value == NoteViewMode.EDIT
 
@@ -449,21 +451,85 @@ abstract class EditActivity(private val type: Type) :
             }
     }
 
-    protected open fun setupToolbars() {
-        binding.Toolbar.setNavigationOnClickListener { finish() }
-        binding.Toolbar.menu.apply {
-            clear() // TODO: needed?
-            add(R.string.search, R.drawable.search, MenuItem.SHOW_AS_ACTION_ALWAYS) {
-                startSearch()
+    fun handleAction(action: EditAction) {
+        when (action) {
+            EditAction.SEARCH -> startSearch()
+            EditAction.PIN -> pin()
+            EditAction.REMINDERS -> changeReminders()
+            EditAction.LABELS -> changeLabels()
+            EditAction.CHANGE_COLOR -> changeColor()
+            EditAction.DUPLICATE -> duplicate()
+            EditAction.EXPORT -> {
+                ExportBottomSheet(colorInt, ::export)
+                    .show(supportFragmentManager, ExportBottomSheet.TAG)
             }
-            if (notallyModel.folder == Folder.NOTES) {
-                add(R.string.reminders, R.drawable.notifications, MenuItem.SHOW_AS_ACTION_ALWAYS) {
-                    changeReminders()
+            EditAction.SHARE -> share()
+            EditAction.DELETE -> delete()
+            EditAction.ARCHIVE -> archive()
+            EditAction.TOGGLE_VIEW_MODE -> toggleViewMode()
+            EditAction.CONVERT -> convertTo()
+            EditAction.DELETE_FOREVER -> deleteForever()
+            EditAction.RESTORE -> restore()
+        }
+    }
+
+    private fun showActionSelectionDialog(oldAction: EditAction, isBottomBar: Boolean = false) {
+        val actions = EditAction.entries.filter { it != EditAction.RESTORE }
+        ActionSelectionBottomSheet(
+                actions,
+                notallyModel,
+                oldAction,
+                title = getString(R.string.swap_action),
+                onReset = {
+                    val prefs = NotallyXPreferences.getInstance(this)
+                    if (isBottomBar) {
+                        prefs.editNoteActivityBottomAction.save(
+                            NotallyXPreferences.DEFAULT_EDIT_NOTE_BOTTOM_ACTION
+                        )
+                    } else {
+                        val currentActions = prefs.editNoteActivityTopActions.value.toMutableList()
+                        val index = currentActions.indexOf(oldAction)
+                        if (
+                            index != -1 &&
+                                index < NotallyXPreferences.DEFAULT_EDIT_NOTE_TOP_ACTIONS.size
+                        ) {
+                            currentActions[index] =
+                                NotallyXPreferences.DEFAULT_EDIT_NOTE_TOP_ACTIONS[index]
+                            prefs.editNoteActivityTopActions.save(currentActions)
+                        }
+                    }
+                    //                    setupToolbars()
+                    //                    initBottomMenu()
+                },
+                colorInt,
+            ) { newAction ->
+                val prefs = NotallyXPreferences.getInstance(this)
+                if (isBottomBar) {
+                    prefs.editNoteActivityBottomAction.save(newAction)
+                    //                    setupToolbars()
+                    //                    initBottomMenu()
+                } else {
+                    val currentActions = prefs.getSafeEditNoteActivityTopActions().toMutableList()
+                    val index = currentActions.indexOf(oldAction)
+                    if (index != -1) {
+                        currentActions[index] = newAction
+                        prefs.editNoteActivityTopActions.save(currentActions)
+                        //                        setupToolbars()
+                        //                        initBottomMenu()
+                    }
                 }
             }
-            pinMenuItem =
-                add(R.string.pin, R.drawable.pin, MenuItem.SHOW_AS_ACTION_ALWAYS) { pin() }
-            bindPinned()
+            .show(supportFragmentManager, ActionSelectionBottomSheet.TAG)
+    }
+
+    protected open fun setupToolbars() {
+        binding.Toolbar.setNavigationOnClickListener { finish() }
+
+        preferences.editNoteActivityTopActions.observe(this) { topActions ->
+            updateTopActions(topActions)
+        }
+        preferences.editNoteActivityBottomAction.observe(this) { bottomAction ->
+            updateBottomActions(bottomAction)
         }
 
         search.results.mergeSkipFirst(search.resultPos).observe(this) { (amount, pos) ->
@@ -666,93 +732,87 @@ abstract class EditActivity(private val type: Type) :
                 }
             updateJumpButtonsVisibility()
         }
-        binding.BottomAppBarRight.apply {
-            removeAllViews()
-
-            addToggleViewMode()
-            addIconButton(R.string.tap_for_more_options, R.drawable.more_vert, marginStart = 0) {
-                MoreNoteBottomSheet(
-                        this@EditActivity,
-                        createNoteTypeActions() + createFolderActions(),
-                        colorInt,
-                    )
-                    .show(supportFragmentManager, MoreNoteBottomSheet.TAG)
-            }
-        }
+        updateBottomActions(preferences.editNoteActivityBottomAction.value)
         setBottomAppBarColor(colorInt)
     }
 
-    protected fun ViewGroup.addToggleViewMode() {
-        toggleViewMode =
-            addIconButton(R.string.edit, R.drawable.visibility) {
-                notallyModel.viewMode.value =
-                    when (notallyModel.viewMode.value) {
-                        NoteViewMode.EDIT -> NoteViewMode.READ_ONLY
-                        NoteViewMode.READ_ONLY -> NoteViewMode.EDIT
-                    }
+    protected open fun openMoreOptionsBottomSheet() {
+        val prefs = NotallyXPreferences.getInstance(this@EditActivity)
+        val topActions = prefs.getSafeEditNoteActivityTopActions()
+        val bottomAction = prefs.editNoteActivityBottomAction.value
+
+        MoreNoteBottomSheet(notallyModel, colorInt, ::handleAction, topActions, bottomAction)
+            .show(supportFragmentManager, MoreNoteBottomSheet.TAG)
+    }
+
+    private fun updateBottomActions(bottomAction: EditAction) {
+        binding.BottomAppBarRight.apply {
+            removeAllViews()
+
+            if (bottomAction != EditAction.RESTORE) {
+                addBottomAction(bottomAction)
+            }
+
+            addIconButton(R.string.tap_for_more_options, R.drawable.more_vert, marginStart = 0) {
+                openMoreOptionsBottomSheet()
+            }
+        }
+    }
+
+    protected fun ViewGroup.addBottomAction(action: EditAction) {
+        val (title, icon) =
+            action.getTitleAndIcon(
+                notallyModel.pinned,
+                notallyModel.viewMode.value,
+                notallyModel.folder,
+                notallyModel.type,
+            )
+        val button = addIconButton(title, icon) { handleAction(action) }
+
+        if (action == EditAction.TOGGLE_VIEW_MODE) {
+            toggleViewModeButton = button
+        }
+
+        // Try to get the view for long click
+        post {
+            button.setOnLongClickListener {
+                showActionSelectionDialog(action, isBottomBar = true)
+                true
+            }
+        }
+    }
+
+    private fun toggleViewMode() {
+        notallyModel.viewMode.value =
+            when (notallyModel.viewMode.value) {
+                NoteViewMode.EDIT -> NoteViewMode.READ_ONLY
+                NoteViewMode.READ_ONLY -> NoteViewMode.EDIT
             }
     }
 
-    protected fun createFolderActions() =
-        when (notallyModel.folder) {
-            Folder.NOTES ->
-                listOf(
-                    Action(R.string.archive, R.drawable.archive) { _ ->
-                        archive()
-                        true
-                    },
-                    Action(R.string.delete, R.drawable.delete) { _ ->
-                        delete()
-                        true
-                    },
-                )
+    private fun updateToggleViewMode() {
+        val value = notallyModel.viewMode.value
+        val folder = notallyModel.folder
+        val prefs = NotallyXPreferences.getInstance(this)
+        val bottomAction = prefs.editNoteActivityBottomAction.value
 
-            Folder.DELETED ->
-                listOf(
-                    Action(R.string.delete_forever, R.drawable.delete) { _ ->
-                        deleteForever()
-                        true
-                    },
-                    Action(R.string.restore, R.drawable.restore) { _ ->
-                        restore()
-                        true
-                    },
-                )
+        val (title, icon) = bottomAction.getTitleAndIcon(notallyModel.pinned, value, folder)
 
-            Folder.ARCHIVED ->
-                listOf(
-                    Action(R.string.delete, R.drawable.delete) { _ ->
-                        delete()
-                        true
-                    },
-                    Action(R.string.unarchive, R.drawable.unarchive) { _ ->
-                        restore()
-                        true
-                    },
-                )
+        if (::toggleViewModeButton.isInitialized) {
+            toggleViewModeButton.apply {
+                setImageResource(icon)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    tooltipText = getString(title)
+                }
+            }
         }
+        //        updateTopActions(topActions)
+    }
 
-    protected fun createNoteTypeActions() =
-        when (notallyModel.type) {
-            Type.NOTE ->
-                listOf(
-                    Action(R.string.convert_to_list_note, R.drawable.convert_to_text) { _ ->
-                        convertTo(Type.LIST)
-                        true
-                    }
-                )
-            Type.LIST ->
-                listOf(
-                    Action(R.string.convert_to_text_note, R.drawable.convert_to_text) { _ ->
-                        convertTo(Type.NOTE)
-                        true
-                    }
-                )
-        }
-
-    private fun convertTo(type: Type) {
+    private fun convertTo() {
         updateModel()
         lifecycleScope.launch {
+            val type = if (notallyModel.type == Type.LIST) Type.NOTE else Type.LIST
             notallyModel.convertTo(type)
             val intent =
                 Intent(
@@ -775,23 +835,7 @@ abstract class EditActivity(private val type: Type) :
             notallyModel.title = text.trim().toString()
         }
         notallyModel.viewMode.observe(this) { value ->
-            toggleViewMode.apply {
-                setImageResource(
-                    when (value) {
-                        NoteViewMode.READ_ONLY -> R.drawable.edit
-                        else -> R.drawable.visibility
-                    }
-                )
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    tooltipText =
-                        getString(
-                            when (value) {
-                                NoteViewMode.READ_ONLY -> R.string.edit
-                                else -> R.string.read_only
-                            }
-                        )
-                }
-            }
+            updateToggleViewMode()
             value?.let { toggleCanEdit(it) }
         }
         val textMaxLengthFilter = application.textMaxLengthFilter()
@@ -984,7 +1028,7 @@ abstract class EditActivity(private val type: Type) :
         } else showToast(R.string.insert_an_sd_card_files)
     }
 
-    override fun changeColor() {
+    private fun changeColor() {
         lifecycleScope.launch {
             val colors =
                 withContext(Dispatchers.IO) {
@@ -1020,7 +1064,7 @@ abstract class EditActivity(private val type: Type) :
         }
     }
 
-    override fun duplicate() {
+    private fun duplicate() {
         lifecycleScope.launch {
             saveNote(true)
             val duplicateId = baseModel.duplicateNote(notallyModel.getBaseNote())
@@ -1028,7 +1072,7 @@ abstract class EditActivity(private val type: Type) :
         }
     }
 
-    override fun changeReminders() {
+    private fun changeReminders() {
         lifecycleScope.launch {
             val noteId =
                 if (notallyModel.id != 0L) {
@@ -1043,17 +1087,17 @@ abstract class EditActivity(private val type: Type) :
         }
     }
 
-    override fun changeLabels() {
+    private fun changeLabels() {
         val intent = Intent(this, SelectLabelsActivity::class.java)
         intent.putStringArrayListExtra(EXTRA_SELECTED_LABELS, notallyModel.labels)
         selectLabelsActivityResultLauncher.launch(intent)
     }
 
-    override fun share() {
+    private fun share() {
         this.shareNote(notallyModel.getBaseNote())
     }
 
-    override fun export(mimeType: ExportMimeType) {
+    private fun export(mimeType: ExportMimeType) {
         exportNote(notallyModel.getBaseNote(), mimeType, exportFileActivityResultLauncher)
     }
 
@@ -1066,7 +1110,11 @@ abstract class EditActivity(private val type: Type) :
     }
 
     private fun archive() {
-        moveNote(Folder.ARCHIVED)
+        if (notallyModel.folder == Folder.ARCHIVED) {
+            restore()
+        } else {
+            moveNote(Folder.ARCHIVED)
+        }
     }
 
     private fun moveNote(toFolder: Folder) {
@@ -1094,7 +1142,7 @@ abstract class EditActivity(private val type: Type) :
             .show()
     }
 
-    fun pin() {
+    private fun pin() {
         notallyModel.pinned = !notallyModel.pinned
         bindPinned()
     }
@@ -1310,19 +1358,42 @@ abstract class EditActivity(private val type: Type) :
         binding.root.isSaveFromParentEnabled = false
     }
 
-    private fun bindPinned() {
-        val icon: Int
-        val title: Int
-        if (notallyModel.pinned) {
-            icon = R.drawable.unpin
-            title = R.string.unpin
-        } else {
-            icon = R.drawable.pin
-            title = R.string.pin
-        }
-        pinMenuItem.apply {
-            setTitle(title)
-            setIcon(icon)
+    protected fun bindPinned() {
+        updateTopActions(preferences.editNoteActivityTopActions.value)
+        updateBottomActions(preferences.editNoteActivityBottomAction.value)
+        //        binding.Toolbar.post {
+        //            findViewById<View>(EditAction.PIN.itemId)?.setOnLongClickListener {
+        //                showActionSelectionDialog(action)
+        //                true
+        //            }
+        //        }
+    }
+
+    private fun updateTopActions(topActions: List<EditAction>) {
+        binding.Toolbar.menu.apply {
+            clear()
+            topActions
+                .filter { it != EditAction.RESTORE }
+                .forEachIndexed { idx, action ->
+                    val (title, icon) =
+                        action.getTitleAndIcon(
+                            notallyModel.pinned,
+                            notallyModel.viewMode.value,
+                            notallyModel.folder,
+                            notallyModel.type,
+                        )
+                    val menuItem =
+                        add(title, icon, MenuItem.SHOW_AS_ACTION_ALWAYS, itemId = action.itemId) {
+                            handleAction(action)
+                        }
+                    // Try to get the view for long click
+                    binding.Toolbar.post {
+                        findViewById<View>(menuItem.itemId)?.setOnLongClickListener {
+                            showActionSelectionDialog(action)
+                            true
+                        }
+                    }
+                }
         }
     }
 
