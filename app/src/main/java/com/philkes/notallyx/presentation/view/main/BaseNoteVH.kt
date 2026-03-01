@@ -1,6 +1,5 @@
 package com.philkes.notallyx.presentation.view.main
 
-import android.graphics.Paint
 import android.graphics.drawable.Drawable
 import android.util.TypedValue
 import android.view.View.GONE
@@ -23,17 +22,14 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.ListItem
-import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.data.model.findNextNotificationDate
 import com.philkes.notallyx.databinding.RecyclerBaseNoteBinding
 import com.philkes.notallyx.presentation.applySpans
 import com.philkes.notallyx.presentation.bindLabels
 import com.philkes.notallyx.presentation.displayFormattedTimestamp
 import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.extractColor
-import com.philkes.notallyx.presentation.format
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.setControlsContrastColorForAllViews
 import com.philkes.notallyx.presentation.view.misc.ItemListener
@@ -43,8 +39,8 @@ import com.philkes.notallyx.presentation.view.note.listitem.init
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
 import com.philkes.notallyx.presentation.viewmodel.preference.TextSize
+import com.philkes.notallyx.utils.setupReminderChip
 import java.io.File
-import java.util.Date
 
 data class BaseNoteVHPreferences(
     val textSize: TextSize,
@@ -168,8 +164,7 @@ class BaseNoteVH(
             }
         }
         setColor(baseNote.color)
-
-        setupReminderChip(baseNote)
+        setupReminderChip(baseNote, binding.ReminderChip)
     }
 
     private fun bindNote(baseNote: BaseNote, keyword: String) {
@@ -407,29 +402,4 @@ class BaseNoteVH(
                 0,
             )
     }
-
-    private fun setupReminderChip(baseNote: BaseNote) {
-        val now = Date(System.currentTimeMillis())
-        val mostRecentNotificationDate =
-            baseNote.reminders.findNextNotificationDate()
-                ?: baseNote.reminders.maxOfOrNull { it.dateTime }
-        if (mostRecentNotificationDate == null) {
-            binding.ReminderChip.visibility = GONE
-            return
-        }
-        binding.ReminderChip.apply {
-            visibility = VISIBLE
-            text = mostRecentNotificationDate.format()
-            setCloseIconVisible(haveAnyRepetition(baseNote.reminders))
-            setChipBackgroundColorResource(R.color.md_theme_secondaryContainer)
-            val isElapsed = mostRecentNotificationDate < now
-            alpha = if (isElapsed) 0.5f else 1.0f
-            paintFlags =
-                if (isElapsed) paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
-                else paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
-        }
-    }
-
-    private fun haveAnyRepetition(reminders: List<Reminder>) =
-        reminders.any { it.repetition != null }
 }

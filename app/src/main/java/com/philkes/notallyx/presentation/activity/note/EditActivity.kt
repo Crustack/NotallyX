@@ -103,6 +103,7 @@ import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.mergeSkipFirst
 import com.philkes.notallyx.utils.observeSkipFirst
 import com.philkes.notallyx.utils.openNote
+import com.philkes.notallyx.utils.setupReminderChip
 import com.philkes.notallyx.utils.shareNote
 import com.philkes.notallyx.utils.showColorSelectDialog
 import com.philkes.notallyx.utils.textMaxLengthFilter
@@ -241,6 +242,18 @@ abstract class EditActivity(private val type: Type) :
             } finally {
                 // Let the system handle the crash
                 DEFAULT_EXCEPTION_HANDLER?.uncaughtException(thread, throwable)
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        lifecycleScope.launch {
+            if (notallyModel.id == 0L) return@launch
+            notallyModel.refreshOriginalNote()
+            notallyModel.originalNote?.let { note ->
+                setupReminderChip(note, binding.EditNoteReminderChip)
+                binding.EditNoteReminderChip.setOnClickListener { changeReminders() }
             }
         }
     }

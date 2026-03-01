@@ -2,6 +2,7 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_height="match_parent"
     android:layout_width="match_parent"
     android:id="@+id/coordinatorLayout">
@@ -57,6 +58,7 @@
             android:fillViewport="true"
             android:visibility="gone"
             android:clipToPadding="false"
+            tools:visibility="visible"
             >
 
             <LinearLayout
@@ -114,19 +116,53 @@
                     android:paddingBottom="8dp"
                     android:textAppearance="?attr/textAppearanceHeadline6" />
 
-                <TextView
-                    android:id="@+id/Date"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
                     android:paddingStart="24dp"
-                    android:paddingTop="2dp"
-                    android:paddingEnd="24dp"
-                    android:paddingBottom="6dp"
-                    android:text="@string/date"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textColor="?android:textColorHint"
-                    android:alpha="@fraction/alpha_secondary" />
+                    android:paddingEnd="8dp"
+                    android:paddingVertical="2dp"
+                    >
 
+                    <TextView
+                        android:id="@+id/Date"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:text="@string/date"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?android:textColorHint"
+                        android:alpha="@fraction/alpha_secondary"
+                        android:layout_weight="1"
+                        />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/EditNoteReminderChip"
+                        style="@style/Widget.MaterialComponents.Chip.Action"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:visibility="gone"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:textAppearance="?attr/textAppearanceLabelSmall"
+                        app:textStartPadding="4dp"
+                        app:textEndPadding="4dp"
+                        app:chipMinTouchTargetSize="20dp"
+                        app:chipIcon="@drawable/notifications"
+                        app:chipIconSize="20dp"
+                        app:layout_constraintTop_toBottomOf="@id/Title"
+                        app:layout_constraintStart_toStartOf="parent"
+                        tools:visibility="visible"
+                        tools:text="00/00/0000 00:00"
+                        app:closeIconVisible="false"
+                        app:closeIcon="@drawable/repetition"
+                        app:closeIconSize="16dp"
+                        tools:closeIconVisible="true"
+                        />
+
+                </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/FilesPreview"
