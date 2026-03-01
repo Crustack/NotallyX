@@ -13,6 +13,7 @@ import androidx.core.widget.TextViewCompat
 import com.philkes.notallyx.R
 import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.getColorFromAttr
+import com.philkes.notallyx.presentation.getString
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel
 import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 
@@ -60,6 +61,7 @@ class ActionSelectionBottomSheet(
                         id = View.generateViewId()
                         resetIconId = id
                         setImageResource(R.drawable.undo)
+                        contentDescription = getString(R.string.reset_settings)
                         layoutParams =
                             RelativeLayout.LayoutParams(24.dp, 24.dp).apply {
                                 addRule(RelativeLayout.ALIGN_PARENT_END)

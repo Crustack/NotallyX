@@ -2,6 +2,7 @@ package com.philkes.notallyx.presentation.view.note.action
 
 import androidx.annotation.ColorInt
 import com.philkes.notallyx.data.model.Folder
+import com.philkes.notallyx.presentation.activity.note.NoteActionHandler
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel
 import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 
@@ -9,17 +10,17 @@ import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 class MoreNoteBottomSheet(
     model: NotallyModel,
     @ColorInt color: Int?,
-    handleAction: (EditAction) -> Unit,
+    actionHandler: NoteActionHandler,
     topActions: Collection<EditAction> = listOf(),
     bottomAction: EditAction? = null,
-) : ActionBottomSheet(createActions(model, handleAction, topActions, bottomAction), color) {
+) : ActionBottomSheet(createActions(model, actionHandler, topActions, bottomAction), color) {
 
     companion object {
         const val TAG = "MoreNoteBottomSheet"
 
         internal fun createActions(
             model: NotallyModel,
-            handleAction: (EditAction) -> Unit,
+            actionHandler: NoteActionHandler,
             topActions: Collection<EditAction>,
             bottomAction: EditAction? = null,
         ): List<Action> {
@@ -41,7 +42,7 @@ class MoreNoteBottomSheet(
                         model.type,
                     )
                 Action(title, icon) { _ ->
-                    handleAction(editAction)
+                    actionHandler.handleAction(editAction)
                     true
                 }
             }

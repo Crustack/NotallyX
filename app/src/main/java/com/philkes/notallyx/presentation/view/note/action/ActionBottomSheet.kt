@@ -144,7 +144,7 @@ open class ActionBottomSheet(
 }
 
 data class Action(
-    val labelResId: Int? = null,
+    val labelResId: Int,
     val drawableResId: Int? = null,
     val label: String? = null,
     val showDividerAbove: Boolean = false,

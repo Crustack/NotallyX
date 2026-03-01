@@ -1,6 +1,8 @@
 package com.philkes.notallyx.presentation.view.note.action
 
 import androidx.annotation.ColorInt
+import com.philkes.notallyx.presentation.activity.note.NoteActionHandler
+import com.philkes.notallyx.presentation.activity.note.NoteListActionHandler
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel
 import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 import com.philkes.notallyx.presentation.viewmodel.preference.EditListAction
@@ -9,13 +11,13 @@ import com.philkes.notallyx.presentation.viewmodel.preference.EditListAction
 class MoreListBottomSheet(
     model: NotallyModel,
     @ColorInt color: Int?,
-    handleAction: (EditAction) -> Unit,
-    handleListAction: (EditListAction) -> Unit,
+    actionHandler: NoteActionHandler,
+    listActionHandler: NoteListActionHandler,
     topActions: Collection<EditAction> = listOf(),
     bottomAction: EditAction? = null,
 ) :
     ActionBottomSheet(
-        createActions(model, handleAction, handleListAction, topActions, bottomAction),
+        createActions(model, actionHandler, listActionHandler, topActions, bottomAction),
         color,
     ) {
 
@@ -24,14 +26,14 @@ class MoreListBottomSheet(
 
         private fun createActions(
             model: NotallyModel,
-            handleAction: (EditAction) -> Unit,
-            handleListAction: (EditListAction) -> Unit,
+            actionHandler: NoteActionHandler,
+            listActionHandler: NoteListActionHandler,
             topActions: Collection<EditAction>,
             bottomAction: EditAction? = null,
         ) =
             MoreNoteBottomSheet.createActions(
                 model,
-                handleAction,
+                actionHandler,
                 topActions = topActions,
                 bottomAction = bottomAction,
             ) +
@@ -41,7 +43,7 @@ class MoreListBottomSheet(
                         editAction.drawableResId,
                         showDividerAbove = index == 0,
                     ) { _ ->
-                        handleListAction(editAction)
+                        listActionHandler.handleAction(editAction)
                         true
                     }
                 }

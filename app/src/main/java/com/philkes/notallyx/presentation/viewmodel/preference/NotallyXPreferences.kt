@@ -179,30 +179,14 @@ class NotallyXPreferences private constructor(private val context: Context) {
         )
 
     fun getSafeEditNoteActivityTopActions(): List<EditAction> {
-        val bottomAction = editNoteActivityBottomAction.value
-        return editNoteActivityTopActions.value
-            .let { actions ->
-                if (actions.size != 3) {
-                    editNoteActivityTopActions.save(DEFAULT_EDIT_NOTE_TOP_ACTIONS)
-                    DEFAULT_EDIT_NOTE_TOP_ACTIONS
-                } else {
-                    actions
-                }
+        return editNoteActivityTopActions.value.let { actions ->
+            if (actions.size != 3) {
+                editNoteActivityTopActions.save(DEFAULT_EDIT_NOTE_TOP_ACTIONS)
+                DEFAULT_EDIT_NOTE_TOP_ACTIONS
+            } else {
+                actions
             }
-            .filter { it != bottomAction }
-            .let { actions ->
-                if (actions.size < 3) {
-                    val allActions = EditAction.entries.filter { it != bottomAction }
-                    val newActions = actions.toMutableList()
-                    for (action in allActions) {
-                        if (newActions.size >= 3) break
-                        if (action !in newActions) {
-                            newActions.add(action)
-                        }
-                    }
-                    newActions
-                } else actions
-            }
+        }
     }
 
     /**
@@ -313,6 +297,8 @@ class NotallyXPreferences private constructor(private val context: Context) {
                 autoSaveAfterIdleTime,
                 imagesHiddenInOverview,
                 autoRemoveDeletedNotesAfterDays,
+                editNoteActivityTopActions,
+                editNoteActivityBottomAction,
             )
             .forEach { it.refresh() }
     }

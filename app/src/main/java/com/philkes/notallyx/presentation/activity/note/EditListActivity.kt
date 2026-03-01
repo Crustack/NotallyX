@@ -23,7 +23,6 @@ import com.philkes.notallyx.presentation.view.note.listitem.sorting.ListItemPare
 import com.philkes.notallyx.presentation.view.note.listitem.sorting.SortedItemsList
 import com.philkes.notallyx.presentation.view.note.listitem.splitByChecked
 import com.philkes.notallyx.presentation.view.note.listitem.toMutableList
-import com.philkes.notallyx.presentation.viewmodel.preference.EditListAction
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.autoSortByCheckedEnabled
 import com.philkes.notallyx.utils.findAllOccurrences
@@ -40,6 +39,9 @@ class EditListActivity : EditActivity(Type.LIST) {
 
     private var itemsChecked: SortedItemsList? = null
     private lateinit var listManager: ListManager
+    private val listActionHandler: NoteListActionHandler by lazy {
+        NoteListActionHandler(listManager)
+    }
 
     override fun finish() {
         notallyModel.setItems(items.toMutableList() + (itemsChecked?.toMutableList() ?: listOf()))
@@ -86,26 +88,6 @@ class EditListActivity : EditActivity(Type.LIST) {
             }
     }
 
-    fun handleListAction(action: EditListAction) {
-        when (action) {
-            EditListAction.DELETE_CHECKED -> deleteChecked()
-            EditListAction.CHECK_ALL -> checkAll()
-            EditListAction.UNCHECK_ALL -> uncheckAll()
-        }
-    }
-
-    private fun deleteChecked() {
-        listManager.deleteCheckedItems()
-    }
-
-    private fun checkAll() {
-        listManager.changeCheckedForAll(true)
-    }
-
-    private fun uncheckAll() {
-        listManager.changeCheckedForAll(false)
-    }
-
     override fun openMoreOptionsBottomSheet() {
         val prefs = NotallyXPreferences.getInstance(this@EditListActivity)
         val topActions = prefs.getSafeEditNoteActivityTopActions()
@@ -114,8 +96,8 @@ class EditListActivity : EditActivity(Type.LIST) {
         MoreListBottomSheet(
                 notallyModel,
                 colorInt,
-                ::handleAction,
-                ::handleListAction,
+                actionHandler,
+                listActionHandler,
                 topActions,
                 bottomAction,
             )
