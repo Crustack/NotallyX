@@ -45,7 +45,7 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
     private lateinit var biometricAuthenticationActivityResultLauncher:
         ActivityResultLauncher<Intent>
 
-    protected lateinit var binding: T
+    internal lateinit var binding: T
     protected lateinit var preferences: NotallyXPreferences
     val baseModel: BaseNoteModel by viewModels()
 

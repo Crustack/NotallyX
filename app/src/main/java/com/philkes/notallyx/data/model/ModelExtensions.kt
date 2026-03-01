@@ -1,15 +1,25 @@
 package com.philkes.notallyx.data.model
 
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
+import android.net.Uri
 import android.text.Html
 import android.util.Base64
+import androidx.core.content.IntentCompat
 import androidx.core.text.toHtml
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
 import com.philkes.notallyx.data.dao.NoteIdReminder
 import com.philkes.notallyx.data.imports.markdown.createMarkdownFromBodyAndSpans
 import com.philkes.notallyx.data.model.BaseNote.Companion.COLOR_DEFAULT
 import com.philkes.notallyx.presentation.applySpans
+import com.philkes.notallyx.presentation.showToast
+import com.philkes.notallyx.presentation.viewmodel.NotallyModel
 import com.philkes.notallyx.utils.decodeToBitmap
+import com.philkes.notallyx.utils.getFileName
+import com.philkes.notallyx.utils.getMimeType
+import com.philkes.notallyx.utils.log
 import java.io.File
 import java.text.DateFormat
 import java.text.SimpleDateFormat
@@ -560,3 +570,72 @@ fun ColorString.isValid() =
                 false
             }
     }
+
+data class SharedNote(
+    val title: String,
+    val text: String,
+    val images: List<FileAttachment>,
+    val files: List<FileAttachment>,
+)
+
+fun Intent.generateBaseNote(context: ContextWrapper): SharedNote {
+    val title = getStringExtra(Intent.EXTRA_SUBJECT) ?: data?.let { context.getFileName(it) } ?: ""
+    val intentFiles =
+        IntentCompat.getParcelableArrayListExtra(this, Intent.EXTRA_STREAM, Uri::class.java)
+            ?: IntentCompat.getParcelableExtra(this, Intent.EXTRA_STREAM, Uri::class.java)?.let {
+                listOf(it)
+            }
+    val text =
+        (data?.let { uri ->
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    try {
+                        inputStream.bufferedReader().readText()
+                    } catch (e: Exception) {
+                        context.log(
+                            tag = "",
+                            msg = "Reading text contents from intent failed",
+                            throwable = e,
+                        )
+                        null
+                    }
+                }
+                    ?: run {
+                        context.showToast(R.string.cant_load_file)
+                        null
+                    }
+            } ?: getStringExtra(Intent.EXTRA_TEXT) ?: "")
+            .let {
+                if (it.length > MAX_BODY_CHAR_LENGTH) {
+                    context.showToast(
+                        context.getString(
+                            R.string.note_text_too_long_truncated,
+                            MAX_BODY_CHAR_LENGTH,
+                        )
+                    )
+                }
+                it.take(MAX_BODY_CHAR_LENGTH)
+            }
+    val (images, files) =
+        intentFiles?.let {
+            val filesByType =
+                it.groupBy { uri ->
+                    context.getMimeType(uri)?.let { mimeType ->
+                        if (mimeType.isImageMimeType) {
+                            NotallyModel.FileType.IMAGE
+                        } else {
+                            NotallyModel.FileType.ANY
+                        }
+                    } ?: NotallyModel.FileType.ANY
+                }
+            val images =
+                filesByType[NotallyModel.FileType.IMAGE]?.let { images ->
+                    images.map { FileAttachment("", it.toString(), "") }
+                } ?: listOf()
+            val files =
+                filesByType[NotallyModel.FileType.ANY]?.let { otherFiles ->
+                    otherFiles.map { FileAttachment("", it.toString(), "") }
+                } ?: listOf()
+            Pair(images, files)
+        } ?: Pair(listOf(), listOf())
+    return SharedNote(title, text, images, files = files)
+}

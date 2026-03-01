@@ -164,6 +164,31 @@ class NotallyXPreferences private constructor(private val context: Context) {
     val dataInPublicFolder =
         BooleanPreference("dataOnExternalStorage", preferences, false, R.string.data_in_public)
 
+    val editNoteActivityTopActions =
+        createEnumListPreference(
+            preferences,
+            "editNoteActivityTopActions",
+            DEFAULT_EDIT_NOTE_TOP_ACTIONS,
+        )
+
+    val editNoteActivityBottomAction: EnumPreference<EditAction> =
+        createEnumPreference(
+            preferences,
+            "editNoteActivityBottomAction",
+            DEFAULT_EDIT_NOTE_BOTTOM_ACTION,
+        )
+
+    fun getSafeEditNoteActivityTopActions(): List<EditAction> {
+        return editNoteActivityTopActions.value.let { actions ->
+            if (actions.size != 3) {
+                editNoteActivityTopActions.save(DEFAULT_EDIT_NOTE_TOP_ACTIONS)
+                DEFAULT_EDIT_NOTE_TOP_ACTIONS
+            } else {
+                actions
+            }
+        }
+    }
+
     /**
      * Tracks app-internal data schema/migration steps. 0 = initial state, no migrations run yet See
      * [DataSchemaMigrations.kt]
@@ -272,6 +297,8 @@ class NotallyXPreferences private constructor(private val context: Context) {
                 autoSaveAfterIdleTime,
                 imagesHiddenInOverview,
                 autoRemoveDeletedNotesAfterDays,
+                editNoteActivityTopActions,
+                editNoteActivityBottomAction,
             )
             .forEach { it.refresh() }
     }
@@ -281,6 +308,10 @@ class NotallyXPreferences private constructor(private val context: Context) {
         const val EMPTY_PATH = "emptyPath"
         const val START_VIEW_DEFAULT = ""
         const val START_VIEW_UNLABELED = "com.philkes.notallyx.startview.UNLABELED"
+
+        val DEFAULT_EDIT_NOTE_TOP_ACTIONS =
+            listOf(EditAction.SEARCH, EditAction.REMINDERS, EditAction.PIN)
+        val DEFAULT_EDIT_NOTE_BOTTOM_ACTION = EditAction.TOGGLE_VIEW_MODE
 
         @Volatile private var instance: NotallyXPreferences? = null
 

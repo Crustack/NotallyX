@@ -115,3 +115,19 @@ fun now(): Calendar =
 typealias TimeMillis = Long
 
 fun TimeMillis.secondsBetween(other: TimeMillis): Long = abs(this - other) / 1000
+
+fun <T : Enum<T>> List<T>.serializeEnums(): String {
+    return joinToString(separator = ",") { it.name }
+}
+
+fun <T : Enum<T>> Class<T>.deserializeEnums(data: String): List<T> {
+    if (data.isEmpty()) return emptyList()
+
+    return data.split(",").mapNotNull { name ->
+        try {
+            java.lang.Enum.valueOf(this, name.trim())
+        } catch (e: IllegalArgumentException) {
+            null
+        }
+    }
+}
