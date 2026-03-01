@@ -482,10 +482,10 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
 
     suspend fun refreshOriginalNote() {
         if (id == 0L) return
-        val cachedNote = Cache.list.find { baseNote -> baseNote.id == id }
-        val baseNote = cachedNote ?: withContext(Dispatchers.IO) { baseNoteDao.get(id) }
+        val baseNote = withContext(Dispatchers.IO) { baseNoteDao.get(id) }
         if (baseNote == null) return
         originalNote = baseNote.deepCopy()
+        reminders.value = baseNote.reminders
     }
 
     enum class FileType {
