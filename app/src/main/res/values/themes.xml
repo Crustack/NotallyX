@@ -129,7 +129,7 @@
 
     <style name="ModalBottomSheet" parent="Widget.Material3.BottomSheet.Modal">
         <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.None</item>
-        <item name="behavior_draggable">false</item>
+        <item name="behavior_draggable">true</item>
     </style>
 
     <style name="FloatingActionButtonPrimary" parent="Widget.Material3.FloatingActionButton.Primary">

@@ -6,21 +6,17 @@ import android.content.Intent.ACTION_CREATE_DOCUMENT
 import android.content.Intent.CATEGORY_OPENABLE
 import android.net.Uri
 import android.os.Bundle
-import android.view.MenuItem
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
-import com.davemorrissey.labs.subscaleview.ImageSource.uri
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.presentation.add
 import com.philkes.notallyx.presentation.addIconButton
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.setOnNextAction
@@ -29,8 +25,6 @@ import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.utils.changehistory.ChangeHistory
 import com.philkes.notallyx.utils.findAllOccurrences
 import com.philkes.notallyx.utils.getFileName
-import com.philkes.notallyx.utils.mergeSkipFirst
-import com.philkes.notallyx.utils.observeSkipFirst
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -143,33 +137,9 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
         }
     }
 
-    override fun setupToolbars() {
+    override fun resetToolbars() {
+        super.resetToolbars()
         binding.Toolbar.setNavigationIcon(R.drawable.close)
-        binding.Toolbar.setNavigationOnClickListener { finish() }
-        binding.Toolbar.menu.apply {
-            clear()
-            add(R.string.search, R.drawable.search, MenuItem.SHOW_AS_ACTION_ALWAYS) {
-                startSearch()
-            }
-            // Pin action removed
-        }
-
-        search.results.mergeSkipFirst(search.resultPos).observe(this) { (amount, pos) ->
-            val hasResults = amount > 0
-            binding.SearchResults.text = if (hasResults) "${pos + 1}/$amount" else "0"
-            search.nextMenuItem?.isEnabled = hasResults
-            search.prevMenuItem?.isEnabled = hasResults
-        }
-
-        search.resultPos.observeSkipFirst(this) { pos -> selectSearchResult(pos) }
-
-        binding.EnterSearchKeyword.apply {
-            doAfterTextChanged { text ->
-                this@EditTextPlainActivity.search.query = text.toString()
-                updateSearchResults(this@EditTextPlainActivity.search.query)
-            }
-        }
-        initBottomMenu()
     }
 
     override fun setStateFromModel(savedInstanceState: Bundle?) {

@@ -1,68 +1,51 @@
 package com.philkes.notallyx.presentation.view.note.action
 
 import androidx.annotation.ColorInt
-import com.philkes.notallyx.R
-import com.philkes.notallyx.databinding.BottomSheetActionBinding
-import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
+import com.philkes.notallyx.data.model.Folder
+import com.philkes.notallyx.presentation.activity.note.NoteActionHandler
+import com.philkes.notallyx.presentation.viewmodel.NotallyModel
+import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 
 /** BottomSheet inside list-note for all common note actions. */
 class MoreNoteBottomSheet(
-    callbacks: MoreActions,
-    additionalActions: Collection<Action> = listOf(),
+    model: NotallyModel,
     @ColorInt color: Int?,
-) : ActionBottomSheet(createActions(callbacks, additionalActions), color) {
+    actionHandler: NoteActionHandler,
+    topActions: Collection<EditAction> = listOf(),
+    bottomAction: EditAction? = null,
+) : ActionBottomSheet(createActions(model, actionHandler, topActions, bottomAction), color) {
 
     companion object {
         const val TAG = "MoreNoteBottomSheet"
 
-        internal fun createActions(callbacks: MoreActions, additionalActions: Collection<Action>) =
-            listOf(
-                Action(R.string.share, R.drawable.share) { _ ->
-                    callbacks.share()
+        internal fun createActions(
+            model: NotallyModel,
+            actionHandler: NoteActionHandler,
+            topActions: Collection<EditAction>,
+            bottomAction: EditAction? = null,
+        ): List<Action> {
+            val allPossibleActions = EditAction.entries
+
+            val actionsInBottomSheet =
+                allPossibleActions.filter {
+                    it !in topActions &&
+                        it != bottomAction &&
+                        (it != EditAction.RESTORE || model.folder == Folder.DELETED)
+                }
+
+            return actionsInBottomSheet.map { editAction ->
+                val (title, icon) =
+                    editAction.getTitleAndIcon(
+                        model.pinned,
+                        model.viewMode.value,
+                        model.folder,
+                        model.type,
+                    )
+                Action(title, icon) { _ ->
+                    actionHandler.handleAction(editAction)
                     true
-                },
-                Action(R.string.export, R.drawable.export) { fragment ->
-                    fragment.layout.removeAllViews()
-                    ExportMimeType.entries.forEach { mimeType ->
-                        BottomSheetActionBinding.inflate(fragment.inflater, fragment.layout, true)
-                            .root
-                            .apply {
-                                text = mimeType.name
-                                setCompoundDrawablesWithIntrinsicBounds(null, null, null, null)
-                                setOnClickListener {
-                                    callbacks.export(mimeType)
-                                    fragment.dismiss()
-                                }
-                            }
-                    }
-                    false
-                },
-                Action(R.string.duplicate, R.drawable.content_copy) { _ ->
-                    callbacks.duplicate()
-                    true
-                },
-                Action(R.string.change_color, R.drawable.change_color) { _ ->
-                    callbacks.changeColor()
-                    true
-                },
-                Action(R.string.labels, R.drawable.label) { _ ->
-                    callbacks.changeLabels()
-                    true
-                },
-            ) + additionalActions
+                }
+            }
+        }
     }
-}
-
-interface MoreActions {
-    fun share()
-
-    fun export(mimeType: ExportMimeType)
-
-    fun changeColor()
-
-    fun duplicate()
-
-    fun changeReminders()
-
-    fun changeLabels()
 }

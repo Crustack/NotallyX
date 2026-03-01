@@ -1,6 +1,5 @@
 package com.philkes.notallyx.presentation.activity.note
 
-import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
@@ -10,7 +9,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.Settings
 import android.text.Editable
 import android.text.Spanned
 import android.text.style.URLSpan
@@ -23,14 +21,9 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.VISIBLE
 import android.view.inputmethod.InputMethodManager
-import android.widget.ImageButton
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.ColorInt
-import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
-import androidx.core.content.IntentCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -42,22 +35,15 @@ import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
-import com.philkes.notallyx.data.NotallyDatabase
-import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
-import com.philkes.notallyx.data.model.Audio
-import com.philkes.notallyx.data.model.FileAttachment
-import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.data.model.isImageMimeType
+import com.philkes.notallyx.data.model.generateBaseNote
 import com.philkes.notallyx.databinding.ActivityEditBinding
 import com.philkes.notallyx.presentation.activity.LockedActivity
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.presentation.activity.main.MainActivity.Companion.EXTRA_FRAGMENT_TO_OPEN
 import com.philkes.notallyx.presentation.activity.main.MainActivity.Companion.EXTRA_SKIP_START_VIEW_ON_BACK
 import com.philkes.notallyx.presentation.activity.main.fragment.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
-import com.philkes.notallyx.presentation.activity.note.SelectLabelsActivity.Companion.EXTRA_SELECTED_LABELS
-import com.philkes.notallyx.presentation.activity.note.reminders.RemindersActivity
 import com.philkes.notallyx.presentation.add
 import com.philkes.notallyx.presentation.addFastScroll
 import com.philkes.notallyx.presentation.addIconButton
@@ -73,30 +59,25 @@ import com.philkes.notallyx.presentation.setControlsContrastColorForAllViews
 import com.philkes.notallyx.presentation.setLightStatusAndNavBar
 import com.philkes.notallyx.presentation.setupProgressDialog
 import com.philkes.notallyx.presentation.showKeyboard
-import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
 import com.philkes.notallyx.presentation.view.note.ErrorAdapter
-import com.philkes.notallyx.presentation.view.note.action.Action
-import com.philkes.notallyx.presentation.view.note.action.AddActions
+import com.philkes.notallyx.presentation.view.note.action.ActionSelectionBottomSheet
 import com.philkes.notallyx.presentation.view.note.action.AddBottomSheet
-import com.philkes.notallyx.presentation.view.note.action.MoreActions
 import com.philkes.notallyx.presentation.view.note.action.MoreNoteBottomSheet
 import com.philkes.notallyx.presentation.view.note.audio.AudioAdapter
 import com.philkes.notallyx.presentation.view.note.preview.PreviewFileAdapter
 import com.philkes.notallyx.presentation.view.note.preview.PreviewImageAdapter
-import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
+import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 import com.philkes.notallyx.presentation.viewmodel.preference.ListItemSort
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
 import com.philkes.notallyx.presentation.widget.WidgetProvider
 import com.philkes.notallyx.utils.FileError
-import com.philkes.notallyx.utils.backup.exportNote
 import com.philkes.notallyx.utils.changeStatusAndNavigationBarColor
 import com.philkes.notallyx.utils.changehistory.ChangeHistory
 import com.philkes.notallyx.utils.findWebUrls
-import com.philkes.notallyx.utils.getFileName
-import com.philkes.notallyx.utils.getMimeType
 import com.philkes.notallyx.utils.getUriForFile
 import com.philkes.notallyx.utils.isInLandscapeMode
 import com.philkes.notallyx.utils.log
@@ -112,24 +93,14 @@ import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 
-abstract class EditActivity(private val type: Type) :
-    LockedActivity<ActivityEditBinding>(), AddActions, MoreActions {
+abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEditBinding>() {
     private lateinit var audioAdapter: AudioAdapter
     private lateinit var fileAdapter: PreviewFileAdapter
-    private lateinit var recordAudioActivityResultLauncher: ActivityResultLauncher<Intent>
-    private lateinit var addImagesActivityResultLauncher: ActivityResultLauncher<Intent>
-    private lateinit var viewImagesActivityResultLauncher: ActivityResultLauncher<Intent>
-    private lateinit var selectLabelsActivityResultLauncher: ActivityResultLauncher<Intent>
-    private lateinit var playAudioActivityResultLauncher: ActivityResultLauncher<Intent>
-    private lateinit var attachFilesActivityResultLauncher: ActivityResultLauncher<Intent>
-    private lateinit var exportFileActivityResultLauncher: ActivityResultLauncher<Intent>
-
-    private lateinit var pinMenuItem: MenuItem
     protected var search = Search()
 
     internal val notallyModel: NotallyModel by viewModels()
+    protected val actionHandler: NoteActionHandler by lazy { NoteActionHandler(this, notallyModel) }
 
     internal lateinit var changeHistory: ChangeHistory
     protected var undo: View? = null
@@ -137,10 +108,9 @@ abstract class EditActivity(private val type: Type) :
     protected var jumpToTop: View? = null
     protected var jumpToBottom: View? = null
 
-    protected var colorInt: Int = -1
+    internal var colorInt: Int = -1
     protected var inputMethodManager: InputMethodManager? = null
 
-    protected lateinit var toggleViewMode: ImageButton
     protected val canEdit
         get() = notallyModel.viewMode.value == NoteViewMode.EDIT
 
@@ -172,7 +142,7 @@ abstract class EditActivity(private val type: Type) :
         }
     }
 
-    protected open fun updateModel() {
+    internal open fun updateModel() {
         notallyModel.modifiedTimestamp = System.currentTimeMillis()
     }
 
@@ -193,6 +163,7 @@ abstract class EditActivity(private val type: Type) :
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        actionHandler.setupActivityResultLaunchers()
         inputMethodManager =
             ContextCompat.getSystemService(baseContext, InputMethodManager::class.java)
         notallyModel.type = type
@@ -211,8 +182,8 @@ abstract class EditActivity(private val type: Type) :
             if (notallyModel.isNewNote) {
                 when (intent.action) {
                     Intent.ACTION_SEND,
-                    Intent.ACTION_SEND_MULTIPLE -> handleSharedNote()
-                    Intent.ACTION_VIEW -> handleViewNote()
+                    Intent.ACTION_SEND_MULTIPLE,
+                    Intent.ACTION_VIEW -> handleSharedNote()
                     else ->
                         intent.getStringExtra(EXTRA_DISPLAYED_LABEL)?.let {
                             notallyModel.setLabels(listOf(it))
@@ -220,7 +191,8 @@ abstract class EditActivity(private val type: Type) :
                 }
             }
 
-            setupToolbars()
+            initBottomMenu()
+            resetToolbars()
             setupListeners()
             setStateFromModel(savedInstanceState)
 
@@ -230,8 +202,6 @@ abstract class EditActivity(private val type: Type) :
                 addFastScroll(this@EditActivity)
             }
         }
-
-        setupActivityResultLaunchers()
 
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             try {
@@ -332,107 +302,12 @@ abstract class EditActivity(private val type: Type) :
         super.onDestroy()
     }
 
-    protected fun resetIdleTimer() {
+    internal fun resetIdleTimer() {
         autoSaveHandler.removeCallbacks(autoSaveRunnable)
         val idleTime = preferences.autoSaveAfterIdleTime.value
         if (idleTime > -1) {
             autoSaveHandler.postDelayed(autoSaveRunnable, idleTime.toLong() * 1000)
         }
-    }
-
-    private fun setupActivityResultLaunchers() {
-        recordAudioActivityResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    notallyModel.addAudio()
-                }
-            }
-        addImagesActivityResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    val uri = result.data?.data
-                    val clipData = result.data?.clipData
-                    if (uri != null) {
-                        val uris = arrayOf(uri)
-                        notallyModel.addImages(uris)
-                    } else if (clipData != null) {
-                        val uris =
-                            Array(clipData.itemCount) { index -> clipData.getItemAt(index).uri }
-                        notallyModel.addImages(uris)
-                    }
-                }
-            }
-        viewImagesActivityResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    val list =
-                        result.data?.let {
-                            IntentCompat.getParcelableArrayListExtra(
-                                it,
-                                ViewImageActivity.EXTRA_DELETED_IMAGES,
-                                FileAttachment::class.java,
-                            )
-                        }
-                    if (!list.isNullOrEmpty()) {
-                        notallyModel.deleteImages(list)
-                    }
-                }
-            }
-        selectLabelsActivityResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    val list = result.data?.getStringArrayListExtra(EXTRA_SELECTED_LABELS)
-                    if (list != null && list != notallyModel.labels) {
-                        notallyModel.setLabels(list)
-                        binding.LabelGroup.bindLabels(
-                            notallyModel.labels,
-                            notallyModel.textSize,
-                            paddingTop = true,
-                            colorInt,
-                        )
-                        resetIdleTimer()
-                    }
-                }
-            }
-        playAudioActivityResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    val audio =
-                        result.data?.let {
-                            IntentCompat.getParcelableExtra(
-                                it,
-                                PlayAudioActivity.EXTRA_AUDIO,
-                                Audio::class.java,
-                            )
-                        }
-                    if (audio != null) {
-                        notallyModel.deleteAudio(audio)
-                    }
-                }
-            }
-        attachFilesActivityResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    val uri = result.data?.data
-                    val clipData = result.data?.clipData
-                    if (uri != null) {
-                        val uris = arrayOf(uri)
-                        notallyModel.addFiles(uris)
-                    } else if (clipData != null) {
-                        val uris =
-                            Array(clipData.itemCount) { index -> clipData.getItemAt(index).uri }
-                        notallyModel.addFiles(uris)
-                    }
-                }
-            }
-        exportFileActivityResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    result.data?.data?.let { uri ->
-                        baseModel.exportNoteToFile(uri, notallyModel.getBaseNote(), binding.root)
-                    }
-                }
-            }
     }
 
     override fun onRequestPermissionsResult(
@@ -447,8 +322,8 @@ abstract class EditActivity(private val type: Type) :
                     grantResults.isNotEmpty() &&
                         grantResults[0] == PackageManager.PERMISSION_GRANTED
                 ) {
-                    startRecordAudioActivity()
-                } else handleRejection()
+                    actionHandler.startRecordAudioActivity()
+                } else actionHandler.handleRejection()
             }
         }
     }
@@ -462,39 +337,55 @@ abstract class EditActivity(private val type: Type) :
             }
     }
 
-    protected open fun setupToolbars() {
-        binding.Toolbar.setNavigationOnClickListener { finish() }
-        binding.Toolbar.menu.apply {
-            clear() // TODO: needed?
-            add(R.string.search, R.drawable.search, MenuItem.SHOW_AS_ACTION_ALWAYS) {
-                startSearch()
-            }
-            if (notallyModel.folder == Folder.NOTES) {
-                add(R.string.reminders, R.drawable.notifications, MenuItem.SHOW_AS_ACTION_ALWAYS) {
-                    changeReminders()
+    fun finishAfterDeleteForever() = super.finish()
+
+    private fun showActionSelectionDialog(oldAction: EditAction, isBottomBar: Boolean = false) {
+        val actions = EditAction.entries.filter { it != EditAction.RESTORE }
+        ActionSelectionBottomSheet(
+                actions,
+                notallyModel,
+                oldAction,
+                title = getString(R.string.swap_action),
+                onReset = {
+                    val prefs = NotallyXPreferences.getInstance(this)
+                    if (isBottomBar) {
+                        prefs.editNoteActivityBottomAction.save(
+                            NotallyXPreferences.DEFAULT_EDIT_NOTE_BOTTOM_ACTION
+                        )
+                    } else {
+                        val currentActions = prefs.editNoteActivityTopActions.value.toMutableList()
+                        val index = currentActions.indexOf(oldAction)
+                        if (
+                            index != -1 &&
+                                index < NotallyXPreferences.DEFAULT_EDIT_NOTE_TOP_ACTIONS.size
+                        ) {
+                            currentActions[index] =
+                                NotallyXPreferences.DEFAULT_EDIT_NOTE_TOP_ACTIONS[index]
+                            prefs.editNoteActivityTopActions.save(currentActions)
+                        }
+                    }
+                },
+                colorInt,
+            ) { newAction ->
+                val prefs = NotallyXPreferences.getInstance(this)
+                if (isBottomBar) {
+                    prefs.editNoteActivityBottomAction.save(newAction)
+                } else {
+                    val currentActions = prefs.getSafeEditNoteActivityTopActions().toMutableList()
+                    val index = currentActions.indexOf(oldAction)
+                    if (index != -1) {
+                        currentActions[index] = newAction
+                        prefs.editNoteActivityTopActions.save(currentActions)
+                    }
                 }
             }
-            pinMenuItem =
-                add(R.string.pin, R.drawable.pin, MenuItem.SHOW_AS_ACTION_ALWAYS) { pin() }
-            bindPinned()
-        }
+            .show(supportFragmentManager, ActionSelectionBottomSheet.TAG)
+    }
 
-        search.results.mergeSkipFirst(search.resultPos).observe(this) { (amount, pos) ->
-            val hasResults = amount > 0
-            binding.SearchResults.text = if (hasResults) "${pos + 1}/$amount" else "0"
-            search.nextMenuItem?.isEnabled = hasResults
-            search.prevMenuItem?.isEnabled = hasResults
-        }
-
-        search.resultPos.observeSkipFirst(this) { pos -> selectSearchResult(pos) }
-
-        binding.EnterSearchKeyword.apply {
-            doAfterTextChanged { text ->
-                this@EditActivity.search.query = text.toString()
-                updateSearchResults(this@EditActivity.search.query)
-            }
-        }
-        initBottomMenu()
+    protected open fun resetToolbars() {
+        binding.Toolbar.setNavigationOnClickListener { finish() }
+        updateTopActions(preferences.getSafeEditNoteActivityTopActions())
+        updateBottomActions(preferences.editNoteActivityBottomAction.value)
     }
 
     protected fun updateSearchResults(query: String) {
@@ -522,7 +413,7 @@ abstract class EditActivity(private val type: Type) :
 
     private var navigationIconBeforeSearch: Drawable? = null
 
-    protected fun startSearch() {
+    fun startSearch() {
         binding.Toolbar.apply {
             menu.clear()
             search.nextMenuItem =
@@ -592,7 +483,7 @@ abstract class EditActivity(private val type: Type) :
             visibility = GONE
             text = ""
         }
-        setupToolbars()
+        resetToolbars()
         binding.Toolbar.navigationIcon = navigationIconBeforeSearch
         binding.Toolbar.setControlsContrastColorForAllViews(colorInt, overwriteBackground = false)
     }
@@ -601,7 +492,7 @@ abstract class EditActivity(private val type: Type) :
         binding.BottomAppBarLeft.apply {
             removeAllViews()
             addIconButton(R.string.adding_files, R.drawable.add, marginStart = 0) {
-                AddBottomSheet(this@EditActivity, colorInt)
+                AddBottomSheet(actionHandler, colorInt)
                     .show(supportFragmentManager, AddBottomSheet.TAG)
             }
         }
@@ -679,106 +570,52 @@ abstract class EditActivity(private val type: Type) :
                 }
             updateJumpButtonsVisibility()
         }
-        binding.BottomAppBarRight.apply {
-            removeAllViews()
-
-            addToggleViewMode()
-            addIconButton(R.string.tap_for_more_options, R.drawable.more_vert, marginStart = 0) {
-                MoreNoteBottomSheet(
-                        this@EditActivity,
-                        createNoteTypeActions() + createFolderActions(),
-                        colorInt,
-                    )
-                    .show(supportFragmentManager, MoreNoteBottomSheet.TAG)
-            }
-        }
+        updateBottomActions(preferences.editNoteActivityBottomAction.value)
         setBottomAppBarColor(colorInt)
     }
 
-    protected fun ViewGroup.addToggleViewMode() {
-        toggleViewMode =
-            addIconButton(R.string.edit, R.drawable.visibility) {
-                notallyModel.viewMode.value =
-                    when (notallyModel.viewMode.value) {
-                        NoteViewMode.EDIT -> NoteViewMode.READ_ONLY
-                        NoteViewMode.READ_ONLY -> NoteViewMode.EDIT
-                    }
-            }
+    protected open fun openMoreOptionsBottomSheet() {
+        val prefs = NotallyXPreferences.getInstance(this@EditActivity)
+        val topActions = prefs.getSafeEditNoteActivityTopActions()
+        val bottomAction = prefs.editNoteActivityBottomAction.value
+
+        MoreNoteBottomSheet(notallyModel, colorInt, actionHandler, topActions, bottomAction)
+            .show(supportFragmentManager, MoreNoteBottomSheet.TAG)
     }
 
-    protected fun createFolderActions() =
-        when (notallyModel.folder) {
-            Folder.NOTES ->
-                listOf(
-                    Action(R.string.archive, R.drawable.archive) { _ ->
-                        archive()
-                        true
-                    },
-                    Action(R.string.delete, R.drawable.delete) { _ ->
-                        delete()
-                        true
-                    },
-                )
+    private fun updateBottomActions(bottomAction: EditAction) {
+        binding.BottomAppBarRight.apply {
+            removeAllViews()
 
-            Folder.DELETED ->
-                listOf(
-                    Action(R.string.delete_forever, R.drawable.delete) { _ ->
-                        deleteForever()
-                        true
-                    },
-                    Action(R.string.restore, R.drawable.restore) { _ ->
-                        restore()
-                        true
-                    },
-                )
-
-            Folder.ARCHIVED ->
-                listOf(
-                    Action(R.string.delete, R.drawable.delete) { _ ->
-                        delete()
-                        true
-                    },
-                    Action(R.string.unarchive, R.drawable.unarchive) { _ ->
-                        restore()
-                        true
-                    },
-                )
+            addBottomAction(bottomAction)
+            addIconButton(R.string.tap_for_more_options, R.drawable.more_vert, marginStart = 0) {
+                openMoreOptionsBottomSheet()
+            }
         }
+    }
 
-    protected fun createNoteTypeActions() =
-        when (notallyModel.type) {
-            Type.NOTE ->
-                listOf(
-                    Action(R.string.convert_to_list_note, R.drawable.convert_to_text) { _ ->
-                        convertTo(Type.LIST)
-                        true
-                    }
-                )
-            Type.LIST ->
-                listOf(
-                    Action(R.string.convert_to_text_note, R.drawable.convert_to_text) { _ ->
-                        convertTo(Type.NOTE)
-                        true
-                    }
-                )
-        }
+    fun ViewGroup.addBottomAction(action: EditAction) {
+        val (title, icon) =
+            action.getTitleAndIcon(
+                notallyModel.pinned,
+                notallyModel.viewMode.value,
+                notallyModel.folder,
+                notallyModel.type,
+            )
+        val button = addIconButton(title, icon) { actionHandler.handleAction(action) }
 
-    private fun convertTo(type: Type) {
-        updateModel()
-        lifecycleScope.launch {
-            notallyModel.convertTo(type)
-            val intent =
-                Intent(
-                    this@EditActivity,
-                    when (type) {
-                        Type.NOTE -> EditNoteActivity::class.java
-                        Type.LIST -> EditListActivity::class.java
-                    },
-                )
-            intent.putExtra(EXTRA_SELECTED_BASE_NOTE, notallyModel.id)
-            startActivity(intent)
-            finish()
+        // Try to get the view for long click
+        post {
+            button.setOnLongClickListener {
+                showActionSelectionDialog(action, isBottomBar = true)
+                true
+            }
         }
+    }
+
+    fun updateToggleViewMode() {
+        updateTopActions(preferences.editNoteActivityTopActions.value)
+        updateBottomActions(preferences.editNoteActivityBottomAction.value)
     }
 
     abstract fun configureUI()
@@ -788,28 +625,35 @@ abstract class EditActivity(private val type: Type) :
             notallyModel.title = text.trim().toString()
         }
         notallyModel.viewMode.observe(this) { value ->
-            toggleViewMode.apply {
-                setImageResource(
-                    when (value) {
-                        NoteViewMode.READ_ONLY -> R.drawable.edit
-                        else -> R.drawable.visibility
-                    }
-                )
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    tooltipText =
-                        getString(
-                            when (value) {
-                                NoteViewMode.READ_ONLY -> R.string.edit
-                                else -> R.string.read_only
-                            }
-                        )
-                }
-            }
+            updateToggleViewMode()
             value?.let { toggleCanEdit(it) }
         }
         val textMaxLengthFilter = application.textMaxLengthFilter()
         binding.EnterTitle.filters = textMaxLengthFilter
         binding.EnterBody.filters = textMaxLengthFilter
+
+        search.results.mergeSkipFirst(search.resultPos).observe(this) { (amount, pos) ->
+            val hasResults = amount > 0
+            binding.SearchResults.text = if (hasResults) "${pos + 1}/$amount" else "0"
+            search.nextMenuItem?.isEnabled = hasResults
+            search.prevMenuItem?.isEnabled = hasResults
+        }
+
+        search.resultPos.observeSkipFirst(this) { pos -> selectSearchResult(pos) }
+
+        binding.EnterSearchKeyword.apply {
+            doAfterTextChanged { text ->
+                this@EditActivity.search.query = text.toString()
+                updateSearchResults(this@EditActivity.search.query)
+            }
+        }
+
+        preferences.editNoteActivityTopActions.observe(this) { topActions ->
+            updateTopActions(topActions)
+        }
+        preferences.editNoteActivityBottomAction.observe(this) { bottomAction ->
+            updateBottomActions(bottomAction)
+        }
     }
 
     open fun setStateFromModel(savedInstanceState: Bundle?) {
@@ -860,256 +704,23 @@ abstract class EditActivity(private val type: Type) :
     }
 
     private fun handleSharedNote() {
-        val title = intent.getStringExtra(Intent.EXTRA_SUBJECT)
-        val string = intent.getStringExtra(Intent.EXTRA_TEXT)
-        val files =
-            IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
-                ?: IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
-                    ?.let { listOf(it) }
-        if (string != null) {
-            if (string.length > MAX_BODY_CHAR_LENGTH) {
-                showToast(getString(R.string.note_text_too_long_truncated, MAX_BODY_CHAR_LENGTH))
-            }
-            val text = string.take(MAX_BODY_CHAR_LENGTH)
-            val editable =
-                Editable.Factory.getInstance().newEditable(text).apply {
+        val baseNote = intent.generateBaseNote(this)
+        notallyModel.apply {
+            body =
+                Editable.Factory.getInstance().newEditable(baseNote.text).apply {
                     findWebUrls().forEach { (urlStart, urlEnd) ->
                         setSpan(
-                            URLSpan(text.substring(urlStart, urlEnd)),
+                            URLSpan(baseNote.text.substring(urlStart, urlEnd)),
                             urlStart,
                             urlEnd,
                             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
                         )
                     }
                 }
-            notallyModel.body = editable
+            title = baseNote.title
+            addImages(baseNote.images.map { Uri.parse(it.originalName) }.toTypedArray())
+            addFiles(baseNote.files.map { Uri.parse(it.originalName) }.toTypedArray())
         }
-        if (title != null) {
-            notallyModel.title = title
-        }
-        files?.let {
-            val filesByType =
-                it.groupBy { uri ->
-                    getMimeType(uri)?.let { mimeType ->
-                        if (mimeType.isImageMimeType) {
-                            NotallyModel.FileType.IMAGE
-                        } else {
-                            NotallyModel.FileType.ANY
-                        }
-                    } ?: NotallyModel.FileType.ANY
-                }
-            filesByType[NotallyModel.FileType.IMAGE]?.let { images ->
-                notallyModel.addImages(images.toTypedArray())
-            }
-            filesByType[NotallyModel.FileType.ANY]?.let { otherFiles ->
-                notallyModel.addFiles(otherFiles.toTypedArray())
-            }
-        }
-    }
-
-    private fun handleViewNote() {
-        val text =
-            intent.data?.let { uri ->
-                contentResolver.openInputStream(uri)?.use { inputStream ->
-                    inputStream.bufferedReader().readText()
-                }
-                    ?: run {
-                        showToast(R.string.cant_load_file)
-                        null
-                    }
-            } ?: intent.getStringExtra(Intent.EXTRA_TEXT)
-        val title =
-            intent.getStringExtra(Intent.EXTRA_SUBJECT) ?: intent.data?.let { getFileName(it) }
-        if (text != null) {
-            if (text.length > MAX_BODY_CHAR_LENGTH) {
-                showToast(getString(R.string.note_text_too_long_truncated, MAX_BODY_CHAR_LENGTH))
-            }
-            notallyModel.body =
-                Editable.Factory.getInstance().newEditable(text.take(MAX_BODY_CHAR_LENGTH))
-        }
-        if (title != null) {
-            notallyModel.title = title
-        }
-    }
-
-    @RequiresApi(24)
-    override fun recordAudio() {
-        val permission = Manifest.permission.RECORD_AUDIO
-        if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-            if (shouldShowRequestPermissionRationale(permission)) {
-                MaterialAlertDialogBuilder(this)
-                    .setMessage(R.string.please_grant_notally_audio)
-                    .setCancelButton()
-                    .setPositiveButton(R.string.continue_) { _, _ ->
-                        requestPermissions(arrayOf(permission), REQUEST_AUDIO_PERMISSION)
-                    }
-                    .show()
-            } else requestPermissions(arrayOf(permission), REQUEST_AUDIO_PERMISSION)
-        } else startRecordAudioActivity()
-    }
-
-    private fun startRecordAudioActivity() {
-        if (notallyModel.audioRoot != null) {
-            val intent = Intent(this, RecordAudioActivity::class.java)
-            recordAudioActivityResultLauncher.launch(intent)
-        } else showToast(R.string.insert_an_sd_card_audio)
-    }
-
-    private fun handleRejection() {
-        MaterialAlertDialogBuilder(this)
-            .setMessage(R.string.to_record_audio)
-            .setCancelButton()
-            .setPositiveButton(R.string.settings) { _, _ ->
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                intent.data = Uri.parse("package:${packageName}")
-                startActivity(intent)
-            }
-            .show()
-    }
-
-    override fun addImages() {
-        if (notallyModel.imageRoot != null) {
-            val intent =
-                Intent(Intent.ACTION_GET_CONTENT)
-                    .apply {
-                        type = "image/*"
-                        putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-                        putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                        addCategory(Intent.CATEGORY_OPENABLE)
-                    }
-                    .wrapWithChooser(this)
-            addImagesActivityResultLauncher.launch(intent)
-        } else showToast(R.string.insert_an_sd_card_images)
-    }
-
-    override fun attachFiles() {
-        if (notallyModel.filesRoot != null) {
-            val intent =
-                Intent(Intent.ACTION_GET_CONTENT)
-                    .apply {
-                        type = "*/*"
-                        putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-                        putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                        addCategory(Intent.CATEGORY_OPENABLE)
-                    }
-                    .wrapWithChooser(this)
-            attachFilesActivityResultLauncher.launch(intent)
-        } else showToast(R.string.insert_an_sd_card_files)
-    }
-
-    override fun changeColor() {
-        lifecycleScope.launch {
-            val colors =
-                withContext(Dispatchers.IO) {
-                        NotallyDatabase.getDatabase(this@EditActivity, observePreferences = false)
-                            .value
-                            .getBaseNoteDao()
-                            .getAllColors()
-                    }
-                    .toMutableList()
-            if (colors.none { it == notallyModel.color }) {
-                colors.add(notallyModel.color)
-            }
-            showColorSelectDialog(
-                colors,
-                notallyModel.color,
-                colorInt.isLightColor(),
-                { selectedColor, oldColor ->
-                    if (oldColor != null) {
-                        baseModel.changeColor(oldColor, selectedColor)
-                    }
-                    notallyModel.color = selectedColor
-                    setColor()
-                    resetIdleTimer()
-                },
-            ) { colorToDelete, newColor ->
-                baseModel.changeColor(colorToDelete, newColor)
-                if (colorToDelete == notallyModel.color) {
-                    notallyModel.color = newColor
-                    setColor()
-                }
-                resetIdleTimer()
-            }
-        }
-    }
-
-    override fun duplicate() {
-        lifecycleScope.launch {
-            saveNote(true)
-            val duplicateId = baseModel.duplicateNote(notallyModel.getBaseNote())
-            openNote(duplicateId, notallyModel.type, clearBackStack = true)
-        }
-    }
-
-    override fun changeReminders() {
-        lifecycleScope.launch {
-            val noteId =
-                if (notallyModel.id != 0L) {
-                    notallyModel.id
-                } else {
-                    notallyModel.id = saveNote(false)
-                    notallyModel.id
-                }
-            val intent = Intent(this@EditActivity, RemindersActivity::class.java)
-            intent.putExtra(RemindersActivity.NOTE_ID, noteId)
-            startActivity(intent)
-        }
-    }
-
-    override fun changeLabels() {
-        val intent = Intent(this, SelectLabelsActivity::class.java)
-        intent.putStringArrayListExtra(EXTRA_SELECTED_LABELS, notallyModel.labels)
-        selectLabelsActivityResultLauncher.launch(intent)
-    }
-
-    override fun share() {
-        this.shareNote(notallyModel.getBaseNote())
-    }
-
-    override fun export(mimeType: ExportMimeType) {
-        exportNote(notallyModel.getBaseNote(), mimeType, exportFileActivityResultLauncher)
-    }
-
-    private fun delete() {
-        moveNote(Folder.DELETED)
-    }
-
-    private fun restore() {
-        moveNote(Folder.NOTES)
-    }
-
-    private fun archive() {
-        moveNote(Folder.ARCHIVED)
-    }
-
-    private fun moveNote(toFolder: Folder) {
-        val resultIntent =
-            Intent().apply {
-                putExtra(EXTRA_NOTE_ID, notallyModel.id)
-                putExtra(EXTRA_FOLDER_FROM, notallyModel.folder.name)
-                putExtra(EXTRA_FOLDER_TO, toFolder.name)
-            }
-        notallyModel.folder = toFolder
-        setResult(RESULT_OK, resultIntent)
-        finish()
-    }
-
-    private fun deleteForever() {
-        MaterialAlertDialogBuilder(this)
-            .setMessage(R.string.delete_note_forever)
-            .setPositiveButton(R.string.delete) { _, _ ->
-                lifecycleScope.launch {
-                    notallyModel.deleteBaseNote()
-                    super.finish()
-                }
-            }
-            .setCancelButton()
-            .show()
-    }
-
-    fun pin() {
-        notallyModel.pinned = !notallyModel.pinned
-        bindPinned()
     }
 
     private fun setupImages() {
@@ -1120,7 +731,7 @@ abstract class EditActivity(private val type: Type) :
                         putExtra(ViewImageActivity.EXTRA_POSITION, position)
                         putExtra(EXTRA_SELECTED_BASE_NOTE, notallyModel.id)
                     }
-                viewImagesActivityResultLauncher.launch(intent)
+                actionHandler.viewImagesActivityResultLauncher.launch(intent)
             }
 
         imageAdapter.registerAdapterDataObserver(
@@ -1245,7 +856,7 @@ abstract class EditActivity(private val type: Type) :
                 val audio = notallyModel.audios.value[position]
                 val intent = Intent(this, PlayAudioActivity::class.java)
                 intent.putExtra(PlayAudioActivity.EXTRA_AUDIO, audio)
-                playAudioActivityResultLauncher.launch(intent)
+                actionHandler.playAudioActivityResultLauncher.launch(intent)
             }
         }
         binding.AudioRecyclerView.adapter = audioAdapter
@@ -1257,7 +868,7 @@ abstract class EditActivity(private val type: Type) :
         }
     }
 
-    protected open fun setColor() {
+    open fun setColor() {
         colorInt = extractColor(notallyModel.color)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             changeStatusAndNavigationBarColor(colorInt)
@@ -1275,8 +886,8 @@ abstract class EditActivity(private val type: Type) :
             Toolbar.setControlsContrastColorForAllViews(colorInt)
         }
         setBottomAppBarColor(colorInt)
-        fileAdapter.setColor(colorInt)
-        audioAdapter.setColor(colorInt)
+        if (::fileAdapter.isInitialized) fileAdapter.setColor(colorInt)
+        if (::audioAdapter.isInitialized) audioAdapter.setColor(colorInt)
     }
 
     protected fun setBottomAppBarColor(@ColorInt color: Int) {
@@ -1323,19 +934,34 @@ abstract class EditActivity(private val type: Type) :
         binding.root.isSaveFromParentEnabled = false
     }
 
-    private fun bindPinned() {
-        val icon: Int
-        val title: Int
-        if (notallyModel.pinned) {
-            icon = R.drawable.unpin
-            title = R.string.unpin
-        } else {
-            icon = R.drawable.pin
-            title = R.string.pin
-        }
-        pinMenuItem.apply {
-            setTitle(title)
-            setIcon(icon)
+    fun bindPinned() {
+        updateTopActions(preferences.editNoteActivityTopActions.value)
+        updateBottomActions(preferences.editNoteActivityBottomAction.value)
+    }
+
+    private fun updateTopActions(topActions: List<EditAction>) {
+        binding.Toolbar.menu.apply {
+            clear()
+            topActions.forEach { action ->
+                val (title, icon) =
+                    action.getTitleAndIcon(
+                        notallyModel.pinned,
+                        notallyModel.viewMode.value,
+                        notallyModel.folder,
+                        notallyModel.type,
+                    )
+                val menuItem =
+                    add(title, icon, MenuItem.SHOW_AS_ACTION_ALWAYS, itemId = action.itemId) {
+                        actionHandler.handleAction(action)
+                    }
+                // Try to get the view for long click
+                binding.Toolbar.post {
+                    findViewById<View>(menuItem.itemId)?.setOnLongClickListener {
+                        showActionSelectionDialog(action)
+                        true
+                    }
+                }
+            }
         }
     }
 
@@ -1349,9 +975,10 @@ abstract class EditActivity(private val type: Type) :
 
     companion object {
         private const val TAG = "EditActivity"
-        private const val REQUEST_AUDIO_PERMISSION = 36
+        const val REQUEST_AUDIO_PERMISSION = 36
 
         const val EXTRA_SELECTED_BASE_NOTE = "notallyx.intent.extra.SELECTED_BASE_NOTE"
+        const val EXTRA_SELECTED_LABELS = "notallyx.intent.extra.SELECTED_LABELS"
         const val EXTRA_NOTE_ID = "notallyx.intent.extra.NOTE_ID"
         const val EXTRA_FOLDER_FROM = "notallyx.intent.extra.FOLDER_FROM"
         const val EXTRA_FOLDER_TO = "notallyx.intent.extra.FOLDER_TO"

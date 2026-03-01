@@ -1,45 +1,51 @@
 package com.philkes.notallyx.presentation.view.note.action
 
 import androidx.annotation.ColorInt
-import com.philkes.notallyx.R
+import com.philkes.notallyx.presentation.activity.note.NoteActionHandler
+import com.philkes.notallyx.presentation.activity.note.NoteListActionHandler
+import com.philkes.notallyx.presentation.viewmodel.NotallyModel
+import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
+import com.philkes.notallyx.presentation.viewmodel.preference.EditListAction
 
 /** BottomSheet inside list-note for all common note actions and list-item actions. */
 class MoreListBottomSheet(
-    callbacks: MoreListActions,
-    additionalActions: Collection<Action> = listOf(),
+    model: NotallyModel,
     @ColorInt color: Int?,
-) : ActionBottomSheet(createActions(callbacks, additionalActions), color) {
+    actionHandler: NoteActionHandler,
+    listActionHandler: NoteListActionHandler,
+    topActions: Collection<EditAction> = listOf(),
+    bottomAction: EditAction? = null,
+) :
+    ActionBottomSheet(
+        createActions(model, actionHandler, listActionHandler, topActions, bottomAction),
+        color,
+    ) {
 
     companion object {
         const val TAG = "MoreListBottomSheet"
 
-        private fun createActions(callbacks: MoreListActions, actions: Collection<Action>) =
-            MoreNoteBottomSheet.createActions(callbacks, actions) +
-                listOf(
+        private fun createActions(
+            model: NotallyModel,
+            actionHandler: NoteActionHandler,
+            listActionHandler: NoteListActionHandler,
+            topActions: Collection<EditAction>,
+            bottomAction: EditAction? = null,
+        ) =
+            MoreNoteBottomSheet.createActions(
+                model,
+                actionHandler,
+                topActions = topActions,
+                bottomAction = bottomAction,
+            ) +
+                EditListAction.entries.mapIndexed { index, editAction ->
                     Action(
-                        R.string.delete_checked_items,
-                        R.drawable.delete_all,
-                        showDividerAbove = true,
+                        editAction.textResId,
+                        editAction.drawableResId,
+                        showDividerAbove = index == 0,
                     ) { _ ->
-                        callbacks.deleteChecked()
+                        listActionHandler.handleAction(editAction)
                         true
-                    },
-                    Action(R.string.check_all_items, R.drawable.checkbox_checked) { _ ->
-                        callbacks.checkAll()
-                        true
-                    },
-                    Action(R.string.uncheck_all_items, R.drawable.checkbox_unchecked) { _ ->
-                        callbacks.uncheckAll()
-                        true
-                    },
-                )
+                    }
+                }
     }
-}
-
-interface MoreListActions : MoreActions {
-    fun deleteChecked()
-
-    fun checkAll()
-
-    fun uncheckAll()
 }
