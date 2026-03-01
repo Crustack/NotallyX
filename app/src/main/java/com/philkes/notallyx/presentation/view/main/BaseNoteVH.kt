@@ -23,6 +23,7 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.ListItem
+import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.findNextNotificationDate
@@ -419,6 +420,8 @@ class BaseNoteVH(
         binding.ReminderChip.apply {
             visibility = VISIBLE
             text = mostRecentNotificationDate.format()
+            setCloseIconVisible(haveAnyRepetition(baseNote.reminders))
+            setChipBackgroundColorResource(R.color.md_theme_secondaryContainer)
             val isElapsed = mostRecentNotificationDate < now
             alpha = if (isElapsed) 0.5f else 1.0f
             paintFlags =
@@ -426,4 +429,7 @@ class BaseNoteVH(
                 else paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
         }
     }
+
+    private fun haveAnyRepetition(reminders: List<Reminder>) =
+        reminders.any { it.repetition != null }
 }

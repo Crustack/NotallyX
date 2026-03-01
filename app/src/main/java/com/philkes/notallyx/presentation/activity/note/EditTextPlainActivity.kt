@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.Intent.ACTION_CREATE_DOCUMENT
 import android.content.Intent.CATEGORY_OPENABLE
-import android.content.Intent.EXTRA_TITLE
 import android.net.Uri
 import android.os.Bundle
 import android.view.MenuItem
@@ -12,14 +11,15 @@ import android.view.View.GONE
 import android.view.View.VISIBLE
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat.startActivity
 import androidx.core.widget.doAfterTextChanged
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
+import com.davemorrissey.labs.subscaleview.ImageSource.uri
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
 import com.philkes.notallyx.presentation.add
 import com.philkes.notallyx.presentation.addIconButton
 import com.philkes.notallyx.presentation.setCancelButton
@@ -44,20 +44,20 @@ import kotlinx.coroutines.withContext
 class EditTextPlainActivity : EditActivity(Type.NOTE) {
 
     private var searchResultIndices: List<Pair<Int, Int>>? = null
-    private lateinit var exportFileActivityResultLauncher: ActivityResultLauncher<Intent>
-    private var originalFileUri: Uri? = null
+    private lateinit var saveAsActivityResultLauncher: ActivityResultLauncher<Intent>
+    private var originalFileUri: MutableLiveData<Uri?> = MutableLiveData(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Store the original URI if this is a txt file being opened
         if (intent.action == Intent.ACTION_VIEW && intent.data != null) {
-            originalFileUri = intent.data
+            originalFileUri.value = intent.data
         }
         setupActivityResultLaunchers()
         super.onCreate(savedInstanceState)
     }
 
     private fun setupActivityResultLaunchers() {
-        exportFileActivityResultLauncher =
+        saveAsActivityResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
                     result.data?.data?.let { uri -> saveToUri(uri) }
@@ -69,14 +69,19 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
 
     override fun configureUI() {
         // Set the file name as the title and make it non-editable
-        originalFileUri?.let { uri ->
-            val fileName = getFileName(uri)
-            if (!fileName.isNullOrEmpty()) {
-                notallyModel.title = fileName
-                binding.EnterTitle.setText(fileName)
-                binding.EnterTitle.isEnabled = false
-            }
-        }
+        originalFileUri.observe(
+            this,
+            Observer { uri ->
+                uri?.let {
+                    val fileName = getFileName(it)
+                    if (!fileName.isNullOrEmpty()) {
+                        notallyModel.title = fileName
+                        binding.EnterTitle.setText(fileName)
+                        binding.EnterTitle.isEnabled = false
+                    }
+                }
+            },
+        )
 
         binding.EnterTitle.setOnNextAction { binding.EnterBody.requestFocus() }
 
@@ -201,19 +206,16 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
         }
         binding.BottomAppBarRight.apply {
             removeAllViews()
-            addIconButton(R.string.save_to_device, R.drawable.save, marginStart = 10) {
+            addIconButton(R.string.save, R.drawable.save, marginStart = 10) {
+                originalFileUri.value?.let { uri -> saveToUri(uri) }
+            }
+            addIconButton(R.string.save_to_device, R.drawable.save_as, marginStart = 10) {
                 val intent =
                     Intent(ACTION_CREATE_DOCUMENT).apply {
                         addCategory(CATEGORY_OPENABLE)
-                        this.type = "text/plain"
-                        originalFileUri?.let { uri ->
-                            val fileName = this@EditTextPlainActivity.getFileName(uri)
-                            if (fileName != null) {
-                                this.putExtra(EXTRA_TITLE, fileName)
-                            }
-                        }
+                        this.type = "text/*"
                     }
-                exportFileActivityResultLauncher.launch(intent)
+                saveAsActivityResultLauncher.launch(intent)
             }
         }
         setBottomAppBarColor(colorInt)
@@ -236,6 +238,7 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
                             ?: throw IOException("Failed to open output stream for URI: $uri")
                     outputStream.use { it.write(notallyModel.body.toString().toByteArray()) }
                 }
+                originalFileUri.value = uri
                 showToast(R.string.saved_to_device)
             } catch (e: Exception) {
                 MaterialAlertDialogBuilder(this@EditTextPlainActivity)

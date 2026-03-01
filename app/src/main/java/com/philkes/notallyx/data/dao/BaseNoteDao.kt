@@ -161,6 +161,9 @@ interface BaseNoteDao {
     )
     fun getAllRemindersAsync(): LiveData<List<NoteReminder>>
 
+    @Query("SELECT * FROM BaseNote WHERE reminders IS NOT NULL AND reminders != '[]'")
+    fun getAllBaseNotesWithReminders(): LiveData<List<BaseNote>>
+
     @Query("SELECT id FROM BaseNote WHERE folder = 'DELETED'")
     suspend fun getDeletedNoteIds(): LongArray
 

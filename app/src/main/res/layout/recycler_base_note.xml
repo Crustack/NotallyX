@@ -100,6 +100,7 @@
             android:focusable="true"
             android:textAppearance="?attr/textAppearanceLabelSmall"
             app:textStartPadding="4dp"
+            app:textEndPadding="4dp"
             app:chipMinTouchTargetSize="20dp"
             app:chipIcon="@drawable/notifications"
             app:chipIconSize="20dp"
@@ -107,6 +108,10 @@
             app:layout_constraintStart_toStartOf="parent"
             tools:visibility="visible"
             tools:text="00/00/0000 00:00"
+            app:closeIconVisible="false"
+            app:closeIcon="@drawable/repetition"
+            app:closeIconSize="16dp"
+            tools:closeIconVisible="true"
             />
 
         <TextView

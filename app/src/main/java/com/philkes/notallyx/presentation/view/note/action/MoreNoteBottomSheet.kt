@@ -45,10 +45,6 @@ class MoreNoteBottomSheet(
                     callbacks.changeColor()
                     true
                 },
-                Action(R.string.reminders, R.drawable.notifications) { _ ->
-                    callbacks.changeReminders()
-                    true
-                },
                 Action(R.string.labels, R.drawable.label) { _ ->
                     callbacks.changeLabels()
                     true
