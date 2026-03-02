@@ -44,6 +44,7 @@ import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.presentation.activity.main.MainActivity.Companion.EXTRA_FRAGMENT_TO_OPEN
 import com.philkes.notallyx.presentation.activity.main.MainActivity.Companion.EXTRA_SKIP_START_VIEW_ON_BACK
 import com.philkes.notallyx.presentation.activity.main.fragment.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
+import com.philkes.notallyx.presentation.activity.note.reminders.RemindersActivity
 import com.philkes.notallyx.presentation.add
 import com.philkes.notallyx.presentation.addFastScroll
 import com.philkes.notallyx.presentation.addIconButton
@@ -83,10 +84,7 @@ import com.philkes.notallyx.utils.isInLandscapeMode
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.mergeSkipFirst
 import com.philkes.notallyx.utils.observeSkipFirst
-import com.philkes.notallyx.utils.openNote
 import com.philkes.notallyx.utils.setupReminderChip
-import com.philkes.notallyx.utils.shareNote
-import com.philkes.notallyx.utils.showColorSelectDialog
 import com.philkes.notallyx.utils.textMaxLengthFilter
 import com.philkes.notallyx.utils.wrapWithChooser
 import java.io.File
@@ -223,7 +221,12 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             notallyModel.refreshOriginalNote()
             notallyModel.originalNote?.let { note ->
                 setupReminderChip(note, binding.EditNoteReminderChip)
-                binding.EditNoteReminderChip.setOnClickListener { changeReminders() }
+                binding.EditNoteReminderChip.setOnClickListener {
+                    val intent =
+                        Intent(this@EditActivity, RemindersActivity::class.java)
+                            .putExtra(RemindersActivity.NOTE_ID, note.id)
+                    startActivity(intent)
+                }
             }
         }
     }
