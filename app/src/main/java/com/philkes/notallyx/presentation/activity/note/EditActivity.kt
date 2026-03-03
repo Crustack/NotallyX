@@ -199,6 +199,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 visibility = View.VISIBLE
                 addFastScroll(this@EditActivity)
             }
+            setupEditNoteReminderChip()
         }
 
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
@@ -212,8 +213,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 DEFAULT_EXCEPTION_HANDLER?.uncaughtException(thread, throwable)
             }
         }
-
-        lifecycleScope.launch { setupEditNoteReminderChip() }
     }
 
     override fun onRestart() {
