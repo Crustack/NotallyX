@@ -213,12 +213,15 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             }
         }
 
-        setupEditNoteReminderChip()
+        lifecycleScope.launch { setupEditNoteReminderChip() }
     }
 
     override fun onRestart() {
         super.onRestart()
-        setupEditNoteReminderChip()
+        lifecycleScope.launch {
+            notallyModel.refreshOriginalNote()
+            setupEditNoteReminderChip()
+        }
     }
 
     override fun onStart() {
@@ -959,17 +962,13 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     }
 
     fun setupEditNoteReminderChip() {
-        lifecycleScope.launch {
-            if (notallyModel.id == 0L) return@launch
-            notallyModel.refreshOriginalNote()
-            notallyModel.originalNote?.let { note ->
-                binding.EditNoteReminderChip.setupReminderChip(note)
-                binding.EditNoteReminderChip.setOnClickListener {
-                    val intent =
-                        Intent(this@EditActivity, RemindersActivity::class.java)
-                            .putExtra(RemindersActivity.NOTE_ID, note.id)
-                    startActivity(intent)
-                }
+        notallyModel.originalNote?.let { note ->
+            binding.EditNoteReminderChip.setupReminderChip(note)
+            binding.EditNoteReminderChip.setOnClickListener {
+                val intent =
+                    Intent(this@EditActivity, RemindersActivity::class.java)
+                        .putExtra(RemindersActivity.NOTE_ID, note.id)
+                startActivity(intent)
             }
         }
     }
