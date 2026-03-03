@@ -90,27 +90,12 @@
             app:layout_constraintTop_toBottomOf="@id/Space" />
 
         <com.google.android.material.chip.Chip
-            android:id="@+id/ReminderChip"
-            style="@style/Widget.MaterialComponents.Chip.Action"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:visibility="gone"
-            android:clickable="true"
-            android:focusable="true"
-            android:textAppearance="?attr/textAppearanceLabelSmall"
-            app:textStartPadding="4dp"
-            app:textEndPadding="4dp"
-            app:chipMinTouchTargetSize="20dp"
-            app:chipIcon="@drawable/notifications"
-            app:chipIconSize="20dp"
             app:layout_constraintTop_toBottomOf="@id/Title"
             app:layout_constraintStart_toStartOf="parent"
+            style="@style/ReminderChip"
+            android:id="@+id/ReminderChip"
             tools:visibility="visible"
             tools:text="00/00/0000 00:00"
-            app:closeIconVisible="false"
-            app:closeIcon="@drawable/repetition"
-            app:closeIconSize="16dp"
             tools:closeIconVisible="true"
             />
 
@@ -123,6 +108,7 @@
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:alpha="@fraction/alpha_secondary"
+            tools:text="Created 2 days ago"
             app:layout_constraintTop_toBottomOf="@id/ReminderChip" />
 
         <LinearLayout

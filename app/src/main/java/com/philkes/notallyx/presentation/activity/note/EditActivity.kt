@@ -214,8 +214,8 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         }
     }
 
-    override fun onResume() {
-        super.onResume()
+    override fun onRestart() {
+        super.onRestart()
         lifecycleScope.launch {
             if (notallyModel.id == 0L) return@launch
             notallyModel.refreshOriginalNote()

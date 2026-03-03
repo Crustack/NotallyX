@@ -151,4 +151,22 @@
         <item name="cornerSize">50%</item>
     </style>
 
+    <style name="ReminderChip" parent="Widget.MaterialComponents.Chip.Action">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">12dp</item>
+        <item name="android:visibility">gone</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:textAppearance">?attr/textAppearanceLabelSmall</item>
+        <item name="chipMinTouchTargetSize">20dp</item>
+        <item name="chipIcon">@drawable/notifications</item>
+        <item name="chipIconSize">20dp</item>
+        <item name="textStartPadding">4dp</item>
+        <item name="textEndPadding">4dp</item>
+        <item name="closeIconVisible">false</item>
+        <item name="closeIcon">@drawable/repetition</item>
+        <item name="closeIconSize">16dp</item>
+    </style>
+
 </resources>
