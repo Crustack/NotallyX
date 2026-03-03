@@ -59,6 +59,7 @@ import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.setControlsContrastColorForAllViews
 import com.philkes.notallyx.presentation.setLightStatusAndNavBar
 import com.philkes.notallyx.presentation.setupProgressDialog
+import com.philkes.notallyx.presentation.setupReminderChip
 import com.philkes.notallyx.presentation.showKeyboard
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
 import com.philkes.notallyx.presentation.view.note.ErrorAdapter
@@ -84,7 +85,6 @@ import com.philkes.notallyx.utils.isInLandscapeMode
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.mergeSkipFirst
 import com.philkes.notallyx.utils.observeSkipFirst
-import com.philkes.notallyx.utils.setupReminderChip
 import com.philkes.notallyx.utils.textMaxLengthFilter
 import com.philkes.notallyx.utils.wrapWithChooser
 import java.io.File
@@ -220,7 +220,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             if (notallyModel.id == 0L) return@launch
             notallyModel.refreshOriginalNote()
             notallyModel.originalNote?.let { note ->
-                setupReminderChip(note, binding.EditNoteReminderChip)
+                binding.EditNoteReminderChip.setupReminderChip(note)
                 binding.EditNoteReminderChip.setOnClickListener {
                     val intent =
                         Intent(this@EditActivity, RemindersActivity::class.java)

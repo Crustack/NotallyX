@@ -639,3 +639,5 @@ fun Intent.generateBaseNote(context: ContextWrapper): SharedNote {
         } ?: Pair(listOf(), listOf())
     return SharedNote(title, text, images, files = files)
 }
+
+fun List<Reminder>.haveAnyRepetition() = this.any { it.repetition != null }

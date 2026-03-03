@@ -32,6 +32,7 @@ import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.extractColor
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.setControlsContrastColorForAllViews
+import com.philkes.notallyx.presentation.setupReminderChip
 import com.philkes.notallyx.presentation.view.misc.ItemListener
 import com.philkes.notallyx.presentation.view.misc.highlightableview.HighlightableTextView
 import com.philkes.notallyx.presentation.view.misc.highlightableview.SEARCH_SNIPPET_ITEM_LINES
@@ -39,7 +40,6 @@ import com.philkes.notallyx.presentation.view.note.listitem.init
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
 import com.philkes.notallyx.presentation.viewmodel.preference.TextSize
-import com.philkes.notallyx.utils.setupReminderChip
 import java.io.File
 
 data class BaseNoteVHPreferences(
@@ -164,7 +164,7 @@ class BaseNoteVH(
             }
         }
         setColor(baseNote.color)
-        setupReminderChip(baseNote, binding.ReminderChip)
+        binding.ReminderChip.setupReminderChip(baseNote)
     }
 
     private fun bindNote(baseNote: BaseNote, keyword: String) {

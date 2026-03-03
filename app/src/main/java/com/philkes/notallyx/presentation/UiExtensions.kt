@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.content.res.Resources
+import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
@@ -33,6 +34,8 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.view.Window
 import android.view.WindowManager
@@ -92,6 +95,8 @@ import com.philkes.notallyx.data.imports.ImportStage
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.SpanRepresentation
+import com.philkes.notallyx.data.model.findNextNotificationDate
+import com.philkes.notallyx.data.model.haveAnyRepetition
 import com.philkes.notallyx.databinding.DialogInputBinding
 import com.philkes.notallyx.databinding.DialogProgressBinding
 import com.philkes.notallyx.databinding.LabelBinding
@@ -1089,5 +1094,27 @@ fun Context.createTextView(textResId: Int, padding: Int = 16.dp): TextView {
         updatePadding(padding, padding, padding, padding)
         maxLines = Integer.MAX_VALUE
         ellipsize = null
+    }
+}
+
+fun Chip.setupReminderChip(baseNote: BaseNote) {
+    val now = Date(System.currentTimeMillis())
+    val mostRecentNotificationDate =
+        baseNote.reminders.findNextNotificationDate()
+            ?: baseNote.reminders.maxOfOrNull { it.dateTime }
+    if (mostRecentNotificationDate == null) {
+        this.visibility = GONE
+        return
+    }
+    this.apply {
+        visibility = VISIBLE
+        text = mostRecentNotificationDate.format()
+        setCloseIconVisible(baseNote.reminders.haveAnyRepetition())
+        setChipBackgroundColorResource(R.color.md_theme_secondaryContainer)
+        val isElapsed = mostRecentNotificationDate < now
+        alpha = if (isElapsed) 0.5f else 1.0f
+        paintFlags =
+            if (isElapsed) paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+            else paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
     }
 }
