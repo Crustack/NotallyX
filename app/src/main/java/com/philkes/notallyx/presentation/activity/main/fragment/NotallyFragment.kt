@@ -47,7 +47,7 @@ import com.philkes.notallyx.presentation.viewmodel.preference.NotesView
 
 abstract class NotallyFragment : Fragment(), ItemListener {
 
-    private var notesAdapter: BaseNoteAdapter? = null
+    protected var notesAdapter: BaseNoteAdapter? = null
     private lateinit var openNoteActivityResultLauncher: ActivityResultLauncher<Intent>
     private var lastSelectedNotePosition = -1
 
@@ -222,8 +222,10 @@ abstract class NotallyFragment : Fragment(), ItemListener {
             doAfterTextChanged { text ->
                 val isSearchFragment = navController.currentDestination?.id == R.id.Search
                 if (isSearchFragment) {
-                    model.keyword = requireNotNull(text, { "text is null" }).toString()
-                    notesAdapter?.apply { setSearchKeyword(model.keyword) }
+                    val newKeyword = text?.toString().orEmpty()
+                    if (model.keyword != newKeyword) {
+                        model.keyword = newKeyword
+                    }
                 }
                 if (text?.isNotEmpty() == true && !isSearchFragment) {
                     setText("")

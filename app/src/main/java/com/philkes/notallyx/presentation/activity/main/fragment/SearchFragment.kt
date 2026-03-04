@@ -8,6 +8,7 @@ import androidx.core.view.isVisible
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
+import com.philkes.notallyx.data.model.isEmpty
 
 class SearchFragment : NotallyFragment() {
 
@@ -47,15 +48,17 @@ class SearchFragment : NotallyFragment() {
         } else binding?.ChipGroup?.isVisible = false
         getObservable().observe(viewLifecycleOwner) { items ->
             model.actionMode.updateSelected(items?.filterIsInstance<BaseNote>()?.map { it.id })
+            notesAdapter?.setSearchKeyword(model.keyword)
         }
         model.searchResults?.isLoading?.observe(viewLifecycleOwner) { isLoading ->
+            binding?.ImageView?.isVisible = !isLoading && model.searchResults.isEmpty
             binding?.LoadingProgress?.isVisible = isLoading
         }
     }
 
     override fun getBackground() = R.drawable.search
 
-    override fun getObservable() = model.searchResults!!
+    override fun getObservable() = model.searchResults!!.results
 
     companion object {
         const val EXTRA_INITIAL_FOLDER = "notallyx.intent.extra.INITIAL_FOLDER"

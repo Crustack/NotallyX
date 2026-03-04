@@ -58,9 +58,40 @@ class BaseNoteAdapter(
 
     fun setSearchKeyword(keyword: String) {
         if (searchKeyword != keyword) {
+            val oldKeyword = searchKeyword
             searchKeyword = keyword
-            notifyDataSetChanged()
+            for (i in 0 until list.size()) {
+                val item = list[i]
+                if (item is BaseNote) {
+                    if (matchesKeyword(item, oldKeyword) || matchesKeyword(item, keyword)) {
+                        notifyItemChanged(i)
+                    }
+                }
+            }
         }
+    }
+
+    private fun matchesKeyword(baseNote: BaseNote, keyword: String): Boolean {
+        if (keyword.isBlank()) {
+            return false
+        }
+        if (baseNote.title.contains(keyword, true)) {
+            return true
+        }
+        if (baseNote.body.contains(keyword, true)) {
+            return true
+        }
+        for (label in baseNote.labels) {
+            if (label.contains(keyword, true)) {
+                return true
+            }
+        }
+        for (item in baseNote.items) {
+            if (item.body.contains(keyword, true)) {
+                return true
+            }
+        }
+        return false
     }
 
     override fun onBindViewHolder(

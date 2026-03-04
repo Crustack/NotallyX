@@ -2,7 +2,6 @@ package com.philkes.notallyx.data.dao
 
 import android.content.ContextWrapper
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.map
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -23,6 +22,8 @@ import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.utils.charLimit
 import com.philkes.notallyx.utils.log
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 data class NoteIdReminder(val id: Long, val reminders: List<Reminder>)
 
@@ -266,7 +267,7 @@ interface BaseNoteDao {
      * notes with the label 'Unimportant'. To prevent this, we use the extension function `map`
      * directly on the LiveData to filter the results accordingly.
      */
-    fun getBaseNotesByLabel(label: String): LiveData<List<BaseNote>> {
+    fun getBaseNotesByLabel(label: String): Flow<List<BaseNote>> {
         val result = getBaseNotesByLabel(label, setOf(Folder.NOTES, Folder.ARCHIVED))
         return result.map { list -> list.filter { baseNote -> baseNote.labels.contains(label) } }
     }
@@ -274,12 +275,12 @@ interface BaseNoteDao {
     @Query(
         "SELECT * FROM BaseNote WHERE folder IN (:folders) AND labels LIKE '%' || :label || '%' ORDER BY folder DESC, pinned DESC, timestamp DESC"
     )
-    fun getBaseNotesByLabel(label: String, folders: Collection<Folder>): LiveData<List<BaseNote>>
+    fun getBaseNotesByLabel(label: String, folders: Collection<Folder>): Flow<List<BaseNote>>
 
     @Query(
         "SELECT * FROM BaseNote WHERE folder = :folder AND labels == '[]' ORDER BY pinned DESC, timestamp DESC"
     )
-    fun getBaseNotesWithoutLabel(folder: Folder): LiveData<List<BaseNote>>
+    fun getBaseNotesWithoutLabel(folder: Folder): Flow<List<BaseNote>>
 
     suspend fun getListOfBaseNotesByLabel(label: String): List<BaseNote> {
         val result = getListOfBaseNotesByLabelImpl(label)
@@ -293,7 +294,7 @@ interface BaseNoteDao {
         keyword: String,
         folder: Folder,
         label: String?,
-    ): LiveData<List<BaseNote>> {
+    ): Flow<List<BaseNote>> {
         val result =
             when (label) {
                 null -> getBaseNotesByKeywordUnlabeledImpl(keyword, folder)
@@ -310,20 +311,17 @@ interface BaseNoteDao {
         keyword: String,
         folder: Folder,
         label: String,
-    ): LiveData<List<BaseNote>>
+    ): Flow<List<BaseNote>>
 
     @Query(
         "SELECT * FROM BaseNote WHERE folder = :folder AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%' OR items LIKE '%' || :keyword || '%' OR labels LIKE '%' || :keyword || '%') ORDER BY pinned DESC, timestamp DESC"
     )
-    fun getBaseNotesByKeywordImpl(keyword: String, folder: Folder): LiveData<List<BaseNote>>
+    fun getBaseNotesByKeywordImpl(keyword: String, folder: Folder): Flow<List<BaseNote>>
 
     @Query(
         "SELECT * FROM BaseNote WHERE folder = :folder AND labels == '[]' AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%' OR items LIKE '%' || :keyword || '%') ORDER BY pinned DESC, timestamp DESC"
     )
-    fun getBaseNotesByKeywordUnlabeledImpl(
-        keyword: String,
-        folder: Folder,
-    ): LiveData<List<BaseNote>>
+    fun getBaseNotesByKeywordUnlabeledImpl(keyword: String, folder: Folder): Flow<List<BaseNote>>
 
     private fun matchesKeyword(baseNote: BaseNote, keyword: String): Boolean {
         if (baseNote.title.contains(keyword, true)) {

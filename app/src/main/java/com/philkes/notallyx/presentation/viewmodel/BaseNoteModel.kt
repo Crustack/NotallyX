@@ -153,7 +153,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     fun startObserving() {
         NotallyDatabase.getDatabase(app).observeForever(::init)
         folder.observeForever { newFolder ->
-            searchResults!!.fetch(keyword, newFolder, currentLabel, debounce = false)
+            searchResults!!.fetch(keyword, newFolder, currentLabel)
         }
     }
 
@@ -198,7 +198,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
 
         if (searchResults == null) {
-            searchResults = SearchResult(viewModelScope, baseNoteDao, ::transform)
+            searchResults = SearchResult(app, viewModelScope, baseNoteDao, ::transform)
         } else {
             searchResults!!.baseNoteDao = baseNoteDao
         }
@@ -231,13 +231,18 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     fun getNotesByLabel(label: String): Content {
         if (labelCache[label] == null) {
-            labelCache[label] = Content(baseNoteDao.getBaseNotesByLabel(label), ::transform)
+            labelCache[label] =
+                Content(baseNoteDao.getBaseNotesByLabel(label), ::transform, viewModelScope)
         }
         return requireNotNull(labelCache[label], { "labelCache has no '$label' value" })
     }
 
     fun getNotesWithoutLabel(): Content {
-        return Content(baseNoteDao.getBaseNotesWithoutLabel(Folder.NOTES), ::transform)
+        return Content(
+            baseNoteDao.getBaseNotesWithoutLabel(Folder.NOTES),
+            ::transform,
+            viewModelScope,
+        )
     }
 
     private fun transform(list: List<BaseNote>) = transform(list, pinned, others, archived)

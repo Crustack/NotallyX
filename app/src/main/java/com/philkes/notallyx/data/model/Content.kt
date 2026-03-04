@@ -2,6 +2,10 @@ package com.philkes.notallyx.data.model
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
+import androidx.lifecycle.asLiveData
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 
 /**
  * The instance of LiveData returned by Room only listens for changes while the fragment observing
@@ -23,6 +27,12 @@ class Content(
     private val transform: (List<BaseNote>) -> List<Item>,
 ) : LiveData<List<Item>>() {
     private var observer: Observer<List<BaseNote>>? = null
+
+    constructor(
+        flow: Flow<List<BaseNote>>,
+        transform: (List<BaseNote>) -> List<Item>,
+        scope: CoroutineScope,
+    ) : this(flow.asLiveData(scope.coroutineContext + Dispatchers.IO), transform)
 
     init {
         setObserver(liveData)
