@@ -31,6 +31,8 @@
     <string name="auto_backups_folder_hint">Ordner in dem alle autom. Backups erstellt werden</string>
     <string name="auto_backups_folder_rechoose">Der Backups Ordner muss erneut ausgewählt werden, damit NotallyX Schreibrechte dafür erhält.\nÜber Abbrechen kann der Import dieser Einstellung übersprungen werden.</string>
     <string name="auto_backups_folder_set">Stelle erst ein Backups Ordner ein</string>
+    <string name="auto_remove_deleted_notes">Entferne gelöschte Notizen permanent nach</string>
+    <string name="auto_remove_deleted_notes_hint">Ist dies aktiviert, werden gelöschte Notizen automatisch nach X Tagen permanent entfernt</string>
     <string name="auto_save_after_idle_time">Autom. Speichern nach X Sekunden</string>
     <string name="auto_sort_by_checked">Abgehakte Elemente ans Ende sortieren</string>
     <string name="back">Zurück</string>
@@ -104,6 +106,7 @@
     <string name="date_format">Datumsformat</string>
     <string name="date_format_apply_in_note_view">Auch in Notiz-Ansicht anwenden</string>
     <string name="date_format_hint">Wendet ausgewähltes Datumsformat in Notizen-Übersicht an</string>
+    <string name="day">Tag</string>
     <string name="days">Tage</string>
     <string name="delete">Löschen</string>
     <string name="delete_all">Alles löschen</string>
@@ -212,6 +215,8 @@
     <string name="item">Eintrag</string>
     <string name="json_files">JSON Dateien</string>
     <string name="json_files_help">Um deine JSON-Notizen (einzele Datei oder Ordner) zu importieren, klicke Import.\nJede valide Datei wird als einzelne Notiz importiert, der Dateiname wird zum Notiz-Titel.</string>
+    <string name="jump_to_bottom">Springe ans Ende</string>
+    <string name="jump_to_top">Springe zum Start</string>
     <string name="label_exists">Label existiert bereits</string>
     <string name="label_visibility">Zeige/Verberge das Label in der Navigation</string>
     <string name="labels">Labels</string>
@@ -260,6 +265,8 @@
         <item quantity="one">%1$s Notiz überschreitet Maximallänge, es wird auf %2$s Zeichen gekürzt</item>
         <item quantity="other">%1$s Notizen überschreiten Maximallänge, sie werden auf %2$s Zeichen gekürzt</item>
     </plurals>
+    <string name="of_the_month">%1$s des Monats</string>
+    <string name="of_the_month_last">Letzter %1$s des Monats</string>
     <string name="open_link">Link öffnen</string>
     <string name="open_note">Notiz öffnen</string>
     <string name="others">Andere</string>
@@ -327,6 +334,7 @@
     <string name="stop">Stop</string>
     <string name="strikethrough">Durchstreichen</string>
     <string name="super_dark">Super Dunkel</string>
+    <string name="swap_action">Tausche Funktion</string>
     <string name="take_note">Notiz erstellen</string>
     <string name="tap_for_more_options">Klick für mehr Optionen</string>
     <string name="tap_to_set_up">Zum Einrichten antippen</string>
