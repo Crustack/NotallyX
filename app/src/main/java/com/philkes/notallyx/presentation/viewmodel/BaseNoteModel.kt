@@ -657,6 +657,20 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun updateNoteSortIdx(id: Long, sortIdx: Int) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { baseNoteDao.updateSortIdx(id, sortIdx) }
+        }
+    }
+
+    fun updateNotesSortIndices(idToIdx: Map<Long, Int>) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { baseNoteDao.updateSortIndices(idToIdx) }
+        }
+    }
+
+    suspend fun getMaxNoteSortIdx() = withContext(Dispatchers.IO) { baseNoteDao.getMaxSortIdx() }
+
     fun updateBaseNoteLabels(labels: List<String>, id: Long) {
         actionMode.close(true)
         viewModelScope.launch(Dispatchers.IO) { baseNoteDao.updateLabels(id, labels) }

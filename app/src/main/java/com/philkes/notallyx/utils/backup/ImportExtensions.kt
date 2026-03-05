@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.util.Log
+import androidx.core.database.getIntOrNull
 import androidx.core.database.getLongOrNull
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.MutableLiveData
@@ -356,6 +357,11 @@ private fun Cursor.toBaseNote(sourceDb: SQLiteDatabase): BaseNote {
         if (viewModeIndex != -1) {
             NoteViewMode.valueOfOrDefault(getString(viewModeIndex))
         } else NoteViewMode.EDIT
+    val sortIdxIndex = getColumnIndex("sortIdx")
+    val sortIdx =
+        if (sortIdxIndex != -1) {
+            getIntOrNull(sortIdxIndex)
+        } else null
     return BaseNote(
         0,
         type,
@@ -374,6 +380,7 @@ private fun Cursor.toBaseNote(sourceDb: SQLiteDatabase): BaseNote {
         audios,
         reminders,
         viewMode,
+        sortIdx,
     )
 }
 

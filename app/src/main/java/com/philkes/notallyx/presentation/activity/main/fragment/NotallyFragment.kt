@@ -2,6 +2,7 @@ package com.philkes.notallyx.presentation.activity.main.fragment
 
 import android.app.Activity.RESULT_OK
 import android.content.Intent
+import android.graphics.Canvas
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -14,6 +15,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
 import androidx.navigation.findNavController
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -43,7 +45,10 @@ import com.philkes.notallyx.presentation.view.main.BaseNoteAdapter
 import com.philkes.notallyx.presentation.view.main.BaseNoteVHPreferences
 import com.philkes.notallyx.presentation.view.misc.ItemListener
 import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
+import com.philkes.notallyx.presentation.viewmodel.preference.NotesSort
+import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesView
+import com.philkes.notallyx.presentation.viewmodel.preference.isManualSort
 
 abstract class NotallyFragment : Fragment(), ItemListener {
 
@@ -157,7 +162,7 @@ abstract class NotallyFragment : Fragment(), ItemListener {
             onClick(position)
             return
         }
-        if (position != -1) {
+        if (position != RecyclerView.NO_POSITION) {
             notesAdapter?.getItem(position)?.let { item ->
                 if (item is BaseNote) {
                     val intent =
@@ -171,7 +176,7 @@ abstract class NotallyFragment : Fragment(), ItemListener {
     }
 
     override fun onLongClick(position: Int) {
-        if (position != -1) {
+        if (position != RecyclerView.NO_POSITION) {
             if (model.actionMode.selectedNotes.isNotEmpty()) {
                 if (lastSelectedNotePosition > position) {
                         position..lastSelectedNotePosition
@@ -255,6 +260,47 @@ abstract class NotallyFragment : Fragment(), ItemListener {
         notesAdapter?.notifyItemChanged(position, 0)
     }
 
+    fun moveSelectedNotesUp() {
+        val lastSelectedId =
+            notesAdapter?.getItem(lastSelectedNotePosition)?.let { (it as? BaseNote)?.id }
+        notesAdapter?.moveSelectedNotesUp(lastSelectedId)?.let { (topPos, lastSelectedPos) ->
+            binding?.MainListView?.scrollToPosition(topPos)
+            if (lastSelectedPos != -1) {
+                lastSelectedNotePosition = lastSelectedPos
+            }
+            updateActionModeSelectedNotes()
+            updateDatabaseSortIndices()
+        }
+    }
+
+    fun moveSelectedNotesDown() {
+        val lastSelectedId =
+            notesAdapter?.getItem(lastSelectedNotePosition)?.let { (it as? BaseNote)?.id }
+        notesAdapter?.moveSelectedNotesDown(lastSelectedId)?.let { (topPos, lastSelectedPos) ->
+            binding?.MainListView?.scrollToPosition(topPos)
+            if (lastSelectedPos != -1) {
+                lastSelectedNotePosition = lastSelectedPos
+            }
+            updateActionModeSelectedNotes()
+            updateDatabaseSortIndices()
+        }
+    }
+
+    private fun updateActionModeSelectedNotes() {
+        val notes = notesAdapter?.currentList?.filterIsInstance<BaseNote>() ?: return
+        model.actionMode.selectedNotes.keys.forEach { id ->
+            notes
+                .find { it.id == id }
+                ?.let { updatedNote -> model.actionMode.selectedNotes[id] = updatedNote }
+        }
+    }
+
+    private fun updateDatabaseSortIndices() {
+        val notes = notesAdapter?.currentList?.filterIsInstance<BaseNote>() ?: return
+        val idToIdx = notes.mapNotNull { it.id to (it.sortIdx ?: return@mapNotNull null) }.toMap()
+        model.updateNotesSortIndices(idToIdx)
+    }
+
     private fun setupAdapter() {
         notesAdapter =
             with(model.preferences) {
@@ -287,6 +333,7 @@ abstract class NotallyFragment : Fragment(), ItemListener {
         binding?.MainListView?.apply {
             adapter = notesAdapter
             setHasFixedSize(false)
+            updateDragAndDrop(model.preferences.notesSorting.value)
         }
         model.actionMode.addListener = { notesAdapter?.notifyDataSetChanged() }
         if (activity is MainActivity) {
@@ -304,6 +351,7 @@ abstract class NotallyFragment : Fragment(), ItemListener {
 
         model.preferences.notesSorting.observe(viewLifecycleOwner) { notesSort ->
             notesAdapter?.setNotesSort(notesSort)
+            updateDragAndDrop(notesSort)
         }
 
         model.actionMode.closeListener.observe(viewLifecycleOwner) { event ->
@@ -314,6 +362,106 @@ abstract class NotallyFragment : Fragment(), ItemListener {
                     }
                 }
             }
+        }
+    }
+
+    private var itemTouchHelper: ItemTouchHelper? = null
+
+    private fun updateDragAndDrop(notesSort: NotesSort) {
+        if (notesSort.isManualSort) {
+            if (itemTouchHelper == null) {
+                itemTouchHelper =
+                    ItemTouchHelper(
+                        object :
+                            ItemTouchHelper.SimpleCallback(
+                                ItemTouchHelper.UP or
+                                    ItemTouchHelper.DOWN or
+                                    ItemTouchHelper.LEFT or
+                                    ItemTouchHelper.RIGHT,
+                                0,
+                            ) {
+                            private var hasMoved = false
+
+                            override fun onChildDraw(
+                                c: Canvas,
+                                recyclerView: RecyclerView,
+                                viewHolder: RecyclerView.ViewHolder,
+                                dX: Float,
+                                dY: Float,
+                                actionState: Int,
+                                isCurrentlyActive: Boolean,
+                            ) {
+                                if (
+                                    actionState == ItemTouchHelper.ACTION_STATE_DRAG &&
+                                        isCurrentlyActive
+                                ) {
+                                    // If dX or dY is non-zero, the user is actively sliding the
+                                    // item
+                                    if (!hasMoved && (Math.abs(dX) > 0 || Math.abs(dY) > 0)) {
+                                        hasMoved = true
+                                        model.actionMode.close(true)
+                                    }
+                                }
+                                super.onChildDraw(
+                                    c,
+                                    recyclerView,
+                                    viewHolder,
+                                    dX,
+                                    dY,
+                                    actionState,
+                                    isCurrentlyActive,
+                                )
+                            }
+
+                            override fun onMove(
+                                recyclerView: RecyclerView,
+                                viewHolder: RecyclerView.ViewHolder,
+                                target: RecyclerView.ViewHolder,
+                            ): Boolean {
+                                val fromPos = viewHolder.bindingAdapterPosition
+                                val toPos = target.bindingAdapterPosition
+                                if (
+                                    fromPos == RecyclerView.NO_POSITION ||
+                                        toPos == RecyclerView.NO_POSITION
+                                ) {
+                                    return false
+                                }
+                                val item1 = notesAdapter?.getItem(fromPos)
+                                val item2 = notesAdapter?.getItem(toPos)
+                                if (item1 is BaseNote && item2 is BaseNote) {
+                                    if (item1.pinned != item2.pinned) {
+                                        return false
+                                    }
+                                    notesAdapter?.onItemMove(fromPos, toPos)
+                                    return true
+                                }
+                                return false
+                            }
+
+                            override fun onSwiped(
+                                viewHolder: RecyclerView.ViewHolder,
+                                direction: Int,
+                            ) {}
+
+                            override fun clearView(
+                                recyclerView: RecyclerView,
+                                viewHolder: RecyclerView.ViewHolder,
+                            ) {
+                                super.clearView(recyclerView, viewHolder)
+                                hasMoved = false
+                                updateDatabaseSortIndices()
+                            }
+
+                            override fun isLongPressDragEnabled(): Boolean {
+                                return model.preferences.notesSorting.value.sortedBy ==
+                                    NotesSortBy.MANUAL && !model.actionMode.enabled.value
+                            }
+                        }
+                    )
+            }
+            itemTouchHelper!!.attachToRecyclerView(binding!!.MainListView)
+        } else {
+            itemTouchHelper?.attachToRecyclerView(null)
         }
     }
 

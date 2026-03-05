@@ -134,6 +134,7 @@ fun String.toBaseNote(): BaseNote {
     val audios = Converters.jsonToAudios(jsonObject.getArrayOrEmpty("audios"))
     val reminders = Converters.jsonToReminders(jsonObject.getArrayOrEmpty("reminders"))
     val viewMode = NoteViewMode.valueOfOrDefault(jsonObject.getStringOrDefault("viewMode", ""))
+    val sortIdx = jsonObject.getIntOrNull("sortIdx")
     return BaseNote(
         id,
         type,
@@ -152,6 +153,7 @@ fun String.toBaseNote(): BaseNote {
         audios,
         reminders,
         viewMode,
+        sortIdx,
     )
 }
 
@@ -160,6 +162,14 @@ private fun JSONObject.getStringOrDefault(key: String, defaultValue: String): St
         getString(key)
     } catch (exception: JSONException) {
         defaultValue
+    }
+}
+
+private fun JSONObject.getIntOrNull(key: String): Int? {
+    return try {
+        getInt(key)
+    } catch (exception: JSONException) {
+        null
     }
 }
 

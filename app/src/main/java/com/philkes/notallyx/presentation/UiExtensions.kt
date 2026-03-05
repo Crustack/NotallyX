@@ -235,7 +235,7 @@ fun Menu.add(
     showAsAction: Int = MenuItem.SHOW_AS_ACTION_IF_ROOM,
     groupId: Int = Menu.NONE,
     itemId: Int = Menu.NONE,
-    order: Int = Menu.NONE,
+    order: Int = Menu.FIRST,
     onClick: (item: MenuItem) -> Unit,
 ): MenuItem {
     val menuItem =
@@ -399,7 +399,7 @@ fun Folder.movedToResId(): Int {
 }
 
 fun RadioGroup.checkedTag(): Any {
-    return this.findViewById<RadioButton?>(this.checkedRadioButtonId).tag
+    return this.findViewById<RadioButton>(this.checkedRadioButtonId).tag
 }
 
 fun Context.showKeyboard(view: View) {

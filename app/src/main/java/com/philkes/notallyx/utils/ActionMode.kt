@@ -19,6 +19,12 @@ class ActionMode {
         enabled.value = selectedNotes.size != 0
     }
 
+    fun clear() {
+        enabled.value = false
+        selectedNotes.clear()
+        refresh()
+    }
+
     fun add(id: Long, baseNote: BaseNote) {
         selectedNotes[id] = baseNote
         refresh()

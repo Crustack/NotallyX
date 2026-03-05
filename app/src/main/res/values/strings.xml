@@ -234,6 +234,8 @@
     <string name="locked">Locked</string>
     <string name="make_feature_request">Make a feature request</string>
     <string name="make_list">Make list</string>
+    <string name="manual">Manual</string>
+    <string name="manual_sort_dialog_message">To manually sort notes, you must first set the sort order to Manual. Would you like to do that now\?</string>
     <string name="max_backups">Amount of backups to keep</string>
     <string name="max_items_to_display">Max items to display in list</string>
     <string name="max_labels_to_display">Max labels to display in Navigation</string>
