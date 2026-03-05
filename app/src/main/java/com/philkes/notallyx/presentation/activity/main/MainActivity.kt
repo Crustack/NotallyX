@@ -429,7 +429,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 baseModel.deleteSelectedBaseNotes()
                 Snackbar.make(
                         findViewById(R.id.DrawerLayout),
-                        getQuantityString(R.plurals.deleted_selected_notes, 1),
+                        getQuantityString(R.plurals.deleted_selected_notes, removedNotes.size),
                         Snackbar.LENGTH_SHORT,
                     )
                     .apply { setAction(R.string.undo) { baseModel.saveNotes(removedNotes) } }

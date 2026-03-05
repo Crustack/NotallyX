@@ -401,22 +401,21 @@ enum class BiometricLock(override val textResId: Int) : StaticTextProvider {
     override fun getText(context: Context): String = context.getString(textResId)
 }
 
-enum class EditAction(override val textResId: Int, val drawableResId: Int, val itemId: Int) :
-    StaticTextProvider {
-    SEARCH(R.string.search, R.drawable.search, 1001),
-    PIN(R.string.pin, R.drawable.pin, 1002),
-    REMINDERS(R.string.reminders, R.drawable.notifications, 1003),
-    LABELS(R.string.labels, R.drawable.label, 1004),
-    CHANGE_COLOR(R.string.change_color, R.drawable.change_color, 1005),
-    DUPLICATE(R.string.duplicate, R.drawable.content_copy, 1006),
-    EXPORT(R.string.export, R.drawable.export, 1007),
-    SHARE(R.string.share, R.drawable.share, 1008),
-    DELETE(R.string.delete, R.drawable.delete, 1009),
-    ARCHIVE(R.string.archive, R.drawable.archive, 1010),
-    TOGGLE_VIEW_MODE(R.string.edit, R.drawable.visibility, 1011),
-    CONVERT(R.string.convert_to_list_note, R.drawable.convert_to_text, 1012),
-    DELETE_FOREVER(R.string.delete_forever, R.drawable.delete, 1014),
-    RESTORE(R.string.restore, R.drawable.restore, 1015);
+enum class EditAction(override val textResId: Int, val drawableResId: Int) : StaticTextProvider {
+    SEARCH(R.string.search, R.drawable.search),
+    PIN(R.string.pin, R.drawable.pin),
+    REMINDERS(R.string.reminders, R.drawable.notifications),
+    LABELS(R.string.labels, R.drawable.label),
+    CHANGE_COLOR(R.string.change_color, R.drawable.change_color),
+    DUPLICATE(R.string.duplicate, R.drawable.content_copy),
+    EXPORT(R.string.export, R.drawable.export),
+    SHARE(R.string.share, R.drawable.share),
+    DELETE(R.string.delete, R.drawable.delete),
+    ARCHIVE(R.string.archive, R.drawable.archive),
+    TOGGLE_VIEW_MODE(R.string.edit, R.drawable.visibility),
+    CONVERT(R.string.convert_to_list_note, R.drawable.convert_to_text),
+    DELETE_FOREVER(R.string.delete_forever, R.drawable.delete),
+    RESTORE(R.string.restore, R.drawable.restore);
 
     fun getTitleAndIcon(
         pinned: Boolean,

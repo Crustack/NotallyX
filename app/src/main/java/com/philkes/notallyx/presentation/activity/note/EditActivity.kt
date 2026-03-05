@@ -334,7 +334,11 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
     fun finishAfterDeleteForever() = super.finish()
 
-    private fun showActionSelectionDialog(oldAction: EditAction, isBottomBar: Boolean = false) {
+    private fun showActionSelectionDialog(
+        oldAction: EditAction,
+        index: Int,
+        isBottomBar: Boolean = false,
+    ) {
         val actions = EditAction.entries.filter { it != EditAction.RESTORE }
         ActionSelectionBottomSheet(
                 actions,
@@ -348,12 +352,9 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                             NotallyXPreferences.DEFAULT_EDIT_NOTE_BOTTOM_ACTION
                         )
                     } else {
-                        val currentActions = prefs.editNoteActivityTopActions.value.toMutableList()
-                        val index = currentActions.indexOf(oldAction)
-                        if (
-                            index != -1 &&
-                                index < NotallyXPreferences.DEFAULT_EDIT_NOTE_TOP_ACTIONS.size
-                        ) {
+                        val currentActions =
+                            prefs.getSafeEditNoteActivityTopActions().toMutableList()
+                        if (index in currentActions.indices) {
                             currentActions[index] =
                                 NotallyXPreferences.DEFAULT_EDIT_NOTE_TOP_ACTIONS[index]
                             prefs.editNoteActivityTopActions.save(currentActions)
@@ -367,8 +368,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                     prefs.editNoteActivityBottomAction.save(newAction)
                 } else {
                     val currentActions = prefs.getSafeEditNoteActivityTopActions().toMutableList()
-                    val index = currentActions.indexOf(oldAction)
-                    if (index != -1) {
+                    if (index in currentActions.indices) {
                         currentActions[index] = newAction
                         prefs.editNoteActivityTopActions.save(currentActions)
                     }
@@ -602,7 +602,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         // Try to get the view for long click
         post {
             button.setOnLongClickListener {
-                showActionSelectionDialog(action, isBottomBar = true)
+                showActionSelectionDialog(action, index = 0, isBottomBar = true)
                 true
             }
         }
@@ -937,7 +937,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     private fun updateTopActions(topActions: List<EditAction>) {
         binding.Toolbar.menu.apply {
             clear()
-            topActions.forEach { action ->
+            topActions.forEachIndexed { idx, action ->
                 val (title, icon) =
                     action.getTitleAndIcon(
                         notallyModel.pinned,
@@ -945,14 +945,13 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                         notallyModel.folder,
                         notallyModel.type,
                     )
-                val menuItem =
-                    add(title, icon, MenuItem.SHOW_AS_ACTION_ALWAYS, itemId = action.itemId) {
-                        actionHandler.handleAction(action)
-                    }
+                add(title, icon, MenuItem.SHOW_AS_ACTION_ALWAYS, itemId = idx) {
+                    actionHandler.handleAction(action)
+                }
                 // Try to get the view for long click
                 binding.Toolbar.post {
-                    findViewById<View>(menuItem.itemId)?.setOnLongClickListener {
-                        showActionSelectionDialog(action)
+                    findViewById<View>(idx)?.setOnLongClickListener {
+                        showActionSelectionDialog(action, idx)
                         true
                     }
                 }
