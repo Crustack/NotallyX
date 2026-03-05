@@ -942,6 +942,10 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun saveNotes(notes: List<BaseNote>) {
+        viewModelScope.launch(Dispatchers.IO) { baseNoteDao.insert(notes) }
+    }
+
     companion object {
         private const val TAG = "BaseNoteModel"
 
