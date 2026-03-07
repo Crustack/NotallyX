@@ -34,7 +34,7 @@
             android:layout_margin="6dp"
             android:src="@drawable/star_rate_filled"
             android:visibility="gone"
-            android:contentDescription="DefaultNoteColor" />
+            android:contentDescription="@string/text_default" />
     </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

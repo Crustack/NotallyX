@@ -28,7 +28,7 @@
               android:src="@drawable/delete"
               android:background="?attr/selectableItemBackgroundBorderless"
               android:contentDescription="@string/delete"
-              android:visibility="visible"/>
+              android:visibility="gone"/>
       </LinearLayout>
     <com.skydoves.colorpickerview.ColorPickerView
       android:id="@+id/ColorPicker"

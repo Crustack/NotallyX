@@ -30,20 +30,20 @@ import com.skydoves.colorpickerview.ColorEnvelope
 import com.skydoves.colorpickerview.listeners.ColorEnvelopeListener
 
 fun AppCompatActivity.showColorSelectDialog(
-    colors: Collection<ColorString>,
+    colors: Set<ColorString>,
     currentColor: ColorString?,
     setNavigationbarLight: Boolean?,
     callback: (selectedColor: ColorString, oldColor: ColorString?) -> Unit,
     deleteCallback: (colorToDelete: ColorString, newColor: ColorString) -> Unit,
 ) {
+    val preferences = NotallyXPreferences.getInstance(this)
     val actualColors =
-        colors.toMutableList().apply {
+        (colors + preferences.defaultNoteColor.value).toMutableList().apply {
             remove(BaseNote.COLOR_DEFAULT)
             remove(BaseNote.COLOR_NEW)
             add(0, BaseNote.COLOR_DEFAULT)
             add(0, BaseNote.COLOR_NEW)
         }
-    val preferences = NotallyXPreferences.getInstance(this)
     val dialog = MaterialAlertDialogBuilder(this).setTitle(R.string.change_color).create()
     lateinit var colorAdapter: ColorAdapter
     colorAdapter =
@@ -192,7 +192,7 @@ private fun AppCompatActivity.showEditColorDialog(
             }
             setNegativeButton(R.string.back) { _, _ ->
                 showColorSelectDialog(
-                    colors,
+                    colors.toSet(),
                     oldColor,
                     setNavigationbarLight,
                     callback,
@@ -232,7 +232,8 @@ private fun AppCompatActivity.showEditColorDialog(
         }
     val observer: Observer<ColorString> = Observer { defaultColor ->
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.apply {
-            val isDefaultColor = oldColor == defaultColor
+            val currentColor = binding.ColorPicker.colorEnvelope.toColorString()
+            val isDefaultColor = currentColor == defaultColor
             setText(if (isDefaultColor) R.string.text_default else R.string.make_default)
             if (!isDefaultColor) {
                 TooltipCompat.setTooltipText(this, getString(R.string.set_as_default_color_message))

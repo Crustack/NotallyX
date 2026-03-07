@@ -714,7 +714,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                                 .getBaseNoteDao()
                                 .getAllColors()
                                 .toSet()
-                        } + preferences.defaultNoteColor.value
+                        }
                     // Show color as selected only if all selected notes have the same color
                     val currentColor =
                         model.actionMode.selectedNotes.values
