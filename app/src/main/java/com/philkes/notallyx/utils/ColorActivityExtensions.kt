@@ -23,6 +23,7 @@ import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.extractColor
 import com.philkes.notallyx.presentation.setLightStatusAndNavBar
 import com.philkes.notallyx.presentation.showAndFocus
+import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.main.ColorAdapter
 import com.philkes.notallyx.presentation.view.misc.ItemListener
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
@@ -41,8 +42,8 @@ fun AppCompatActivity.showColorSelectDialog(
         (colors + preferences.defaultNoteColor.value).toMutableList().apply {
             remove(BaseNote.COLOR_DEFAULT)
             remove(BaseNote.COLOR_NEW)
-            add(0, BaseNote.COLOR_DEFAULT)
             add(0, BaseNote.COLOR_NEW)
+            add(1, BaseNote.COLOR_DEFAULT)
         }
     val dialog = MaterialAlertDialogBuilder(this).setTitle(R.string.change_color).create()
     lateinit var colorAdapter: ColorAdapter
@@ -72,17 +73,22 @@ fun AppCompatActivity.showColorSelectDialog(
                         return
                     }
                     if (oldColor == BaseNote.COLOR_DEFAULT) {
-                        MaterialAlertDialogBuilder(this@showColorSelectDialog)
-                            .setTitle(R.string.set_as_default_color)
-                            .setMessage(R.string.set_as_default_color_message)
-                            .setPositiveButton(R.string.make_default) { _, _ ->
-                                preferences.defaultNoteColor.save(oldColor)
-                                colorAdapter.defaultColor = oldColor
-                                colorAdapter.notifyDataSetChanged()
-                            }
-                            .setNegativeButton(android.R.string.cancel, null)
-                            .show()
-                        return
+                        if (oldColor == preferences.defaultNoteColor.value) {
+                            showToast(R.string.default_color_hint)
+                            return
+                        } else {
+                            MaterialAlertDialogBuilder(this@showColorSelectDialog)
+                                .setTitle(R.string.set_as_default_color)
+                                .setMessage(R.string.set_as_default_color_message)
+                                .setPositiveButton(R.string.make_default) { _, _ ->
+                                    preferences.defaultNoteColor.save(oldColor)
+                                    colorAdapter.defaultColor = oldColor
+                                    colorAdapter.notifyItemRangeChanged(1, actualColors.size - 1)
+                                }
+                                .setNegativeButton(android.R.string.cancel, null)
+                                .show()
+                            return
+                        }
                     }
                     dialog.dismiss()
                     showEditColorDialog(

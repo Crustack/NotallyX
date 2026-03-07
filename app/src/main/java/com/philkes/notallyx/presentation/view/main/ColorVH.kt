@@ -24,7 +24,7 @@ class ColorVH(private val binding: RecyclerColorBinding, listener: ItemListener)
         }
     }
 
-    fun bind(color: ColorString, isSelected: Boolean, isDefault: Boolean = false) {
+    fun bind(color: ColorString, isSelected: Boolean, isNoteDefault: Boolean = false) {
         val showAddIcon = color == BaseNote.COLOR_NEW
         val context = binding.root.context
         val value =
@@ -33,8 +33,11 @@ class ColorVH(private val binding: RecyclerColorBinding, listener: ItemListener)
         val controlsColor = context.getContrastFontColor(value)
         binding.apply {
             CardView.apply {
-                setCardBackgroundColor(value)
                 contentDescription = color
+                setCardBackgroundColor(value)
+                if (color == BaseNote.COLOR_DEFAULT) {
+                    setBackgroundResource(R.drawable.dashed_background)
+                }
                 if (isSelected) {
                     strokeWidth = 4.dp
                     strokeColor = controlsColor
@@ -53,7 +56,7 @@ class ColorVH(private val binding: RecyclerColorBinding, listener: ItemListener)
                 isVisible = showAddIcon || isSelected
             }
             DefaultColorIcon.apply {
-                isVisible = isDefault
+                isVisible = isNoteDefault
                 imageTintList = ColorStateList.valueOf(controlsColor)
             }
         }
