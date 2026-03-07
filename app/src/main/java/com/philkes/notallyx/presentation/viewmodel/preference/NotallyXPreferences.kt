@@ -7,6 +7,7 @@ import androidx.preference.PreferenceManager
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.presentation.viewmodel.preference.Constants.PASSWORD_EMPTY
 import com.philkes.notallyx.utils.backup.importPreferences
@@ -204,6 +205,8 @@ class NotallyXPreferences private constructor(private val context: Context) {
      */
     val dataSchemaId = IntPreference("dataSchemaId", preferences, 0, 0, Integer.MAX_VALUE)
 
+    val defaultNoteColor = StringPreference("defaultNoteColor", preferences, BaseNote.COLOR_DEFAULT)
+
     fun setDataSchemaId(value: Int) {
         preferences.edit(true) { putInt(dataSchemaId.key, value) }
         dataSchemaId.refresh()
@@ -309,6 +312,7 @@ class NotallyXPreferences private constructor(private val context: Context) {
                 autoRemoveDeletedNotesAfterDays,
                 editNoteActivityTopActions,
                 editNoteActivityBottomAction,
+                defaultNoteColor,
             )
             .forEach { it.refresh() }
     }

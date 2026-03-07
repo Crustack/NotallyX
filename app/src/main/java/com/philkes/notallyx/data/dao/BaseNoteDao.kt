@@ -188,8 +188,6 @@ interface BaseNoteDao {
     )
     suspend fun move(ids: LongArray, folder: Folder, timestamp: Long)
 
-    @Query("SELECT DISTINCT color FROM BaseNote") fun getAllColorsAsync(): LiveData<List<String>>
-
     @Query("SELECT DISTINCT color FROM BaseNote") suspend fun getAllColors(): List<String>
 
     @Query("UPDATE BaseNote SET color = :color WHERE id IN (:ids)")

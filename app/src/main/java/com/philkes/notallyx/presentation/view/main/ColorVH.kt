@@ -5,6 +5,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.BaseNote
+import com.philkes.notallyx.data.model.ColorString
 import com.philkes.notallyx.databinding.RecyclerColorBinding
 import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.extractColor
@@ -23,7 +24,7 @@ class ColorVH(private val binding: RecyclerColorBinding, listener: ItemListener)
         }
     }
 
-    fun bind(color: String, isSelected: Boolean) {
+    fun bind(color: ColorString, isSelected: Boolean, isDefault: Boolean = false) {
         val showAddIcon = color == BaseNote.COLOR_NEW
         val context = binding.root.context
         val value =
@@ -50,6 +51,10 @@ class ColorVH(private val binding: RecyclerColorBinding, listener: ItemListener)
                 }
                 imageTintList = ColorStateList.valueOf(controlsColor)
                 isVisible = showAddIcon || isSelected
+            }
+            DefaultColorIcon.apply {
+                isVisible = isDefault
+                imageTintList = ColorStateList.valueOf(controlsColor)
             }
         }
     }

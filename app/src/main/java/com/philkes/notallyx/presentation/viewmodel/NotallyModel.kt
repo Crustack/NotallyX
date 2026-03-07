@@ -77,7 +77,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
 
     var id = 0L
     var folder = Folder.NOTES
-    var color = BaseNote.COLOR_DEFAULT
+    var color = preferences.defaultNoteColor.value
 
     var title = String()
     var pinned = false
