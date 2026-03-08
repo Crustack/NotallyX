@@ -22,7 +22,6 @@ import com.philkes.notallyx.data.model.getNoteTypeFromUrl
 import com.philkes.notallyx.data.model.isNoteUrl
 import com.philkes.notallyx.databinding.BottomTextFormattingMenuBinding
 import com.philkes.notallyx.databinding.RecyclerToggleBinding
-import com.philkes.notallyx.presentation.add
 import com.philkes.notallyx.presentation.addIconButton
 import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.hideKeyboard
@@ -173,13 +172,13 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
         binding.BottomAppBarCenter.visibility = VISIBLE
         binding.BottomAppBarLeft.apply {
             removeAllViews()
-            addIconButton(R.string.add_item, R.drawable.add, marginStart = 0) {
+            addIconButton(R.string.add_item, R.drawable.add, colorInt, marginStart = 0) {
                 AddNoteBottomSheet(actionHandler, colorInt)
                     .show(supportFragmentManager, AddNoteBottomSheet.TAG)
             }
             updateLayoutParams<ConstraintLayout.LayoutParams> { endToStart = -1 }
             textFormatMenu =
-                addIconButton(R.string.edit, R.drawable.text_format) {
+                addIconButton(R.string.edit, R.drawable.text_format, colorInt) {
                         initBottomTextFormattingMenu()
                     }
                     .apply { isEnabled = binding.EnterBody.isActionModeOn }

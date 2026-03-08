@@ -46,7 +46,6 @@ import com.philkes.notallyx.presentation.activity.main.MainActivity.Companion.EX
 import com.philkes.notallyx.presentation.activity.main.fragment.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
 import com.philkes.notallyx.presentation.activity.note.reminders.RemindersActivity
 import com.philkes.notallyx.presentation.add
-import com.philkes.notallyx.presentation.addFastScroll
 import com.philkes.notallyx.presentation.addIconButton
 import com.philkes.notallyx.presentation.bindLabels
 import com.philkes.notallyx.presentation.displayEditLabelDialog
@@ -195,10 +194,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             setStateFromModel(savedInstanceState)
 
             configureUI()
-            binding.ScrollView.apply {
-                visibility = View.VISIBLE
-                addFastScroll(this@EditActivity)
-            }
+            binding.ScrollView.visibility = VISIBLE
             setupEditNoteReminderChip()
         }
 
@@ -486,7 +482,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     protected open fun initBottomMenu() {
         binding.BottomAppBarLeft.apply {
             removeAllViews()
-            addIconButton(R.string.adding_files, R.drawable.add, marginStart = 0) {
+            addIconButton(R.string.adding_files, R.drawable.add, colorInt, marginStart = 0) {
                 AddBottomSheet(actionHandler, colorInt)
                     .show(supportFragmentManager, AddBottomSheet.TAG)
             }
@@ -497,6 +493,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 addIconButton(
                     R.string.jump_to_top,
                     R.drawable.vertical_align_top,
+                    colorInt,
                     marginStart = 0,
                 ) {
                     binding.ScrollView.apply { post { fullScroll(View.FOCUS_UP) } }
@@ -505,6 +502,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 addIconButton(
                         R.string.undo,
                         R.drawable.undo,
+                        colorInt,
                         marginStart = 2,
                         onLongClick = {
                             try {
@@ -527,6 +525,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 addIconButton(
                         R.string.redo,
                         R.drawable.redo,
+                        colorInt,
                         marginStart = 2,
                         onLongClick = {
                             try {
@@ -548,6 +547,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 addIconButton(
                     R.string.jump_to_bottom,
                     R.drawable.vertical_align_bottom,
+                    colorInt,
                     marginStart = 2,
                 ) {
                     binding.ScrollView.apply {
@@ -583,7 +583,12 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             removeAllViews()
 
             addBottomAction(bottomAction)
-            addIconButton(R.string.tap_for_more_options, R.drawable.more_vert, marginStart = 0) {
+            addIconButton(
+                R.string.tap_for_more_options,
+                R.drawable.more_vert,
+                colorInt,
+                marginStart = 0,
+            ) {
                 openMoreOptionsBottomSheet()
             }
         }
@@ -597,7 +602,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 notallyModel.folder,
                 notallyModel.type,
             )
-        val button = addIconButton(title, icon) { actionHandler.handleAction(action) }
+        val button = addIconButton(title, icon, colorInt) { actionHandler.handleAction(action) }
 
         // Try to get the view for long click
         post {
@@ -880,12 +885,18 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             root.setBackgroundColor(colorInt)
             MainListView.setBackgroundColor(colorInt)
             CheckedListView.setBackgroundColor(colorInt)
-            Toolbar.backgroundTintList = ColorStateList.valueOf(colorInt)
-            Toolbar.setControlsContrastColorForAllViews(colorInt)
         }
+        setTopActionBarColor(colorInt)
         setBottomAppBarColor(colorInt)
         if (::fileAdapter.isInitialized) fileAdapter.setColor(colorInt)
         if (::audioAdapter.isInitialized) audioAdapter.setColor(colorInt)
+    }
+
+    protected fun setTopActionBarColor(@ColorInt color: Int) {
+        binding.Toolbar.apply {
+            backgroundTintList = ColorStateList.valueOf(color)
+            setControlsContrastColorForAllViews(color)
+        }
     }
 
     protected fun setBottomAppBarColor(@ColorInt color: Int) {
@@ -962,6 +973,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 }
             }
         }
+        setTopActionBarColor(colorInt)
     }
 
     fun setupEditNoteReminderChip() {

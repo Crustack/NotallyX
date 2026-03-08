@@ -56,6 +56,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
@@ -114,7 +115,9 @@ import com.philkes.notallyx.utils.changehistory.EditTextState
 import com.philkes.notallyx.utils.changehistory.EditTextWithHistoryChange
 import com.philkes.notallyx.utils.getUrl
 import java.util.Date
+import me.zhanghai.android.fastscroll.FastScrollNestedScrollView
 import me.zhanghai.android.fastscroll.FastScrollerBuilder
+import me.zhanghai.android.fastscroll.PopupStyles
 import org.ocpsoft.prettytime.PrettyTime
 
 /**
@@ -247,6 +250,7 @@ fun Menu.add(
 fun ViewGroup.addIconButton(
     title: Int,
     drawable: Int,
+    colorInt: Int,
     marginStart: Int = 10,
     onLongClick: View.OnLongClickListener? = null,
     onClick: View.OnClickListener? = null,
@@ -274,6 +278,7 @@ fun ViewGroup.addIconButton(
                     )
                     .apply { setMargins(marginStart.dp, marginTop, 0, marginBottom) }
             setPadding(8.dp)
+            setControlsContrastColorForAllViews(colorInt)
         }
     addView(view)
     return view
@@ -718,6 +723,9 @@ fun View.setControlsColorForAllViews(
                 )
             setStrokeColor(colorStateList)
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && this is FastScrollNestedScrollView) {
+            this.addFastScroll(context, controlsColor)
+        }
     } else {
         val controlsStateList =
             ColorStateList(
@@ -986,12 +994,24 @@ fun Context.extractColor(color: String): Int {
     }
 }
 
-fun ViewGroup.addFastScroll(context: Context) {
-    FastScrollerBuilder(this)
-        .useMd2Style()
-        .setTrackDrawable(ContextCompat.getDrawable(context, R.drawable.scroll_track)!!)
-        .setPadding(0, 0, 2.dp, 0)
-        .build()
+fun ViewGroup.addFastScroll(context: Context, @ColorInt colorInt: Int) {
+    FastScrollerBuilder(this).useColoredStyle(context, colorInt).build()
+}
+
+fun FastScrollerBuilder.useColoredStyle(
+    context: Context,
+    @ColorInt colorInt: Int,
+): FastScrollerBuilder {
+    AppCompatResources.getDrawable(context, me.zhanghai.android.fastscroll.R.drawable.afs_md2_thumb)
+        ?.mutate()
+        ?.let {
+            DrawableCompat.setTint(it, colorInt)
+            setThumbDrawable(it)
+        }
+    setTrackDrawable(ContextCompat.getDrawable(context, R.drawable.scroll_track)!!)
+    setPadding(0, 0, 2.dp, 0)
+    setPopupStyle(PopupStyles.MD2)
+    return this
 }
 
 fun Window.setLightStatusAndNavBar(value: Boolean, view: View = decorView) {

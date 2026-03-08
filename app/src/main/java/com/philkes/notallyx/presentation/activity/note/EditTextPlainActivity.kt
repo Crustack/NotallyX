@@ -168,20 +168,16 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
         binding.BottomAppBarCenter.visibility = VISIBLE
         binding.BottomAppBarLeft.apply {
             removeAllViews()
-            addIconButton(
-                R.string.convert_to_text_note,
-                R.drawable.convert_to_text,
-                marginStart = 10,
-            ) {
+            addIconButton(R.string.convert_to_text_note, R.drawable.convert_to_text, colorInt) {
                 convertToTextNote()
             }
         }
         binding.BottomAppBarRight.apply {
             removeAllViews()
-            addIconButton(R.string.save, R.drawable.save, marginStart = 10) {
+            addIconButton(R.string.save, R.drawable.save, colorInt) {
                 originalFileUri.value?.let { uri -> saveToUri(uri) }
             }
-            addIconButton(R.string.save_to_device, R.drawable.save_as, marginStart = 10) {
+            addIconButton(R.string.save_to_device, R.drawable.save_as, colorInt) {
                 val intent =
                     Intent(ACTION_CREATE_DOCUMENT).apply {
                         addCategory(CATEGORY_OPENABLE)
