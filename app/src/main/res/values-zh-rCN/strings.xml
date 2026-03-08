@@ -14,8 +14,8 @@
     <string name="archive">存档</string>
     <string name="archived">已存档</string>
     <plurals name="archived_selected_notes">
-        <item quantity="one">存档了 %d 则笔记</item>
-        <item quantity="other">存档了 %d 则笔记</item>
+        <item quantity="one">存档了 %1$d 则笔记</item>
+        <item quantity="other">存档了 %1$d 则笔记</item>
     </plurals>
     <string name="ascending">升序</string>
     <string name="attach_file">附件</string>
@@ -25,18 +25,20 @@
     <string name="auto_backup_failed">NotallyX 自动备份失败了</string>
     <string name="auto_backup_last">上次备份</string>
     <string name="auto_backup_on_save">保存笔记时自动备份</string>
-    <string name="auto_backup_on_save_hint">启用本选项后，每当保存笔记时都会在所配置的”备份文件夹“中自动创建一个备份文件（”NotallyX_AutoBackup.zip）。请注意这可能影响性能</string>
+    <string name="auto_backup_on_save_hint">启用本选项后，每当退出笔记时都会在所配置的”备份文件夹“中自动创建一个备份文件（”NotallyX_AutoBackup.zip）。请注意这可能影响性能</string>
     <string name="auto_backup_skipped_files">跳过了 %1$d 个缺失的附加文件/图片</string>
     <string name="auto_backups_folder">备份文件夹</string>
-    <string name="auto_backups_folder_hint">保存所有自动备份文件的文件夹</string>
-    <string name="auto_backups_folder_rechoose">你需要重新选择备份文件夹，这样 NotallyX 有写入它的权限。你也可以按：取消“跳过导入备份文件夹的值</string>
+    <string name="auto_backups_folder_hint">保存所有自动备份文件的文件夹。如果要对备份使用云存储/WebDAV，请阅读文档（单击“%1$s”）</string>
+    <string name="auto_backups_folder_rechoose">你需要重新选择备份文件夹，这样 NotallyX 有写入它的权限。你也可以“取消”跳过导入备份文件夹的值</string>
     <string name="auto_backups_folder_set">先在上方设置备份文件夹</string>
+    <string name="auto_remove_deleted_notes">多久后对已删除笔记自动采取永久删除操作</string>
+    <string name="auto_remove_deleted_notes_hint">启用后，被删除的笔记将在 X 天后被永久性删除</string>
     <string name="auto_save_after_idle_time">在指定的空闲时间后自动保存笔记</string>
     <string name="auto_sort_by_checked">将所选项目排到末尾</string>
     <string name="back">返回</string>
     <string name="backup">备份</string>
     <string name="backup_password">备份密码</string>
-    <string name="backup_password_hint">如果设置密码，未来备份的ZIPs数据都会被加密且受密码保护。</string>
+    <string name="backup_password_hint">如果设置密码，未来备份的ZIP压缩包都会被加密且受密码保护。</string>
     <string name="backup_period_days">自动备份周期/天</string>
     <string name="backup_periodic">定期备份</string>
     <string name="backup_periodic_hint">启用此选项后将自动在配置的备份文件夹中创建备份文件。如果你启用了节能模式，这可能无法正常工作</string>
@@ -92,7 +94,7 @@
     <string name="copy">复制</string>
     <string name="crash_export_backup_failed">导出备份不幸失败。请用  \'%1$s\' 按钮报告崩溃</string>
     <string name="crash_export_backup_message">你可以单击  \'%1$s\' 试着创建笔记备份。如果崩溃造成数据损坏/破坏，创建备份可能失败。如果出现这种情况，用  \'%2$s\' 按钮报告崩溃</string>
-    <string name="crash_message">发生了意外错误。抱歉造成不变</string>
+    <string name="crash_message">发生了意外错误。抱歉造成不便。</string>
     <string name="create_github_issue">在Github创建问题</string>
     <string name="creation_date">创建时间</string>
     <string name="custom">自定义</string>
@@ -110,7 +112,7 @@
     <string name="delete_all_notes">删除全部笔记？</string>
     <string name="delete_audio_recording_forever">永久删除录音？</string>
     <string name="delete_checked_items">删除选中的项目</string>
-    <string name="delete_file">删除 \"%1$S\" 文件？</string>
+    <string name="delete_file">删除 \"%1$s\" 文件？</string>
     <string name="delete_forever">永久删除</string>
     <string name="delete_image_forever">永久删除图片？</string>
     <string name="delete_label">删除标签？</string>
@@ -119,8 +121,8 @@
     <string name="delete_selected_notes">删除所选笔记？</string>
     <string name="deleted">已删除</string>
     <plurals name="deleted_selected_notes">
-        <item quantity="one">删除 %1$d 则笔记？</item>
-        <item quantity="other">删除 %1$d 则笔记？</item>
+        <item quantity="one">删除了 %1$d 则笔记</item>
+        <item quantity="other">删除了 %1$d 则笔记</item>
     </plurals>
     <string name="deleting_files">正在删除文件</string>
     <string name="deleting_images">正在删除图片</string>
@@ -136,6 +138,11 @@
     <string name="documentation">文档</string>
     <string name="donate">捐赠</string>
     <string name="drag_handle">拖动处理</string>
+    <string name="duplicate">重复项</string>
+    <plurals name="duplicates">
+        <item quantity="one">%1$d 个重复项</item>
+        <item quantity="other">%1$d 个重复项</item>
+    </plurals>
     <string name="edit">编辑</string>
     <string name="edit_color">编辑颜色</string>
     <string name="edit_label">编辑标签</string>
@@ -158,7 +165,7 @@
     <string name="export_backup">导出备份</string>
     <string name="export_settings">导出设置</string>
     <string name="export_settings_failure">未能导出设置，你选择的路径有效吗？</string>
-    <string name="export_settings_message">所有设置都将导出为 JSON 文件，该文件可用于重新导入所存储的设置。请注意，这个文件中并不包含已加密的设置，如自动备份密码或生物特征认证密钥</string>
+    <string name="export_settings_message">所有设置都导出为 JSON 文件，该文件可用于重新导所存储的设置。请注意，这个文件中并不包含已加密的设置，如自动备份密码或生物特征加密密钥</string>
     <string name="export_settings_success">成功地导出了设置</string>
     <plurals name="exported_notes">
         <item quantity="one">导出了%1$s则笔记</item>
@@ -175,14 +182,14 @@
     <string name="help">帮助</string>
     <string name="hours">小时</string>
     <string name="image_format_not_supported">不支持该图片格式</string>
-    <string name="images_hidden_in_overview">如果启用此选项，则注释的图像将不会显示在概览中。</string>
+    <string name="images_hidden_in_overview">如果启用此选项，则笔记的图像将不会显示在概览中。</string>
     <string name="images_hidden_in_overview_title">在概览中隐藏图片</string>
     <string name="import_action">导入</string>
     <string name="import_backup">导入备份</string>
-    <string name="import_backup_password_hint">如果你的备份文件没有密码保护，只需按下“导入”即可。如有，起输入正确的密码</string>
+    <string name="import_backup_password_hint">如果你的备份文件没有密码保护，按下“导入”即可。如有，请输入正确的密码。</string>
     <string name="import_other">从其它APP导入笔记</string>
     <string name="import_settings">导入设置</string>
-    <string name="import_settings_failure">导入设置</string>
+    <string name="import_settings_failure">导入设置失败，选对文件了吗？</string>
     <string name="import_settings_message">为了导入设置，请选择有效的 NotallyX 设置 JSON 文件</string>
     <string name="import_settings_success">成功地导入了设置</string>
     <string name="imported_files">已导入文件</string>
@@ -237,8 +244,8 @@
     <string name="months">个月</string>
     <string name="more">另 %1$d 个</string>
     <plurals name="more_files">
-        <item quantity="one">…另 %1$s 个文件</item>
-        <item quantity="other">…另 %1$s 个文件</item>
+        <item quantity="one">…另 %1$d 个文件</item>
+        <item quantity="other">…另 %1$d 个文件</item>
     </plurals>
     <string name="new_color">新颜色</string>
     <string name="next">下一个</string>
@@ -317,9 +324,10 @@
     <string name="source_code">源码</string>
     <string name="start">启动视图</string>
     <string name="start_view">启动视图</string>
-    <string name="start_view_hint">选择应用启动时应显示哪个视图/标签。默认为笔记主视图</string>
+    <string name="start_view_hint">选择应用启动时应显示的个视图/标签。默认为笔记主视图</string>
     <string name="stop">停止</string>
     <string name="strikethrough">删除线</string>
+    <string name="super_dark">超深</string>
     <string name="take_note">记笔记</string>
     <string name="tap_for_more_options">轻按查看更多选项</string>
     <string name="tap_to_set_up">轻按进行设置</string>

@@ -73,18 +73,16 @@ open class ActionBottomSheet(
             }
             val textView =
                 BottomSheetActionBinding.inflate(inflater, layout, false).root.apply {
-                    text = getString(action.labelResId)
-                    setCompoundDrawablesWithIntrinsicBounds(
-                        ContextCompat.getDrawable(context, action.drawableResId),
-                        null,
-                        null,
-                        null,
-                    )
+                    text = action.label ?: getString(action.labelResId!!)
+                    val drawable =
+                        action.drawableResId?.let { ContextCompat.getDrawable(context, it) }
+                    setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null)
                     setOnClickListener {
                         if (action.callback(this@ActionBottomSheet)) {
                             dismiss()
                         }
                     }
+                    isSelected = action.isSelected
                 }
             layout.addView(textView)
         }
@@ -115,7 +113,7 @@ open class ActionBottomSheet(
                 bottomSheet ->
                 BottomSheetBehavior.from(bottomSheet).apply {
                     state = BottomSheetBehavior.STATE_EXPANDED
-                    isHideable = false
+                    isHideable = true
                     // Disable dragging changes to allow nested scroll
                     setBottomSheetCallback(
                         object : BottomSheetCallback() {
@@ -125,9 +123,7 @@ open class ActionBottomSheet(
                                 }
                             }
 
-                            override fun onSlide(bottomSheet: View, slideOffset: Float) {
-                                state = BottomSheetBehavior.STATE_EXPANDED
-                            }
+                            override fun onSlide(bottomSheet: View, slideOffset: Float) {}
                         }
                     )
                 }
@@ -139,12 +135,20 @@ open class ActionBottomSheet(
     fun hide() {
         (dialog as? BottomSheetDialog)?.behavior?.state = STATE_HIDDEN
     }
+
+    override fun dismiss() {
+        if (isAdded) {
+            super.dismiss()
+        }
+    }
 }
 
 data class Action(
     val labelResId: Int,
-    val drawableResId: Int,
+    val drawableResId: Int? = null,
+    val label: String? = null,
     val showDividerAbove: Boolean = false,
+    val isSelected: Boolean = false,
     /**
      * On click callback.
      *

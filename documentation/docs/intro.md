@@ -144,9 +144,10 @@ For more detailed information about specific features, check out the following p
 - ✏️ [Rich Text Formatting](features/rich-text.mdx)
 - 📋 [Task Lists and Subtasks](features/task-lists.mdx)
 - 🏷️ [Labels and Organization](features/labels.mdx)
+- 🔔 [Reminders](features/reminders.mdx)
 - 🛡️ [Security and Privacy](security-privacy.mdx)
 - ⚙️ [Settings](settings.mdx)
-- 🔔 [Reminders](features/reminders.mdx)
+- 🛠️ [Customizing Edit Actions](features/edit-actions.mdx)
 
 ## Contributing
 

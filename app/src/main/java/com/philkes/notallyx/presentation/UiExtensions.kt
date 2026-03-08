@@ -9,6 +9,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.content.res.Resources
+import android.graphics.Color
+import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
@@ -33,6 +35,8 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.view.Window
 import android.view.WindowManager
@@ -53,6 +57,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
@@ -92,6 +97,8 @@ import com.philkes.notallyx.data.imports.ImportStage
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.SpanRepresentation
+import com.philkes.notallyx.data.model.findNextNotificationDate
+import com.philkes.notallyx.data.model.haveAnyRepetition
 import com.philkes.notallyx.databinding.DialogInputBinding
 import com.philkes.notallyx.databinding.DialogProgressBinding
 import com.philkes.notallyx.databinding.LabelBinding
@@ -108,8 +115,12 @@ import com.philkes.notallyx.utils.changehistory.ChangeHistory
 import com.philkes.notallyx.utils.changehistory.EditTextState
 import com.philkes.notallyx.utils.changehistory.EditTextWithHistoryChange
 import com.philkes.notallyx.utils.getUrl
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
+import me.zhanghai.android.fastscroll.FastScrollNestedScrollView
 import me.zhanghai.android.fastscroll.FastScrollerBuilder
+import me.zhanghai.android.fastscroll.PopupStyles
 import org.ocpsoft.prettytime.PrettyTime
 
 /**
@@ -225,11 +236,12 @@ fun Menu.add(
     drawable: Int,
     showAsAction: Int = MenuItem.SHOW_AS_ACTION_IF_ROOM,
     groupId: Int = Menu.NONE,
+    itemId: Int = Menu.NONE,
     order: Int = Menu.NONE,
     onClick: (item: MenuItem) -> Unit,
 ): MenuItem {
     val menuItem =
-        add(groupId, Menu.NONE, order, title).setIcon(drawable).setOnMenuItemClickListener { item ->
+        add(groupId, itemId, order, title).setIcon(drawable).setOnMenuItemClickListener { item ->
             onClick(item)
             item.isChecked = true
             return@setOnMenuItemClickListener false
@@ -241,6 +253,7 @@ fun Menu.add(
 fun ViewGroup.addIconButton(
     title: Int,
     drawable: Int,
+    colorInt: Int,
     marginStart: Int = 10,
     onLongClick: View.OnLongClickListener? = null,
     onClick: View.OnClickListener? = null,
@@ -268,6 +281,7 @@ fun ViewGroup.addIconButton(
                     )
                     .apply { setMargins(marginStart.dp, marginTop, 0, marginBottom) }
             setPadding(8.dp)
+            setControlsContrastColorForAllViews(colorInt)
         }
     addView(view)
     return view
@@ -598,6 +612,8 @@ private fun formatTimestamp(timestamp: Long, dateFormat: DateFormat): String {
     return Date(timestamp).format(dateFormat)
 }
 
+private val ISO_DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+
 fun Date.format(dateFormat: DateFormat = DateFormat.TIMESTAMP_SHORT): String {
     return when (dateFormat) {
         DateFormat.NONE -> ""
@@ -606,6 +622,9 @@ fun Date.format(dateFormat: DateFormat = DateFormat.TIMESTAMP_SHORT): String {
             java.text.DateFormat.getDateInstance(java.text.DateFormat.FULL).format(this)
         DateFormat.ABSOLUTE_SHORT ->
             java.text.DateFormat.getDateInstance(java.text.DateFormat.SHORT).format(this)
+        DateFormat.SHORT_ISO -> {
+            ISO_DATE_FORMAT.format(this)
+        }
         DateFormat.TIMESTAMP_SHORT ->
             java.text.DateFormat.getDateTimeInstance(
                     java.text.DateFormat.SHORT,
@@ -712,6 +731,9 @@ fun View.setControlsColorForAllViews(
                 )
             setStrokeColor(colorStateList)
         }
+        if (this is FastScrollNestedScrollView) {
+            this.addFastScroll(context, controlsColor)
+        }
     } else {
         val controlsStateList =
             ColorStateList(
@@ -724,9 +746,12 @@ fun View.setControlsColorForAllViews(
         if (this is Chip) {
             setTextColor(controlsStateList)
             setLinkTextColor(controlsStateList)
-            chipBackgroundColor = ColorStateList.valueOf(backgroundColor)
+            val chipColor = backgroundColor.getSlightContrastColor()
+            chipBackgroundColor = ColorStateList.valueOf(chipColor)
             chipIconTint = controlsStateList
             chipStrokeColor = controlsStateList
+            closeIconTint = controlsStateList
+            checkedIconTint = controlsStateList
             return
         }
         if (this is TextView) {
@@ -847,6 +872,16 @@ fun Context.getContrastFontColor(@ColorInt backgroundColor: Int): Int {
 }
 
 fun @receiver:ColorInt Int.isLightColor() = ColorUtils.calculateLuminance(this) > 0.5
+
+@ColorInt
+fun @receiver:ColorInt Int.getSlightContrastColor(): Int {
+    val overlayColor = if (this.isLightColor()) Color.BLACK else Color.WHITE
+    // Composite black/white over the background color
+    return ColorUtils.compositeColors(
+        ColorUtils.setAlphaComponent(overlayColor, 15), // ~10% alpha
+        this,
+    )
+}
 
 fun MaterialAlertDialogBuilder.setCancelButton(listener: DialogInterface.OnClickListener? = null) =
     setNegativeButton(R.string.cancel, listener)
@@ -980,12 +1015,24 @@ fun Context.extractColor(color: String): Int {
     }
 }
 
-fun ViewGroup.addFastScroll(context: Context) {
-    FastScrollerBuilder(this)
-        .useMd2Style()
-        .setTrackDrawable(ContextCompat.getDrawable(context, R.drawable.scroll_track)!!)
-        .setPadding(0, 0, 2.dp, 0)
-        .build()
+fun ViewGroup.addFastScroll(context: Context, @ColorInt colorInt: Int) {
+    FastScrollerBuilder(this).useColoredStyle(context, colorInt).build()
+}
+
+fun FastScrollerBuilder.useColoredStyle(
+    context: Context,
+    @ColorInt colorInt: Int,
+): FastScrollerBuilder {
+    AppCompatResources.getDrawable(context, me.zhanghai.android.fastscroll.R.drawable.afs_md2_thumb)
+        ?.mutate()
+        ?.let {
+            DrawableCompat.setTint(it, colorInt)
+            setThumbDrawable(it)
+        }
+    ContextCompat.getDrawable(context, R.drawable.scroll_track)?.let { setTrackDrawable(it) }
+    setPadding(0, 0, 2.dp, 0)
+    setPopupStyle(PopupStyles.MD2)
+    return this
 }
 
 fun Window.setLightStatusAndNavBar(value: Boolean, view: View = decorView) {
@@ -1088,5 +1135,26 @@ fun Context.createTextView(textResId: Int, padding: Int = 16.dp): TextView {
         updatePadding(padding, padding, padding, padding)
         maxLines = Integer.MAX_VALUE
         ellipsize = null
+    }
+}
+
+fun Chip.setupReminderChip(baseNote: BaseNote) {
+    val now = Date(System.currentTimeMillis())
+    val mostRecentNotificationDate =
+        baseNote.reminders.findNextNotificationDate()
+            ?: baseNote.reminders.maxOfOrNull { it.dateTime }
+    if (mostRecentNotificationDate == null) {
+        this.visibility = GONE
+        return
+    }
+    this.apply {
+        visibility = VISIBLE
+        text = mostRecentNotificationDate.format()
+        setCloseIconVisible(baseNote.reminders.haveAnyRepetition())
+        val isElapsed = mostRecentNotificationDate < now
+        alpha = if (isElapsed) 0.5f else 1.0f
+        paintFlags =
+            if (isElapsed) paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+            else paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
     }
 }

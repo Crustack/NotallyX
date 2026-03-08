@@ -424,7 +424,17 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     private fun deleteForever() {
         MaterialAlertDialogBuilder(this)
             .setMessage(R.string.delete_selected_notes)
-            .setPositiveButton(R.string.delete) { _, _ -> baseModel.deleteSelectedBaseNotes() }
+            .setPositiveButton(R.string.delete) { _, _ ->
+                val removedNotes = baseModel.actionMode.selectedNotes.values.toList()
+                baseModel.deleteSelectedBaseNotes()
+                Snackbar.make(
+                        findViewById(R.id.DrawerLayout),
+                        getQuantityString(R.plurals.deleted_selected_notes, removedNotes.size),
+                        Snackbar.LENGTH_SHORT,
+                    )
+                    .apply { setAction(R.string.undo) { baseModel.saveNotes(removedNotes) } }
+                    .show()
+            }
             .setCancelButton()
             .show()
     }

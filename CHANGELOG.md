@@ -1,5 +1,34 @@
 # Changelog
 
+## [v7.9.1](https://github.com/Crustack/NotallyX/tree/v7.9.1) (2026-03-05)
+
+[Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.9.0...v7.9.1)
+
+### Fixed Bugs
+
+- Save buttons missing when editing txt files [\#892](https://github.com/Crustack/NotallyX/issues/892)
+
+## [v7.9.0](https://github.com/Crustack/NotallyX/tree/v7.9.0) (2026-03-05)
+
+[Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.8.1...v7.9.0)
+
+### Added Features
+
+- Make action buttons interchangeable in edit note view [\#876](https://github.com/Crustack/NotallyX/issues/876)
+- Use default datetime format for reminders [\#858](https://github.com/Crustack/NotallyX/issues/858)
+- Feature Request: Add a Reminder button on the top right corner + Reminder Simplification [\#829](https://github.com/Crustack/NotallyX/issues/829)
+- Show reminder details in note [\#819](https://github.com/Crustack/NotallyX/issues/819)
+- Add option to backup all notes after a specific interval [\#737](https://github.com/Crustack/NotallyX/issues/737)
+- Add reminder repetition option [\#578](https://github.com/Crustack/NotallyX/issues/578)
+- Add scroll "to top" and "to bottom" shortcut [\#189](https://github.com/Crustack/NotallyX/issues/189)
+- Detailed reminder screen option [\#875](https://github.com/Crustack/NotallyX/pull/875) ([ulibte](https://github.com/ulibte))
+- Restore active reminder notifications after device reboot [\#850](https://github.com/Crustack/NotallyX/pull/850) ([ulibte](https://github.com/ulibte))
+
+### Fixed Bugs
+
+- Stuttering search [\#879](https://github.com/Crustack/NotallyX/issues/879)
+- Not overwriting file with the same name by default [\#854](https://github.com/Crustack/NotallyX/issues/854)
+
 ## [v7.8.1](https://github.com/Crustack/NotallyX/tree/v7.8.1) (2026-02-21)
 
 [Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.8.0...v7.8.1)

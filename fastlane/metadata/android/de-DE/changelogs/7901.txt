@@ -1,0 +1,1 @@
+- Speichern Buttons wiedergestellt beim Text-Datei Editieren

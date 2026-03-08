@@ -6,31 +6,26 @@ import android.content.Intent.ACTION_CREATE_DOCUMENT
 import android.content.Intent.CATEGORY_OPENABLE
 import android.net.Uri
 import android.os.Bundle
-import android.view.MenuItem
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
-import com.davemorrissey.labs.subscaleview.ImageSource.uri
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.presentation.add
 import com.philkes.notallyx.presentation.addIconButton
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.setOnNextAction
 import com.philkes.notallyx.presentation.showKeyboard
 import com.philkes.notallyx.presentation.showToast
+import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 import com.philkes.notallyx.utils.changehistory.ChangeHistory
 import com.philkes.notallyx.utils.findAllOccurrences
 import com.philkes.notallyx.utils.getFileName
-import com.philkes.notallyx.utils.mergeSkipFirst
-import com.philkes.notallyx.utils.observeSkipFirst
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -143,33 +138,10 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
         }
     }
 
-    override fun setupToolbars() {
-        binding.Toolbar.setNavigationIcon(R.drawable.close)
+    override fun resetToolbars() {
         binding.Toolbar.setNavigationOnClickListener { finish() }
-        binding.Toolbar.menu.apply {
-            clear()
-            add(R.string.search, R.drawable.search, MenuItem.SHOW_AS_ACTION_ALWAYS) {
-                startSearch()
-            }
-            // Pin action removed
-        }
-
-        search.results.mergeSkipFirst(search.resultPos).observe(this) { (amount, pos) ->
-            val hasResults = amount > 0
-            binding.SearchResults.text = if (hasResults) "${pos + 1}/$amount" else "0"
-            search.nextMenuItem?.isEnabled = hasResults
-            search.prevMenuItem?.isEnabled = hasResults
-        }
-
-        search.resultPos.observeSkipFirst(this) { pos -> selectSearchResult(pos) }
-
-        binding.EnterSearchKeyword.apply {
-            doAfterTextChanged { text ->
-                this@EditTextPlainActivity.search.query = text.toString()
-                updateSearchResults(this@EditTextPlainActivity.search.query)
-            }
-        }
-        initBottomMenu()
+        binding.Toolbar.setNavigationIcon(R.drawable.close)
+        updateTopActions(listOf(EditAction.SEARCH), changeable = false)
     }
 
     override fun setStateFromModel(savedInstanceState: Bundle?) {
@@ -196,20 +168,16 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
         binding.BottomAppBarCenter.visibility = VISIBLE
         binding.BottomAppBarLeft.apply {
             removeAllViews()
-            addIconButton(
-                R.string.convert_to_text_note,
-                R.drawable.convert_to_text,
-                marginStart = 10,
-            ) {
+            addIconButton(R.string.convert_to_text_note, R.drawable.convert_to_text, colorInt) {
                 convertToTextNote()
             }
         }
         binding.BottomAppBarRight.apply {
             removeAllViews()
-            addIconButton(R.string.save, R.drawable.save, marginStart = 10) {
+            addIconButton(R.string.save, R.drawable.save, colorInt) {
                 originalFileUri.value?.let { uri -> saveToUri(uri) }
             }
-            addIconButton(R.string.save_to_device, R.drawable.save_as, marginStart = 10) {
+            addIconButton(R.string.save_to_device, R.drawable.save_as, colorInt) {
                 val intent =
                     Intent(ACTION_CREATE_DOCUMENT).apply {
                         addCategory(CATEGORY_OPENABLE)
@@ -220,6 +188,8 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
         }
         setBottomAppBarColor(colorInt)
     }
+
+    override fun setupAdditionalListeners() {}
 
     override fun initChangeHistory() {
         changeHistory =

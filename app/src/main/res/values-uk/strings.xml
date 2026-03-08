@@ -24,13 +24,15 @@
     <string name="auto_backup_error_message">Під час автоматичного резервного копіювання сталася помилка:\n\'%1$s\'\nБудь ласка, перевірте налаштування або повідомте про помилку</string>
     <string name="auto_backup_failed">Збій автоматичного резервного копіювання NotallyX</string>
     <string name="auto_backup_last">Останнє резервне копіювання</string>
-    <string name="auto_backup_on_save">Автоматично створювати резервну копію при виході з додатку</string>
+    <string name="auto_backup_on_save">Автоматично створювати резервну копію при виході з додатка</string>
     <string name="auto_backup_on_save_hint">Якщо ввімкнути цей параметр, резервна копія («NotallyX_AutoBackup.zip») автоматично створюватиметься у вибраній папці щоразу при виході з нотатки.\nЗверніть увагу: це може вплинути на продуктивність пристрою</string>
     <string name="auto_backup_skipped_files">Пропущено відсутніх вкладень (файлів/зображень): %1$d</string>
     <string name="auto_backups_folder">Папка резервних копій</string>
     <string name="auto_backups_folder_hint">Папка, у якій зберігатимуться всі автоматичні резервні копії.\nЯкщо ви хочете використовувати хмарне сховище або WebDAV, ознайомтеся з документацією (натисніть \"%1$s\")</string>
     <string name="auto_backups_folder_rechoose">Потрібно заново вибрати папку резервних копій, щоб NotallyX мав дозвіл на запис у неї.\nВи також можете натиснути «Скасувати», щоб пропустити імпорт налаштувань папки</string>
     <string name="auto_backups_folder_set">Спочатку виберіть папку резервних копій вище</string>
+    <string name="auto_remove_deleted_notes">Автоматично видаляти нотатки назавжди через</string>
+    <string name="auto_remove_deleted_notes_hint">Якщо ввімкнути цю опцію, видалені нотатки будуть остаточно видалені через X днів</string>
     <string name="auto_save_after_idle_time">Автозбереження нотатки після вказаного часу бездіяльності</string>
     <string name="auto_sort_by_checked">Переносити відмічені пункти в кінець</string>
     <string name="back">Назад</string>
@@ -159,7 +161,7 @@
     <string name="error_while_renaming_image">Помилка під час перейменування зображення</string>
     <string name="evernote">Імпортувати із Evernote</string>
     <string name="evernote_help">Щоб імпортувати нотатки з Evernote, вам потрібно експортувати блокнот Evernote у форматі ENEX. Натисніть «Довідка», щоб дізнатися більше.\n\nЯкщо у вас уже є файл ENEX, натисніть «Імпортувати» та виберіть його.</string>
-    <string name="every">Загальні</string>
+    <string name="every">Кожні</string>
     <string name="export">Експорт</string>
     <string name="export_backup">Експорт резервної копії</string>
     <string name="export_settings">Експорт налаштувань</string>
@@ -212,6 +214,8 @@
     <string name="item">Пункт</string>
     <string name="json_files">JSON-файли</string>
     <string name="json_files_help">Щоб імпортувати ваші нотатки з JSON-файлів (окремого файлу або папки), натисніть «Імпортувати». Кожен коректний JSON-файл буде імпортовано як окрему нотатку, а назва файлу стане заголовком нотатки.</string>
+    <string name="jump_to_bottom">Донизу</string>
+    <string name="jump_to_top">Вгору</string>
     <string name="label_exists">Мітка вже існує</string>
     <string name="label_visibility">Приховати/Показати мітку на панелі навігації</string>
     <string name="labels">Мітки</string>
@@ -326,6 +330,7 @@
     <string name="start_view_hint">Виберіть вигляд або мітку, що відображатимуться під час запуску додатка.\nЗа замовчуванням: основний екран нотаток.</string>
     <string name="stop">Стоп</string>
     <string name="strikethrough">Перекреслити</string>
+    <string name="super_dark">Нічна</string>
     <string name="take_note">Створити нотатку</string>
     <string name="tap_for_more_options">Торкніться, щоб відкрити додаткові опції</string>
     <string name="tap_to_set_up">Торкніться, щоб налаштувати</string>

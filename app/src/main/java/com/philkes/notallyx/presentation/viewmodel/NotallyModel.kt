@@ -1,6 +1,5 @@
 package com.philkes.notallyx.presentation.viewmodel
 
-import android.R.attr.type
 import android.app.Application
 import android.graphics.Typeface
 import android.net.Uri
@@ -479,6 +478,14 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
         }
         Cache.list = ArrayList()
         saveNote(checkBackupOnSave = false)
+    }
+
+    suspend fun refreshOriginalNote() {
+        if (id == 0L) return
+        val baseNote = withContext(Dispatchers.IO) { baseNoteDao.get(id) }
+        if (baseNote == null) return
+        originalNote = baseNote.deepCopy()
+        reminders.value = baseNote.reminders
     }
 
     enum class FileType {

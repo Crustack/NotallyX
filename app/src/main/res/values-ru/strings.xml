@@ -40,7 +40,7 @@
     <string name="backup_period_days">Интервал авторезервирования (в днях)</string>
     <string name="backup_periodic">Периодические резервные копии</string>
     <string name="backup_periodic_hint">При включении этой функции резервные копии будут автоматически сохраняться в указанную папку.\nФункция может не работать при включенном режиме энергосбережения</string>
-    <string name="behaviour">Биометрия</string>
+    <string name="behaviour">Поведение</string>
     <string name="biometric_lock">Блокировать приложение с помощью биометрии или PIN-кода</string>
     <string name="biometrics_disable_success">Биометрическая защита/PIN-код отключены</string>
     <string name="biometrics_failure">Ошибка аутентификации по Биометрии/PIN-коду</string>
