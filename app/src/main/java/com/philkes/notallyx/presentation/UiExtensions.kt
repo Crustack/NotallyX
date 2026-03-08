@@ -115,7 +115,9 @@ import com.philkes.notallyx.utils.changehistory.ChangeHistory
 import com.philkes.notallyx.utils.changehistory.EditTextState
 import com.philkes.notallyx.utils.changehistory.EditTextWithHistoryChange
 import com.philkes.notallyx.utils.getUrl
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 import me.zhanghai.android.fastscroll.FastScrollNestedScrollView
 import me.zhanghai.android.fastscroll.FastScrollerBuilder
 import me.zhanghai.android.fastscroll.PopupStyles
@@ -610,6 +612,8 @@ private fun formatTimestamp(timestamp: Long, dateFormat: DateFormat): String {
     return Date(timestamp).format(dateFormat)
 }
 
+private val ISO_DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+
 fun Date.format(dateFormat: DateFormat = DateFormat.TIMESTAMP_SHORT): String {
     return when (dateFormat) {
         DateFormat.NONE -> ""
@@ -618,6 +622,9 @@ fun Date.format(dateFormat: DateFormat = DateFormat.TIMESTAMP_SHORT): String {
             java.text.DateFormat.getDateInstance(java.text.DateFormat.FULL).format(this)
         DateFormat.ABSOLUTE_SHORT ->
             java.text.DateFormat.getDateInstance(java.text.DateFormat.SHORT).format(this)
+        DateFormat.SHORT_ISO -> {
+            ISO_DATE_FORMAT.format(this)
+        }
         DateFormat.TIMESTAMP_SHORT ->
             java.text.DateFormat.getDateTimeInstance(
                     java.text.DateFormat.SHORT,

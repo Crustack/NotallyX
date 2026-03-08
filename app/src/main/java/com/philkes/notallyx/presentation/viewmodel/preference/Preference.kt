@@ -337,6 +337,7 @@ enum class DateFormat : TextProvider {
     RELATIVE,
     ABSOLUTE_SHORT,
     TIMESTAMP_SHORT,
+    SHORT_ISO,
     ABSOLUTE;
 
     override fun getText(context: Context): String {
