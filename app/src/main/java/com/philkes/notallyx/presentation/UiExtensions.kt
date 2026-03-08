@@ -299,6 +299,10 @@ fun TextView.displayFormattedTimestamp(
     } else visibility = View.GONE
 }
 
+fun TextView.setTextSizeSp(textSizeSp: Float) {
+    setTextSize(TypedValue.COMPLEX_UNIT_SP, textSizeSp)
+}
+
 val Int.dp: Int
     get() = (this * Resources.getSystem().displayMetrics.density + 0.5f).toInt()
 
@@ -1043,7 +1047,7 @@ fun Window.setLightStatusAndNavBar(value: Boolean, view: View = decorView) {
 
 fun ChipGroup.bindLabels(
     labels: List<String>,
-    textSize: Int,
+    textSize: Float,
     paddingTop: Boolean,
     color: Int? = null,
     onClick: ((label: String) -> Unit)? = null,
@@ -1062,7 +1066,7 @@ fun ChipGroup.bindLabels(
         for (label in labels) {
             LabelBinding.inflate(inflater, this, true).root.apply {
                 background = getOutlinedDrawable(this@bindLabels.context)
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, labelSize)
+                setTextSizeSp(labelSize)
                 text = label
                 color?.let { setControlsContrastColorForAllViews(it) }
                 onClick?.let { setOnClickListener { it(label) } }
@@ -1151,7 +1155,7 @@ fun Chip.setupReminderChip(baseNote: BaseNote, textSize: Float? = null) {
         visibility = VISIBLE
         text = mostRecentNotificationDate.format()
         textSize?.let {
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, it)
+            setTextSizeSp(it)
             chipIconSize =
                 TypedValue.applyDimension(
                     TypedValue.COMPLEX_UNIT_SP,

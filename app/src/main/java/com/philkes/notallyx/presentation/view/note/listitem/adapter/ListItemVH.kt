@@ -1,7 +1,6 @@
 package com.philkes.notallyx.presentation.view.note.listitem.adapter
 
 import android.graphics.Paint
-import android.util.TypedValue
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View.GONE
@@ -27,6 +26,7 @@ import com.philkes.notallyx.presentation.clone
 import com.philkes.notallyx.presentation.createListTextWatcherWithHistory
 import com.philkes.notallyx.presentation.setControlsContrastColorForAllViews
 import com.philkes.notallyx.presentation.setOnNextAction
+import com.philkes.notallyx.presentation.setTextSizeSp
 import com.philkes.notallyx.presentation.view.misc.EditTextAutoClearFocus
 import com.philkes.notallyx.presentation.view.note.listitem.ListManager
 import com.philkes.notallyx.presentation.view.note.listitem.firstBodyOrEmptyString
@@ -49,7 +49,7 @@ class ListItemVH(
     init {
         val body = textSize.editBodySize
         binding.EditText.apply {
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, body)
+            setTextSizeSp(body)
             filters = context.textMaxLengthFilter()
             textWatcher =
                 createListTextWatcherWithHistory(

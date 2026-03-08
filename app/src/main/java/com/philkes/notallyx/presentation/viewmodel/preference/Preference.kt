@@ -223,6 +223,24 @@ class IntPreference(
     }
 }
 
+class FloatPreference(
+    val key: String,
+    sharedPreferences: SharedPreferences,
+    defaultValue: Float,
+    val min: Float,
+    val max: Float,
+    titleResId: Int? = null,
+) : BasePreference<Float>(sharedPreferences, defaultValue, titleResId) {
+
+    override fun getValue(sharedPreferences: SharedPreferences): Float {
+        return sharedPreferences.getFloat(key, defaultValue)
+    }
+
+    override fun SharedPreferences.Editor.put(value: Float) {
+        putFloat(key, value)
+    }
+}
+
 class LongPreference(val key: String, sharedPreferences: SharedPreferences, defaultValue: Long) :
     BasePreference<Long>(sharedPreferences, defaultValue) {
 
@@ -348,17 +366,22 @@ enum class DateFormat : TextProvider {
     }
 }
 
-val Int.editBodySize: Float
-    get() = this.toFloat()
+typealias TextSizeSp = Float
 
-val Int.editTitleSize: Float
-    get() = (this + 4).toFloat()
+val TextSizeSp.editBodySize: Float
+    get() = this
 
-val Int.displayBodySize: Float
-    get() = (this - 2).toFloat()
+val TextSizeSp.editTitleSize: Float
+    get() = (this + 4)
 
-val Int.displayTitleSize: Float
-    get() = this.toFloat()
+val TextSizeSp.displayBodySize: Float
+    get() = (this - 2)
+
+val TextSizeSp.displaySmallerSize: Float
+    get() = (this - 3)
+
+val TextSizeSp.displayTitleSize: Float
+    get() = this
 
 enum class ListItemSort(override val textResId: Int) : StaticTextProvider {
     NO_AUTO_SORT(R.string.no_auto_sort),

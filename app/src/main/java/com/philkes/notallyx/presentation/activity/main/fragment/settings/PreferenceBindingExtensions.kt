@@ -5,7 +5,6 @@ import android.hardware.biometrics.BiometricManager
 import android.net.Uri
 import android.os.Build
 import android.text.method.PasswordTransformationMethod
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import androidx.core.view.isVisible
@@ -26,6 +25,7 @@ import com.philkes.notallyx.databinding.PreferenceSeekbarBinding
 import com.philkes.notallyx.presentation.checkedTag
 import com.philkes.notallyx.presentation.select
 import com.philkes.notallyx.presentation.setCancelButton
+import com.philkes.notallyx.presentation.setTextSizeSp
 import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.MenuDialog
@@ -35,6 +35,7 @@ import com.philkes.notallyx.presentation.viewmodel.preference.BooleanPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.Constants.PASSWORD_EMPTY
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.EnumPreference
+import com.philkes.notallyx.presentation.viewmodel.preference.FloatPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.IntPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.EMPTY_PATH
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.START_VIEW_DEFAULT
@@ -511,30 +512,28 @@ fun PreferenceSeekbarBinding.setup(
 }
 
 fun PreferenceSeekbarBinding.setupTextSizePreference(
-    preference: IntPreference,
+    preference: FloatPreference,
     context: Context,
-    value: Int = preference.value,
+    value: Float = preference.value,
     tooltipResId: Int? = null,
-    onChange: (newValue: Int) -> Unit,
+    onChange: (newValue: Float) -> Unit,
 ) {
     setup(
-        value,
+        value.toInt(),
         preference.titleResId!!,
-        preference.min,
-        preference.max,
+        preference.min.toInt(),
+        preference.max.toInt(),
         context,
         tooltipResId = tooltipResId,
     ) { newValue ->
-        onChange(newValue)
+        onChange(newValue.toFloat())
     }
     PreviewText.apply {
         isVisible = false
-        setTextSize(TypedValue.COMPLEX_UNIT_SP, value.toFloat())
+        setTextSizeSp(value)
     }
     Slider.apply {
-        addOnChangeListener { _, newValue, _ ->
-            PreviewText.setTextSize(TypedValue.COMPLEX_UNIT_SP, newValue)
-        }
+        addOnChangeListener { _, newValue, _ -> PreviewText.setTextSizeSp(newValue) }
         addOnSliderTouchListener(
             object : Slider.OnSliderTouchListener {
                 override fun onStartTrackingTouch(slider: Slider) {
@@ -543,7 +542,7 @@ fun PreferenceSeekbarBinding.setupTextSizePreference(
 
                 override fun onStopTrackingTouch(slider: Slider) {
                     PreviewText.isVisible = false
-                    onChange(slider.value.toInt())
+                    onChange(slider.value)
                 }
             }
         )
