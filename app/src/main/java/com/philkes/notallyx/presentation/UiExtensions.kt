@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.content.res.Resources
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.Typeface
@@ -723,7 +724,7 @@ fun View.setControlsColorForAllViews(
                 )
             setStrokeColor(colorStateList)
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && this is FastScrollNestedScrollView) {
+        if (this is FastScrollNestedScrollView) {
             this.addFastScroll(context, controlsColor)
         }
     } else {
@@ -738,9 +739,12 @@ fun View.setControlsColorForAllViews(
         if (this is Chip) {
             setTextColor(controlsStateList)
             setLinkTextColor(controlsStateList)
-            chipBackgroundColor = ColorStateList.valueOf(backgroundColor)
+            val chipColor = backgroundColor.getSlightContrastColor()
+            chipBackgroundColor = ColorStateList.valueOf(chipColor)
             chipIconTint = controlsStateList
             chipStrokeColor = controlsStateList
+            closeIconTint = controlsStateList
+            checkedIconTint = controlsStateList
             return
         }
         if (this is TextView) {
@@ -861,6 +865,16 @@ fun Context.getContrastFontColor(@ColorInt backgroundColor: Int): Int {
 }
 
 fun @receiver:ColorInt Int.isLightColor() = ColorUtils.calculateLuminance(this) > 0.5
+
+@ColorInt
+fun @receiver:ColorInt Int.getSlightContrastColor(): Int {
+    val overlayColor = if (this.isLightColor()) Color.BLACK else Color.WHITE
+    // Composite black/white over the background color
+    return ColorUtils.compositeColors(
+        ColorUtils.setAlphaComponent(overlayColor, 15), // ~10% alpha
+        this,
+    )
+}
 
 fun MaterialAlertDialogBuilder.setCancelButton(listener: DialogInterface.OnClickListener? = null) =
     setNegativeButton(R.string.cancel, listener)
@@ -1008,7 +1022,7 @@ fun FastScrollerBuilder.useColoredStyle(
             DrawableCompat.setTint(it, colorInt)
             setThumbDrawable(it)
         }
-    setTrackDrawable(ContextCompat.getDrawable(context, R.drawable.scroll_track)!!)
+    ContextCompat.getDrawable(context, R.drawable.scroll_track)?.let { setTrackDrawable(it) }
     setPadding(0, 0, 2.dp, 0)
     setPopupStyle(PopupStyles.MD2)
     return this
@@ -1130,7 +1144,6 @@ fun Chip.setupReminderChip(baseNote: BaseNote) {
         visibility = VISIBLE
         text = mostRecentNotificationDate.format()
         setCloseIconVisible(baseNote.reminders.haveAnyRepetition())
-        setChipBackgroundColorResource(R.color.md_theme_secondaryContainer)
         val isElapsed = mostRecentNotificationDate < now
         alpha = if (isElapsed) 0.5f else 1.0f
         paintFlags =

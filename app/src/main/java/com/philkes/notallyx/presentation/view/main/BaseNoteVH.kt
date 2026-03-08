@@ -163,8 +163,8 @@ class BaseNoteVH(
                 isVisible = true
             }
         }
-        setColor(baseNote.color)
         binding.ReminderChip.setupReminderChip(baseNote)
+        setColor(baseNote.color)
     }
 
     private fun bindNote(baseNote: BaseNote, keyword: String) {

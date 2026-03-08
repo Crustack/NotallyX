@@ -885,6 +885,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             root.setBackgroundColor(colorInt)
             MainListView.setBackgroundColor(colorInt)
             CheckedListView.setBackgroundColor(colorInt)
+            EditNoteReminderChip.setControlsContrastColorForAllViews(colorInt)
         }
         setTopActionBarColor(colorInt)
         setBottomAppBarColor(colorInt)
