@@ -68,7 +68,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
     private lateinit var baseNoteDao: BaseNoteDao
 
     val preferences = NotallyXPreferences.getInstance(app)
-    val textSize = preferences.textSize.value
+    val textSize = preferences.textSizeNoteEditor.value
 
     var isNewNote = true
 

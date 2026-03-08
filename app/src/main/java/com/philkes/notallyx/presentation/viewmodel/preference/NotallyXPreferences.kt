@@ -30,8 +30,10 @@ class NotallyXPreferences private constructor(private val context: Context) {
 
     val theme = createEnumPreference(preferences, "theme", Theme.FOLLOW_SYSTEM, R.string.theme)
     val useDynamicColors = BooleanPreference("useDynamicColors", preferences, false)
-    val textSize =
-        createEnumPreference(preferences, "textSize", TextSize.MEDIUM, R.string.text_size)
+    val textSizeNoteEditor =
+        IntPreference("textSizeNoteEditor", preferences, 16, 12, 32, R.string.text_size_note_editor)
+    val textSizeOverview =
+        IntPreference("textSizeOverview", preferences, 14, 12, 32, R.string.text_size_overview)
     val dateFormat =
         createEnumPreference(preferences, "dateFormat", DateFormat.RELATIVE, R.string.date_format)
     val applyDateFormatInNoteView =
@@ -278,7 +280,8 @@ class NotallyXPreferences private constructor(private val context: Context) {
 
     private fun reload() {
         setOf(
-                textSize,
+                textSizeNoteEditor,
+                textSizeOverview,
                 dateFormat,
                 applyDateFormatInNoteView,
                 notesView,

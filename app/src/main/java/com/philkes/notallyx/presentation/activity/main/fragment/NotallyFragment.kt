@@ -263,7 +263,7 @@ abstract class NotallyFragment : Fragment(), ItemListener {
                     dateFormat.value,
                     notesSorting.value,
                     BaseNoteVHPreferences(
-                        textSize.value,
+                        textSizeOverview.value,
                         maxItems.value,
                         maxLines.value,
                         maxTitle.value,

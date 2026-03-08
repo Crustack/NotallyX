@@ -39,11 +39,12 @@ import com.philkes.notallyx.presentation.view.misc.highlightableview.SEARCH_SNIP
 import com.philkes.notallyx.presentation.view.note.listitem.init
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
-import com.philkes.notallyx.presentation.viewmodel.preference.TextSize
+import com.philkes.notallyx.presentation.viewmodel.preference.displayBodySize
+import com.philkes.notallyx.presentation.viewmodel.preference.displayTitleSize
 import java.io.File
 
 data class BaseNoteVHPreferences(
-    val textSize: TextSize,
+    val textSize: Int,
     val maxItems: Int,
     val maxLines: Int,
     val maxTitleLines: Int,
@@ -72,11 +73,6 @@ class BaseNoteVH(
             Title.setTextSize(TypedValue.COMPLEX_UNIT_SP, title)
             Date.setTextSize(TypedValue.COMPLEX_UNIT_SP, body)
             Note.setTextSize(TypedValue.COMPLEX_UNIT_SP, body)
-
-            LinearLayout.children.forEach { view ->
-                view as TextView
-                view.setTextSize(TypedValue.COMPLEX_UNIT_SP, body)
-            }
 
             Title.maxLines = preferences.maxTitleLines
             Note.maxLines = preferences.maxLines
@@ -163,7 +159,7 @@ class BaseNoteVH(
                 isVisible = true
             }
         }
-        binding.ReminderChip.setupReminderChip(baseNote)
+        binding.ReminderChip.setupReminderChip(baseNote, preferences.textSize.displayBodySize)
         setColor(baseNote.color)
     }
 

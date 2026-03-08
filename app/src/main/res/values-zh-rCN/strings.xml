@@ -332,7 +332,7 @@
     <string name="tap_for_more_options">轻按查看更多选项</string>
     <string name="tap_to_set_up">轻按进行设置</string>
     <string name="text_default">默认</string>
-    <string name="text_size">文本大小</string>
+    <string name="text_size_note_editor">文本大小</string>
     <string name="theme">主题</string>
     <string name="theme_use_dynamic_colors">使用系统的壁纸颜色</string>
     <string name="title">标题</string>

@@ -319,7 +319,7 @@
     <string name="tap_for_more_options">Klepněte pro více možností</string>
     <string name="tap_to_set_up">Nastavit klepnutím sem</string>
     <string name="text_default">Výchozí</string>
-    <string name="text_size">Velikost písma</string>
+    <string name="text_size_note_editor">Velikost písma</string>
     <string name="theme">Téma</string>
     <string name="theme_use_dynamic_colors">Použít barvy z tapety</string>
     <string name="title">Název</string>

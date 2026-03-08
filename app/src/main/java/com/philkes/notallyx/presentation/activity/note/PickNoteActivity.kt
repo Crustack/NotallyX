@@ -52,7 +52,7 @@ open class PickNoteActivity : LockedActivity<ActivityPickNoteBinding>(), ItemLis
                     dateFormat.value,
                     notesSorting.value,
                     BaseNoteVHPreferences(
-                        textSize.value,
+                        textSizeOverview.value,
                         maxItems.value,
                         maxLines.value,
                         maxTitle.value,

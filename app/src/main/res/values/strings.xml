@@ -341,7 +341,9 @@
     <string name="tap_for_more_options">Tap for more options</string>
     <string name="tap_to_set_up">Tap to set up</string>
     <string name="text_default">Default</string>
-    <string name="text_size">Text size</string>
+    <string name="text_size_note_editor">Text size (Note Editor)</string>
+    <string name="text_size_overview">Text size (Overview)</string>
+    <string name="text_size_preview">Lorem ipsum dolor sit</string>
     <string name="theme">Theme</string>
     <string name="theme_use_dynamic_colors">Use system\'s wallpaper colors</string>
     <string name="title">Title</string>

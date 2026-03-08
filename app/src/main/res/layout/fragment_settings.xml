@@ -28,7 +28,11 @@
 
         <include
             android:id="@+id/TextSize"
-            layout="@layout/preference" />
+            layout="@layout/preference_seekbar" />
+
+        <include
+            android:id="@+id/TextSizeOverview"
+            layout="@layout/preference_seekbar" />
 
         <include
             android:id="@+id/ShowSearchInTopBar"

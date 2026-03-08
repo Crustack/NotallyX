@@ -31,7 +31,7 @@ import com.philkes.notallyx.presentation.view.misc.EditTextAutoClearFocus
 import com.philkes.notallyx.presentation.view.note.listitem.ListManager
 import com.philkes.notallyx.presentation.view.note.listitem.firstBodyOrEmptyString
 import com.philkes.notallyx.presentation.viewmodel.preference.ListItemSort
-import com.philkes.notallyx.presentation.viewmodel.preference.TextSize
+import com.philkes.notallyx.presentation.viewmodel.preference.editBodySize
 import com.philkes.notallyx.utils.changehistory.EditTextState
 import com.philkes.notallyx.utils.copyToClipBoard
 import com.philkes.notallyx.utils.textMaxLengthFilter
@@ -40,7 +40,7 @@ class ListItemVH(
     val binding: RecyclerListItemBinding,
     val listManager: ListManager,
     touchHelper: ItemTouchHelper,
-    textSize: TextSize,
+    textSize: Int,
     private val inCheckedList: Boolean,
 ) : RecyclerView.ViewHolder(binding.root) {
 

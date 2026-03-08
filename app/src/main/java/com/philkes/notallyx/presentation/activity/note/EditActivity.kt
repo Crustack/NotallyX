@@ -74,6 +74,9 @@ import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 import com.philkes.notallyx.presentation.viewmodel.preference.ListItemSort
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
+import com.philkes.notallyx.presentation.viewmodel.preference.displayBodySize
+import com.philkes.notallyx.presentation.viewmodel.preference.editBodySize
+import com.philkes.notallyx.presentation.viewmodel.preference.editTitleSize
 import com.philkes.notallyx.presentation.widget.WidgetProvider
 import com.philkes.notallyx.utils.FileError
 import com.philkes.notallyx.utils.changeStatusAndNavigationBarColor
@@ -979,7 +982,10 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
     fun setupEditNoteReminderChip() {
         notallyModel.originalNote?.let { note ->
-            binding.EditNoteReminderChip.setupReminderChip(note)
+            binding.EditNoteReminderChip.setupReminderChip(
+                note,
+                notallyModel.textSize.displayBodySize,
+            )
             binding.EditNoteReminderChip.setOnClickListener {
                 val intent =
                     Intent(this@EditActivity, RemindersActivity::class.java)

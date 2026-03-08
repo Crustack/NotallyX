@@ -297,7 +297,7 @@
     <string name="tap_for_more_options">Atinge pentru mai multe opțiuni</string>
     <string name="tap_to_set_up">Apasă pentru a seta</string>
     <string name="text_default">Implicit</string>
-    <string name="text_size">Mărimea textului</string>
+    <string name="text_size_note_editor">Mărimea textului</string>
     <string name="theme">Tema</string>
     <string name="theme_use_dynamic_colors">Folosește culorile de fundal ale sistemului</string>
     <string name="title">Titlu</string>

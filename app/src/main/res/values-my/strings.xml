@@ -81,7 +81,7 @@
     <string name="strikethrough">ဖျက်မှတ်</string>
     <string name="take_note">မှတ်စု</string>
     <string name="tap_to_set_up">ချိန်ညှိရန် နှိပ်ပါ</string>
-    <string name="text_size">စာလလုံးအရွယ်အစား</string>
+    <string name="text_size_note_editor">စာလလုံးအရွယ်အစား</string>
     <string name="theme">နောက်ခံပုံစံ</string>
     <string name="title">ခေါင်းစဥ်</string>
     <string name="unarchive">မသိမ်းဆည်း​တော့ပါ</string>

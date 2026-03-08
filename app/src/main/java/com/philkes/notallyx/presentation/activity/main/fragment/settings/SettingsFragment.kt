@@ -307,9 +307,22 @@ class SettingsFragment : Fragment() {
             }
         }
 
-        textSize.observe(viewLifecycleOwner) { value ->
-            binding.TextSize.setup(textSize, value, requireContext()) { newValue ->
-                model.savePreference(textSize, newValue)
+        textSizeNoteEditor.observe(viewLifecycleOwner) { value ->
+            binding.TextSize.setupTextSizePreference(
+                textSizeNoteEditor,
+                requireContext(),
+                value = value,
+            ) { newValue ->
+                model.savePreference(textSizeNoteEditor, newValue)
+            }
+        }
+        textSizeOverview.observe(viewLifecycleOwner) { value ->
+            binding.TextSizeOverview.setupTextSizePreference(
+                textSizeOverview,
+                requireContext(),
+                value = value,
+            ) { newValue ->
+                model.savePreference(textSizeOverview, newValue)
             }
         }
         alwaysShowSearchBar.observe(viewLifecycleOwner) { value ->

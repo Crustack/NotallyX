@@ -348,47 +348,17 @@ enum class DateFormat : TextProvider {
     }
 }
 
-enum class TextSize(override val textResId: Int) : StaticTextProvider {
-    SMALL(R.string.small),
-    MEDIUM(R.string.medium),
-    LARGE(R.string.large);
+val Int.editBodySize: Float
+    get() = this.toFloat()
 
-    val editBodySize: Float
-        get() {
-            return when (this) {
-                SMALL -> 14f
-                MEDIUM -> 16f
-                LARGE -> 18f
-            }
-        }
+val Int.editTitleSize: Float
+    get() = (this + 4).toFloat()
 
-    val editTitleSize: Float
-        get() {
-            return when (this) {
-                SMALL -> 18f
-                MEDIUM -> 20f
-                LARGE -> 22f
-            }
-        }
+val Int.displayBodySize: Float
+    get() = (this - 2).toFloat()
 
-    val displayBodySize: Float
-        get() {
-            return when (this) {
-                SMALL -> 12f
-                MEDIUM -> 14f
-                LARGE -> 16f
-            }
-        }
-
-    val displayTitleSize: Float
-        get() {
-            return when (this) {
-                SMALL -> 14f
-                MEDIUM -> 16f
-                LARGE -> 18f
-            }
-        }
-}
+val Int.displayTitleSize: Float
+    get() = this.toFloat()
 
 enum class ListItemSort(override val textResId: Int) : StaticTextProvider {
     NO_AUTO_SORT(R.string.no_auto_sort),

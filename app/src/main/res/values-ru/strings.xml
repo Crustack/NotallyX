@@ -312,7 +312,7 @@
     <string name="tap_for_more_options">Нажмите для подробностей</string>
     <string name="tap_to_set_up">Нажмите для настройки</string>
     <string name="text_default">По умолчанию</string>
-    <string name="text_size">Размер текста</string>
+    <string name="text_size_note_editor">Размер текста</string>
     <string name="theme">Тема</string>
     <string name="theme_use_dynamic_colors">Использовать цвета обоев</string>
     <string name="title">Заголовок</string>

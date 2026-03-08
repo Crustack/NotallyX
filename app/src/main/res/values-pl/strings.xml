@@ -310,7 +310,7 @@
     <string name="tap_for_more_options">Dotknij, aby uzyskać więcej opcji</string>
     <string name="tap_to_set_up">Dotknij, aby ustawić</string>
     <string name="text_default">Domyślny</string>
-    <string name="text_size">Rozmiar tekstu</string>
+    <string name="text_size_note_editor">Rozmiar tekstu</string>
     <string name="theme">Motyw</string>
     <string name="theme_use_dynamic_colors">Użyj kolorów tapety systemu</string>
     <string name="title">Tytuł</string>

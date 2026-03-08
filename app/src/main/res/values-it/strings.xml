@@ -288,7 +288,7 @@
     <string name="tap_for_more_options">Tocca per ulteriori opzioni</string>
     <string name="tap_to_set_up">Tocca per impostare</string>
     <string name="text_default">Predefinito</string>
-    <string name="text_size">Dimensione testo</string>
+    <string name="text_size_note_editor">Dimensione testo</string>
     <string name="theme">Tema</string>
     <string name="title">Titolo</string>
     <string name="to_record_audio">Per registrare audio, consenti a NotallyX di accedere al tuo microfono. Vai su Impostazioni &gt; Permessi e attiva il microfono</string>

@@ -5,6 +5,7 @@ import android.hardware.biometrics.BiometricManager
 import android.net.Uri
 import android.os.Build
 import android.text.method.PasswordTransformationMethod
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import androidx.core.view.isVisible
@@ -506,6 +507,46 @@ fun PreferenceSeekbarBinding.setup(
         tooltipResId = tooltipResId,
     ) { newValue ->
         onChange(newValue)
+    }
+}
+
+fun PreferenceSeekbarBinding.setupTextSizePreference(
+    preference: IntPreference,
+    context: Context,
+    value: Int = preference.value,
+    tooltipResId: Int? = null,
+    onChange: (newValue: Int) -> Unit,
+) {
+    setup(
+        value,
+        preference.titleResId!!,
+        preference.min,
+        preference.max,
+        context,
+        tooltipResId = tooltipResId,
+    ) { newValue ->
+        onChange(newValue)
+    }
+    PreviewText.apply {
+        isVisible = false
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, value.toFloat())
+    }
+    Slider.apply {
+        addOnChangeListener { _, newValue, _ ->
+            PreviewText.setTextSize(TypedValue.COMPLEX_UNIT_SP, newValue)
+        }
+        addOnSliderTouchListener(
+            object : Slider.OnSliderTouchListener {
+                override fun onStartTrackingTouch(slider: Slider) {
+                    PreviewText.isVisible = true
+                }
+
+                override fun onStopTrackingTouch(slider: Slider) {
+                    PreviewText.isVisible = false
+                    onChange(slider.value.toInt())
+                }
+            }
+        )
     }
 }
 
