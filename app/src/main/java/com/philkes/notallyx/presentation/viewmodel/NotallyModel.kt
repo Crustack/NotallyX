@@ -354,6 +354,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
             audios.value,
             reminders.value,
             viewMode.value,
+            originalNote?.sortIdx,
         )
     }
 

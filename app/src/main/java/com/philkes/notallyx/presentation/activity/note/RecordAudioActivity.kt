@@ -146,21 +146,24 @@ class RecordAudioActivity : LockedActivity<ActivityRecordAudioBinding>() {
     }
 
     private fun updateUI(binding: ActivityRecordAudioBinding, service: AudioRecordService) {
-        binding.Timer.base = service.getBase()
-        when (service.status.value) {
-            Status.READY -> {
-                binding.Stop.isEnabled = false
-                binding.Main.setText(R.string.start)
-            }
-            Status.RECORDING -> {
-                binding.Timer.start()
-                binding.Stop.isEnabled = true
-                binding.Main.setText(R.string.pause)
-            }
-            Status.PAUSED -> {
-                binding.Timer.stop()
-                binding.Stop.isEnabled = true
-                binding.Main.setText(R.string.resume)
+        binding.apply {
+            Timer.base = service.getBase()
+            when (service.status.value) {
+                Status.READY -> {
+                    Stop.isEnabled = false
+                    Main.setText(R.string.start)
+                }
+                Status.RECORDING -> {
+                    Timer.start()
+                    Stop.isEnabled = true
+                    Main.setText(R.string.pause)
+                }
+                Status.PAUSED -> {
+                    Timer.stop()
+                    Stop.isEnabled = true
+                    Main.setText(R.string.resume)
+                }
+                else -> {}
             }
         }
     }

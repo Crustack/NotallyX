@@ -45,6 +45,7 @@ import com.philkes.notallyx.presentation.viewmodel.preference.SortDirection
 import com.philkes.notallyx.presentation.viewmodel.preference.StringPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.TextProvider
 import com.philkes.notallyx.presentation.viewmodel.preference.Theme
+import com.philkes.notallyx.presentation.viewmodel.preference.isManualSort
 import com.philkes.notallyx.utils.canAuthenticateWithBiometrics
 import com.philkes.notallyx.utils.toReadablePath
 
@@ -158,6 +159,14 @@ fun PreferenceBinding.setup(
             }
         }
 
+        layout.NotesSortDirectionRadioGroup.isVisible =
+            (layout.NotesSortByRadioGroup.checkedTag() as? NotesSortBy)?.isManualSort?.not() ?: true
+        layout.NotesSortByRadioGroup.setOnCheckedChangeListener { group, checkedId ->
+            val selectedSortBy = group.checkedTag() as? NotesSortBy
+            layout.NotesSortDirectionRadioGroup.isVisible =
+                selectedSortBy?.isManualSort?.not() ?: true
+        }
+
         SortDirection.entries.forEachIndexed { idx, sortDir ->
             ChoiceItemBinding.inflate(layoutInflater).root.apply {
                 id = idx
@@ -178,7 +187,9 @@ fun PreferenceBinding.setup(
                 dialog.cancel()
                 val newSortBy = layout.NotesSortByRadioGroup.checkedTag() as NotesSortBy
                 val newSortDirection =
-                    layout.NotesSortDirectionRadioGroup.checkedTag() as SortDirection
+                    if (layout.NotesSortDirectionRadioGroup.isVisible)
+                        layout.NotesSortDirectionRadioGroup.checkedTag() as SortDirection
+                    else value.sortDirection
                 model.savePreference(
                     model.preferences.notesSorting,
                     NotesSort(newSortBy, newSortDirection),

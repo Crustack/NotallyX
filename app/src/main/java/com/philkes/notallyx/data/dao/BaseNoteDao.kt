@@ -7,6 +7,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.RawQuery
+import androidx.room.Transaction
 import androidx.room.Update
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.philkes.notallyx.R
@@ -57,6 +58,10 @@ interface BaseNoteDao {
     }
 
     suspend fun insertSafe(context: ContextWrapper, baseNote: BaseNote): Long {
+        if (baseNote.sortIdx == null) {
+            val maxSortIdx = getMaxSortIdx() ?: 0
+            baseNote.sortIdx = maxSortIdx + 1
+        }
         val (truncated, note) = baseNote.truncated()
         if (truncated) {
             context.log(
@@ -75,17 +80,19 @@ interface BaseNoteDao {
     }
 
     suspend fun insertSafe(context: ContextWrapper, baseNotes: List<BaseNote>): List<Long> {
+        val maxSortIdx = getMaxSortIdx() ?: 0
         val truncatedNotes = mutableListOf<BaseNote>()
         var truncatedCharacterSize = 0
-        val notes =
-            baseNotes.map { baseNote ->
-                val (truncated, note) = baseNote.truncated()
-                if (truncated) {
-                    truncatedCharacterSize += baseNote.body.length
-                    truncatedNotes.add(note)
-                }
-                note
+        baseNotes.forEachIndexed { index, baseNote ->
+            if (baseNote.sortIdx == null) {
+                baseNote.sortIdx = (maxSortIdx + 1 + index)
             }
+            val (truncated, note) = baseNote.truncated()
+            if (truncated) {
+                truncatedCharacterSize += baseNote.body.length
+                truncatedNotes.add(note)
+            }
+        }
         if (truncatedNotes.isNotEmpty()) {
             context.log(
                 TAG,
@@ -99,7 +106,7 @@ interface BaseNoteDao {
                 )
             )
         }
-        return insert(notes)
+        return insert(baseNotes)
     }
 
     @Insert suspend fun insert(baseNotes: List<BaseNote>): List<Long>
@@ -244,6 +251,16 @@ interface BaseNoteDao {
      *
      * In this case, an exception will be thrown. It is the caller's responsibility to handle it.
      */
+    @Query("UPDATE BaseNote SET sortIdx = :sortIdx WHERE id = :id")
+    fun updateSortIdx(id: Long, sortIdx: Int)
+
+    @Transaction
+    fun updateSortIndices(idToIdx: Map<Long, Int>) {
+        idToIdx.forEach { (id, idx) -> updateSortIdx(id, idx) }
+    }
+
+    @Query("SELECT MAX(sortIdx) FROM BaseNote") fun getMaxSortIdx(): Int?
+
     suspend fun updateChecked(id: Long, position: Int, checked: Boolean) {
         val items =
             requireNotNull(get(id), { "updateChecked: Note with id '$id' does not exist" }).items

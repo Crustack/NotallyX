@@ -133,7 +133,6 @@
     </style>
 
     <style name="FloatingActionButtonPrimary" parent="Widget.Material3.FloatingActionButton.Primary">
-        <item name="android:backgroundTint">?attr/colorPrimary</item>
         <item name="tint">?attr/colorOnPrimary</item>
     </style>
 

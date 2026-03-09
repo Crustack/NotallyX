@@ -7,7 +7,13 @@ import androidx.room.PrimaryKey
 /** Format: `#RRGGBB` or `#AARRGGBB` or [BaseNote.COLOR_DEFAULT] */
 typealias ColorString = String
 
-@Entity(indices = [Index(value = ["id", "folder", "pinned", "timestamp", "labels"])])
+@Entity(
+    indices =
+        [
+            Index(value = ["id", "folder", "pinned", "timestamp", "labels"]),
+            Index(value = ["sortIdx"]),
+        ]
+)
 data class BaseNote(
     @PrimaryKey(autoGenerate = true) val id: Long,
     val type: Type,
@@ -26,6 +32,7 @@ data class BaseNote(
     val audios: List<Audio>,
     val reminders: List<Reminder>,
     val viewMode: NoteViewMode,
+    var sortIdx: Int? = null,
 ) : Item {
 
     companion object {
@@ -55,6 +62,7 @@ data class BaseNote(
         if (audios != other.audios) return false
         if (reminders != other.reminders) return false
         if (viewMode != other.viewMode) return false
+        if (sortIdx != other.sortIdx) return false
 
         return true
     }
@@ -76,6 +84,7 @@ data class BaseNote(
         result = 31 * result + audios.hashCode()
         result = 31 * result + reminders.hashCode()
         result = 31 * result + viewMode.hashCode()
+        result = 31 * result + (sortIdx ?: 0)
         return result
     }
 }

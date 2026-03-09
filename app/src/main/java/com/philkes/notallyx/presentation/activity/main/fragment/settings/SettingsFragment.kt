@@ -323,15 +323,6 @@ class SettingsFragment : Fragment() {
                 model.savePreference(alwaysShowSearchBar, enabled)
             }
         }
-        notesSorting.observe(viewLifecycleOwner) { notesSort ->
-            binding.NotesSortOrder.setup(
-                notesSorting,
-                notesSort,
-                requireContext(),
-                layoutInflater,
-                model,
-            )
-        }
 
         listItemSorting.observe(viewLifecycleOwner) { value ->
             binding.CheckedListItemSorting.setup(listItemSorting, value, requireContext()) {

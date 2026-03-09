@@ -50,7 +50,8 @@ enum class NotesSortBy(val textResId: Int, val iconResId: Int, val value: String
     TITLE(R.string.title, R.drawable.sort_by_alpha, "autoSortByTitle"),
     CREATION_DATE(R.string.creation_date, R.drawable.calendar_add_on, "autoSortByCreationDate"),
     MODIFIED_DATE(R.string.modified_date, R.drawable.edit_calendar, "autoSortByModifiedDate"),
-    COLOR(R.string.color, R.drawable.change_color, "autoSortByColor");
+    COLOR(R.string.color, R.drawable.change_color, "autoSortByColor"),
+    MANUAL(R.string.manual, R.drawable.sort, "manualSort");
 
     companion object {
         fun fromValue(value: String): NotesSortBy? {
@@ -67,3 +68,9 @@ data class NotesSort(
         return "${context.getString(sortedBy.textResId)} (${context.getString(sortDirection.textResId)})"
     }
 }
+
+val NotesSort.isManualSort: Boolean
+    get() = sortedBy.isManualSort
+
+val NotesSortBy.isManualSort: Boolean
+    get() = this == NotesSortBy.MANUAL

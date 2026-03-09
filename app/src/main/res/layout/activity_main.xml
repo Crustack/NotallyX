@@ -63,6 +63,7 @@
             android:contentDescription="@string/take_note"
             android:tooltipText="@string/take_note"
             style="@style/FloatingActionButtonPrimary"
+            app:backgroundTint="@color/md_theme_primary"
             app:srcCompat="@drawable/edit" />
 
     </RelativeLayout>
