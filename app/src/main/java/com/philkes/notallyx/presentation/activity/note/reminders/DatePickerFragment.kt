@@ -6,6 +6,7 @@ import com.google.android.material.datepicker.MaterialDatePicker
 import com.philkes.notallyx.utils.now
 import java.util.Calendar
 import java.util.Date
+import java.util.TimeZone
 
 class DatePickerFragment(
     private val date: Date?,
@@ -21,7 +22,7 @@ class DatePickerFragment(
             MaterialDatePicker.Builder.datePicker().setSelection(c.timeInMillis).build()
 
         datePicker.addOnPositiveButtonClickListener { selection ->
-            val calendar = Calendar.getInstance()
+            val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
             calendar.timeInMillis = selection
             onDateSetListener(
                 calendar.get(Calendar.YEAR),
