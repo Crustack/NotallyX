@@ -100,6 +100,7 @@
     <string name="take_note">Ghi chú</string>
     <string name="tap_to_set_up">Thiết lập</string>
     <string name="text_size_note_editor">Cỡ chữ (trình soạn thảo ghi chú)</string>
+    <string name="text_size_overview">Cỡ chữ (tổng quan)</string>
     <string name="theme">Chủ đề</string>
     <string name="title">Tựa đề</string>
     <string name="unarchive">Bỏ lưu trữ</string>
@@ -110,5 +111,4 @@
     <string name="view_file">Xem tập tin</string>
     <string name="view_note">Xem ghi chú…</string>
     <string name="your_notes_associated">Những ghi chú có sử dụng nhãn này sẽ không bị xóa.</string>
-    <string name="text_size_overview">Cỡ chữ (tổng quan)</string>
 </resources>

@@ -102,6 +102,8 @@ fun AppCompatActivity.showColorSelectDialog(
             },
         )
     DialogColorBinding.inflate(layoutInflater).apply {
+        Message.text =
+            "${getString(R.string.change_color_message)}\n${getString(R.string.change_color_default_message)}"
         MainListView.adapter = colorAdapter
         dialog.setView(root)
         dialog.setOnShowListener {

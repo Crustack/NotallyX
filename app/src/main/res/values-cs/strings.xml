@@ -320,6 +320,7 @@
     <string name="tap_to_set_up">Nastavit klepnutím sem</string>
     <string name="text_default">Výchozí</string>
     <string name="text_size_note_editor">Velikost písma (editor poznámek)</string>
+    <string name="text_size_overview">Velikost písma (přehled)</string>
     <string name="theme">Téma</string>
     <string name="theme_use_dynamic_colors">Použít barvy z tapety</string>
     <string name="title">Název</string>
@@ -350,5 +351,4 @@
     <string name="yearly">Ročně</string>
     <string name="years">Roky</string>
     <string name="your_notes_associated">Vaše poznámky přiřazené k tomuto štítku nebudou smazány</string>
-    <string name="text_size_overview">Velikost písma (přehled)</string>
 </resources>

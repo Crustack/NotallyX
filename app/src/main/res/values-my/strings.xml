@@ -82,6 +82,7 @@
     <string name="take_note">မှတ်စု</string>
     <string name="tap_to_set_up">ချိန်ညှိရန် နှိပ်ပါ</string>
     <string name="text_size_note_editor">ဖောင့်အရွယ်အစား (မှတ်စုတည်းဖြတ်သူ)</string>
+    <string name="text_size_overview">စာသားအရွယ်အစား (ခြုံငုံသုံးသပ်ချက်)</string>
     <string name="theme">နောက်ခံပုံစံ</string>
     <string name="title">ခေါင်းစဥ်</string>
     <string name="unarchive">မသိမ်းဆည်း​တော့ပါ</string>
@@ -90,5 +91,4 @@
     <string name="view_file">ဖိုင်ကိုကြည့်မည်</string>
     <string name="view_note">မှတ်စုကိုဖတ်မည်…</string>
     <string name="your_notes_associated">ဒီတံဆိပ်တပ်ထားတဲ့ မှတ်စုက ပျက်သွားမှာမဟုတ်ပါ။</string>
-    <string name="text_size_overview">စာသားအရွယ်အစား (ခြုံငုံသုံးသပ်ချက်)</string>
 </resources>

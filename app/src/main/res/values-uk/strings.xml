@@ -336,6 +336,7 @@
     <string name="tap_to_set_up">Торкніться, щоб налаштувати</string>
     <string name="text_default">За замовчуванням</string>
     <string name="text_size_note_editor">Розмір тексту (редактор нотаток)</string>
+    <string name="text_size_overview">Розмір тексту (огляд)</string>
     <string name="theme">Тема</string>
     <string name="theme_use_dynamic_colors">Використовувати кольори системних шпалер</string>
     <string name="title">Назва</string>
@@ -365,5 +366,4 @@
     <string name="yearly">Щорічно</string>
     <string name="years">Роки</string>
     <string name="your_notes_associated">Ваші нотатки, пов’язані з цією міткою, не будуть видалені</string>
-    <string name="text_size_overview">Розмір тексту (огляд)</string>
 </resources>

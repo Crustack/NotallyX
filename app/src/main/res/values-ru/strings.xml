@@ -313,6 +313,7 @@
     <string name="tap_to_set_up">Нажмите для настройки</string>
     <string name="text_default">По умолчанию</string>
     <string name="text_size_note_editor">Размер текста (в редакторе заметок)</string>
+    <string name="text_size_overview">Размер текста (обзор)</string>
     <string name="theme">Тема</string>
     <string name="theme_use_dynamic_colors">Использовать цвета обоев</string>
     <string name="title">Заголовок</string>
@@ -342,5 +343,4 @@
     <string name="yearly">Ежегодный</string>
     <string name="years">Года</string>
     <string name="your_notes_associated">Ваши заметки, связанные с этой меткой, не будут удалены</string>
-    <string name="text_size_overview">Размер текста (обзор)</string>
 </resources>

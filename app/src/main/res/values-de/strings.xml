@@ -340,6 +340,7 @@
     <string name="tap_to_set_up">Zum Einrichten antippen</string>
     <string name="text_default">Standard</string>
     <string name="text_size_note_editor">Textgröße (Notizeditor)</string>
+    <string name="text_size_overview">Textgröße (Übersicht)</string>
     <string name="theme">Design</string>
     <string name="theme_use_dynamic_colors">Systemhintergrundfarben verwenden</string>
     <string name="title">Titel</string>
@@ -369,5 +370,4 @@
     <string name="yearly">Jährlich</string>
     <string name="years">Jahre</string>
     <string name="your_notes_associated">Notizen, welche dieses Label verwenden, werden nicht gelöscht.</string>
-    <string name="text_size_overview">Textgröße (Übersicht)</string>
 </resources>

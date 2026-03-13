@@ -332,6 +332,7 @@
     <string name="tap_to_set_up">Toucher pour régler</string>
     <string name="text_default">Défaut</string>
     <string name="text_size_note_editor">Taille du texte (éditeur de notes)</string>
+    <string name="text_size_overview">Taille du texte (aperçu)</string>
     <string name="theme">Thème</string>
     <string name="theme_use_dynamic_colors">Utiliser les couleurs de fond d’écran du système</string>
     <string name="title">Titre</string>
@@ -361,5 +362,4 @@
     <string name="yearly">Tous les ans</string>
     <string name="years">Ans</string>
     <string name="your_notes_associated">Vos notes associées à cette étiquette ne seront pas supprimées</string>
-    <string name="text_size_overview">Taille du texte (aperçu)</string>
 </resources>

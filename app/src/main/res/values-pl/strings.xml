@@ -311,6 +311,7 @@
     <string name="tap_to_set_up">Dotknij, aby ustawić</string>
     <string name="text_default">Domyślny</string>
     <string name="text_size_note_editor">Rozmiar tekstu (edytor notatek)</string>
+    <string name="text_size_overview">Rozmiar tekstu (przegląd)</string>
     <string name="theme">Motyw</string>
     <string name="theme_use_dynamic_colors">Użyj kolorów tapety systemu</string>
     <string name="title">Tytuł</string>
@@ -341,5 +342,4 @@
     <string name="yearly">Rocznie</string>
     <string name="years">Lat</string>
     <string name="your_notes_associated">Notatki z tą etykietą nie zostaną usunięte</string>
-    <string name="text_size_overview">Rozmiar tekstu (przegląd)</string>
 </resources>

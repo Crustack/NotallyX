@@ -289,6 +289,7 @@
     <string name="tap_to_set_up">Tocca per impostare</string>
     <string name="text_default">Predefinito</string>
     <string name="text_size_note_editor">Dimensione testo (editor di note)</string>
+    <string name="text_size_overview">Dimensioni testo (panoramica)</string>
     <string name="theme">Tema</string>
     <string name="title">Titolo</string>
     <string name="to_record_audio">Per registrare audio, consenti a NotallyX di accedere al tuo microfono. Vai su Impostazioni &gt; Permessi e attiva il microfono</string>
@@ -316,5 +317,4 @@
     <string name="yearly">Annuale</string>
     <string name="years">Anni</string>
     <string name="your_notes_associated">Le note associate a questa etichetta non verranno eliminate</string>
-    <string name="text_size_overview">Dimensioni testo (panoramica)</string>
 </resources>

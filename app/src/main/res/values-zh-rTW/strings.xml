@@ -291,6 +291,7 @@
     <string name="tap_to_set_up">點擊以進行設定</string>
     <string name="text_default">預設</string>
     <string name="text_size_note_editor">字體大小（筆記編輯器）</string>
+    <string name="text_size_overview">文字大小（概述）</string>
     <string name="theme">主題</string>
     <string name="theme_use_dynamic_colors">使用系統桌布配色</string>
     <string name="title">標題</string>
@@ -319,5 +320,4 @@
     <string name="yearly">每年</string>
     <string name="years">年數</string>
     <string name="your_notes_associated">不會刪除與此標籤相關的筆記</string>
-    <string name="text_size_overview">文字大小（概述）</string>
 </resources>

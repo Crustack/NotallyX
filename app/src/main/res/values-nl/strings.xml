@@ -216,6 +216,7 @@
     <string name="tap_for_more_options">Tik voor meer opties</string>
     <string name="tap_to_set_up">Tik om in te stellen</string>
     <string name="text_size_note_editor">Tekstgrootte (notitie-editor)</string>
+    <string name="text_size_overview">Tekstgrootte (overzicht)</string>
     <string name="theme">Thema</string>
     <string name="title">Titel</string>
     <string name="to_record_audio">Om audio op te nemen, geef NotallyX toegang tot je microfoon. Tik op Instellingen &gt; Machtigingen en zet Microfoon aan</string>
@@ -237,5 +238,4 @@
     <string name="weekly">Wekelijks</string>
     <string name="wrong_password">Onjuist wachtwoord opgegeven</string>
     <string name="your_notes_associated">Je notities die aan dit label zijn gekoppeld, worden niet verwijderd</string>
-    <string name="text_size_overview">Tekstgrootte (overzicht)</string>
 </resources>

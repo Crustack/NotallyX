@@ -99,6 +99,7 @@
     <string name="take_note">Ta eit notat</string>
     <string name="tap_to_set_up">Trykk for å konfigurera</string>
     <string name="text_size_note_editor">Skriftstorleik (notereditor)</string>
+    <string name="text_size_overview">Skriftstorleik (oversikt)</string>
     <string name="theme">Tema</string>
     <string name="title">Tittel</string>
     <string name="unarchive">Fjern frå arkivet</string>
@@ -109,5 +110,4 @@
     <string name="view_file">Sjå fil</string>
     <string name="view_note">Sjå notat</string>
     <string name="your_notes_associated">Notata assosiert med etikketten vil ikkje bli sletta.</string>
-    <string name="text_size_overview">Skriftstorleik (oversikt)</string>
 </resources>

@@ -71,7 +71,8 @@
     <string name="cant_load_image">Can’t load image. It may have been moved or deleted</string>
     <string name="cant_open_link">Can’t open link</string>
     <string name="change_color">Change Color</string>
-    <string name="change_color_message">Pick a color or create a new one.\nYou can also edit a Color by long pressing it.\nThe ★ marks the default color for new notes.</string>
+    <string name="change_color_default_message">The ★ marks the default color for new notes.</string>
+    <string name="change_color_message">Pick a color or create a new one.\nYou can also edit a Color by long pressing it.</string>
     <string name="change_note">Change Note</string>
     <string name="check_all_items">Check all items</string>
     <string name="choose_another_folder">Choose another folder</string>
