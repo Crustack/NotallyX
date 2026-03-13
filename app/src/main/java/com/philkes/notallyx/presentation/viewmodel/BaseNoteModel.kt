@@ -645,6 +645,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         ) { // Only reminders of notes in NOTES folder are active
             if (folder == Folder.DELETED) {
                 baseNoteDao.move(ids, folder, System.currentTimeMillis())
+                baseNoteDao.clearReminders(ids)
             } else {
                 baseNoteDao.move(ids, folder)
             }

@@ -452,6 +452,11 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
         withContext(Dispatchers.IO) { baseNoteDao.updateReminders(id, updatedReminders) }
     }
 
+    suspend fun clearReminders() {
+        app.cancelNoteReminders(listOf(NoteIdReminder(id, reminders.value)))
+        updateReminders(emptyList())
+    }
+
     suspend fun convertTo(noteType: Type) {
         when (noteType) {
             Type.NOTE -> {

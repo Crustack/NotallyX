@@ -320,7 +320,10 @@ class NoteActionHandler(
     }
 
     private fun delete() {
-        moveNote(Folder.DELETED)
+        activity.lifecycleScope.launch {
+            notallyModel.clearReminders()
+            moveNote(Folder.DELETED)
+        }
     }
 
     private fun restore() {

@@ -222,6 +222,9 @@ interface BaseNoteDao {
     @Query("UPDATE BaseNote SET reminders = :reminders WHERE id = :id")
     suspend fun updateReminders(id: Long, reminders: List<Reminder>)
 
+    @Query("UPDATE BaseNote SET reminders = '[]' WHERE id IN (:ids)")
+    suspend fun clearReminders(ids: LongArray)
+
     @Query("UPDATE BaseNote SET spans = :spans WHERE id = :id")
     suspend fun updateSpans(
         id: Long,
