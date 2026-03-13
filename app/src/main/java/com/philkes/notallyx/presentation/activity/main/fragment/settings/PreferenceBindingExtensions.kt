@@ -542,7 +542,6 @@ fun PreferenceSeekbarBinding.setupTextSizePreference(
 
                 override fun onStopTrackingTouch(slider: Slider) {
                     PreviewText.isVisible = false
-                    onChange(slider.value)
                 }
             }
         )

@@ -125,7 +125,6 @@
             <com.google.android.material.chip.Chip
                 android:id="@+id/ReminderChip"
                 style="@style/ReminderChip"
-                android:layout_marginStart="12dp"
                 tools:closeIconVisible="true"
                 tools:text="00/00/0000 00:00"
                 tools:visibility="visible"

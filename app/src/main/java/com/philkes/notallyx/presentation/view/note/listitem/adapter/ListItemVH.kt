@@ -40,7 +40,7 @@ class ListItemVH(
     val binding: RecyclerListItemBinding,
     val listManager: ListManager,
     touchHelper: ItemTouchHelper,
-    textSize: Int,
+    textSize: Float,
     private val inCheckedList: Boolean,
 ) : RecyclerView.ViewHolder(binding.root) {
 

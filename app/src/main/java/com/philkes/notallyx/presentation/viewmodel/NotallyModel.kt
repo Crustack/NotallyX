@@ -39,6 +39,7 @@ import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
 import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
+import com.philkes.notallyx.presentation.viewmodel.preference.TextSizeSp
 import com.philkes.notallyx.presentation.viewmodel.progress.AddFilesProgress
 import com.philkes.notallyx.presentation.widget.WidgetProvider
 import com.philkes.notallyx.utils.Cache
@@ -68,7 +69,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
     private lateinit var baseNoteDao: BaseNoteDao
 
     val preferences = NotallyXPreferences.getInstance(app)
-    val textSize = preferences.textSizeNoteEditor.value
+    val textSize: TextSizeSp = preferences.textSizeNoteEditor.value
 
     var isNewNote = true
 
