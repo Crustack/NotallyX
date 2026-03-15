@@ -353,6 +353,16 @@ class SettingsFragment : Fragment() {
             }
         }
 
+        defaultListNoteViewMode.observe(viewLifecycleOwner) { value ->
+            binding.DefaultListNoteViewMode.setup(
+                defaultListNoteViewMode,
+                value,
+                requireContext(),
+            ) { newValue ->
+                model.savePreference(defaultListNoteViewMode, newValue)
+            }
+        }
+
         autoRemoveDeletedNotesAfterDays.observe(viewLifecycleOwner) { value ->
             binding.AutoEmptyBin.setupAutoEmptyBin(
                 autoRemoveDeletedNotesAfterDays,

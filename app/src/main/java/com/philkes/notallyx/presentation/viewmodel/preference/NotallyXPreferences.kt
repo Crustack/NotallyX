@@ -59,6 +59,14 @@ class NotallyXPreferences private constructor(private val context: Context) {
             R.string.list_item_auto_sort,
         )
 
+    val defaultListNoteViewMode =
+        createEnumPreference(
+            preferences,
+            "defaultListNoteViewMode",
+            DefaultListNoteViewMode.LAST_USED,
+            R.string.default_list_note_view_mode,
+        )
+
     val maxItems =
         IntPreference(
             "maxItemsToDisplayInList.v1",
@@ -313,6 +321,7 @@ class NotallyXPreferences private constructor(private val context: Context) {
                 editNoteActivityTopActions,
                 editNoteActivityBottomAction,
                 defaultNoteColor,
+                defaultListNoteViewMode,
             )
             .forEach { it.refresh() }
     }

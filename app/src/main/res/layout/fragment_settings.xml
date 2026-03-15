@@ -62,6 +62,10 @@
           layout="@layout/preference" />
 
         <include
+          android:id="@+id/DefaultListNoteViewMode"
+          layout="@layout/preference" />
+
+        <include
           android:id="@+id/AutoSaveAfterIdle"
           layout="@layout/preference_seekbar" />
 

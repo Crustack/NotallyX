@@ -404,6 +404,20 @@ fun ListItemSort.callback(adapterChecked: CheckedListItemAdapter) =
         else -> ListItemParentSortCallback(adapterChecked)
     }
 
+enum class DefaultListNoteViewMode(override val textResId: Int) : StaticTextProvider {
+    READ_ONLY(R.string.read_only),
+    EDIT(R.string.edit),
+    LAST_USED(R.string.last_used);
+
+    fun toNoteViewMode(lastUsed: NoteViewMode): NoteViewMode {
+        return when (this) {
+            READ_ONLY -> NoteViewMode.READ_ONLY
+            EDIT -> NoteViewMode.EDIT
+            LAST_USED -> lastUsed
+        }
+    }
+}
+
 enum class BiometricLock(override val textResId: Int) : StaticTextProvider {
     ENABLED(R.string.enabled),
     DISABLED(R.string.disabled);

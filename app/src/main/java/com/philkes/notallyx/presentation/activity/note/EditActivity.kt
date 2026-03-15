@@ -196,6 +196,16 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             setupListeners()
             setStateFromModel(savedInstanceState)
 
+            if (
+                !notallyModel.isNewNote &&
+                    notallyModel.type == Type.LIST &&
+                    savedInstanceState == null
+            ) {
+                val lastUsedViewMode = notallyModel.viewMode.value
+                notallyModel.viewMode.value =
+                    preferences.defaultListNoteViewMode.value.toNoteViewMode(lastUsedViewMode)
+            }
+
             configureUI()
             binding.ScrollView.visibility = VISIBLE
             setupEditNoteReminderChip()
