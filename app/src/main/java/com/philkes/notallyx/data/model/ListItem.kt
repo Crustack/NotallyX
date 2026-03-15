@@ -37,17 +37,6 @@ data class ListItem(
             this.checkedTimestamp == other.checkedTimestamp)
     }
 
-    override fun hashCode(): Int {
-        var result = body.hashCode()
-        result = 31 * result + checked.hashCode()
-        result = 31 * result + isChild.hashCode()
-        result = 31 * result + (order ?: 0)
-        result = 31 * result + children.hashCode()
-        result = 31 * result + id
-        result = 31 * result + (checkedTimestamp?.hashCode() ?: 0)
-        return result
-    }
-
     val itemCount: Int
         get() = children.size + 1
 
