@@ -162,7 +162,9 @@ interface BaseNoteDao {
     )
     fun getAllRemindersAsync(): LiveData<List<NoteReminder>>
 
-    @Query("SELECT * FROM BaseNote WHERE reminders IS NOT NULL AND reminders != '[]'")
+    @Query(
+        "SELECT * FROM BaseNote WHERE reminders IS NOT NULL AND reminders != '[]' AND folder = 'NOTES'"
+    )
     fun getAllBaseNotesWithReminders(): LiveData<List<BaseNote>>
 
     @Query("SELECT id FROM BaseNote WHERE folder = 'DELETED'")
