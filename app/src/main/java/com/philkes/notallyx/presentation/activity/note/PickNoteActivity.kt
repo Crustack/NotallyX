@@ -18,6 +18,7 @@ import com.philkes.notallyx.databinding.ActivityPickNoteBinding
 import com.philkes.notallyx.presentation.activity.LockedActivity
 import com.philkes.notallyx.presentation.view.main.BaseNoteAdapter
 import com.philkes.notallyx.presentation.view.main.BaseNoteVHPreferences
+import com.philkes.notallyx.presentation.view.main.createCallback
 import com.philkes.notallyx.presentation.view.misc.ItemListener
 import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
@@ -50,7 +51,7 @@ open class PickNoteActivity : LockedActivity<ActivityPickNoteBinding>(), ItemLis
                 BaseNoteAdapter(
                     Collections.emptySet(),
                     dateFormat.value,
-                    notesSorting.value,
+                    { adapter -> notesSorting.value.createCallback(adapter) },
                     BaseNoteVHPreferences(
                         textSizeOverview.value,
                         maxItems.value,
@@ -58,6 +59,7 @@ open class PickNoteActivity : LockedActivity<ActivityPickNoteBinding>(), ItemLis
                         maxTitle.value,
                         labelTagsHiddenInOverview.value,
                         imagesHiddenInOverview.value,
+                        notesSorting.value.sortedBy,
                     ),
                     application.getCurrentImagesDirectory(),
                     this@PickNoteActivity,

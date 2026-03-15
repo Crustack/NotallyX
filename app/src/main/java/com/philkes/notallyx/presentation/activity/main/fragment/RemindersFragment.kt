@@ -4,15 +4,21 @@ import android.os.Bundle
 import android.view.View
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.recyclerview.widget.SortedListAdapterCallback
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.hasAnyUpcomingNotifications
+import com.philkes.notallyx.presentation.view.main.BaseNoteAdapter
+import com.philkes.notallyx.presentation.view.main.sorting.BaseNoteLastNotificationSort
+import com.philkes.notallyx.presentation.view.main.sorting.BaseNoteMostRecentNotificationSort
+import com.philkes.notallyx.presentation.view.main.sorting.BaseNoteNextNotificationSort
+import com.philkes.notallyx.presentation.viewmodel.preference.SortDirection
 
 class RemindersFragment : NotallyFragment() {
     private val currentReminderNotes = MutableLiveData<List<Item>>()
     private val allReminderNotes: LiveData<List<Item>> by lazy { model.reminderNotes!! }
-    private var filterMode = FilterOptions.ALL
+    private var filterMode = FilterOptions.UPCOMING
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -21,7 +27,7 @@ class RemindersFragment : NotallyFragment() {
         allReminderNotes.observe(viewLifecycleOwner) { _ -> applyFilter(filterMode) }
         binding?.ReminderFilter?.setOnCheckedStateChangeListener { _, checkedIds ->
             if (checkedIds.isEmpty()) {
-                binding?.ReminderFilter?.check(R.id.all)
+                binding?.ReminderFilter?.check(R.id.upcoming)
                 return@setOnCheckedStateChangeListener
             }
             filterMode =
@@ -38,6 +44,15 @@ class RemindersFragment : NotallyFragment() {
 
     override fun getObservable(): LiveData<List<Item>> = currentReminderNotes
 
+    override fun notesAdapterSortCallback(): (BaseNoteAdapter) -> SortedListAdapterCallback<Item> =
+        { adapter ->
+            when (filterMode) {
+                FilterOptions.UPCOMING -> BaseNoteNextNotificationSort(adapter, SortDirection.ASC)
+                FilterOptions.ELAPSED -> BaseNoteLastNotificationSort(adapter, SortDirection.DESC)
+                FilterOptions.ALL -> BaseNoteMostRecentNotificationSort(adapter, SortDirection.DESC)
+            }
+        }
+
     fun applyFilter(filterOptions: FilterOptions) {
         val items: List<Item> = allReminderNotes.value ?: return
         val filteredList: List<Item> =
@@ -53,11 +68,12 @@ class RemindersFragment : NotallyFragment() {
                 }
             }
         currentReminderNotes.value = filteredList
+        notesAdapter?.setNotesSortCallback(notesAdapterSortCallback())
     }
 }
 
 enum class FilterOptions {
-    ALL,
     UPCOMING,
     ELAPSED,
+    ALL,
 }

@@ -51,6 +51,7 @@ data class BaseNoteVHPreferences(
     val maxTitleLines: Int,
     val hideLabels: Boolean,
     val hideImages: Boolean,
+    val sortedBy: NotesSortBy,
 )
 
 class BaseNoteVH(

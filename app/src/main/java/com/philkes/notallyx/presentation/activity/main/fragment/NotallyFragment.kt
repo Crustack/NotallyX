@@ -16,6 +16,7 @@ import androidx.lifecycle.LiveData
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SortedListAdapterCallback
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.philkes.notallyx.R
@@ -41,6 +42,7 @@ import com.philkes.notallyx.presentation.movedToResId
 import com.philkes.notallyx.presentation.showKeyboard
 import com.philkes.notallyx.presentation.view.main.BaseNoteAdapter
 import com.philkes.notallyx.presentation.view.main.BaseNoteVHPreferences
+import com.philkes.notallyx.presentation.view.main.createCallback
 import com.philkes.notallyx.presentation.view.misc.ItemListener
 import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesView
@@ -261,7 +263,7 @@ abstract class NotallyFragment : Fragment(), ItemListener {
                 BaseNoteAdapter(
                     model.actionMode.selectedIds,
                     dateFormat.value,
-                    notesSorting.value,
+                    notesAdapterSortCallback(),
                     BaseNoteVHPreferences(
                         textSizeOverview.value,
                         maxItems.value,
@@ -269,6 +271,7 @@ abstract class NotallyFragment : Fragment(), ItemListener {
                         maxTitle.value,
                         labelTagsHiddenInOverview.value,
                         imagesHiddenInOverview.value,
+                        notesSorting.value.sortedBy,
                     ),
                     model.imageRoot,
                     this@NotallyFragment,
@@ -294,6 +297,11 @@ abstract class NotallyFragment : Fragment(), ItemListener {
                 notesAdapter?.currentList?.filterIsInstance<BaseNote>()
             }
         }
+    }
+
+    protected open fun notesAdapterSortCallback():
+        (BaseNoteAdapter) -> SortedListAdapterCallback<Item> = { adapter ->
+        model.preferences.notesSorting.value.createCallback(adapter)
     }
 
     private fun setupObserver() {
