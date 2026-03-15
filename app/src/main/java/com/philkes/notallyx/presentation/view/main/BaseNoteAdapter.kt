@@ -12,7 +12,7 @@ import com.philkes.notallyx.databinding.RecyclerBaseNoteBinding
 import com.philkes.notallyx.databinding.RecyclerHeaderBinding
 import com.philkes.notallyx.presentation.view.main.sorting.BaseNoteColorSort
 import com.philkes.notallyx.presentation.view.main.sorting.BaseNoteCreationDateSort
-import com.philkes.notallyx.presentation.view.main.sorting.BaseNoteNextNotificationSort
+import com.philkes.notallyx.presentation.view.main.sorting.BaseNoteModifiedDateSort
 import com.philkes.notallyx.presentation.view.main.sorting.BaseNoteTitleSort
 import com.philkes.notallyx.presentation.view.misc.ItemListener
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
@@ -167,7 +167,7 @@ class BaseNoteAdapter(
 fun NotesSort.createCallback(adapter: RecyclerView.Adapter<*>?) =
     when (sortedBy) {
         NotesSortBy.TITLE -> BaseNoteTitleSort(adapter, sortDirection)
-        NotesSortBy.MODIFIED_DATE -> BaseNoteNextNotificationSort(adapter, sortDirection)
+        NotesSortBy.MODIFIED_DATE -> BaseNoteModifiedDateSort(adapter, sortDirection)
         NotesSortBy.CREATION_DATE -> BaseNoteCreationDateSort(adapter, sortDirection)
         NotesSortBy.COLOR -> BaseNoteColorSort(adapter, sortDirection)
     }
