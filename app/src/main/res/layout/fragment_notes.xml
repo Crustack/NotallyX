@@ -78,12 +78,12 @@
         >
 
         <com.google.android.material.chip.Chip
-            android:id="@+id/all"
+            android:id="@+id/upcoming"
             style="@style/FilterChip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:checked="true"
-            android:text="@string/all" />
+            android:text="@string/upcoming" />
         <com.google.android.material.chip.Chip
             android:id="@+id/elapsed"
             style="@style/FilterChip"
@@ -91,11 +91,11 @@
             android:layout_height="wrap_content"
             android:text="@string/elapsed" />
         <com.google.android.material.chip.Chip
-            android:id="@+id/upcoming"
+            android:id="@+id/all"
             style="@style/FilterChip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/upcoming" />
+            android:text="@string/all" />
 
     </com.google.android.material.chip.ChipGroup>
 
