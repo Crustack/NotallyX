@@ -12,8 +12,13 @@ fun ListItem.findChild(childId: Int): ListItem? {
 
 fun ListItem.check(checked: Boolean, checkChildren: Boolean = true) {
     this.checked = checked
+    val checkedTimestamp = if (checked) System.currentTimeMillis() else null
+    this.checkedTimestamp = checkedTimestamp
     if (checkChildren) {
-        this.children.forEach { child -> child.checked = checked }
+        this.children.forEach { child ->
+            child.checked = checked
+            child.checkedTimestamp = checkedTimestamp
+        }
     }
 }
 

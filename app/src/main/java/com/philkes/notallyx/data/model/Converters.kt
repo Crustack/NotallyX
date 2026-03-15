@@ -120,7 +120,15 @@ object Converters {
             val checked = jsonObject.getSafeBoolean("checked")
             val isChild = jsonObject.getSafeBoolean("isChild")
             val order = jsonObject.getSafeInt("order")
-            ListItem(body, checked, isChild, order, mutableListOf())
+            val checkedTimestamp = jsonObject.getSafeLong("checkedTimestamp")
+            ListItem(
+                body,
+                checked,
+                isChild,
+                order,
+                mutableListOf(),
+                checkedTimestamp = checkedTimestamp,
+            )
         }
     }
 
@@ -134,6 +142,7 @@ object Converters {
                 jsonObject.put("checked", item.checked)
                 jsonObject.put("isChild", item.isChild)
                 jsonObject.put("order", item.order)
+                jsonObject.put("checkedTimestamp", item.checkedTimestamp)
             }
         return JSONArray(objects)
     }

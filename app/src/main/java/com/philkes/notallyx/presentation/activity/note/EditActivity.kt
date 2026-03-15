@@ -71,12 +71,12 @@ import com.philkes.notallyx.presentation.view.note.preview.PreviewImageAdapter
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
-import com.philkes.notallyx.presentation.viewmodel.preference.ListItemSort
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
 import com.philkes.notallyx.presentation.viewmodel.preference.displaySmallerSize
 import com.philkes.notallyx.presentation.viewmodel.preference.editBodySize
 import com.philkes.notallyx.presentation.viewmodel.preference.editTitleSize
+import com.philkes.notallyx.presentation.viewmodel.preference.isAutoSortChecked
 import com.philkes.notallyx.presentation.widget.WidgetProvider
 import com.philkes.notallyx.utils.FileError
 import com.philkes.notallyx.utils.changeStatusAndNavigationBarColor
@@ -925,9 +925,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             Type.LIST -> {
                 binding.EnterBody.visibility = GONE
                 binding.CheckedListView.visibility =
-                    if (preferences.listItemSorting.value == ListItemSort.AUTO_SORT_BY_CHECKED)
-                        VISIBLE
-                    else GONE
+                    if (preferences.listItemSorting.value.isAutoSortChecked) VISIBLE else GONE
             }
         }
 

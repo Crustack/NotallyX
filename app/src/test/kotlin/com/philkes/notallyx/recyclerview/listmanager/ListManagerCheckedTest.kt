@@ -92,6 +92,20 @@ class ListManagerCheckedTest : ListManagerTestBase() {
     }
 
     @Test
+    fun `changeChecked on child item and does not move when auto-sort timestamp is enabled`() {
+        setSorting(ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
+        listManager.changeIsChild(1, true)
+
+        listManager.changeChecked(1, checked = true, pushChange = true)
+
+        "A".assertIsChecked()
+        "A".assertChildren("B")
+        "B".assertIsChecked()
+        "A".assertOrder(0)
+        "B".assertOrder(1)
+    }
+
+    @Test
     fun `changeChecked true on parent item checks all children and moves when auto-sort is enabled`() {
         setSorting(ListItemSort.AUTO_SORT_BY_CHECKED)
         listManager.changeIsChild(1, true)
@@ -102,6 +116,28 @@ class ListManagerCheckedTest : ListManagerTestBase() {
         items.assertSize(3)
         itemsChecked!!.assertSize(3)
         itemsChecked!!.assertOrder("A", "B", "C")
+        itemsChecked!!.assertChecked(true, true, true)
+        "A".assertChildren("B", "C")
+        items.assertOrder("D", "E", "F")
+        items.assertChecked(false, false, false)
+    }
+
+    @Test
+    fun `changeChecked true on parent item checks all children and moves when auto-sort timestamp is enabled`() {
+        setSorting(ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
+        listManager.changeIsChild(1, true)
+        listManager.changeIsChild(2, true)
+
+        listManager.changeChecked(0, checked = true, pushChange = true)
+
+        items.assertSize(3)
+        itemsChecked!!.assertSize(3)
+        itemsChecked!!.assertOrder(
+            "A",
+            "B",
+            "C",
+        ) // Since all get the same timestamp, they fall back to original order or just stay as they
+          // were
         itemsChecked!!.assertChecked(true, true, true)
         "A".assertChildren("B", "C")
         items.assertOrder("D", "E", "F")
@@ -124,8 +160,41 @@ class ListManagerCheckedTest : ListManagerTestBase() {
     }
 
     @Test
+    fun `changeChecked false on parent item unchecks all children and moves when auto-sort timestamp is enabled`() {
+        setSorting(ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
+        listManager.changeIsChild(1, true)
+        listManager.changeIsChild(2, true)
+        listManager.changeChecked(0, checked = true, pushChange = true)
+
+        listManager.changeChecked(0, checked = false, inCheckedList = true, pushChange = true)
+
+        items.assertSize(6)
+        itemsChecked!!.assertSize(0)
+        items.assertOrder("A", "B", "C", "D", "E", "F")
+        items.assertChecked(false, false, false, false, false, false)
+    }
+
+    @Test
     fun `changeChecked false on parent item after add another item when auto-sort is enabled`() {
         setSorting(ListItemSort.AUTO_SORT_BY_CHECKED)
+        listManager.changeIsChild(1, true)
+        listManager.changeIsChild(2, true)
+        listManager.changeChecked(0, checked = true, pushChange = true)
+        listManager.addWithChildren(0, "Parent1", "Child1", "Child2")
+
+        listManager.changeChecked(0, checked = false, inCheckedList = true, pushChange = true)
+
+        itemsChecked!!.assertSize(0)
+        "A".assertIsNotChecked()
+        "B".assertIsNotChecked()
+        "C".assertIsNotChecked()
+        "A".assertChildren("B", "C")
+        items.assertOrder("Parent1", "Child1", "Child2", "A", "B", "C")
+    }
+
+    @Test
+    fun `changeChecked false on parent item after add another item when auto-sort timestamp is enabled`() {
+        setSorting(ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
         listManager.changeIsChild(1, true)
         listManager.changeIsChild(2, true)
         listManager.changeChecked(0, checked = true, pushChange = true)
@@ -177,8 +246,40 @@ class ListManagerCheckedTest : ListManagerTestBase() {
     }
 
     @Test
+    fun `changeChecked after parent with child moved when auto-sort timestamp is enabled`() {
+        setSorting(ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
+        listManager.changeIsChild(4, true)
+        listManager.changeChecked(3, checked = true, pushChange = true)
+        listManager.changeChecked(1, checked = false, inCheckedList = true, pushChange = true)
+        listItemDragCallback.simulateDrag(3, 1, 2)
+        items.printList("Before")
+        listManager.changeChecked(1, checked = true, pushChange = true)
+        items.printList("After")
+
+        items.assertOrder("A", "B", "C", "F")
+        itemsChecked!!.assertOrder("D", "E")
+        "D".assertChildren("E")
+        "D".assertIsChecked()
+        "E".assertIsChecked()
+    }
+
+    @Test
     fun `changeChecked false with auto-sort correct orders`() {
         setSorting(ListItemSort.AUTO_SORT_BY_CHECKED)
+        listManager.changeIsChild(3, true)
+        listManager.changeChecked(2, checked = true)
+        listItemDragCallback.simulateDrag(1, 2, 1)
+        items.printList("Before")
+        listManager.changeChecked(0, checked = false, inCheckedList = true)
+        items.printList("After")
+
+        items.assertOrder("A", "C", "D", "E", "B", "F")
+        items.assertOrderValues(0, 1, 2, 3, 4)
+    }
+
+    @Test
+    fun `changeChecked false with auto-sort timestamp correct orders`() {
+        setSorting(ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
         listManager.changeIsChild(3, true)
         listManager.changeChecked(2, checked = true)
         listItemDragCallback.simulateDrag(1, 2, 1)
@@ -206,6 +307,21 @@ class ListManagerCheckedTest : ListManagerTestBase() {
     }
 
     @Test
+    fun `changeChecked true with auto-sort timestamp with other item having same body`() {
+        setSorting(ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
+        val items = this.items.cloneList()
+        items[1].body = "A"
+        listManager.setState(ListState(items, itemsChecked!!.toMutableList().cloneList()))
+
+        listManager.changeChecked(1, checked = true)
+
+        this.items.assertSize(5)
+        this.items.assertOrder("A", "C", "D", "E", "F")
+        itemsChecked!!.assertSize(1)
+        itemsChecked!!.assertOrder("A")
+    }
+
+    @Test
     fun `changeChecked true with auto-sort parent with child with checked item in between`() {
         setSorting(ListItemSort.AUTO_SORT_BY_CHECKED)
         listManager.changeChecked(2, true)
@@ -215,6 +331,20 @@ class ListManagerCheckedTest : ListManagerTestBase() {
 
         items.assertOrder("A", "E", "F")
         itemsChecked!!.assertOrder("B", "D", "C")
+        "B".assertChildren("D")
+    }
+
+    @Test
+    fun `changeChecked true with auto-sort timestamp parent with child with checked item in between`() {
+        setSorting(ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
+        listManager.changeChecked(2, true)
+        listManager.changeIsChild(2, true)
+
+        listManager.changeChecked(1, true)
+
+        items.assertOrder("A", "E", "F")
+        // B was checked after C (C was checked in first line), so B should be after C
+        itemsChecked!!.assertOrder("C", "B", "D")
         "B".assertChildren("D")
     }
 
@@ -235,6 +365,50 @@ class ListManagerCheckedTest : ListManagerTestBase() {
         "E".assertOrder(4)
         "F".assertOrder(5)
         "C".assertOrder(2)
+    }
+
+    @Test
+    fun `changeChecked true with auto-sort timestamp parent with children with checked item in between`() {
+        setSorting(ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
+        listManager.changeChecked(2, true)
+        listManager.changeIsChild(3, true)
+        listManager.changeIsChild(4, true)
+        listManager.changeIsChild(2, true)
+
+        listManager.changeChecked(1, true)
+
+        items.assertOrder("A")
+        // B was checked after C
+        itemsChecked!!.assertOrder("C", "B", "D", "E", "F")
+        "B".assertChildren("D", "E", "F")
+    }
+
+    @Test
+    fun `changeChecked true with auto-sort timestamp`() {
+        setSorting(ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
+
+        listManager.changeChecked(1, true)
+        listManager.changeChecked(0, true)
+        listManager.changeChecked(2, true)
+
+        items.assertOrder("C", "D", "F")
+        itemsChecked!!.assertOrder("E", "A", "B")
+    }
+
+    @Test
+    fun `changeChecked true with auto-sort timestamp uncheck order`() {
+        setSorting(ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
+        listManager.changeChecked(1, true)
+        listManager.changeChecked(0, true)
+        listManager.changeChecked(2, true)
+
+        listManager.changeChecked(2, false, inCheckedList = true)
+        listManager.changeChecked(1, false, inCheckedList = true)
+        listManager.changeChecked(0, false, inCheckedList = true)
+
+        items.assertSize(6)
+        items.assertOrder("A", "B", "C", "D", "E", "F")
+        itemsChecked!!.assertSize(0)
     }
 
     // endregion
@@ -281,8 +455,40 @@ class ListManagerCheckedTest : ListManagerTestBase() {
     }
 
     @Test
+    fun `changeCheckedForAll true correct order with auto-sort timestamp enabled`() {
+        setSorting(ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
+        listManager.changeIsChild(3, true)
+        listManager.changeChecked(2, true)
+        listManager.changeChecked(0, true)
+
+        listManager.changeCheckedForAll(true)
+
+        items.assertSize(0)
+        // C was checked before A (C was at index 2, A at 0).
+        // C and D have same timestamp, so D follows C.
+        // A has a later timestamp (checked after C).
+        // B, E, F have even later timestamp (checked via changeCheckedForAll).
+        itemsChecked!!.assertOrder("C", "D", "A", "B", "E", "F")
+        itemsChecked!!.assertChecked(true, true, true, true, true, true)
+    }
+
+    @Test
     fun `changeCheckedForAll false correct order with auto-sort enabled`() {
         setSorting(ListItemSort.AUTO_SORT_BY_CHECKED)
+        listManager.changeIsChild(3, true)
+        listManager.changeChecked(2, true)
+        listManager.changeChecked(0, true)
+
+        listManager.changeCheckedForAll(false)
+
+        itemsChecked!!.assertSize(0)
+        items.assertOrder("A", "B", "C", "D", "E", "F")
+        items.assertChecked(false, false, false, false, false, false)
+    }
+
+    @Test
+    fun `changeCheckedForAll false correct order with auto-sort timestamp enabled`() {
+        setSorting(ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
         listManager.changeIsChild(3, true)
         listManager.changeChecked(2, true)
         listManager.changeChecked(0, true)

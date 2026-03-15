@@ -15,6 +15,9 @@ import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.presentation.format
 import com.philkes.notallyx.presentation.merge
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
+import com.philkes.notallyx.presentation.view.note.listitem.adapter.CheckedListItemAdapter
+import com.philkes.notallyx.presentation.view.note.listitem.sorting.ListItemCheckedTimestampSortCallback
+import com.philkes.notallyx.presentation.view.note.listitem.sorting.ListItemParentSortCallback
 import com.philkes.notallyx.utils.createObserverSkipFirst
 import com.philkes.notallyx.utils.deserializeEnums
 import com.philkes.notallyx.utils.fromCamelCaseToEnumName
@@ -386,7 +389,20 @@ val TextSizeSp.displayTitleSize: Float
 enum class ListItemSort(override val textResId: Int) : StaticTextProvider {
     NO_AUTO_SORT(R.string.no_auto_sort),
     AUTO_SORT_BY_CHECKED(R.string.auto_sort_by_checked),
+    AUTO_SORT_BY_CHECKED_TIMESTAMP(R.string.auto_sort_by_checked_timestamp),
 }
+
+val ListItemSort.isAutoSortChecked
+    get() =
+        this in
+            setOf(ListItemSort.AUTO_SORT_BY_CHECKED, ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
+
+fun ListItemSort.callback(adapterChecked: CheckedListItemAdapter) =
+    when (this) {
+        ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP ->
+            ListItemCheckedTimestampSortCallback(adapterChecked)
+        else -> ListItemParentSortCallback(adapterChecked)
+    }
 
 enum class BiometricLock(override val textResId: Int) : StaticTextProvider {
     ENABLED(R.string.enabled),

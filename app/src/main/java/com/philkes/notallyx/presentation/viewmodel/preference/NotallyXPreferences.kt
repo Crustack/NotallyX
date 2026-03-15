@@ -341,4 +341,4 @@ class NotallyXPreferences private constructor(private val context: Context) {
 }
 
 val NotallyXPreferences.autoSortByCheckedEnabled
-    get() = listItemSorting.value == ListItemSort.AUTO_SORT_BY_CHECKED
+    get() = listItemSorting.value.isAutoSortChecked

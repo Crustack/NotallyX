@@ -32,6 +32,7 @@ import com.philkes.notallyx.presentation.view.note.listitem.ListManager
 import com.philkes.notallyx.presentation.view.note.listitem.firstBodyOrEmptyString
 import com.philkes.notallyx.presentation.viewmodel.preference.ListItemSort
 import com.philkes.notallyx.presentation.viewmodel.preference.editBodySize
+import com.philkes.notallyx.presentation.viewmodel.preference.isAutoSortChecked
 import com.philkes.notallyx.utils.changehistory.EditTextState
 import com.philkes.notallyx.utils.copyToClipBoard
 import com.philkes.notallyx.utils.textMaxLengthFilter
@@ -105,7 +106,7 @@ class ListItemVH(
             visibility =
                 when {
                     viewMode != NoteViewMode.EDIT -> GONE
-                    item.checked && autoSort == ListItemSort.AUTO_SORT_BY_CHECKED -> INVISIBLE
+                    item.checked && autoSort.isAutoSortChecked -> INVISIBLE
                     else -> VISIBLE
                 }
             contentDescription = "Drag$position"

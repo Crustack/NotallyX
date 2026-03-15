@@ -19,12 +19,12 @@ import com.philkes.notallyx.presentation.view.note.listitem.adapter.ListItemHigh
 import com.philkes.notallyx.presentation.view.note.listitem.adapter.ListItemVH
 import com.philkes.notallyx.presentation.view.note.listitem.init
 import com.philkes.notallyx.presentation.view.note.listitem.setItems
-import com.philkes.notallyx.presentation.view.note.listitem.sorting.ListItemParentSortCallback
 import com.philkes.notallyx.presentation.view.note.listitem.sorting.SortedItemsList
 import com.philkes.notallyx.presentation.view.note.listitem.splitByChecked
 import com.philkes.notallyx.presentation.view.note.listitem.toMutableList
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.autoSortByCheckedEnabled
+import com.philkes.notallyx.presentation.viewmodel.preference.callback
 import com.philkes.notallyx.utils.findAllOccurrences
 import com.philkes.notallyx.utils.indices
 import com.philkes.notallyx.utils.mapIndexed
@@ -260,9 +260,8 @@ class EditListActivity : EditActivity(Type.LIST) {
                     binding.ScrollView,
                 )
             itemsChecked =
-                SortedItemsList(ListItemParentSortCallback(adapterChecked!!)).apply {
-                    setItems(checkedItems.toMutableList())
-                }
+                SortedItemsList(preferences.listItemSorting.value.callback(adapterChecked!!))
+                    .apply { setItems(checkedItems.toMutableList()) }
             adapterChecked?.setList(itemsChecked!!)
             binding.CheckedListView.adapter = adapterChecked
         } else {

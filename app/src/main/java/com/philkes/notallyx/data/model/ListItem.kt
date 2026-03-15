@@ -7,6 +7,7 @@ data class ListItem(
     var order: Int?,
     var children: MutableList<ListItem>,
     var id: Int = -1,
+    var checkedTimestamp: Long? = null,
 ) : Cloneable {
 
     public override fun clone(): Any {
@@ -18,18 +19,13 @@ data class ListItem(
             order,
             children.map { it.clone() as ListItem }.toMutableList(),
             id,
+            checkedTimestamp,
         )
     }
 
     override fun equals(other: Any?): Boolean {
-        if (this == null && other == null) {
+        if (this === other) {
             return true
-        }
-        if (this != null && other == null) {
-            return false
-        }
-        if (this == null && other != null) {
-            return false
         }
         if (other !is ListItem) {
             return false
@@ -37,7 +33,19 @@ data class ListItem(
         return (this.body == other.body &&
             this.order == other.order &&
             this.checked == other.checked &&
-            this.isChild == other.isChild)
+            this.isChild == other.isChild &&
+            this.checkedTimestamp == other.checkedTimestamp)
+    }
+
+    override fun hashCode(): Int {
+        var result = body.hashCode()
+        result = 31 * result + checked.hashCode()
+        result = 31 * result + isChild.hashCode()
+        result = 31 * result + (order ?: 0)
+        result = 31 * result + children.hashCode()
+        result = 31 * result + id
+        result = 31 * result + (checkedTimestamp?.hashCode() ?: 0)
+        return result
     }
 
     val itemCount: Int

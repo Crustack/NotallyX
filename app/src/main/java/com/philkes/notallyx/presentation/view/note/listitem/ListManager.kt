@@ -68,7 +68,7 @@ class ListManager(
         this.checkedAdapter = adapterChecked
         nextItemId = this.items.size + (this.itemsChecked?.size() ?: 0)
         Log.d(TAG, "initList:\n${this.items.toReadableString()}")
-        this.itemsChecked?.let { Log.d(TAG, "itemsChecked:\n${it}") }
+        this.itemsChecked?.let { Log.d(TAG, "itemsChecked:\n${it.toReadableString()}") }
     }
 
     internal fun getState(selectedPos: Int? = null): ListState {
@@ -458,6 +458,7 @@ class ListManager(
     ) {
         if (checked) {
             child.checked = true
+            child.checkedTimestamp = System.currentTimeMillis()
             adapter.notifyItemChanged(position)
             val (_, parent) = items.findParent(child)!!
             parent.updateParentChecked()
@@ -466,6 +467,7 @@ class ListManager(
                 uncheckWithAutoSort(child)
             } else {
                 child.checked = false
+                child.checkedTimestamp = null
                 adapter.notifyItemChanged(position)
                 checkParent(child, false)
             }
@@ -529,6 +531,7 @@ class ListManager(
         val (parentPos, parent) = items.findParent(item)!!
         if (parent.checked != checked) {
             parent.checked = checked
+            parent.checkedTimestamp = if (checked) System.currentTimeMillis() else null
             adapter.notifyItemChanged(parentPos)
         }
     }
