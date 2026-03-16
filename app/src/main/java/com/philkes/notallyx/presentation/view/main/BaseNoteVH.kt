@@ -300,12 +300,13 @@ class BaseNoteVH(
     private fun setImages(images: List<FileAttachment>, mediaRoot: File?) {
         binding.apply {
             if (images.isNotEmpty() && !preferences.hideImages) {
-                Message.visibility = GONE
+                ImageLayout.visibility = VISIBLE
                 val image = images[0]
                 val file = if (mediaRoot != null) File(mediaRoot, image.localName) else null
                 if (file?.exists() == true) {
                     ImageView.visibility = VISIBLE
-                    Glide.with(ImageView)
+                    Message.visibility = GONE
+                    Glide.with(ImageView.context)
                         .load(file)
                         .centerCrop()
                         .transition(DrawableTransitionOptions.withCrossFade())
@@ -320,6 +321,7 @@ class BaseNoteVH(
                                     isFirstResource: Boolean,
                                 ): Boolean {
                                     Message.visibility = VISIBLE
+                                    ImageView.visibility = GONE
                                     return false
                                 }
 
@@ -336,6 +338,7 @@ class BaseNoteVH(
                         )
                         .into(ImageView)
                 } else {
+                    Glide.with(ImageView.context).clear(ImageView)
                     ImageView.visibility = GONE
                     Message.visibility = VISIBLE
                 }
@@ -351,7 +354,8 @@ class BaseNoteVH(
                 ImageLayout.visibility = GONE
                 Message.visibility = GONE
                 ImageViewMore.visibility = GONE
-                Glide.with(ImageView).clear(ImageView)
+                ImageView.visibility = GONE
+                Glide.with(ImageView.context).clear(ImageView)
             }
         }
     }
