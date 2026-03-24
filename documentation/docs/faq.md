@@ -16,7 +16,7 @@ NotallyX is a minimalistic yet powerful note-taking app for Android. It's an ext
 ### Is NotallyX free?
 
 Yes, NotallyX is completely free and open-source. There are no in-app purchases, subscriptions, or advertisements.
-If you still want to donate to support me as a developer, feel free to donate via my [ko-fi link](https://ko-fi.com/philkes), it is greatly appreciated 🙂.
+If you still want to donate to support me as a developer, feel free to donate via my [ko-fi link](https://ko-fi.com/crustack), it is greatly appreciated 🙂.
 
 ### What devices does NotallyX support?
 

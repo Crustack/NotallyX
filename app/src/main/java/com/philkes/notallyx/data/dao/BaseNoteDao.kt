@@ -162,7 +162,9 @@ interface BaseNoteDao {
     )
     fun getAllRemindersAsync(): LiveData<List<NoteReminder>>
 
-    @Query("SELECT * FROM BaseNote WHERE reminders IS NOT NULL AND reminders != '[]'")
+    @Query(
+        "SELECT * FROM BaseNote WHERE reminders IS NOT NULL AND reminders != '[]' AND folder = 'NOTES'"
+    )
     fun getAllBaseNotesWithReminders(): LiveData<List<BaseNote>>
 
     @Query("SELECT id FROM BaseNote WHERE folder = 'DELETED'")
@@ -187,8 +189,6 @@ interface BaseNoteDao {
         "UPDATE BaseNote SET folder = :folder, modifiedTimestamp = :timestamp WHERE id IN (:ids)"
     )
     suspend fun move(ids: LongArray, folder: Folder, timestamp: Long)
-
-    @Query("SELECT DISTINCT color FROM BaseNote") fun getAllColorsAsync(): LiveData<List<String>>
 
     @Query("SELECT DISTINCT color FROM BaseNote") suspend fun getAllColors(): List<String>
 

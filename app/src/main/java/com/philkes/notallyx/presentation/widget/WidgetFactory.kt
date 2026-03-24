@@ -14,6 +14,8 @@ import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
+import com.philkes.notallyx.presentation.viewmodel.preference.displayBodySize
+import com.philkes.notallyx.presentation.viewmodel.preference.displayTitleSize
 import com.philkes.notallyx.presentation.widget.WidgetProvider.Companion.extractWidgetColors
 import com.philkes.notallyx.presentation.widget.WidgetProvider.Companion.getWidgetCheckedChangeIntent
 import com.philkes.notallyx.presentation.widget.WidgetProvider.Companion.getWidgetOpenNoteIntent
@@ -67,7 +69,7 @@ class WidgetFactory(
 
     private fun getNoteView(note: BaseNote): RemoteViews {
         return RemoteViews(app.packageName, R.layout.widget_note).apply {
-            val textSize = preferences.textSize.value
+            val textSize = preferences.textSizeNoteEditor.value
             setTextViewTextSize(R.id.Title, TypedValue.COMPLEX_UNIT_SP, textSize.displayTitleSize)
             setTextViewText(R.id.Title, note.title)
 
@@ -93,7 +95,7 @@ class WidgetFactory(
             setTextViewTextSize(
                 R.id.Title,
                 TypedValue.COMPLEX_UNIT_SP,
-                preferences.textSize.value.displayTitleSize,
+                preferences.textSizeNoteEditor.value.displayTitleSize,
             )
             setTextViewText(R.id.Title, list.title)
             setOnClickFillInIntent(R.id.ChangeNote, getWidgetSelectNoteIntent(widgetId))
@@ -150,7 +152,7 @@ class WidgetFactory(
         setTextViewTextSize(
             textViewId,
             TypedValue.COMPLEX_UNIT_SP,
-            preferences.textSize.value.displayBodySize,
+            preferences.textSizeNoteEditor.value.displayBodySize,
         )
         setTextViewText(textViewId, item.body)
         setInt(

@@ -1,0 +1,8 @@
+- Ansichtsmodus als Standard hinzugefügt
+- Weitere Optionen zur Anpassung der Schriftart hinzugefügt
+- Option zum Sortieren markierter Elemente nach Fertigstellung hinzugefügt
+- Datumsformat „JJJJ-MM-TT“ hinzugefügt
+- Standardfarbauswahl für neue Notizen hinzugefügt
+- Filterung und Sortierung in der Erinnerungsansicht verbessert
+- Kleinere Fehler in der Benutzeroberfläche behoben; inkonsistente Bildanzeige in der Übersicht
+- Fehler bei der Zeitzone im Datumswähler behoben

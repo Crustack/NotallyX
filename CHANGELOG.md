@@ -1,5 +1,25 @@
 # Changelog
 
+## [v7.10.0](https://github.com/Crustack/NotallyX/tree/v7.10.0) (2026-03-16)
+
+[Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.9.1...v7.10.0)
+
+### Added Features
+
+- Setting for default List Note view mode [\#877](https://github.com/Crustack/NotallyX/issues/877)
+- More Font customization options [\#855](https://github.com/Crustack/NotallyX/issues/855)
+- Option to have checked items in order of completion \(not creation\) [\#843](https://github.com/Crustack/NotallyX/issues/843)
+- Date format YYYY-MM-DD [\#841](https://github.com/Crustack/NotallyX/issues/841)
+- Being able to select a color by default for new notes [\#630](https://github.com/Crustack/NotallyX/issues/630)
+- Only display non deleted/archived notes and correctly sort reminders view [\#925](https://github.com/Crustack/NotallyX/pull/925) ([Crustack](https://github.com/Crustack))
+
+### Fixed Bugs
+
+- Inconsistent display of images in overview [\#928](https://github.com/Crustack/NotallyX/issues/928)
+- Some icons are barely visible in dark mode [\#901](https://github.com/Crustack/NotallyX/issues/901)
+- Save buttons missing when editing txt files [\#892](https://github.com/Crustack/NotallyX/issues/892)
+- MaterialDatePicker timezone bug [\#908](https://github.com/Crustack/NotallyX/pull/908) ([ulibte](https://github.com/ulibte))
+
 ## [v7.9.1](https://github.com/Crustack/NotallyX/tree/v7.9.1) (2026-03-05)
 
 [Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.9.0...v7.9.1)

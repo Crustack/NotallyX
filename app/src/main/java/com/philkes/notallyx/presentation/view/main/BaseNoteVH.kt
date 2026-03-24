@@ -1,7 +1,6 @@
 package com.philkes.notallyx.presentation.view.main
 
 import android.graphics.drawable.Drawable
-import android.util.TypedValue
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.widget.LinearLayout
@@ -32,6 +31,7 @@ import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.extractColor
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.setControlsContrastColorForAllViews
+import com.philkes.notallyx.presentation.setTextSizeSp
 import com.philkes.notallyx.presentation.setupReminderChip
 import com.philkes.notallyx.presentation.view.misc.ItemListener
 import com.philkes.notallyx.presentation.view.misc.highlightableview.HighlightableTextView
@@ -39,16 +39,19 @@ import com.philkes.notallyx.presentation.view.misc.highlightableview.SEARCH_SNIP
 import com.philkes.notallyx.presentation.view.note.listitem.init
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
-import com.philkes.notallyx.presentation.viewmodel.preference.TextSize
+import com.philkes.notallyx.presentation.viewmodel.preference.displayBodySize
+import com.philkes.notallyx.presentation.viewmodel.preference.displaySmallerSize
+import com.philkes.notallyx.presentation.viewmodel.preference.displayTitleSize
 import java.io.File
 
 data class BaseNoteVHPreferences(
-    val textSize: TextSize,
+    val textSize: Float,
     val maxItems: Int,
     val maxLines: Int,
     val maxTitleLines: Int,
     val hideLabels: Boolean,
     val hideImages: Boolean,
+    val sortedBy: NotesSortBy,
 )
 
 class BaseNoteVH(
@@ -65,18 +68,13 @@ class BaseNoteVH(
     }
 
     init {
-        val title = preferences.textSize.displayTitleSize
-        val body = preferences.textSize.displayBodySize
 
         binding.apply {
-            Title.setTextSize(TypedValue.COMPLEX_UNIT_SP, title)
-            Date.setTextSize(TypedValue.COMPLEX_UNIT_SP, body)
-            Note.setTextSize(TypedValue.COMPLEX_UNIT_SP, body)
-
-            LinearLayout.children.forEach { view ->
-                view as TextView
-                view.setTextSize(TypedValue.COMPLEX_UNIT_SP, body)
-            }
+            val titleTextSize = preferences.textSize.displayTitleSize
+            val bodyTextSize = preferences.textSize.displayBodySize
+            Title.setTextSizeSp(titleTextSize)
+            Date.setTextSizeSp(bodyTextSize)
+            Note.setTextSizeSp(bodyTextSize)
 
             Title.maxLines = preferences.maxTitleLines
             Note.maxLines = preferences.maxLines
@@ -119,7 +117,10 @@ class BaseNoteVH(
                     Pair(baseNote.modifiedTimestamp, R.string.modified_date)
                 else -> Pair(null, null)
             }
-        binding.Date.displayFormattedTimestamp(date, dateFormat, datePrefixResId)
+        binding.Date.apply {
+            displayFormattedTimestamp(date, dateFormat, datePrefixResId)
+            setTextSizeSp(preferences.textSize.displaySmallerSize)
+        }
 
         setImages(baseNote.images, imageRoot)
         setFiles(baseNote.files)
@@ -163,7 +164,7 @@ class BaseNoteVH(
                 isVisible = true
             }
         }
-        binding.ReminderChip.setupReminderChip(baseNote)
+        binding.ReminderChip.setupReminderChip(baseNote, preferences.textSize.displaySmallerSize)
         setColor(baseNote.color)
     }
 
@@ -205,7 +206,7 @@ class BaseNoteVH(
         val keywordItemIdx =
             initializedItems.indexOfFirst { it.body.contains(keyword, ignoreCase = true) }
         if (keywordItemIdx == -1) {
-            return bindList(initializedItems, isTitleEmpty)
+            return bindList(initializedItems, isTitleEmpty, preferences.textSize.displayBodySize)
         }
         val listItemViews = children.filterIsInstance(HighlightableTextView::class.java).toList()
         listItemViews.forEach { it.visibility = GONE }
@@ -237,7 +238,11 @@ class BaseNoteVH(
             return
         }
         if (keyword.isBlank()) {
-            bindList(initializedItems, baseNote.title.isEmpty())
+            bindList(
+                initializedItems,
+                baseNote.title.isEmpty(),
+                preferences.textSize.displayBodySize,
+            )
             return
         }
         binding.LinearLayout.bindListSearch(initializedItems, keyword, baseNote.title.isEmpty())
@@ -252,7 +257,7 @@ class BaseNoteVH(
         } else binding.ItemsRemaining.visibility = GONE
     }
 
-    private fun bindList(initializedItems: List<ListItem>, isTitleEmpty: Boolean) {
+    private fun bindList(initializedItems: List<ListItem>, isTitleEmpty: Boolean, textSize: Float) {
         binding.apply {
             bindItemsRemaining(initializedItems.size, preferences.maxItems)
             if (initializedItems.isEmpty()) {
@@ -277,6 +282,7 @@ class BaseNoteVH(
                                 if (index == filteredList.lastIndex) {
                                     updatePadding(bottom = 0)
                                 }
+                                setTextSizeSp(textSize)
                             }
                         } else view.visibility = GONE
                     }
@@ -295,12 +301,13 @@ class BaseNoteVH(
     private fun setImages(images: List<FileAttachment>, mediaRoot: File?) {
         binding.apply {
             if (images.isNotEmpty() && !preferences.hideImages) {
-                Message.visibility = GONE
+                ImageLayout.visibility = VISIBLE
                 val image = images[0]
                 val file = if (mediaRoot != null) File(mediaRoot, image.localName) else null
                 if (file?.exists() == true) {
                     ImageView.visibility = VISIBLE
-                    Glide.with(ImageView)
+                    Message.visibility = GONE
+                    Glide.with(ImageView.context)
                         .load(file)
                         .centerCrop()
                         .transition(DrawableTransitionOptions.withCrossFade())
@@ -315,6 +322,7 @@ class BaseNoteVH(
                                     isFirstResource: Boolean,
                                 ): Boolean {
                                     Message.visibility = VISIBLE
+                                    ImageView.visibility = GONE
                                     return false
                                 }
 
@@ -331,6 +339,7 @@ class BaseNoteVH(
                         )
                         .into(ImageView)
                 } else {
+                    Glide.with(ImageView.context).clear(ImageView)
                     ImageView.visibility = GONE
                     Message.visibility = VISIBLE
                 }
@@ -346,7 +355,8 @@ class BaseNoteVH(
                 ImageLayout.visibility = GONE
                 Message.visibility = GONE
                 ImageViewMore.visibility = GONE
-                Glide.with(ImageView).clear(ImageView)
+                ImageView.visibility = GONE
+                Glide.with(ImageView.context).clear(ImageView)
             }
         }
     }

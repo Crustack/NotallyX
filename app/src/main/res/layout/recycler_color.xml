@@ -25,6 +25,16 @@
           android:layout_gravity="center"
           android:visibility="gone"
           />
+
+        <ImageView
+            android:id="@+id/DefaultColorIcon"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="6dp"
+            android:src="@drawable/star_rate_filled"
+            android:visibility="gone"
+            android:contentDescription="@string/text_default" />
     </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

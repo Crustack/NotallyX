@@ -88,7 +88,7 @@ const config: Config = {
           position: 'left',
         },
         {
-          href: 'https://ko-fi.com/philkes',
+          href: 'https://ko-fi.com/crustack',
           position: 'right',
           className: "header--kofi-link",
         },

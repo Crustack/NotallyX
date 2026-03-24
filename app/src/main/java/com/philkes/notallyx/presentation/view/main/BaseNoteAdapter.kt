@@ -23,7 +23,7 @@ import java.io.File
 class BaseNoteAdapter(
     private val selectedIds: Set<Long>,
     private val dateFormat: DateFormat,
-    private var notesSort: NotesSort,
+    private var notesSortCallback: (adapter: BaseNoteAdapter) -> SortedListAdapterCallback<Item>,
     private val preferences: BaseNoteVHPreferences,
     private val imageRoot: File?,
     private val listener: ItemListener,
@@ -31,7 +31,7 @@ class BaseNoteAdapter(
 
     private var searchKeyword: String = ""
 
-    private var list = SortedList(Item::class.java, notesSort.createCallback())
+    private var list = SortedList(Item::class.java, notesSortCallback(this))
 
     override fun getItemViewType(position: Int): Int {
         return when (list[position]) {
@@ -50,7 +50,7 @@ class BaseNoteAdapter(
             is BaseNote -> {
                 (holder as BaseNoteVH).apply {
                     setSearchKeyword(searchKeyword)
-                    bind(item, imageRoot, selectedIds.contains(item.id), notesSort.sortedBy)
+                    bind(item, imageRoot, selectedIds.contains(item.id), preferences.sortedBy)
                 }
             }
         }
@@ -119,8 +119,14 @@ class BaseNoteAdapter(
     }
 
     fun setNotesSort(notesSort: NotesSort) {
-        this.notesSort = notesSort
-        replaceSortCallback(notesSort.createCallback())
+        setNotesSortCallback { adapter -> notesSort.createCallback(adapter) }
+    }
+
+    fun setNotesSortCallback(
+        notesSortCallback: (adapter: BaseNoteAdapter) -> SortedListAdapterCallback<Item>
+    ) {
+        this.notesSortCallback = notesSortCallback
+        replaceSortCallback(this.notesSortCallback(this))
     }
 
     fun getItem(position: Int): Item? {
@@ -133,16 +139,6 @@ class BaseNoteAdapter(
     fun submitList(items: List<Item>) {
         list.replaceAll(items)
     }
-
-    private fun NotesSort.createCallback() =
-        when (sortedBy) {
-            NotesSortBy.TITLE -> BaseNoteTitleSort(this@BaseNoteAdapter, sortDirection)
-            NotesSortBy.MODIFIED_DATE ->
-                BaseNoteModifiedDateSort(this@BaseNoteAdapter, sortDirection)
-            NotesSortBy.CREATION_DATE ->
-                BaseNoteCreationDateSort(this@BaseNoteAdapter, sortDirection)
-            NotesSortBy.COLOR -> BaseNoteColorSort(this@BaseNoteAdapter, sortDirection)
-        }
 
     private fun replaceSortCallback(sortCallback: SortedListAdapterCallback<Item>) {
         val mutableList = mutableListOf<Item>()
@@ -167,3 +163,11 @@ class BaseNoteAdapter(
         return mutableList.toList()
     }
 }
+
+fun NotesSort.createCallback(adapter: RecyclerView.Adapter<*>?) =
+    when (sortedBy) {
+        NotesSortBy.TITLE -> BaseNoteTitleSort(adapter, sortDirection)
+        NotesSortBy.MODIFIED_DATE -> BaseNoteModifiedDateSort(adapter, sortDirection)
+        NotesSortBy.CREATION_DATE -> BaseNoteCreationDateSort(adapter, sortDirection)
+        NotesSortBy.COLOR -> BaseNoteColorSort(adapter, sortDirection)
+    }

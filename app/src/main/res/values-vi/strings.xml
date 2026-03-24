@@ -99,7 +99,8 @@
     <string name="strikethrough">Gạch giữa</string>
     <string name="take_note">Ghi chú</string>
     <string name="tap_to_set_up">Thiết lập</string>
-    <string name="text_size">Cỡ chữ</string>
+    <string name="text_size_note_editor">Cỡ chữ (trình soạn thảo ghi chú)</string>
+    <string name="text_size_overview">Cỡ chữ (tổng quan)</string>
     <string name="theme">Chủ đề</string>
     <string name="title">Tựa đề</string>
     <string name="unarchive">Bỏ lưu trữ</string>

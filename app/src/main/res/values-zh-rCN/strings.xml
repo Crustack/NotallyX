@@ -70,6 +70,7 @@
     <string name="cant_load_image">无法加载图片。它可能已被移动或删除</string>
     <string name="cant_open_link">打不开链接</string>
     <string name="change_color">更改色彩</string>
+    <string name="change_color_default_message">★  标记新笔记的默认颜色。</string>
     <string name="change_color_message">挑个颜色或创建一个新颜色。你也可以长按颜色来进行编辑</string>
     <string name="change_note">更改笔记</string>
     <string name="check_all_items">选中所有项目</string>
@@ -106,7 +107,9 @@
     <string name="date_format">日期格式</string>
     <string name="date_format_apply_in_note_view">同样应用于笔记视图</string>
     <string name="date_format_hint">将所选日期格式应用于笔记概览</string>
+    <string name="day">天</string>
     <string name="days">天</string>
+    <string name="default_color_hint">这是新笔记的默认颜色。要更改它，请让另一个颜色成为默认颜色</string>
     <string name="delete">删除</string>
     <string name="delete_all">删除全部</string>
     <string name="delete_all_notes">删除全部笔记？</string>
@@ -213,6 +216,8 @@
     <string name="item">项目</string>
     <string name="json_files">JSON 文件</string>
     <string name="json_files_help">要从 JSON 文件（单一文件或文件夹）导入你的笔记，单击“导入”。每个有效的 JSON 文件会被导入成不同笔记，原始文件名成为笔记的标题。</string>
+    <string name="jump_to_bottom">跳到底部</string>
+    <string name="jump_to_top">跳到顶部</string>
     <string name="label_exists">标签已存在</string>
     <string name="label_visibility">在导航面板中隐藏/显示标签</string>
     <string name="labels">标签</string>
@@ -226,6 +231,7 @@
     <string name="list">列表</string>
     <string name="list_item_auto_sort">对清单项目排序</string>
     <string name="locked">已锁定</string>
+    <string name="make_default">成为默认色</string>
     <string name="make_feature_request">提出功能需求</string>
     <string name="make_list">制作列表</string>
     <string name="max_backups">保留的备份文件数</string>
@@ -261,6 +267,8 @@
         <item quantity="one">%1$s 则笔记过大无法保存。被缩短到 %2$s 个字符</item>
         <item quantity="other">%1$s 则笔记过大无法保存，它们被缩短到 %2$s 个字符</item>
     </plurals>
+    <string name="of_the_month">当月的 %1$s</string>
+    <string name="of_the_month_last">当月的最后 %1$s</string>
     <string name="open_link">打开链接</string>
     <string name="open_note">打开笔记</string>
     <string name="others">其他</string>
@@ -312,6 +320,8 @@
     <string name="select_labels">选择标签</string>
     <string name="select_note">选择笔记</string>
     <string name="send_feedback">发送反馈</string>
+    <string name="set_as_default_color">设为默认色？</string>
+    <string name="set_as_default_color_message">将此颜色设为新笔记的默认色</string>
     <string name="settings">设置</string>
     <string name="share">分享</string>
     <string name="single_file">单个文件</string>
@@ -328,11 +338,14 @@
     <string name="stop">停止</string>
     <string name="strikethrough">删除线</string>
     <string name="super_dark">超深</string>
+    <string name="swap_action">交换操作</string>
     <string name="take_note">记笔记</string>
     <string name="tap_for_more_options">轻按查看更多选项</string>
     <string name="tap_to_set_up">轻按进行设置</string>
     <string name="text_default">默认</string>
-    <string name="text_size">文本大小</string>
+    <string name="text_size_note_editor">文本大小（笔记编辑器）</string>
+    <string name="text_size_overview">文本大小（概述）</string>
+    <string name="text_size_preview">乱数假文</string>
     <string name="theme">主题</string>
     <string name="theme_use_dynamic_colors">使用系统的壁纸颜色</string>
     <string name="title">标题</string>

@@ -629,6 +629,10 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     fun changeColor(oldColor: String, newColor: String) {
+        val defaultColor = preferences.defaultNoteColor.value
+        if (oldColor == defaultColor) {
+            preferences.defaultNoteColor.save(newColor)
+        }
         viewModelScope.launch(Dispatchers.IO) { baseNoteDao.updateColor(oldColor, newColor) }
     }
 

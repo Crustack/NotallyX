@@ -28,6 +28,7 @@ import com.philkes.notallyx.utils.changehistory.ListEditTextChange
 import com.philkes.notallyx.utils.changehistory.ListIsChildChange
 import com.philkes.notallyx.utils.changehistory.ListMoveChange
 import com.philkes.notallyx.utils.lastIndex
+import com.philkes.notallyx.utils.uniqueCurrentMillis
 
 data class ListState(
     val items: MutableList<ListItem>,
@@ -68,7 +69,7 @@ class ListManager(
         this.checkedAdapter = adapterChecked
         nextItemId = this.items.size + (this.itemsChecked?.size() ?: 0)
         Log.d(TAG, "initList:\n${this.items.toReadableString()}")
-        this.itemsChecked?.let { Log.d(TAG, "itemsChecked:\n${it}") }
+        this.itemsChecked?.let { Log.d(TAG, "itemsChecked:\n${it.toReadableString()}") }
     }
 
     internal fun getState(selectedPos: Int? = null): ListState {
@@ -323,7 +324,9 @@ class ListManager(
         val parents =
             items.findParentsByChecked(!checked) +
                 (itemsChecked?.findParentsByChecked(!checked) ?: listOf())
-        parents.forEach { parent -> changeCheckedParent(parent, checked, true) }
+        parents
+            .sortedBy { it.order ?: -1 }
+            .forEach { parent -> changeCheckedParent(parent, checked, true) }
         if (pushChange) {
             changeHistory.push(ChangeCheckedForAllChange(stateBefore, getState(), this))
         }
@@ -458,6 +461,7 @@ class ListManager(
     ) {
         if (checked) {
             child.checked = true
+            child.checkedTimestamp = uniqueCurrentMillis()
             adapter.notifyItemChanged(position)
             val (_, parent) = items.findParent(child)!!
             parent.updateParentChecked()
@@ -466,6 +470,7 @@ class ListManager(
                 uncheckWithAutoSort(child)
             } else {
                 child.checked = false
+                child.checkedTimestamp = null
                 adapter.notifyItemChanged(position)
                 checkParent(child, false)
             }
@@ -529,6 +534,7 @@ class ListManager(
         val (parentPos, parent) = items.findParent(item)!!
         if (parent.checked != checked) {
             parent.checked = checked
+            parent.checkedTimestamp = if (checked) uniqueCurrentMillis() else null
             adapter.notifyItemChanged(parentPos)
         }
     }

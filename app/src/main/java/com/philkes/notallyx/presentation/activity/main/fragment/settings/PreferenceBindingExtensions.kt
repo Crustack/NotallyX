@@ -25,6 +25,7 @@ import com.philkes.notallyx.databinding.PreferenceSeekbarBinding
 import com.philkes.notallyx.presentation.checkedTag
 import com.philkes.notallyx.presentation.select
 import com.philkes.notallyx.presentation.setCancelButton
+import com.philkes.notallyx.presentation.setTextSizeSp
 import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.MenuDialog
@@ -34,6 +35,7 @@ import com.philkes.notallyx.presentation.viewmodel.preference.BooleanPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.Constants.PASSWORD_EMPTY
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.EnumPreference
+import com.philkes.notallyx.presentation.viewmodel.preference.FloatPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.IntPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.EMPTY_PATH
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.START_VIEW_DEFAULT
@@ -506,6 +508,43 @@ fun PreferenceSeekbarBinding.setup(
         tooltipResId = tooltipResId,
     ) { newValue ->
         onChange(newValue)
+    }
+}
+
+fun PreferenceSeekbarBinding.setupTextSizePreference(
+    preference: FloatPreference,
+    context: Context,
+    value: Float = preference.value,
+    tooltipResId: Int? = null,
+    onChange: (newValue: Float) -> Unit,
+) {
+    setup(
+        value.toInt(),
+        preference.titleResId!!,
+        preference.min.toInt(),
+        preference.max.toInt(),
+        context,
+        tooltipResId = tooltipResId,
+    ) { newValue ->
+        onChange(newValue.toFloat())
+    }
+    PreviewText.apply {
+        isVisible = false
+        setTextSizeSp(value)
+    }
+    Slider.apply {
+        addOnChangeListener { _, newValue, _ -> PreviewText.setTextSizeSp(newValue) }
+        addOnSliderTouchListener(
+            object : Slider.OnSliderTouchListener {
+                override fun onStartTrackingTouch(slider: Slider) {
+                    PreviewText.isVisible = true
+                }
+
+                override fun onStopTrackingTouch(slider: Slider) {
+                    PreviewText.isVisible = false
+                }
+            }
+        )
     }
 }
 

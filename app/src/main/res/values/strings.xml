@@ -36,6 +36,7 @@
     <string name="auto_remove_deleted_notes_hint">By enabling this, Notes that were deleted will be permanently removed after X days</string>
     <string name="auto_save_after_idle_time">Auto save note after specified idle time</string>
     <string name="auto_sort_by_checked">Sort checked items to the end</string>
+    <string name="auto_sort_by_checked_timestamp">Sort checked items by checked time</string>
     <string name="back">Back</string>
     <string name="backup">Backup</string>
     <string name="backup_password">Backup Password</string>
@@ -71,6 +72,7 @@
     <string name="cant_load_image">Can’t load image. It may have been moved or deleted</string>
     <string name="cant_open_link">Can’t open link</string>
     <string name="change_color">Change Color</string>
+    <string name="change_color_default_message">The ★ marks the default color for new notes.</string>
     <string name="change_color_message">Pick a color or create a new one.\nYou can also edit a Color by long pressing it.</string>
     <string name="change_note">Change Note</string>
     <string name="check_all_items">Check all items</string>
@@ -110,6 +112,8 @@
     <string name="date_format_hint">Applies selected date format in Notes Overview</string>
     <string name="day">Day</string>
     <string name="days">Days</string>
+    <string name="default_color_hint">This is the default color for new notes. To change it, make another color the default</string>
+    <string name="default_list_note_view_mode">Default List-Note View Mode</string>
     <string name="delete">Delete</string>
     <string name="delete_all">Delete all</string>
     <string name="delete_all_notes">Delete all notes\?</string>
@@ -225,6 +229,7 @@
     <string name="labels_hidden_in_overview">By enabling this, the notes’ labels will be hidden in the overview</string>
     <string name="labels_hidden_in_overview_title">Hide Labels in Overview</string>
     <string name="large">Large</string>
+    <string name="last_used">Last Used</string>
     <string name="libraries">Libraries</string>
     <string name="light">Light</string>
     <string name="link">Link</string>
@@ -232,6 +237,7 @@
     <string name="list">List</string>
     <string name="list_item_auto_sort">Sort List items</string>
     <string name="locked">Locked</string>
+    <string name="make_default">Make default</string>
     <string name="make_feature_request">Make a feature request</string>
     <string name="make_list">Make list</string>
     <string name="max_backups">Amount of backups to keep</string>
@@ -320,6 +326,8 @@
     <string name="select_labels">Select labels</string>
     <string name="select_note">Select note</string>
     <string name="send_feedback">Send Feedback</string>
+    <string name="set_as_default_color">Set as default color\?</string>
+    <string name="set_as_default_color_message">Sets this color to be the default for new notes</string>
     <string name="settings">Settings</string>
     <string name="share">Share</string>
     <string name="single_file">Single File</string>
@@ -341,7 +349,9 @@
     <string name="tap_for_more_options">Tap for more options</string>
     <string name="tap_to_set_up">Tap to set up</string>
     <string name="text_default">Default</string>
-    <string name="text_size">Text size</string>
+    <string name="text_size_note_editor">Text size (Note Editor)</string>
+    <string name="text_size_overview">Text size (Overview)</string>
+    <string name="text_size_preview">Lorem ipsum dolor sit</string>
     <string name="theme">Theme</string>
     <string name="theme_use_dynamic_colors">Use system\'s wallpaper colors</string>
     <string name="title">Title</string>

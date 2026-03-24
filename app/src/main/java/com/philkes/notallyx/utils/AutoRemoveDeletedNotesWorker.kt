@@ -42,7 +42,7 @@ suspend fun ContextWrapper.removeOldDeletedNotes(): ListenableWorker.Result {
         "Removing notes that have been deleted for $days days or more (since: ${Date(before).format()})",
     )
 
-    val database = NotallyDatabase.getFreshDatabase(this, preferences.dataInPublicFolder.value)
+    val database = NotallyDatabase.getDatabase(this, false).value
     val baseNoteDao = database.getBaseNoteDao()
 
     return try {
@@ -58,11 +58,15 @@ suspend fun ContextWrapper.removeOldDeletedNotes(): ListenableWorker.Result {
 
             baseNoteDao.delete(ids)
             deleteAttachments(images + files + audios, ids)
+            log(
+                AutoRemoveDeletedNotesWorker.TAG,
+                msg = "Auto removed ${ids.size} deleted notes after $days days",
+            )
         }
         ListenableWorker.Result.success()
     } catch (e: Exception) {
         log(
-            AutoRemoveDeletedNotesWorker.Companion.TAG,
+            AutoRemoveDeletedNotesWorker.TAG,
             msg = "Auto remove deleted notes after $days days failed",
             throwable = e,
         )

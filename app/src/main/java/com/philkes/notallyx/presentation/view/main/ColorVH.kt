@@ -5,6 +5,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.BaseNote
+import com.philkes.notallyx.data.model.ColorString
 import com.philkes.notallyx.databinding.RecyclerColorBinding
 import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.extractColor
@@ -23,7 +24,7 @@ class ColorVH(private val binding: RecyclerColorBinding, listener: ItemListener)
         }
     }
 
-    fun bind(color: String, isSelected: Boolean) {
+    fun bind(color: ColorString, isSelected: Boolean, isNoteDefault: Boolean = false) {
         val showAddIcon = color == BaseNote.COLOR_NEW
         val context = binding.root.context
         val value =
@@ -32,8 +33,11 @@ class ColorVH(private val binding: RecyclerColorBinding, listener: ItemListener)
         val controlsColor = context.getContrastFontColor(value)
         binding.apply {
             CardView.apply {
-                setCardBackgroundColor(value)
                 contentDescription = color
+                setCardBackgroundColor(value)
+                if (color == BaseNote.COLOR_DEFAULT) {
+                    setBackgroundResource(R.drawable.dashed_background)
+                }
                 if (isSelected) {
                     strokeWidth = 4.dp
                     strokeColor = controlsColor
@@ -50,6 +54,10 @@ class ColorVH(private val binding: RecyclerColorBinding, listener: ItemListener)
                 }
                 imageTintList = ColorStateList.valueOf(controlsColor)
                 isVisible = showAddIcon || isSelected
+            }
+            DefaultColorIcon.apply {
+                isVisible = isNoteDefault
+                imageTintList = ColorStateList.valueOf(controlsColor)
             }
         }
     }

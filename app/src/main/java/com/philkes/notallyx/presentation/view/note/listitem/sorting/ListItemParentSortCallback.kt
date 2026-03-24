@@ -11,10 +11,10 @@ import com.philkes.notallyx.presentation.view.note.listitem.findParent
  * Sort algorithm that only sorts by [ListItem.order]. A children is always below it's parent and
  * above parents with a lower order.
  */
-class ListItemParentSortCallback(adapter: RecyclerView.Adapter<*>?) :
+open class ListItemParentSortCallback(adapter: RecyclerView.Adapter<*>?) :
     SortedListAdapterCallback<ListItem>(adapter) {
 
-    private var items: SortedList<ListItem>? = null
+    protected var items: SortedList<ListItem>? = null
 
     internal fun setItems(items: SortedList<ListItem>) {
         this.items = items
@@ -34,7 +34,7 @@ class ListItemParentSortCallback(adapter: RecyclerView.Adapter<*>?) :
                         items!!.findParent(item2)!!.second
                     }
                 return when {
-                    item1.id == parent2.id -> compareOrder(item1, item2)
+                    item1.id == parent2.id -> compareItems(item1, item2)
                     else -> compare(item1, parent2)
                 }
             }
@@ -47,17 +47,17 @@ class ListItemParentSortCallback(adapter: RecyclerView.Adapter<*>?) :
                         items!!.findParent(item1)!!.second
                     }
                 when {
-                    item2.id == parent1.id -> compareOrder(item1, item2)
+                    item2.id == parent1.id -> compareItems(item1, item2)
                     else -> compare(parent1, item2)
                 }
             }
             else -> {
-                return compareOrder(item1, item2)
+                return compareItems(item1, item2)
             }
         }
     }
 
-    private fun compareOrder(item1: ListItem, item2: ListItem): Int {
+    protected open fun compareItems(item1: ListItem, item2: ListItem): Int {
         val orderCmp = item1.order!!.compareTo(item2.order!!)
         if (orderCmp == 0 && item1.isChildOf(item2)) {
             return -1 // happens when a parent with children is moved up, the children is

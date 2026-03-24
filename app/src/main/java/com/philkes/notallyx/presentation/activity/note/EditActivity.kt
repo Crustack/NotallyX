@@ -13,7 +13,6 @@ import android.text.Editable
 import android.text.Spanned
 import android.text.style.URLSpan
 import android.util.Log
-import android.util.TypedValue
 import android.view.MenuItem
 import android.view.View
 import android.view.View.GONE
@@ -57,6 +56,7 @@ import com.philkes.notallyx.presentation.isLightColor
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.setControlsContrastColorForAllViews
 import com.philkes.notallyx.presentation.setLightStatusAndNavBar
+import com.philkes.notallyx.presentation.setTextSizeSp
 import com.philkes.notallyx.presentation.setupProgressDialog
 import com.philkes.notallyx.presentation.setupReminderChip
 import com.philkes.notallyx.presentation.showKeyboard
@@ -71,9 +71,12 @@ import com.philkes.notallyx.presentation.view.note.preview.PreviewImageAdapter
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
-import com.philkes.notallyx.presentation.viewmodel.preference.ListItemSort
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
+import com.philkes.notallyx.presentation.viewmodel.preference.displaySmallerSize
+import com.philkes.notallyx.presentation.viewmodel.preference.editBodySize
+import com.philkes.notallyx.presentation.viewmodel.preference.editTitleSize
+import com.philkes.notallyx.presentation.viewmodel.preference.isAutoSortChecked
 import com.philkes.notallyx.presentation.widget.WidgetProvider
 import com.philkes.notallyx.utils.FileError
 import com.philkes.notallyx.utils.changeStatusAndNavigationBarColor
@@ -192,6 +195,16 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             resetToolbars()
             setupListeners()
             setStateFromModel(savedInstanceState)
+
+            if (
+                !notallyModel.isNewNote &&
+                    notallyModel.type == Type.LIST &&
+                    savedInstanceState == null
+            ) {
+                val lastUsedViewMode = notallyModel.viewMode.value
+                notallyModel.viewMode.value =
+                    preferences.defaultListNoteViewMode.value.toNoteViewMode(lastUsedViewMode)
+            }
 
             configureUI()
             binding.ScrollView.visibility = VISIBLE
@@ -671,7 +684,10 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             if (preferences.applyDateFormatInNoteView.value) {
                 preferences.dateFormat.value
             } else DateFormat.ABSOLUTE
-        binding.Date.displayFormattedTimestamp(date, dateFormat, datePrefixResId)
+        binding.Date.apply {
+            displayFormattedTimestamp(date, dateFormat, datePrefixResId)
+            setTextSizeSp(notallyModel.textSize.displaySmallerSize)
+        }
         binding.EnterTitle.setText(notallyModel.title)
         bindLabels()
         setColor()
@@ -919,19 +935,13 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             Type.LIST -> {
                 binding.EnterBody.visibility = GONE
                 binding.CheckedListView.visibility =
-                    if (preferences.listItemSorting.value == ListItemSort.AUTO_SORT_BY_CHECKED)
-                        VISIBLE
-                    else GONE
+                    if (preferences.listItemSorting.value.isAutoSortChecked) VISIBLE else GONE
             }
         }
 
-        val title = notallyModel.textSize.editTitleSize
-        val date = notallyModel.textSize.displayBodySize
-        val body = notallyModel.textSize.editBodySize
-
-        binding.EnterTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, title)
-        binding.Date.setTextSize(TypedValue.COMPLEX_UNIT_SP, date)
-        binding.EnterBody.setTextSize(TypedValue.COMPLEX_UNIT_SP, body)
+        binding.EnterTitle.setTextSizeSp(notallyModel.textSize.editTitleSize)
+        binding.Date.setTextSizeSp(notallyModel.textSize.displaySmallerSize)
+        binding.EnterBody.setTextSizeSp(notallyModel.textSize.editBodySize)
 
         setupImages()
         setupFiles()
@@ -979,7 +989,10 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
     fun setupEditNoteReminderChip() {
         notallyModel.originalNote?.let { note ->
-            binding.EditNoteReminderChip.setupReminderChip(note)
+            binding.EditNoteReminderChip.setupReminderChip(
+                note,
+                notallyModel.textSize.displaySmallerSize,
+            )
             binding.EditNoteReminderChip.setOnClickListener {
                 val intent =
                     Intent(this@EditActivity, RemindersActivity::class.java)

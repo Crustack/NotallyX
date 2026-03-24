@@ -335,7 +335,8 @@
     <string name="tap_for_more_options">Торкніться, щоб відкрити додаткові опції</string>
     <string name="tap_to_set_up">Торкніться, щоб налаштувати</string>
     <string name="text_default">За замовчуванням</string>
-    <string name="text_size">Розмір тексту</string>
+    <string name="text_size_note_editor">Розмір тексту (редактор нотаток)</string>
+    <string name="text_size_overview">Розмір тексту (огляд)</string>
     <string name="theme">Тема</string>
     <string name="theme_use_dynamic_colors">Використовувати кольори системних шпалер</string>
     <string name="title">Назва</string>

@@ -4,7 +4,7 @@
     <b><a href="https://crustack.github.io/NotallyX/">NotallyX | Minimalistic note taking app</a></b>
     <p>
         <center>
-            <a href="https://ko-fi.com/philkes"><img alt='Donate' height='30' src='documentation/static/img/kofi_donate.svg' /></a>
+            <a href="https://ko-fi.com/crustack"><img alt='Donate' height='30' src='documentation/static/img/kofi_donate.svg' /></a>
         </center>
     </p>
     <p>

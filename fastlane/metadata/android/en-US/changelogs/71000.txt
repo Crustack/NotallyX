@@ -1,0 +1,8 @@
+- Added view mode as default
+- Added more font customization options
+- Added option to sort checked items by completion
+- Added YYYY-MM-DD date format
+- Added default color selection for new notes
+- Improved reminders view filtering and sorting
+- Fixed minor UI bugs inconsistent image display in overview
+- Fixed date picker timezone bug

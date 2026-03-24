@@ -1,7 +1,6 @@
 package com.philkes.notallyx.presentation.view.note.listitem.adapter
 
 import android.graphics.Paint
-import android.util.TypedValue
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View.GONE
@@ -27,11 +26,13 @@ import com.philkes.notallyx.presentation.clone
 import com.philkes.notallyx.presentation.createListTextWatcherWithHistory
 import com.philkes.notallyx.presentation.setControlsContrastColorForAllViews
 import com.philkes.notallyx.presentation.setOnNextAction
+import com.philkes.notallyx.presentation.setTextSizeSp
 import com.philkes.notallyx.presentation.view.misc.EditTextAutoClearFocus
 import com.philkes.notallyx.presentation.view.note.listitem.ListManager
 import com.philkes.notallyx.presentation.view.note.listitem.firstBodyOrEmptyString
 import com.philkes.notallyx.presentation.viewmodel.preference.ListItemSort
-import com.philkes.notallyx.presentation.viewmodel.preference.TextSize
+import com.philkes.notallyx.presentation.viewmodel.preference.editBodySize
+import com.philkes.notallyx.presentation.viewmodel.preference.isAutoSortChecked
 import com.philkes.notallyx.utils.changehistory.EditTextState
 import com.philkes.notallyx.utils.copyToClipBoard
 import com.philkes.notallyx.utils.textMaxLengthFilter
@@ -40,7 +41,7 @@ class ListItemVH(
     val binding: RecyclerListItemBinding,
     val listManager: ListManager,
     touchHelper: ItemTouchHelper,
-    textSize: TextSize,
+    textSize: Float,
     private val inCheckedList: Boolean,
 ) : RecyclerView.ViewHolder(binding.root) {
 
@@ -49,7 +50,7 @@ class ListItemVH(
     init {
         val body = textSize.editBodySize
         binding.EditText.apply {
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, body)
+            setTextSizeSp(body)
             filters = context.textMaxLengthFilter()
             textWatcher =
                 createListTextWatcherWithHistory(
@@ -105,7 +106,7 @@ class ListItemVH(
             visibility =
                 when {
                     viewMode != NoteViewMode.EDIT -> GONE
-                    item.checked && autoSort == ListItemSort.AUTO_SORT_BY_CHECKED -> INVISIBLE
+                    item.checked && autoSort.isAutoSortChecked -> INVISIBLE
                     else -> VISIBLE
                 }
             contentDescription = "Drag$position"

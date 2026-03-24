@@ -1,6 +1,7 @@
 package com.philkes.notallyx.data.model
 
 import com.philkes.notallyx.presentation.view.note.listitem.areAllChecked
+import com.philkes.notallyx.utils.uniqueCurrentMillis
 
 operator fun ListItem.plus(list: List<ListItem>): List<ListItem> {
     return mutableListOf(this) + list
@@ -12,8 +13,13 @@ fun ListItem.findChild(childId: Int): ListItem? {
 
 fun ListItem.check(checked: Boolean, checkChildren: Boolean = true) {
     this.checked = checked
+    val checkedTimestamp = if (checked) uniqueCurrentMillis() else null
+    this.checkedTimestamp = checkedTimestamp
     if (checkChildren) {
-        this.children.forEach { child -> child.checked = checked }
+        this.children.forEach { child ->
+            child.checked = checked
+            child.checkedTimestamp = checkedTimestamp
+        }
     }
 }
 

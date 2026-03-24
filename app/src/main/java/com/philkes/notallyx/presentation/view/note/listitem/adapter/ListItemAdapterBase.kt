@@ -12,7 +12,7 @@ import com.philkes.notallyx.databinding.RecyclerListItemBinding
 import com.philkes.notallyx.presentation.view.note.listitem.ListItemDragCallback
 import com.philkes.notallyx.presentation.view.note.listitem.ListManager
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
-import com.philkes.notallyx.presentation.viewmodel.preference.TextSize
+import com.philkes.notallyx.presentation.viewmodel.preference.TextSizeSp
 
 data class ListItemHighlight(
     val itemPos: Int,
@@ -25,7 +25,7 @@ data class ListItemHighlight(
 abstract class ListItemAdapterBase(
     private val adapter: RecyclerView.Adapter<*>,
     @ColorInt var backgroundColor: Int,
-    private val textSize: TextSize,
+    private val textSize: TextSizeSp,
     elevation: Float,
     private val preferences: NotallyXPreferences,
     private val listManager: ListManager,

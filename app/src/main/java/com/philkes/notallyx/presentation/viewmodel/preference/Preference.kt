@@ -15,6 +15,9 @@ import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.presentation.format
 import com.philkes.notallyx.presentation.merge
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
+import com.philkes.notallyx.presentation.view.note.listitem.adapter.CheckedListItemAdapter
+import com.philkes.notallyx.presentation.view.note.listitem.sorting.ListItemCheckedTimestampSortCallback
+import com.philkes.notallyx.presentation.view.note.listitem.sorting.ListItemParentSortCallback
 import com.philkes.notallyx.utils.createObserverSkipFirst
 import com.philkes.notallyx.utils.deserializeEnums
 import com.philkes.notallyx.utils.fromCamelCaseToEnumName
@@ -223,6 +226,24 @@ class IntPreference(
     }
 }
 
+class FloatPreference(
+    val key: String,
+    sharedPreferences: SharedPreferences,
+    defaultValue: Float,
+    val min: Float,
+    val max: Float,
+    titleResId: Int? = null,
+) : BasePreference<Float>(sharedPreferences, defaultValue, titleResId) {
+
+    override fun getValue(sharedPreferences: SharedPreferences): Float {
+        return sharedPreferences.getFloat(key, defaultValue)
+    }
+
+    override fun SharedPreferences.Editor.put(value: Float) {
+        putFloat(key, value)
+    }
+}
+
 class LongPreference(val key: String, sharedPreferences: SharedPreferences, defaultValue: Long) :
     BasePreference<Long>(sharedPreferences, defaultValue) {
 
@@ -348,51 +369,53 @@ enum class DateFormat : TextProvider {
     }
 }
 
-enum class TextSize(override val textResId: Int) : StaticTextProvider {
-    SMALL(R.string.small),
-    MEDIUM(R.string.medium),
-    LARGE(R.string.large);
+typealias TextSizeSp = Float
 
-    val editBodySize: Float
-        get() {
-            return when (this) {
-                SMALL -> 14f
-                MEDIUM -> 16f
-                LARGE -> 18f
-            }
-        }
+val TextSizeSp.editBodySize: Float
+    get() = this
 
-    val editTitleSize: Float
-        get() {
-            return when (this) {
-                SMALL -> 18f
-                MEDIUM -> 20f
-                LARGE -> 22f
-            }
-        }
+val TextSizeSp.editTitleSize: Float
+    get() = (this + 4)
 
-    val displayBodySize: Float
-        get() {
-            return when (this) {
-                SMALL -> 12f
-                MEDIUM -> 14f
-                LARGE -> 16f
-            }
-        }
+val TextSizeSp.displayBodySize: Float
+    get() = (this - 2)
 
-    val displayTitleSize: Float
-        get() {
-            return when (this) {
-                SMALL -> 14f
-                MEDIUM -> 16f
-                LARGE -> 18f
-            }
-        }
-}
+val TextSizeSp.displaySmallerSize: Float
+    get() = (this - 3)
+
+val TextSizeSp.displayTitleSize: Float
+    get() = this
 
 enum class ListItemSort(override val textResId: Int) : StaticTextProvider {
     NO_AUTO_SORT(R.string.no_auto_sort),
     AUTO_SORT_BY_CHECKED(R.string.auto_sort_by_checked),
+    AUTO_SORT_BY_CHECKED_TIMESTAMP(R.string.auto_sort_by_checked_timestamp),
+}
+
+val ListItemSort.isAutoSortChecked
+    get() =
+        this in
+            setOf(ListItemSort.AUTO_SORT_BY_CHECKED, ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
+
+fun ListItemSort.callback(adapterChecked: CheckedListItemAdapter) =
+    when (this) {
+        ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP ->
+            ListItemCheckedTimestampSortCallback(adapterChecked)
+        else -> ListItemParentSortCallback(adapterChecked)
+    }
+
+enum class DefaultListNoteViewMode(override val textResId: Int) : StaticTextProvider {
+    READ_ONLY(R.string.read_only),
+    EDIT(R.string.edit),
+    LAST_USED(R.string.last_used);
+
+    fun toNoteViewMode(lastUsed: NoteViewMode): NoteViewMode {
+        return when (this) {
+            READ_ONLY -> NoteViewMode.READ_ONLY
+            EDIT -> NoteViewMode.EDIT
+            LAST_USED -> lastUsed
+        }
+    }
 }
 
 enum class BiometricLock(override val textResId: Int) : StaticTextProvider {

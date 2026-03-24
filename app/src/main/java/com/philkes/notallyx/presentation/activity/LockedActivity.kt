@@ -46,7 +46,7 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
         ActivityResultLauncher<Intent>
 
     internal lateinit var binding: T
-    protected lateinit var preferences: NotallyXPreferences
+    internal lateinit var preferences: NotallyXPreferences
     val baseModel: BaseNoteModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {

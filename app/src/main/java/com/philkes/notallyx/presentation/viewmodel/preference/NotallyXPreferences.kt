@@ -7,6 +7,7 @@ import androidx.preference.PreferenceManager
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.presentation.viewmodel.preference.Constants.PASSWORD_EMPTY
 import com.philkes.notallyx.utils.backup.importPreferences
@@ -30,8 +31,17 @@ class NotallyXPreferences private constructor(private val context: Context) {
 
     val theme = createEnumPreference(preferences, "theme", Theme.FOLLOW_SYSTEM, R.string.theme)
     val useDynamicColors = BooleanPreference("useDynamicColors", preferences, false)
-    val textSize =
-        createEnumPreference(preferences, "textSize", TextSize.MEDIUM, R.string.text_size)
+    val textSizeNoteEditor =
+        FloatPreference(
+            "textSizeNoteEditor",
+            preferences,
+            16f,
+            12f,
+            32f,
+            R.string.text_size_note_editor,
+        )
+    val textSizeOverview =
+        FloatPreference("textSizeOverview", preferences, 16f, 12f, 32f, R.string.text_size_overview)
     val dateFormat =
         createEnumPreference(preferences, "dateFormat", DateFormat.RELATIVE, R.string.date_format)
     val applyDateFormatInNoteView =
@@ -47,6 +57,14 @@ class NotallyXPreferences private constructor(private val context: Context) {
             "listItemSorting",
             ListItemSort.AUTO_SORT_BY_CHECKED,
             R.string.list_item_auto_sort,
+        )
+
+    val defaultListNoteViewMode =
+        createEnumPreference(
+            preferences,
+            "defaultListNoteViewMode",
+            DefaultListNoteViewMode.LAST_USED,
+            R.string.default_list_note_view_mode,
         )
 
     val maxItems =
@@ -195,6 +213,8 @@ class NotallyXPreferences private constructor(private val context: Context) {
      */
     val dataSchemaId = IntPreference("dataSchemaId", preferences, 0, 0, Integer.MAX_VALUE)
 
+    val defaultNoteColor = StringPreference("defaultNoteColor", preferences, BaseNote.COLOR_DEFAULT)
+
     fun setDataSchemaId(value: Int) {
         preferences.edit(true) { putInt(dataSchemaId.key, value) }
         dataSchemaId.refresh()
@@ -278,7 +298,8 @@ class NotallyXPreferences private constructor(private val context: Context) {
 
     private fun reload() {
         setOf(
-                textSize,
+                textSizeNoteEditor,
+                textSizeOverview,
                 dateFormat,
                 applyDateFormatInNoteView,
                 notesView,
@@ -299,6 +320,8 @@ class NotallyXPreferences private constructor(private val context: Context) {
                 autoRemoveDeletedNotesAfterDays,
                 editNoteActivityTopActions,
                 editNoteActivityBottomAction,
+                defaultNoteColor,
+                defaultListNoteViewMode,
             )
             .forEach { it.refresh() }
     }
@@ -327,4 +350,4 @@ class NotallyXPreferences private constructor(private val context: Context) {
 }
 
 val NotallyXPreferences.autoSortByCheckedEnabled
-    get() = listItemSorting.value == ListItemSort.AUTO_SORT_BY_CHECKED
+    get() = listItemSorting.value.isAutoSortChecked

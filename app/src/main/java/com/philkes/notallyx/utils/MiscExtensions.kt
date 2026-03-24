@@ -131,3 +131,8 @@ fun <T : Enum<T>> Class<T>.deserializeEnums(data: String): List<T> {
         }
     }
 }
+
+fun uniqueCurrentMillis(): Long {
+    Thread.sleep(1)
+    return System.currentTimeMillis()
+}

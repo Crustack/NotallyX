@@ -27,10 +27,13 @@
     <string name="auto_backup_last">Poslední záloha</string>
     <string name="auto_backup_on_save">Automaticky zálohovat při ukončení poznámky</string>
     <string name="auto_backup_on_save_hint">Pokud tuto možnost povolíte, záloha („NotallyX_AutoBackup.zip“) bude automaticky vytvořena ve zvoleném „Adresáři záloh“ pokaždé, když bude poznámka uložena. Mějte na paměti, že to může ovlivnit výkon</string>
+    <string name="auto_backup_skipped_files">Přeskočeno %1$d chybějících souborů/obrázků </string>
     <string name="auto_backups_folder">Adresář pro zálohy</string>
     <string name="auto_backups_folder_hint">Adresář pro uložení automatických záloh.</string>
     <string name="auto_backups_folder_rechoose">Vyberte znovu Adresář pro zálohy a udělte tak znovu NotallyX oprávnění do něj zapisovat.\nPro přeskočení můžete stisknout tlačítko Zrušit</string>
     <string name="auto_backups_folder_set">Nejprve nastavte adresář pro zálohy</string>
+    <string name="auto_remove_deleted_notes">Trvale odstranit smazané poznámky po</string>
+    <string name="auto_remove_deleted_notes_hint">Při zapnutí této volby se smazané poznámky po X dnech trvale odstraní. </string>
     <string name="auto_save_after_idle_time">Automatické uložení poznámky při nečinnosti </string>
     <string name="auto_sort_by_checked">Seřadit zaškrtnuté položky na konec</string>
     <string name="back">Zpět</string>
@@ -41,6 +44,7 @@
     <string name="backup_periodic">Periodické zálohy</string>
     <string name="backup_periodic_hint">Pokud tuto možnost povolíte, zálohy budou automaticky vytvářeny ve zvoleném adresáři záloh. Nemusí to fungovat, pokud máte povolený úsporný režim</string>
     <string name="behaviour">Chování</string>
+    <string name="biometric_backup_advice">Před povolením nebo vypnutím biometrického zámku se doporučuje exportovat úplnou zálohu všech poznámek, pro případ, že by šifrování přes biometrický zámek selhalo.</string>
     <string name="biometric_lock">Uzamknout aplikaci pomocí biometrických údajů zařízení nebo kódu PIN</string>
     <string name="biometrics_disable_success">Biometrický zámek/PIN byl vypnut</string>
     <string name="biometrics_failure">Ověření pomocí biometrických údajů/kódu PIN selhalo</string>
@@ -75,6 +79,9 @@
     <string name="choose_another_folder">Vybrat jinou složku</string>
     <string name="choose_folder">Vybrat složku</string>
     <string name="choose_other_app">Vybrat aplikaci pro import</string>
+    <string name="clean_up">Vyčistit</string>
+    <string name="cleanup_finished_summary">Odstraněno %1$d chybějících příloh z %2$d poznámek</string>
+    <string name="cleanup_finished_title">Vyčištění bylo dokončeno</string>
     <string name="clear">Vymazat</string>
     <string name="clear_data">Vymazat data</string>
     <string name="clear_data_message">Všechny poznámky, obrázky, soubory a zvuky budou nenávratně odstraněny</string>
@@ -87,7 +94,7 @@
     <string name="convert_to_list_note">Převést na seznam</string>
     <string name="convert_to_text_note">Převést na textovou poznámku</string>
     <string name="copied_link">Odkaz zkopírován do schránky</string>
-    <string name="copy">Kopírovat</string>
+    <string name="copy">Kopie</string>
     <string name="crash_export_backup_failed">Bohužel se nepodařilo exportovat zálohu.     \nK nahlášení pádu aplikace použijte tlačítko \'%1$s\'.</string>
     <string name="crash_export_backup_message">Zálohu poznámek lze zkusit vytvořit kliknutím na \'%1$s\'.\nPokud pád aplikace způsobil poškození dat, záloha se nemusí podařit. V takovém případě použijte \'%2$s\' k nahlášení pádu. </string>
     <string name="crash_message">Došlo k neočekávané chybě. \nOmluvte prosím vzniklé nepříjemnosti. </string>
@@ -102,6 +109,7 @@
     <string name="date_format">Formát data</string>
     <string name="date_format_apply_in_note_view">Použít také v poznámkách</string>
     <string name="date_format_hint">Nastaví vybraný formát data v přehledu poznámek</string>
+    <string name="day">Den</string>
     <string name="days">Dny</string>
     <string name="delete">Smazat</string>
     <string name="delete_all">Smazat vše</string>
@@ -136,6 +144,12 @@
     <string name="documentation">Dokumentace</string>
     <string name="donate">Podpořit</string>
     <string name="drag_handle">Chytni a přetáhni</string>
+    <string name="duplicate">Vytvořit kopii</string>
+    <plurals name="duplicates">
+        <item quantity="few">%1$d kopie</item>
+        <item quantity="many">%1$d kopií</item>
+        <item quantity="one">%1$d kopie</item>
+    </plurals>
     <string name="edit">Upravit</string>
     <string name="edit_color">Upravit barvu</string>
     <string name="edit_label">Upravit štítek</string>
@@ -208,6 +222,8 @@
     <string name="item">Položka</string>
     <string name="json_files">JSON soubory</string>
     <string name="json_files_help">Pro import poznámek z JSON souborů (jednotlivý soubor nebo složka) klikněte na Importovat. Každý platný JSON soubor je importován jako samostatná poznámka, název souboru se stane názvem poznámky. </string>
+    <string name="jump_to_bottom">Přejít na konec</string>
+    <string name="jump_to_top">Přejít na začátek</string>
     <string name="label_exists">Štítek již existuje</string>
     <string name="label_visibility">Skrýt/zobrazit štítek na navigačním panelu</string>
     <string name="labels">Štítky</string>
@@ -229,6 +245,9 @@
     <string name="max_lines_to_display">Max. počet položek v poznámce</string>
     <string name="max_lines_to_display_title">Max. počet řádků v názvu poznámky</string>
     <string name="medium">Střední</string>
+    <string name="migrating_data">Přesouvají se data…</string>
+    <string name="migration_moving_attachments">Přesouvají se přílohy…</string>
+    <string name="migration_splitting_notes">\nRozdělování příliš velkých poznámek…\n </string>
     <string name="minutes">Minuty</string>
     <string name="modified_date">Datum úpravy</string>
     <string name="monospace">Neproporcionální</string>
@@ -246,8 +265,17 @@
     <string name="none">Žádné</string>
     <string name="not_exists">\'%1$s\' neexistuje</string>
     <string name="note">Poznámka</string>
+    <string name="note_text_too_long_truncated">Text překročil délku, zkráceno na %1$d znaků\n</string>
+    <string name="note_too_big_truncating">Poznámka je příliš velká na uložení, byla zkrácena na %1$s znaků (původně: %2$s)\n</string>
     <string name="notes">Poznámky</string>
     <string name="notes_sorted_by">Poznámky řazeny dle</string>
+    <plurals name="notes_too_big_truncating">
+        <item quantity="few">%1$s Poznámky jsou příliš velké na uložení, byly zkráceny na %2$s znaků\n</item>
+        <item quantity="many">%1$s Poznámek je příliš velkých na uložení, byly zkráceny na %2$s znaků\n</item>
+        <item quantity="one">%1$s Poznámka je příliš velká na uložení, byla zkrácena na %2$s znaků\n</item>
+    </plurals>
+    <string name="of_the_month">%1$s v měsíci</string>
+    <string name="of_the_month_last">Poslední %1$s v měsíci</string>
     <string name="open_link">Otevřít odkaz</string>
     <string name="open_note">Otevřít poznámku</string>
     <string name="others">Jiné</string>
@@ -315,11 +343,14 @@
     <string name="start_view_hint">Vyberte, který pohled/štítek by měl být zobrazen při spuštění aplikace. Výchozí je hlavní pohled na poznámky.\n</string>
     <string name="stop">Zastavit</string>
     <string name="strikethrough">Přeškrtnuté</string>
+    <string name="super_dark">Velmi tmavé</string>
+    <string name="swap_action">Změnit funkci</string>
     <string name="take_note">Napsat poznámku</string>
     <string name="tap_for_more_options">Klepněte pro více možností</string>
     <string name="tap_to_set_up">Nastavit klepnutím sem</string>
     <string name="text_default">Výchozí</string>
-    <string name="text_size">Velikost písma</string>
+    <string name="text_size_note_editor">Velikost písma (editor poznámek)</string>
+    <string name="text_size_overview">Velikost písma (přehled)</string>
     <string name="theme">Téma</string>
     <string name="theme_use_dynamic_colors">Použít barvy z tapety</string>
     <string name="title">Název</string>
@@ -335,7 +366,7 @@
     <string name="unknown_error">Neznámá chyba</string>
     <string name="unknown_name">Neznámý název</string>
     <string name="unlabeled">Bez štítku</string>
-    <string name="unlock">Odemknout pomocí biometrických údajů/PIN</string>
+    <string name="unlock">Odemknout</string>
     <string name="unlock_with_biometrics_not_setup">Dříve jste biometrický zámek zapnuli, ale biometrické údaje/PIN již nejsou pro vaše zařízení nastaveny.\n\nPokud chcete biometrický zámek vypnout, stiskněte tlačítko Zakázat, jinak nastavte biometrické údaje/PIN pro vaše zařízení.</string>
     <string name="unpin">Odepnout</string>
     <string name="upcoming">Nadcházející</string>

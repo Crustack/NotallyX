@@ -10,11 +10,12 @@ import com.philkes.notallyx.presentation.view.note.listitem.adapter.CheckedListI
 import com.philkes.notallyx.presentation.view.note.listitem.adapter.ListItemAdapter
 import com.philkes.notallyx.presentation.view.note.listitem.adapter.ListItemVH
 import com.philkes.notallyx.presentation.view.note.listitem.init
-import com.philkes.notallyx.presentation.view.note.listitem.sorting.ListItemParentSortCallback
 import com.philkes.notallyx.presentation.view.note.listitem.sorting.SortedItemsList
 import com.philkes.notallyx.presentation.viewmodel.preference.EnumPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.ListItemSort
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
+import com.philkes.notallyx.presentation.viewmodel.preference.callback
+import com.philkes.notallyx.presentation.viewmodel.preference.isAutoSortChecked
 import com.philkes.notallyx.test.assertChildren
 import com.philkes.notallyx.test.createListItem
 import com.philkes.notallyx.test.mockAndroidLog
@@ -66,9 +67,13 @@ open class ListManagerTestBase {
 
     protected fun setSorting(sorting: ListItemSort) {
         itemsInternal = mutableListOf<ListItem>()
-        if (sorting == ListItemSort.AUTO_SORT_BY_CHECKED) {
-            val sortCallback = ListItemParentSortCallback(adapterChecked)
-            itemsChecked = SortedItemsList(sortCallback)
+        val listItemSortingPreference = mock(EnumPreference::class.java)
+        `when`(listItemSortingPreference.value).thenReturn(sorting)
+        `when`(preferences.listItemSorting)
+            .thenReturn(listItemSortingPreference as EnumPreference<ListItemSort>)
+
+        if (sorting.isAutoSortChecked) {
+            itemsChecked = SortedItemsList(sorting.callback(adapterChecked))
         }
         itemsInternal.addAll(
             listOf(
@@ -98,10 +103,6 @@ open class ListManagerTestBase {
         listManager.init(adapter, itemsChecked, adapterChecked)
         adapter.submitList(items)
         listItemDragCallback = ListItemDragCallback(1.0f, listManager)
-        val listItemSortingPreference = mock(EnumPreference::class.java)
-        `when`(listItemSortingPreference.value).thenReturn(sorting)
-        `when`(preferences.listItemSorting)
-            .thenReturn(listItemSortingPreference as EnumPreference<ListItemSort>)
     }
 
     protected val items: MutableList<ListItem>

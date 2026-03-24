@@ -110,7 +110,7 @@ import com.philkes.notallyx.presentation.view.note.listitem.ListManager
 import com.philkes.notallyx.presentation.view.note.listitem.adapter.ListItemVH
 import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
-import com.philkes.notallyx.presentation.viewmodel.preference.TextSize
+import com.philkes.notallyx.presentation.viewmodel.preference.displayBodySize
 import com.philkes.notallyx.utils.changehistory.ChangeHistory
 import com.philkes.notallyx.utils.changehistory.EditTextState
 import com.philkes.notallyx.utils.changehistory.EditTextWithHistoryChange
@@ -297,6 +297,10 @@ fun TextView.displayFormattedTimestamp(
         text =
             "${prefixResId?.let { getString(it) } ?: ""} ${formatTimestamp(timestamp, dateFormat)}"
     } else visibility = View.GONE
+}
+
+fun TextView.setTextSizeSp(textSizeSp: Float) {
+    setTextSize(TypedValue.COMPLEX_UNIT_SP, textSizeSp)
 }
 
 val Int.dp: Int
@@ -1043,7 +1047,7 @@ fun Window.setLightStatusAndNavBar(value: Boolean, view: View = decorView) {
 
 fun ChipGroup.bindLabels(
     labels: List<String>,
-    textSize: TextSize,
+    textSize: Float,
     paddingTop: Boolean,
     color: Int? = null,
     onClick: ((label: String) -> Unit)? = null,
@@ -1062,7 +1066,7 @@ fun ChipGroup.bindLabels(
         for (label in labels) {
             LabelBinding.inflate(inflater, this, true).root.apply {
                 background = getOutlinedDrawable(this@bindLabels.context)
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, labelSize)
+                setTextSizeSp(labelSize)
                 text = label
                 color?.let { setControlsContrastColorForAllViews(it) }
                 onClick?.let { setOnClickListener { it(label) } }
@@ -1138,7 +1142,7 @@ fun Context.createTextView(textResId: Int, padding: Int = 16.dp): TextView {
     }
 }
 
-fun Chip.setupReminderChip(baseNote: BaseNote) {
+fun Chip.setupReminderChip(baseNote: BaseNote, textSize: Float? = null) {
     val now = Date(System.currentTimeMillis())
     val mostRecentNotificationDate =
         baseNote.reminders.findNextNotificationDate()
@@ -1150,6 +1154,15 @@ fun Chip.setupReminderChip(baseNote: BaseNote) {
     this.apply {
         visibility = VISIBLE
         text = mostRecentNotificationDate.format()
+        textSize?.let {
+            setTextSizeSp(it)
+            chipIconSize =
+                TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_SP,
+                    it + 4,
+                    resources.displayMetrics,
+                )
+        }
         setCloseIconVisible(baseNote.reminders.haveAnyRepetition())
         val isElapsed = mostRecentNotificationDate < now
         alpha = if (isElapsed) 0.5f else 1.0f

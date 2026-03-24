@@ -18,6 +18,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.model.Audio
+import com.philkes.notallyx.data.model.ColorString
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.NoteViewMode
@@ -269,14 +270,15 @@ class NoteActionHandler(
 
     private fun changeColor() {
         activity.lifecycleScope.launch {
-            val colors =
+            val colors: MutableSet<ColorString> =
                 withContext(Dispatchers.IO) {
                         NotallyDatabase.getDatabase(activity, observePreferences = false)
                             .value
                             .getBaseNoteDao()
                             .getAllColors()
+                            .toMutableSet()
                     }
-                    .toMutableList()
+                    .toMutableSet()
             if (colors.none { it == notallyModel.color }) {
                 colors.add(notallyModel.color)
             }
