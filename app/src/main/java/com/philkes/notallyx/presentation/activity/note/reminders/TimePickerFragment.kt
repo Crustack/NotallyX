@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.text.format.DateFormat
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.MaterialTimePicker.INPUT_MODE_CLOCK
 import com.google.android.material.timepicker.TimeFormat
 import java.util.Calendar
 
@@ -19,6 +20,7 @@ class TimePickerFragment(private val calendar: Calendar, private val listener: T
         val timePicker =
             MaterialTimePicker.Builder()
                 .setTimeFormat(if (is24Hour) TimeFormat.CLOCK_24H else TimeFormat.CLOCK_12H)
+                .setInputMode(INPUT_MODE_CLOCK)
                 .setHour(hour)
                 .setMinute(minute)
                 .build()

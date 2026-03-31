@@ -101,19 +101,12 @@ class ReminderReceiver : BroadcastReceiver() {
                 } else {
                     note.body
                 }
-
-            val bigText =
-                if (note.type == com.philkes.notallyx.data.model.Type.LIST) {
-                    note.items.joinToString("\n") { (if (it.checked) "✅ " else "🔳 ") + it.body }
-                } else {
-                    note.body
-                }
             val notification =
                 NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
                     .setSmallIcon(R.drawable.notebook)
                     .setContentTitle(note.title.ifEmpty { context.getString(R.string.note) })
                     .setContentText(contentText)
-                    .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
+                    .setStyle(NotificationCompat.BigTextStyle().bigText(contentText))
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setGroup(GROUP_REMINDERS)
                     .addAction(
