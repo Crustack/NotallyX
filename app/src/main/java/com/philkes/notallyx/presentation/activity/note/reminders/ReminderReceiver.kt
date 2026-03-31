@@ -20,7 +20,6 @@ import com.philkes.notallyx.utils.cancelReminder
 import com.philkes.notallyx.utils.createChannelIfNotExists
 import com.philkes.notallyx.utils.getOpenNotePendingIntent
 import com.philkes.notallyx.utils.scheduleReminder
-import com.philkes.notallyx.utils.truncate
 import java.util.Date
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -96,12 +95,27 @@ class ReminderReceiver : BroadcastReceiver() {
             )
         }
         database.getBaseNoteDao().get(noteId)?.let { note ->
+            val contentText =
+                if (note.type == com.philkes.notallyx.data.model.Type.LIST) {
+                    note.items.joinToString("\n") { (if (it.checked) "✅ " else "🔳 ") + it.body }
+                } else {
+                    note.body
+                }
+
+            val bigText =
+                if (note.type == com.philkes.notallyx.data.model.Type.LIST) {
+                    note.items.joinToString("\n") { (if (it.checked) "✅ " else "🔳 ") + it.body }
+                } else {
+                    note.body
+                }
             val notification =
                 NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
                     .setSmallIcon(R.drawable.notebook)
-                    .setContentTitle(note.title)
-                    .setContentText(note.body.truncate(200))
+                    .setContentTitle(note.title.ifEmpty { context.getString(R.string.note) })
+                    .setContentText(contentText)
+                    .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setGroup(GROUP_REMINDERS)
                     .addAction(
                         R.drawable.visibility,
                         context.getString(R.string.open_note),
@@ -109,11 +123,19 @@ class ReminderReceiver : BroadcastReceiver() {
                     )
                     .setDeleteIntent(getDeletePendingIntent(context, noteId, reminderId))
                     .build()
+            val summaryNotification =
+                NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.notebook_multiple)
+                    .setGroup(GROUP_REMINDERS)
+                    .setGroupSummary(true)
+                    .build()
+
             note.reminders
                 .find { it.id == reminderId }
                 ?.let { reminder: Reminder ->
                     setIsNotificationVisible(true, context, note.id, reminderId)
                     manager.notify(note.id.toString(), reminderId.toInt(), notification)
+                    manager.notify(SUMMARY_ID, summaryNotification)
                     if (schedule)
                         context.scheduleReminder(note.id, reminder, forceRepetition = true)
                 }
@@ -220,7 +242,9 @@ class ReminderReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "ReminderReceiver"
 
+        private const val SUMMARY_ID = 1231325
         private const val NOTIFICATION_CHANNEL_ID = "Reminders"
+        private const val GROUP_REMINDERS = "notallyx.notifications.group.reminders"
 
         const val EXTRA_REMINDER_ID = "notallyx.intent.extra.REMINDER_ID"
         const val EXTRA_NOTE_ID = "notallyx.intent.extra.NOTE_ID"

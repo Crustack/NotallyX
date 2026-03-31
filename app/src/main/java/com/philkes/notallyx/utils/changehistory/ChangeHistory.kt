@@ -35,7 +35,6 @@ class ChangeHistory(
         }
         changeStack.add(change)
         stackPointer.value = newStackPointer + 1
-        Log.d(TAG, "addChange: $change")
     }
 
     fun redo() {
