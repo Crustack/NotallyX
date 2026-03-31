@@ -98,7 +98,6 @@
     <string name="data_in_public_message">Ao ativar esta opção, o banco de dados interno do aplicativo e os arquivos anexados serão movidos para a pasta pública do aplicativo (Android/media/com.philkes.notallyx). Em combinação com aplicativos de sincronização de arquivos, isso pode ser usado para sincronizar os dados do NotallyX entre vários dispositivos.</string>
     <string name="date">Data</string>
     <string name="date_format">Formato de data</string>
-    <string name="date_format_apply_in_note_view">Também aplicar na visualização da nota</string>
     <string name="date_format_hint">Aplica o formato de data selecionado na visão geral das notas</string>
     <string name="days">Dias</string>
     <string name="delete">Deletar</string>

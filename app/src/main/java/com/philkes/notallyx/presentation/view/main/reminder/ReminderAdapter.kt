@@ -6,9 +6,14 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.databinding.RecyclerReminderBinding
+import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
+import com.philkes.notallyx.presentation.viewmodel.preference.TimeFormat
 
-class ReminderAdapter(private val listener: ReminderListener) :
-    ListAdapter<Reminder, ReminderVH>(ReminderDiffCallback()) {
+class ReminderAdapter(
+    private val dateFormat: DateFormat,
+    private val timeFormat: TimeFormat,
+    private val listener: ReminderListener,
+) : ListAdapter<Reminder, ReminderVH>(ReminderDiffCallback()) {
 
     override fun onBindViewHolder(holder: ReminderVH, position: Int) {
         val reminder = getItem(position)
@@ -18,7 +23,7 @@ class ReminderAdapter(private val listener: ReminderListener) :
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ReminderVH {
         val inflater = LayoutInflater.from(parent.context)
         val binding = RecyclerReminderBinding.inflate(inflater, parent, false)
-        return ReminderVH(binding, listener)
+        return ReminderVH(binding, dateFormat, timeFormat, listener)
     }
 }
 

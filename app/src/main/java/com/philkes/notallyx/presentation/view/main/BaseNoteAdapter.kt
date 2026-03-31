@@ -18,11 +18,13 @@ import com.philkes.notallyx.presentation.view.misc.ItemListener
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesSort
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
+import com.philkes.notallyx.presentation.viewmodel.preference.TimeFormat
 import java.io.File
 
 class BaseNoteAdapter(
     private val selectedIds: Set<Long>,
     private val dateFormat: DateFormat,
+    private val timeFormat: TimeFormat,
     private var notesSortCallback: (adapter: BaseNoteAdapter) -> SortedListAdapterCallback<Item>,
     private val preferences: BaseNoteVHPreferences,
     private val imageRoot: File?,
@@ -113,7 +115,7 @@ class BaseNoteAdapter(
             }
             else -> {
                 val binding = RecyclerBaseNoteBinding.inflate(inflater, parent, false)
-                BaseNoteVH(binding, dateFormat, preferences, listener)
+                BaseNoteVH(binding, dateFormat, timeFormat, preferences, listener)
             }
         }
     }

@@ -23,7 +23,11 @@
             layout="@layout/preference" />
 
         <include
-            android:id="@+id/DateFormat"
+            android:id="@+id/DateFormatOverview"
+            layout="@layout/preference" />
+
+        <include
+            android:id="@+id/DateFormatNoteView"
             layout="@layout/preference" />
 
         <include

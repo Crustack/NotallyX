@@ -69,7 +69,6 @@ import com.philkes.notallyx.presentation.view.note.audio.AudioAdapter
 import com.philkes.notallyx.presentation.view.note.preview.PreviewFileAdapter
 import com.philkes.notallyx.presentation.view.note.preview.PreviewImageAdapter
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel
-import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
@@ -680,12 +679,13 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                     Pair(notallyModel.modifiedTimestamp, R.string.modified_date)
                 else -> Pair(null, null)
             }
-        val dateFormat =
-            if (preferences.applyDateFormatInNoteView.value) {
-                preferences.dateFormat.value
-            } else DateFormat.ABSOLUTE
         binding.Date.apply {
-            displayFormattedTimestamp(date, dateFormat, datePrefixResId)
+            displayFormattedTimestamp(
+                date,
+                preferences.dateFormatNoteView.value,
+                preferences.timeFormatNoteView.value,
+                datePrefixResId,
+            )
             setTextSizeSp(notallyModel.textSize.displaySmallerSize)
         }
         binding.EnterTitle.setText(notallyModel.title)
@@ -991,6 +991,8 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         notallyModel.originalNote?.let { note ->
             binding.EditNoteReminderChip.setupReminderChip(
                 note,
+                preferences.dateFormatNoteView.value,
+                preferences.timeFormatNoteView.value,
                 notallyModel.textSize.displaySmallerSize,
             )
             binding.EditNoteReminderChip.setOnClickListener {

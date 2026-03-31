@@ -110,18 +110,16 @@ import com.philkes.notallyx.presentation.view.note.listitem.ListManager
 import com.philkes.notallyx.presentation.view.note.listitem.adapter.ListItemVH
 import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
+import com.philkes.notallyx.presentation.viewmodel.preference.TimeFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.displayBodySize
 import com.philkes.notallyx.utils.changehistory.ChangeHistory
 import com.philkes.notallyx.utils.changehistory.EditTextState
 import com.philkes.notallyx.utils.changehistory.EditTextWithHistoryChange
 import com.philkes.notallyx.utils.getUrl
-import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 import me.zhanghai.android.fastscroll.FastScrollNestedScrollView
 import me.zhanghai.android.fastscroll.FastScrollerBuilder
 import me.zhanghai.android.fastscroll.PopupStyles
-import org.ocpsoft.prettytime.PrettyTime
 
 /**
  * For some reason, this method crashes sometimes with an IndexOutOfBoundsException that I've not
@@ -290,12 +288,14 @@ fun ViewGroup.addIconButton(
 fun TextView.displayFormattedTimestamp(
     timestamp: Long?,
     dateFormat: DateFormat,
+    timeFormat: TimeFormat,
     prefixResId: Int? = null,
 ) {
-    if (dateFormat != DateFormat.NONE && timestamp != null) {
+    if ((dateFormat != DateFormat.NONE || timeFormat != TimeFormat.NONE) && timestamp != null) {
         visibility = View.VISIBLE
         text =
-            "${prefixResId?.let { getString(it) } ?: ""} ${formatTimestamp(timestamp, dateFormat)}"
+            "${prefixResId?.let { getString(it) } ?: ""} ${Date(timestamp).format(dateFormat, timeFormat)}"
+                .trim()
     } else visibility = View.GONE
 }
 
@@ -456,6 +456,17 @@ fun <T, C> NotNullLiveData<T>.merge(liveData: NotNullLiveData<C>): MediatorLiveD
     }
 }
 
+fun <T, C, B> NotNullLiveData<T>.merge(
+    liveData: NotNullLiveData<C>,
+    liveData2: NotNullLiveData<B>,
+): MediatorLiveData<Triple<T, C, B>> {
+    return MediatorLiveData<Triple<T, C, B>>().apply {
+        addSource(this@merge) { value1 -> value = Triple(value1, liveData.value, liveData2.value) }
+        addSource(liveData) { value2 -> value = Triple(this@merge.value, value2, liveData2.value) }
+        addSource(liveData2) { value3 -> value = Triple(this@merge.value, liveData.value, value3) }
+    }
+}
+
 fun <T, C> NotNullLiveData<T>.merge(liveData: LiveData<C>): MediatorLiveData<Pair<T, C?>> {
     return MediatorLiveData<Pair<T, C?>>().apply {
         addSource(this@merge) { value1 -> value = Pair(value1, liveData.value) }
@@ -612,29 +623,28 @@ fun Context.displayEditLabelDialog(
         }
 }
 
-private fun formatTimestamp(timestamp: Long, dateFormat: DateFormat): String {
-    return Date(timestamp).format(dateFormat)
-}
+fun Date.format(
+    dateFormat: DateFormat = DateFormat.DD_MM_YY_GER,
+    timeFormat: TimeFormat = TimeFormat.TWENTY_FOUR_H,
+    ensureFullFormat: Boolean = false,
+): String {
+    val (effectiveDateFormat, effectiveTimeFormat) =
+        if (ensureFullFormat && dateFormat != DateFormat.RELATIVE) {
+            Pair(
+                dateFormat.takeIf { it != DateFormat.NONE } ?: DateFormat.DD_MM_YY_GER,
+                timeFormat.takeIf { it != TimeFormat.NONE } ?: TimeFormat.TWENTY_FOUR_H,
+            )
+        } else Pair(dateFormat, timeFormat)
+    if (effectiveDateFormat == DateFormat.NONE && effectiveTimeFormat == TimeFormat.NONE) {
+        return ""
+    }
+    val datePart = effectiveDateFormat.format(this)
+    val timePart = effectiveTimeFormat.format(this)
 
-private val ISO_DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-
-fun Date.format(dateFormat: DateFormat = DateFormat.TIMESTAMP_SHORT): String {
-    return when (dateFormat) {
-        DateFormat.NONE -> ""
-        DateFormat.RELATIVE -> PrettyTime().format(this)
-        DateFormat.ABSOLUTE ->
-            java.text.DateFormat.getDateInstance(java.text.DateFormat.FULL).format(this)
-        DateFormat.ABSOLUTE_SHORT ->
-            java.text.DateFormat.getDateInstance(java.text.DateFormat.SHORT).format(this)
-        DateFormat.SHORT_ISO -> {
-            ISO_DATE_FORMAT.format(this)
-        }
-        DateFormat.TIMESTAMP_SHORT ->
-            java.text.DateFormat.getDateTimeInstance(
-                    java.text.DateFormat.SHORT,
-                    java.text.DateFormat.SHORT,
-                )
-                .format(this)
+    return if (datePart.isNotEmpty() && timePart.isNotEmpty()) {
+        "$datePart $timePart"
+    } else {
+        datePart + timePart
     }
 }
 
@@ -1142,7 +1152,12 @@ fun Context.createTextView(textResId: Int, padding: Int = 16.dp): TextView {
     }
 }
 
-fun Chip.setupReminderChip(baseNote: BaseNote, textSize: Float? = null) {
+fun Chip.setupReminderChip(
+    baseNote: BaseNote,
+    dateFormat: DateFormat,
+    timeFormat: TimeFormat,
+    textSize: Float? = null,
+) {
     val now = Date(System.currentTimeMillis())
     val mostRecentNotificationDate =
         baseNote.reminders.findNextNotificationDate()
@@ -1153,7 +1168,7 @@ fun Chip.setupReminderChip(baseNote: BaseNote, textSize: Float? = null) {
     }
     this.apply {
         visibility = VISIBLE
-        text = mostRecentNotificationDate.format()
+        text = mostRecentNotificationDate.format(dateFormat, timeFormat, ensureFullFormat = true)
         textSize?.let {
             setTextSizeSp(it)
             chipIconSize =

@@ -26,8 +26,11 @@ import com.philkes.notallyx.utils.toCamelCase
 import com.philkes.notallyx.utils.toPreservedByteArray
 import com.philkes.notallyx.utils.toPreservedString
 import java.security.SecureRandom
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 import javax.crypto.Cipher
+import org.ocpsoft.prettytime.PrettyTime
 
 /**
  * Every Preference can be observed like a [NotNullLiveData].
@@ -73,6 +76,13 @@ abstract class BasePreference<T>(
 
     fun <C> merge(other: BasePreference<C>): MediatorLiveData<Pair<T, C>> {
         return getData().merge(other.getData())
+    }
+
+    fun <C, B> merge(
+        other: BasePreference<C>,
+        other2: BasePreference<B>,
+    ): MediatorLiveData<Triple<T, C, B>> {
+        return getData().merge(other.getData(), other2.getData())
     }
 
     fun <C> merge(other: LiveData<C>): MediatorLiveData<Pair<T, C?>> {
@@ -353,19 +363,45 @@ enum class Theme(override val textResId: Int) : StaticTextProvider {
     FOLLOW_SYSTEM(R.string.follow_system),
 }
 
-enum class DateFormat : TextProvider {
-    NONE,
-    RELATIVE,
-    ABSOLUTE_SHORT,
-    TIMESTAMP_SHORT,
-    SHORT_ISO,
-    ABSOLUTE;
+private val ISO_DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+private val MM_DD_YY_FORMAT = SimpleDateFormat("MM/dd/yy", Locale.US)
+private val DD_MM_YY_FORMAT = SimpleDateFormat("dd/MM/yy", Locale.UK)
+private val DD_MM_YY_FORMAT_GER = SimpleDateFormat("dd.MM.yy", Locale.GERMANY)
+
+enum class DateFormat(val format: (Date) -> String, private val textHint: String = "") :
+    TextProvider {
+    NONE({ "" }),
+    FULL({ java.text.DateFormat.getDateInstance(java.text.DateFormat.FULL).format(it) }),
+    RELATIVE({ PrettyTime().format(it) }),
+    DD_MM_YY_GER(DD_MM_YY_FORMAT_GER::format, " (${DD_MM_YY_FORMAT_GER.toPattern()})"),
+    DD_MM_YY(DD_MM_YY_FORMAT::format, " (${DD_MM_YY_FORMAT.toPattern()})"),
+    MM_DD_YY(MM_DD_YY_FORMAT::format, " (${MM_DD_YY_FORMAT.toPattern()})"),
+    SHORT_ISO(ISO_DATE_FORMAT::format, " (${ISO_DATE_FORMAT.toPattern()})");
 
     override fun getText(context: Context): String {
-        if (this == NONE) {
-            return context.getString(R.string.none)
+        return when (this) {
+            NONE -> context.getString(R.string.none)
+            else ->
+                Date(System.currentTimeMillis() - 86400000).format(this, TimeFormat.NONE) + textHint
         }
-        return Date(System.currentTimeMillis() - 86400000).format(this)
+    }
+}
+
+private val TWENTY_FOUR_H_FORMAT = SimpleDateFormat("HH:mm", Locale.GERMANY)
+private val AM_PM_FORMAT = SimpleDateFormat("hh:mm a", Locale.US)
+
+enum class TimeFormat(val format: (Date) -> String) : TextProvider {
+    NONE({ "" }),
+    TWENTY_FOUR_H(TWENTY_FOUR_H_FORMAT::format),
+    AM_PM(AM_PM_FORMAT::format);
+
+    override fun getText(context: Context): String {
+        return when (this) {
+            NONE -> context.getString(R.string.none)
+            else ->
+                Date(System.currentTimeMillis() - 86400000)
+                    .format(dateFormat = DateFormat.NONE, timeFormat = this)
+        }
     }
 }
 

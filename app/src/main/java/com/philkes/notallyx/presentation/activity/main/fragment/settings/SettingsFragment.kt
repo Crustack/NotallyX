@@ -293,17 +293,29 @@ class SettingsFragment : Fragment() {
             }
         }
 
-        dateFormat.merge(applyDateFormatInNoteView).observe(viewLifecycleOwner) {
-            (dateFormatValue, applyDateFormatInEditNoteValue) ->
-            binding.DateFormat.setup(
-                dateFormat,
-                dateFormatValue,
-                applyDateFormatInEditNoteValue,
+        dateFormatOverview.merge(timeFormatOverview).observe(viewLifecycleOwner) { (date, time) ->
+            binding.DateFormatOverview.setupDateTimeFormat(
+                R.string.date_format_overview,
+                dateFormatOverview,
+                timeFormatOverview,
                 requireContext(),
                 layoutInflater,
-            ) { newDateFormatValue, newApplyDateFormatInEditNote ->
-                model.savePreference(dateFormat, newDateFormatValue)
-                model.savePreference(applyDateFormatInNoteView, newApplyDateFormatInEditNote)
+            ) { newDate, newTime ->
+                model.savePreference(dateFormatOverview, newDate)
+                model.savePreference(timeFormatOverview, newTime)
+            }
+        }
+
+        dateFormatNoteView.merge(timeFormatNoteView).observe(viewLifecycleOwner) { (date, time) ->
+            binding.DateFormatNoteView.setupDateTimeFormat(
+                R.string.date_format_note_view,
+                dateFormatNoteView,
+                timeFormatNoteView,
+                requireContext(),
+                layoutInflater,
+            ) { newDate, newTime ->
+                model.savePreference(dateFormatNoteView, newDate)
+                model.savePreference(timeFormatNoteView, newTime)
             }
         }
 
@@ -618,15 +630,25 @@ class SettingsFragment : Fragment() {
                 model.savePreference(preference, preference.value.copy(periodInDays = 0))
             }
         }
-        lastExecutionPreference.observe(viewLifecycleOwner) { time ->
-            binding.PeriodicBackupLastExecution.apply {
-                if (time != -1L) {
-                    isVisible = true
-                    text =
-                        "${requireContext().getString(R.string.auto_backup_last)}: ${Date(time).format()}"
-                } else isVisible = false
+        lastExecutionPreference
+            .merge(model.preferences.dateFormatOverview, model.preferences.timeFormatOverview)
+            .observe(viewLifecycleOwner) { (time, _, _) ->
+                binding.PeriodicBackupLastExecution.apply {
+                    if (time != -1L) {
+                        isVisible = true
+                        text =
+                            Date(time)
+                                .format(
+                                    model.preferences.dateFormatOverview.value,
+                                    model.preferences.timeFormatOverview.value,
+                                    ensureFullFormat = true,
+                                )
+                                .let { lastBackupFormatted ->
+                                    "${requireContext().getString(R.string.auto_backup_last)}: $lastBackupFormatted"
+                                }
+                    } else isVisible = false
+                }
             }
-        }
         binding.PeriodicBackupsPeriodInDays.setup(
             value.periodInDays,
             R.string.backup_period_days,

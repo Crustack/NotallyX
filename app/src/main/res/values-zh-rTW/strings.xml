@@ -90,7 +90,6 @@
     <string name="data_in_public_message">啟用此功能，應用程式的內部資料庫和附件將被移至應用程式的公開資料夾（Android/media/com.philkes.notallyx）中。與檔案同步應用程式組合，這可用於同步多個裝置之間的資料。</string>
     <string name="date">日期</string>
     <string name="date_format">日期格式</string>
-    <string name="date_format_apply_in_note_view">也應用於筆記檢視</string>
     <string name="date_format_hint">在筆記概覽中套用選定的日期格式</string>
     <string name="days">天</string>
     <string name="delete">刪除</string>

@@ -85,7 +85,6 @@
     <string name="data_in_public_message">Attivandolo, il database interno dell’app e i file allegati verranno spostati nella cartella pubblica dell’app (Android/media/com.philkes.notallyx). Abbinandolo con un’app di sincronizzazione file potrai così sincronizzare i dati di NotallyX tra dispositivi diversi.</string>
     <string name="date">Data</string>
     <string name="date_format">Formato data</string>
-    <string name="date_format_apply_in_note_view">Applica anche nella vista nota</string>
     <string name="date_format_hint">Applica il formato data selezionato nella panoramica delle note</string>
     <string name="days">Giorni</string>
     <string name="delete">Elimina</string>

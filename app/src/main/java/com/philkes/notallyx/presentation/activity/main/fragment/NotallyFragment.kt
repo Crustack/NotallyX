@@ -262,7 +262,8 @@ abstract class NotallyFragment : Fragment(), ItemListener {
             with(model.preferences) {
                 BaseNoteAdapter(
                     model.actionMode.selectedIds,
-                    dateFormat.value,
+                    dateFormatOverview.value,
+                    timeFormatOverview.value,
                     notesAdapterSortCallback(),
                     BaseNoteVHPreferences(
                         textSizeOverview.value,

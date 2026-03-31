@@ -95,7 +95,6 @@
     <string name="data_in_public_message">При включении этой функции внутренняя база данных приложения и прикрепленные файлы будут перенесены в его общедоступную папку (Android/media/com.philkes.notallyx). Это позволит синхронизировать данные NotallyX между устройствами с помощью приложений для синхронизации файлов.</string>
     <string name="date">Дата</string>
     <string name="date_format">Формат даты</string>
-    <string name="date_format_apply_in_note_view">Применять и в просмотре заметки</string>
     <string name="date_format_hint">Применяет выбранный формат даты в общем списке заметок</string>
     <string name="days">Дней</string>
     <string name="delete">Удалить</string>

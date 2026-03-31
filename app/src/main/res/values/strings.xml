@@ -108,8 +108,9 @@
     <string name="data_in_public_message">By enabling this, the app’s internal database and attached files will be moved into the app’s public folder (Android/media/com.philkes.notallyx). In combination with file synchronization apps this can be used to synchronize NotallyX data between multiple devices.</string>
     <string name="date">Date</string>
     <string name="date_format">Date format</string>
-    <string name="date_format_apply_in_note_view">Also apply in Note View</string>
-    <string name="date_format_hint">Applies selected date format in Notes Overview</string>
+    <string name="date_format_hint">Applies selected datetime format in Notes Overview</string>
+    <string name="date_format_note_view">Datetime Format Note View</string>
+    <string name="date_format_overview">Datetime Format Overview</string>
     <string name="day">Day</string>
     <string name="days">Days</string>
     <string name="default_color_hint">This is the default color for new notes. To change it, make another color the default</string>
@@ -354,6 +355,11 @@
     <string name="text_size_preview">Lorem ipsum dolor sit</string>
     <string name="theme">Theme</string>
     <string name="theme_use_dynamic_colors">Use system\'s wallpaper colors</string>
+    <string name="time">Time</string>
+    <string name="time_24h">24h</string>
+    <string name="time_am_pm">am/pm</string>
+    <string name="time_format_note_view">Time format Note View</string>
+    <string name="time_format_overview">Time format Overview</string>
     <string name="title">Title</string>
     <string name="to_record_audio">To record audio, allow NotallyX access to your microphone. Tap Settings &gt; Permissions and turn Microphone on</string>
     <string name="unarchive">Unarchive</string>

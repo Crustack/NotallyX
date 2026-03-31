@@ -39,6 +39,7 @@ import com.philkes.notallyx.presentation.view.misc.highlightableview.SEARCH_SNIP
 import com.philkes.notallyx.presentation.view.note.listitem.init
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
+import com.philkes.notallyx.presentation.viewmodel.preference.TimeFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.displayBodySize
 import com.philkes.notallyx.presentation.viewmodel.preference.displaySmallerSize
 import com.philkes.notallyx.presentation.viewmodel.preference.displayTitleSize
@@ -57,6 +58,7 @@ data class BaseNoteVHPreferences(
 class BaseNoteVH(
     private val binding: RecyclerBaseNoteBinding,
     private val dateFormat: DateFormat,
+    private val timeFormat: TimeFormat,
     private val preferences: BaseNoteVHPreferences,
     listener: ItemListener,
 ) : RecyclerView.ViewHolder(binding.root) {
@@ -118,7 +120,7 @@ class BaseNoteVH(
                 else -> Pair(null, null)
             }
         binding.Date.apply {
-            displayFormattedTimestamp(date, dateFormat, datePrefixResId)
+            displayFormattedTimestamp(date, dateFormat, timeFormat, datePrefixResId)
             setTextSizeSp(preferences.textSize.displaySmallerSize)
         }
 
@@ -164,7 +166,12 @@ class BaseNoteVH(
                 isVisible = true
             }
         }
-        binding.ReminderChip.setupReminderChip(baseNote, preferences.textSize.displaySmallerSize)
+        binding.ReminderChip.setupReminderChip(
+            baseNote,
+            dateFormat,
+            timeFormat,
+            preferences.textSize.displaySmallerSize,
+        )
         setColor(baseNote.color)
     }
 

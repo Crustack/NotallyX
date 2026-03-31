@@ -15,6 +15,7 @@ import com.google.android.material.slider.Slider
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
 import com.philkes.notallyx.R
 import com.philkes.notallyx.databinding.ChoiceItemBinding
+import com.philkes.notallyx.databinding.DialogDatetimeFormatBinding
 import com.philkes.notallyx.databinding.DialogNotesSortBinding
 import com.philkes.notallyx.databinding.DialogPreferenceBooleanBinding
 import com.philkes.notallyx.databinding.DialogPreferenceEnumWithToggleBinding
@@ -47,6 +48,7 @@ import com.philkes.notallyx.presentation.viewmodel.preference.SortDirection
 import com.philkes.notallyx.presentation.viewmodel.preference.StringPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.TextProvider
 import com.philkes.notallyx.presentation.viewmodel.preference.Theme
+import com.philkes.notallyx.presentation.viewmodel.preference.TimeFormat
 import com.philkes.notallyx.utils.canAuthenticateWithBiometrics
 import com.philkes.notallyx.utils.toReadablePath
 
@@ -185,55 +187,6 @@ fun PreferenceBinding.setup(
                     model.preferences.notesSorting,
                     NotesSort(newSortBy, newSortDirection),
                 )
-            }
-            .setCancelButton()
-            .show()
-    }
-}
-
-fun PreferenceBinding.setup(
-    dateFormatPreference: EnumPreference<DateFormat>,
-    dateFormatValue: DateFormat,
-    applyToNoteViewValue: Boolean,
-    context: Context,
-    layoutInflater: LayoutInflater,
-    onSave: (dateFormat: DateFormat, applyToEditMode: Boolean) -> Unit,
-) {
-    Title.setText(dateFormatPreference.titleResId!!)
-
-    Value.text = dateFormatValue.getText(context)
-
-    root.setOnClickListener {
-        val layout = DialogPreferenceEnumWithToggleBinding.inflate(layoutInflater, null, false)
-        layout.EnumHint.apply {
-            setText(R.string.date_format_hint)
-            isVisible = true
-        }
-        DateFormat.entries.forEachIndexed { idx, dateFormat ->
-            ChoiceItemBinding.inflate(layoutInflater).root.apply {
-                id = idx
-                text = dateFormat.getText(context)
-                tag = dateFormat
-                layout.EnumRadioGroup.addView(this)
-                if (dateFormat == dateFormatValue) {
-                    layout.EnumRadioGroup.check(this.id)
-                }
-            }
-        }
-
-        layout.Toggle.apply {
-            setText(R.string.date_format_apply_in_note_view)
-            isChecked = applyToNoteViewValue
-        }
-
-        MaterialAlertDialogBuilder(context)
-            .setTitle(dateFormatPreference.titleResId)
-            .setView(layout.root)
-            .setPositiveButton(R.string.save) { dialog, _ ->
-                dialog.cancel()
-                val dateFormat = layout.EnumRadioGroup.checkedTag() as DateFormat
-                val applyToNoteView = layout.Toggle.isChecked
-                onSave(dateFormat, applyToNoteView)
             }
             .setCancelButton()
             .show()
@@ -629,6 +582,70 @@ fun PreferenceBinding.setupStartView(
                     val newValue = values[selected].second
                     onSave(newValue)
                 }
+            }
+            .setCancelButton()
+            .showAndFocus(allowFullSize = true)
+    }
+}
+
+fun PreferenceBinding.setupDateTimeFormat(
+    titleResId: Int,
+    datePreference: EnumPreference<DateFormat>,
+    timePreference: EnumPreference<TimeFormat>,
+    context: Context,
+    layoutInflater: LayoutInflater,
+    onSave: (dateFormat: DateFormat, timeFormat: TimeFormat) -> Unit,
+) {
+    Title.setText(titleResId)
+    val updateValueText = {
+        val dateText =
+            if (datePreference.value == DateFormat.NONE) ""
+            else datePreference.value.getText(context)
+        val timeText =
+            if (timePreference.value == TimeFormat.NONE) ""
+            else timePreference.value.getText(context)
+        Value.text =
+            when {
+                datePreference.value == DateFormat.NONE &&
+                    timePreference.value == TimeFormat.NONE ->
+                    datePreference.value.getText(context) // Shows "None"
+                datePreference.value == DateFormat.NONE -> timeText
+                timePreference.value == TimeFormat.NONE -> dateText
+                else -> "$dateText $timeText"
+            }
+    }
+    updateValueText()
+
+    root.setOnClickListener {
+        val layout = DialogDatetimeFormatBinding.inflate(layoutInflater, null, false)
+        var selectedDate = datePreference.value
+        var selectedTime = timePreference.value
+
+        val dateEntries = DateFormat.entries.map { it.getText(context) }.toTypedArray()
+        layout.DateSelectionBox.apply {
+            setSimpleItems(dateEntries)
+            select(selectedDate.getText(context))
+            setOnItemClickListener { _, _, position, _ ->
+                selectedDate = DateFormat.entries[position]
+            }
+        }
+
+        val timeEntries = TimeFormat.entries.map { it.getText(context) }.toTypedArray()
+        layout.TimeSelectionBox.apply {
+            setSimpleItems(timeEntries)
+            select(selectedTime.getText(context))
+            setOnItemClickListener { _, _, position, _ ->
+                selectedTime = TimeFormat.entries[position]
+            }
+        }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle(titleResId)
+            .setView(layout.root)
+            .setPositiveButton(R.string.save) { dialog, _ ->
+                dialog.cancel()
+                onSave(selectedDate, selectedTime)
+                updateValueText()
             }
             .setCancelButton()
             .showAndFocus(allowFullSize = true)
