@@ -445,19 +445,13 @@ fun Intent.embedIntentExtras() {
 
 fun Context.getOpenNotePendingIntent(note: BaseNote) = getOpenNotePendingIntent(note.id, note.type)
 
-fun Context.getOpenNoteIntent(
-    noteId: Long,
-    noteType: Type,
-    addPendingFlags: Boolean = false,
-): Intent {
+fun Context.getOpenNoteIntent(noteId: Long, noteType: Type): Intent {
     return when (noteType) {
         Type.NOTE -> Intent(this, EditNoteActivity::class.java)
         Type.LIST -> Intent(this, EditListActivity::class.java)
     }.apply {
         putExtra(EXTRA_SELECTED_BASE_NOTE, noteId)
-        if (addPendingFlags) {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        }
+        addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
     }
 }
 
@@ -465,7 +459,7 @@ fun Context.getOpenNotePendingIntent(noteId: Long, noteType: Type): PendingInten
     return PendingIntent.getActivity(
         this,
         0,
-        getOpenNoteIntent(noteId, noteType, addPendingFlags = false),
+        getOpenNoteIntent(noteId, noteType),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
     )
 }

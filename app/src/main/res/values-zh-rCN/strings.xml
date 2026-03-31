@@ -119,7 +119,7 @@
     <string name="delete_image_forever">永久删除图片？</string>
     <string name="delete_label">删除标签？</string>
     <string name="delete_note_forever">永久性删除笔记？</string>
-    <string name="delete_reminder">删除提醒？</string>
+    <string name="delete_reminder_question">删除提醒？</string>
     <string name="delete_selected_notes">删除所选笔记？</string>
     <string name="deleted">已删除</string>
     <plurals name="deleted_selected_notes">

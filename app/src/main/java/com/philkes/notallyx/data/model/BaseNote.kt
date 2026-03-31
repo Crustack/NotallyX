@@ -26,6 +26,7 @@ data class BaseNote(
     val audios: List<Audio>,
     val reminders: List<Reminder>,
     val viewMode: NoteViewMode,
+    val isPinnedToStatus: Boolean = false,
 ) : Item {
 
     companion object {
@@ -55,6 +56,7 @@ data class BaseNote(
         if (audios != other.audios) return false
         if (reminders != other.reminders) return false
         if (viewMode != other.viewMode) return false
+        if (isPinnedToStatus != other.isPinnedToStatus) return false
 
         return true
     }
@@ -76,6 +78,7 @@ data class BaseNote(
         result = 31 * result + audios.hashCode()
         result = 31 * result + reminders.hashCode()
         result = 31 * result + viewMode.hashCode()
+        result = 31 * result + isPinnedToStatus.hashCode()
         return result
     }
 }

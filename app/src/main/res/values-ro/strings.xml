@@ -103,7 +103,7 @@
     <string name="delete_image_forever">Ștergi imaginea definitiv\?</string>
     <string name="delete_label">Ștergi eticheta\?</string>
     <string name="delete_note_forever">Ștergi nota definitiv\?</string>
-    <string name="delete_reminder">Ștergi mementoul\?</string>
+    <string name="delete_reminder_question">Ștergi mementoul\?</string>
     <string name="delete_selected_notes">Ștergi notele selectate\?</string>
     <string name="deleted">Șterse</string>
     <plurals name="deleted_selected_notes">

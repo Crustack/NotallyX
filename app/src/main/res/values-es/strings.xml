@@ -111,7 +111,7 @@
     <string name="delete_image_forever">¿Borrar imagen para siempre\?</string>
     <string name="delete_label">¿Eliminar etiqueta\?</string>
     <string name="delete_note_forever">¿Eliminar nota para siempre\?</string>
-    <string name="delete_reminder">¿Borrar recordatorio\?</string>
+    <string name="delete_reminder_question">¿Borrar recordatorio\?</string>
     <string name="delete_selected_notes">¿Borrar notas seleccionadas\?</string>
     <string name="deleted">Eliminados</string>
     <plurals name="deleted_selected_notes">

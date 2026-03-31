@@ -118,7 +118,7 @@
     <string name="delete_image_forever">Bild endgültig löschen\?</string>
     <string name="delete_label">Label löschen\?</string>
     <string name="delete_note_forever">Notiz endgültig löschen\?</string>
-    <string name="delete_reminder">Erinnerung löschen\?</string>
+    <string name="delete_reminder_question">Erinnerung löschen\?</string>
     <string name="delete_selected_notes">Ausgewählte Notizen löschen\?</string>
     <string name="deleted">Papierkorb</string>
     <plurals name="deleted_selected_notes">

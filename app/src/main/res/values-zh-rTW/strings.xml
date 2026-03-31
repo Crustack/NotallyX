@@ -102,7 +102,7 @@
     <string name="delete_image_forever">永久刪除圖片\?</string>
     <string name="delete_label">刪除標籤\?</string>
     <string name="delete_note_forever">永久刪除筆記\?</string>
-    <string name="delete_reminder">刪除提醒\?</string>
+    <string name="delete_reminder_question">刪除提醒\?</string>
     <string name="delete_selected_notes">刪除選擇的筆記\?</string>
     <string name="deleted">已刪除</string>
     <plurals name="deleted_selected_notes">

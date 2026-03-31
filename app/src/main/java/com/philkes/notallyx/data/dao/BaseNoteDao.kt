@@ -122,6 +122,11 @@ interface BaseNoteDao {
     @Query("SELECT * FROM BaseNote WHERE folder = 'NOTES' ORDER BY pinned DESC, timestamp DESC")
     suspend fun getAllNotes(): List<BaseNote>
 
+    @Query(
+        "SELECT * FROM BaseNote WHERE folder = 'NOTES' AND isPinnedToStatus = 1 ORDER BY timestamp DESC"
+    )
+    suspend fun getAllPinnedToStatusNotes(): List<BaseNote>
+
     @Query("SELECT * FROM BaseNote") fun getAllAsync(): LiveData<List<BaseNote>>
 
     @Query("SELECT * FROM BaseNote") fun getAll(): List<BaseNote>
@@ -154,6 +159,11 @@ interface BaseNoteDao {
 
     @Query("SELECT id, reminders FROM BaseNote WHERE reminders IS NOT NULL AND reminders != '[]'")
     suspend fun getAllReminders(): List<NoteIdReminder>
+
+    @Query(
+        "SELECT * FROM BaseNote WHERE folder = 'NOTES' AND ((reminders IS NOT NULL AND reminders != '[]') OR isPinnedToStatus == 1)"
+    )
+    suspend fun getAllWithRemindersOrPinned(): List<BaseNote>
 
     @Query("SELECT color FROM BaseNote WHERE id = :id ") fun getColorOfNote(id: Long): String?
 
@@ -200,6 +210,9 @@ interface BaseNoteDao {
 
     @Query("UPDATE BaseNote SET pinned = :pinned WHERE id IN (:ids)")
     suspend fun updatePinned(ids: LongArray, pinned: Boolean)
+
+    @Query("UPDATE BaseNote SET isPinnedToStatus = :isPinnedToStatus WHERE id = :id")
+    fun updatePinnedToStatus(id: Long, isPinnedToStatus: Boolean)
 
     @Query("UPDATE BaseNote SET labels = :labels WHERE id = :id")
     suspend fun updateLabels(id: Long, labels: List<String>)

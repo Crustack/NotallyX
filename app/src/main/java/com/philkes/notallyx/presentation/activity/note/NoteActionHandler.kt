@@ -32,6 +32,7 @@ import com.philkes.notallyx.presentation.activity.note.PickNoteActivity.Companio
 import com.philkes.notallyx.presentation.activity.note.SelectLabelsActivity.Companion.EXTRA_SELECTED_LABELS
 import com.philkes.notallyx.presentation.activity.note.reminders.RemindersActivity
 import com.philkes.notallyx.presentation.bindLabels
+import com.philkes.notallyx.presentation.checkNotificationPermission
 import com.philkes.notallyx.presentation.isLightColor
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showToast
@@ -39,6 +40,7 @@ import com.philkes.notallyx.presentation.view.note.action.ExportBottomSheet
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel
 import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
+import com.philkes.notallyx.utils.PinnedNotificationManager
 import com.philkes.notallyx.utils.backup.exportNote
 import com.philkes.notallyx.utils.cancelNoteReminders
 import com.philkes.notallyx.utils.openNote
@@ -226,6 +228,7 @@ class NoteActionHandler(
         when (action) {
             EditAction.SEARCH -> activity.startSearch()
             EditAction.PIN -> pin()
+            EditAction.PIN_TO_STATUS -> pinToStatus()
             EditAction.REMINDERS -> changeReminders()
             EditAction.LABELS -> changeLabels()
             EditAction.CHANGE_COLOR -> changeColor()
@@ -247,6 +250,29 @@ class NoteActionHandler(
     private fun pin() {
         notallyModel.pinned = !notallyModel.pinned
         activity.bindPinned()
+    }
+
+    private fun pinToStatus() {
+        notallyModel.isPinnedToStatus = !notallyModel.isPinnedToStatus
+        activity.bindPinned()
+        if (notallyModel.isPinnedToStatus) {
+            activity.checkNotificationPermission(
+                REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
+                alsoCheckAlarmPermission = false,
+            ) {
+                notifyPinToStatus()
+            }
+        } else {
+            notifyPinToStatus()
+        }
+    }
+
+    fun notifyPinToStatus() {
+        if (notallyModel.isPinnedToStatus) {
+            PinnedNotificationManager.notify(activity, notallyModel.getBaseNote())
+        } else {
+            PinnedNotificationManager.cancel(activity, notallyModel.id)
+        }
     }
 
     private fun changeReminders() {
@@ -499,5 +525,9 @@ class NoteActionHandler(
         val noteType = Type.valueOf(getStringExtra(EXTRA_PICKED_NOTE_TYPE)!!)
         val noteUrl = noteId.createNoteUrl(noteType)
         return Triple(noteTitle, noteUrl, emptyTitle)
+    }
+
+    companion object {
+        const val REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS = 37
     }
 }

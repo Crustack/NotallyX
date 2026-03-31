@@ -115,7 +115,7 @@
     <string name="delete_image_forever">Supprimer l\'image définitivement \?</string>
     <string name="delete_label">Supprimer l\'étiquette \?</string>
     <string name="delete_note_forever">Supprimer la note définitivement \?</string>
-    <string name="delete_reminder">Supprimer le rappel \?</string>
+    <string name="delete_reminder_question">Supprimer le rappel \?</string>
     <string name="delete_selected_notes">Supprimer les notes sélectionnées \?</string>
     <string name="deleted">Éléments supprimés</string>
     <plurals name="deleted_selected_notes">

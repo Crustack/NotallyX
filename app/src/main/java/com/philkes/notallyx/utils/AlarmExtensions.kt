@@ -67,7 +67,7 @@ private fun Context.scheduleReminder(noteId: Long, reminderId: Long, dateTime: D
 }
 
 fun Context.cancelReminder(noteId: Long, reminderId: Long) {
-    Log.d(TAG, "cancelScheduledReminder: noteId: $noteId reminderId: $reminderId")
+    Log.d(TAG, "cancelReminder: noteId: $noteId reminderId: $reminderId")
     val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
     val pendingIntent = createReminderAlarmIntent(noteId, reminderId)
     alarmManager.cancel(pendingIntent)

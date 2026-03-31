@@ -126,7 +126,8 @@
     <string name="delete_image_forever">Delete image forever\?</string>
     <string name="delete_label">Delete label\?</string>
     <string name="delete_note_forever">Delete note forever\?</string>
-    <string name="delete_reminder">Delete reminder\?</string>
+    <string name="delete_reminder">Delete Reminder</string>
+    <string name="delete_reminder_question">Delete reminder\?</string>
     <string name="delete_selected_notes">Delete selected notes\?</string>
     <string name="deleted">Deleted</string>
     <plurals name="deleted_selected_notes">
@@ -283,6 +284,7 @@
     <string name="pause">Pause</string>
     <string name="paused">Paused</string>
     <string name="pin">Pin</string>
+    <string name="pin_to_status_bar">Pin to status bar</string>
     <string name="pinned">Pinned</string>
     <string name="plain_text_files">Markdown/Plain Text Files</string>
     <string name="plain_text_files_help">In order to import your Notes from markdown/plain text files (single file or folder), click Import. Every file is imported as a separate note, the file’s name becomes the note’s title. If the text contents start with list syntax (e.g. Markdown ’- [x]’, NotallyX syntax ’[✓]’, or ’*’, ’-’) it will be converted to a List note.</string>
@@ -376,6 +378,7 @@
     <string name="unlock">Unlock via Biometric/PIN</string>
     <string name="unlock_with_biometrics_not_setup">You have previously enabled biometric lock but Biometrics/PIN are not setup for your device anymore.\n\nIf you wish to disable biometric lock press Disable, otherwise setup Biometrics/PIN for your device</string>
     <string name="unpin">Unpin</string>
+    <string name="unpin_from_status_bar">Unpin from status bar</string>
     <string name="upcoming">Upcoming</string>
     <string name="updated_link">Updated Link</string>
     <string name="view">View</string>

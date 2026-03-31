@@ -121,7 +121,7 @@
     <string name="delete_image_forever">Smazat obrázek\?</string>
     <string name="delete_label">Smazat štítek\?</string>
     <string name="delete_note_forever">Smazat poznámku\?</string>
-    <string name="delete_reminder">Odebrat upomínku\?</string>
+    <string name="delete_reminder_question">Odebrat upomínku\?</string>
     <string name="delete_selected_notes">Smazat vybrané poznámky\?</string>
     <string name="deleted">Smazané</string>
     <plurals name="deleted_selected_notes">

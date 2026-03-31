@@ -18,6 +18,7 @@ import androidx.work.WorkManager
 import com.google.android.material.color.DynamicColors
 import com.philkes.notallyx.NotallyXApplication.Companion.AUTO_REMOVE_DELETED_NOTES
 import com.philkes.notallyx.NotallyXApplication.Companion.TAG
+import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.presentation.setEnabledSecureFlag
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
 import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
@@ -26,6 +27,7 @@ import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.Theme
 import com.philkes.notallyx.presentation.widget.WidgetProvider
 import com.philkes.notallyx.utils.AutoRemoveDeletedNotesWorker
+import com.philkes.notallyx.utils.PinnedNotificationManager
 import com.philkes.notallyx.utils.backup.AUTO_BACKUP_WORK_NAME
 import com.philkes.notallyx.utils.backup.autoBackupOnSave
 import com.philkes.notallyx.utils.backup.autoBackupOnSaveFileExists
@@ -67,6 +69,7 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
         } else {
             setTheme(R.style.AppTheme)
         }
+        restorePinnedNotifications()
         preferences.theme.observeForeverWithPrevious { (oldTheme, theme) ->
             when (theme) {
                 Theme.DARK,
@@ -157,6 +160,20 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
             return false
         }
         return folderBefore != folderAfter
+    }
+
+    private fun restorePinnedNotifications() {
+        runOnIODispatcher<Unit> {
+            NotallyDatabase.getDatabase(this@NotallyXApplication, false)
+                .value
+                .getBaseNoteDao()
+                .getAllPinnedToStatusNotes()
+                .forEach { note ->
+                    if (note.isPinnedToStatus) {
+                        PinnedNotificationManager.notify(this@NotallyXApplication, note)
+                    }
+                }
+        }
     }
 
     private fun checkUpdatePeriodicBackup(

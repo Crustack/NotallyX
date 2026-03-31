@@ -117,7 +117,7 @@
     <string name="delete_image_forever">Видалити зображення назавжди\?</string>
     <string name="delete_label">Видалити мітку\?</string>
     <string name="delete_note_forever">Видалити запис назавжди\?</string>
-    <string name="delete_reminder">Видалити нагадування\?</string>
+    <string name="delete_reminder_question">Видалити нагадування\?</string>
     <string name="delete_selected_notes">Видалити вибрані нотатки\?</string>
     <string name="deleted">Видалені</string>
     <plurals name="deleted_selected_notes">

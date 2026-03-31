@@ -466,12 +466,12 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
 
     private fun confirmDeletion(reminder: Reminder) {
         MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.delete_reminder)
+            .setTitle(R.string.delete_reminder_question)
             .setMessage(
                 "${reminder.dateTime.format(
                     preferences.dateFormatNoteView.value,
                     preferences.timeFormatNoteView.value,
-                    ensureFullFormat = true,)}\n${reminder.repetition?.toText(this) ?: getString(R.string.reminder_no_repetition)}"
+                    ensureFullFormat = true)}\n${reminder.repetition?.toText(this) ?: getString(R.string.reminder_no_repetition)}"
             )
             .setPositiveButton(R.string.delete) { _, _ ->
                 lifecycleScope.launch { model.removeReminder(reminder) }
@@ -489,9 +489,9 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
     }
 
     companion object {
+        private const val REQUEST_NOTIFICATION_PERMISSION_ON_OPEN_REQUEST_CODE = 101
+        private const val REQUEST_NOTIFICATION_PERMISSION_REQUEST_CODE = 102
         const val NOTE_ID = "NOTE_ID"
-        const val REQUEST_NOTIFICATION_PERMISSION_ON_OPEN_REQUEST_CODE = 101
-        const val REQUEST_NOTIFICATION_PERMISSION_REQUEST_CODE = 102
         const val NEW_REMINDER_ID = -1L
     }
 }

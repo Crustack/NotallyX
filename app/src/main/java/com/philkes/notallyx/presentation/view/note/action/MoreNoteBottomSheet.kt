@@ -40,6 +40,7 @@ class MoreNoteBottomSheet(
                         model.viewMode.value,
                         model.folder,
                         model.type,
+                        model.isPinnedToStatus,
                     )
                 Action(title, icon) { _ ->
                     actionHandler.handleAction(editAction)

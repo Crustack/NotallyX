@@ -109,7 +109,7 @@
     <string name="delete_image_forever">Usunąć obraz bezpowrotnie\?</string>
     <string name="delete_label">Usunąć etykietę\?</string>
     <string name="delete_note_forever">Usunąć notatkę na zawsze\?</string>
-    <string name="delete_reminder">Usunąć przypomnienie\?</string>
+    <string name="delete_reminder_question">Usunąć przypomnienie\?</string>
     <string name="delete_selected_notes">Usunąć zaznaczone notatki\?</string>
     <string name="deleted">Usunięte</string>
     <plurals name="deleted_selected_notes">

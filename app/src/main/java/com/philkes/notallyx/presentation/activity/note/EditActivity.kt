@@ -328,6 +328,8 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                     actionHandler.startRecordAudioActivity()
                 } else actionHandler.handleRejection()
             }
+            NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS ->
+                actionHandler.notifyPinToStatus()
         }
     }
 
@@ -613,6 +615,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 notallyModel.viewMode.value,
                 notallyModel.folder,
                 notallyModel.type,
+                notallyModel.isPinnedToStatus,
             )
         val button = addIconButton(title, icon, colorInt) { actionHandler.handleAction(action) }
 
@@ -969,6 +972,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                         notallyModel.viewMode.value,
                         notallyModel.folder,
                         notallyModel.type,
+                        notallyModel.isPinnedToStatus,
                     )
                 add(title, icon, MenuItem.SHOW_AS_ACTION_ALWAYS, itemId = idx) {
                     actionHandler.handleAction(action)

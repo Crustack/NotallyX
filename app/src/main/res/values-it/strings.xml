@@ -98,7 +98,7 @@
     <string name="delete_image_forever">Eliminare l’immagine definitivamente\?</string>
     <string name="delete_label">Eliminare etichetta\?</string>
     <string name="delete_note_forever">Eliminare nota definitivamente\?</string>
-    <string name="delete_reminder">Eliminare promemoria\?</string>
+    <string name="delete_reminder_question">Eliminare promemoria\?</string>
     <string name="delete_selected_notes">Eliminare le note selezionate\?</string>
     <string name="deleted">Cestino</string>
     <plurals name="deleted_selected_notes">

@@ -506,17 +506,21 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
     TOGGLE_VIEW_MODE(R.string.edit, R.drawable.visibility),
     CONVERT(R.string.convert_to_list_note, R.drawable.convert_to_text),
     DELETE_FOREVER(R.string.delete_forever, R.drawable.delete),
-    RESTORE(R.string.restore, R.drawable.restore);
+    RESTORE(R.string.restore, R.drawable.restore),
+    PIN_TO_STATUS(R.string.pin_to_status_bar, R.drawable.pinboard);
 
     fun getTitleAndIcon(
         pinned: Boolean,
         viewMode: NoteViewMode?,
         folder: Folder? = null,
         type: Type? = null,
+        isPinnedToStatus: Boolean = false,
     ): Pair<Int, Int> {
         val icon =
             when (this) {
                 PIN -> if (pinned) R.drawable.unpin else R.drawable.pin
+                PIN_TO_STATUS ->
+                    if (isPinnedToStatus) R.drawable.pinboard_filled else R.drawable.pinboard
                 ARCHIVE ->
                     if (folder == Folder.ARCHIVED) R.drawable.unarchive else R.drawable.archive
                 RESTORE ->
@@ -529,6 +533,9 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
         val title =
             when (this) {
                 PIN -> if (pinned) R.string.unpin else R.string.pin
+                PIN_TO_STATUS ->
+                    if (isPinnedToStatus) R.string.unpin_from_status_bar
+                    else R.string.pin_to_status_bar
                 ARCHIVE -> if (folder == Folder.ARCHIVED) R.string.unarchive else R.string.archive
                 RESTORE -> if (folder == Folder.ARCHIVED) R.string.unarchive else R.string.restore
                 TOGGLE_VIEW_MODE ->
