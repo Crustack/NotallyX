@@ -407,7 +407,7 @@ class SettingsFragment : Fragment() {
             binding.StartView.setupStartView(
                 startView,
                 startViewValue,
-                labelsValue,
+                labelsValue?.map { it.value },
                 requireContext(),
                 layoutInflater,
             ) { newValue ->

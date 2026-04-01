@@ -11,6 +11,8 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.Label
@@ -32,6 +34,7 @@ class LabelsFragment : Fragment(), LabelListener {
 
     private var labelAdapter: LabelAdapter? = null
     private var binding: FragmentNotesBinding? = null
+    private var itemTouchHelper: ItemTouchHelper? = null
 
     private val model: BaseNoteModel by activityViewModels()
 
@@ -39,6 +42,7 @@ class LabelsFragment : Fragment(), LabelListener {
         super.onDestroyView()
         binding = null
         labelAdapter = null
+        itemTouchHelper = null
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -48,9 +52,51 @@ class LabelsFragment : Fragment(), LabelListener {
             initListView(requireContext())
             adapter = labelAdapter
             binding?.ImageView?.setImageResource(R.drawable.label)
+            setupItemTouchHelper(this)
         }
 
         setupObserver()
+    }
+
+    private fun setupItemTouchHelper(recyclerView: RecyclerView) {
+        val itemTouchHelperCallback =
+            object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
+                override fun onMove(
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                    target: RecyclerView.ViewHolder,
+                ): Boolean {
+                    val fromPosition = viewHolder.bindingAdapterPosition
+                    val toPosition = target.bindingAdapterPosition
+                    labelAdapter?.onItemMove(fromPosition, toPosition)
+                    return true
+                }
+
+                override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
+
+                override fun isLongPressDragEnabled(): Boolean = true
+
+                override fun clearView(
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                ) {
+                    super.clearView(recyclerView, viewHolder)
+                    labelAdapter?.currentList?.let { list ->
+                        val size = list.size
+                        val updatedLabels =
+                            list.mapIndexed { index, labelData ->
+                                Label(labelData.value, size - 1 - index)
+                            }
+                        model.updateLabels(updatedLabels)
+                    }
+                }
+            }
+        itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
+        itemTouchHelper?.attachToRecyclerView(recyclerView)
+    }
+
+    override fun onStartDrag(viewHolder: RecyclerView.ViewHolder) {
+        itemTouchHelper?.startDrag(viewHolder)
     }
 
     override fun onCreateView(
@@ -68,30 +114,32 @@ class LabelsFragment : Fragment(), LabelListener {
     }
 
     override fun onClick(position: Int) {
-        labelAdapter?.currentList?.get(position)?.let { (label, _) ->
+        labelAdapter?.currentList?.get(position)?.let { labelData ->
             val bundle = Bundle()
-            bundle.putString(EXTRA_DISPLAYED_LABEL, label)
+            bundle.putString(EXTRA_DISPLAYED_LABEL, labelData.value)
             findNavController().navigate(R.id.LabelsToDisplayLabel, bundle)
         }
     }
 
     override fun onEdit(position: Int) {
-        labelAdapter?.currentList?.get(position)?.let { (label, _) ->
-            displayEditLabelDialog(label, model)
+        labelAdapter?.currentList?.get(position)?.let { labelData ->
+            displayEditLabelDialog(labelData.value, model)
         }
     }
 
     override fun onDelete(position: Int) {
-        labelAdapter?.currentList?.get(position)?.let { (label, _) -> confirmDeletion(label) }
+        labelAdapter?.currentList?.get(position)?.let { labelData ->
+            confirmDeletion(labelData.value)
+        }
     }
 
     override fun onToggleVisibility(position: Int) {
         labelAdapter?.currentList?.get(position)?.let { value ->
             val hiddenLabels = model.preferences.labelsHidden.value.toMutableSet()
             if (value.visibleInNavigation) {
-                hiddenLabels.add(value.label)
+                hiddenLabels.add(value.value)
             } else {
-                hiddenLabels.remove(value.label)
+                hiddenLabels.remove(value.value)
             }
             model.savePreference(model.preferences.labelsHidden, hiddenLabels)
 
@@ -105,7 +153,10 @@ class LabelsFragment : Fragment(), LabelListener {
     private fun setupObserver() {
         model.labels.observe(viewLifecycleOwner) { labels ->
             val hiddenLabels = model.preferences.labelsHidden.value
-            val labelsData = labels.map { label -> LabelData(label, !hiddenLabels.contains(label)) }
+            val labelsData =
+                labels.map { label ->
+                    LabelData(label.value, !hiddenLabels.contains(label.value), label.order)
+                }
             labelAdapter?.submitList(labelsData)
             binding?.ImageView?.isVisible = labels.isEmpty()
         }
@@ -122,8 +173,7 @@ class LabelsFragment : Fragment(), LabelListener {
             .setPositiveButton(R.string.save) { dialog, _ ->
                 val value = dialogBinding.EditText.text.toString().trim()
                 if (value.isNotEmpty()) {
-                    val label = Label(value)
-                    model.insertLabel(label) { success: Boolean ->
+                    model.insertLabel(value) { success: Boolean ->
                         if (success) {
                             dialog.dismiss()
                         } else {

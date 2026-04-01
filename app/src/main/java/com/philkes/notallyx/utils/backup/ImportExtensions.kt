@@ -281,7 +281,9 @@ private fun ContextWrapper.importFiles(
 
 private fun Cursor.toLabel(): Label {
     val value = this.getString(getColumnIndexOrThrow("value"))
-    return Label(value)
+    val orderIndex = getColumnIndex("order")
+    val order = if (orderIndex != -1) getInt(orderIndex) else 0
+    return Label(value, order)
 }
 
 private fun Cursor.toBaseNote(sourceDb: SQLiteDatabase): BaseNote {

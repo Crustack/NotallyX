@@ -19,9 +19,17 @@ class LabelAdapter(private val listener: LabelListener) :
         val binding = RecyclerLabelBinding.inflate(inflater, parent, false)
         return LabelVH(binding, listener)
     }
+
+    fun onItemMove(fromPosition: Int, toPosition: Int): List<LabelData> {
+        val list = currentList.toMutableList()
+        val fromLabel = list.removeAt(fromPosition)
+        list.add(toPosition, fromLabel)
+        submitList(list)
+        return list
+    }
 }
 
-data class LabelData(val label: String, var visibleInNavigation: Boolean)
+data class LabelData(val value: String, var visibleInNavigation: Boolean, val order: Int)
 
 private object DiffCallback : DiffUtil.ItemCallback<LabelData>() {
 

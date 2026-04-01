@@ -33,7 +33,7 @@ import java.io.File
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @TypeConverters(Converters::class)
-@Database(entities = [BaseNote::class, Label::class], version = 10)
+@Database(entities = [BaseNote::class, Label::class], version = 11)
 abstract class NotallyDatabase : RoomDatabase() {
 
     abstract fun getLabelDao(): LabelDao
@@ -162,6 +162,7 @@ abstract class NotallyDatabase : RoomDatabase() {
                         Migration8,
                         Migration9,
                         Migration10,
+                        Migration11
                     )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 System.loadLibrary("sqlcipher")
@@ -308,6 +309,24 @@ abstract class NotallyDatabase : RoomDatabase() {
                 db.execSQL(
                     "ALTER TABLE `BaseNote` ADD COLUMN `isPinnedToStatus` INTEGER NOT NULL DEFAULT 0"
                 )
+            }
+        }
+
+        object Migration11 : Migration(10, 11) {
+
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `Label` ADD COLUMN `order` INTEGER NOT NULL DEFAULT 0")
+                val cursor = db.query("SELECT value FROM Label ORDER BY value DESC")
+                var order = 0
+                while (cursor.moveToNext()) {
+                    val value = cursor.getString(0)
+                    db.execSQL(
+                        "UPDATE Label SET `order` = ? WHERE value = ?",
+                        arrayOf(order, value),
+                    )
+                    order++
+                }
+                cursor.close()
             }
         }
     }

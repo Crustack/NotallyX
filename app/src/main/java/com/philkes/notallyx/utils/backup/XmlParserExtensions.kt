@@ -36,7 +36,13 @@ fun InputStream.readAsBackup(): Pair<List<BaseNote>, List<Label>> {
                 "deleted-notes" -> parser.parseBaseNoteList(parser.name, baseNotes, Folder.DELETED)
                 "archived-notes" ->
                     parser.parseBaseNoteList(parser.name, baseNotes, Folder.ARCHIVED)
-                "label" -> labels.add(Label(parser.nextText()))
+                "label" -> {
+                    val value = parser.nextText()
+                    // Initialize order based on current list size to maintain sequence
+                    // We will re-adjust these in CommonDao during insertion to avoid overlaps with
+                    // existing labels
+                    labels.add(Label(value, labels.size))
+                }
             }
         }
     }

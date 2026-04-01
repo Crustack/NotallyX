@@ -65,7 +65,11 @@ abstract class CommonDao(private val database: NotallyDatabase) {
                 duplicates++
             }
         }
-        database.getLabelDao().insert(labels)
+        val labelDao = database.getLabelDao()
+        val maxOrder = labelDao.getMaxOrder() ?: -1
+        labelDao.insert(
+            labels.mapIndexed { index, label -> Label(label.value, maxOrder + 1 + index) }
+        )
         return ImportResult(inserted = insertedCount, duplicates = duplicates)
     }
 
@@ -134,7 +138,11 @@ abstract class CommonDao(private val database: NotallyDatabase) {
             }
         }
 
-        database.getLabelDao().insert(labels)
+        val labelDaoForRemap = database.getLabelDao()
+        val maxOrderForRemap = labelDaoForRemap.getMaxOrder() ?: -1
+        labelDaoForRemap.insert(
+            labels.mapIndexed { index, label -> Label(label.value, maxOrderForRemap + 1 + index) }
+        )
         return ImportResult(inserted = insertedCount, duplicates = duplicates)
     }
 

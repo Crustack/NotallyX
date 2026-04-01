@@ -55,7 +55,15 @@ class NotesImporter(private val app: Application, private val database: NotallyD
                     progress?.postValue(ImportProgress(inProgress = false))
                     throw e
                 }
-            database.getLabelDao().insert(notes.flatMap { it.labels }.distinct().map { Label(it) })
+            val labelDao = database.getLabelDao()
+            val maxOrder = labelDao.getMaxOrder() ?: -1
+            labelDao.insert(
+                notes
+                    .flatMap { it.labels }
+                    .distinct()
+                    .sorted()
+                    .mapIndexed { index, value -> Label(value, maxOrder + 1 + index) }
+            )
             val files = notes.flatMap { it.files }.distinct()
             val images = notes.flatMap { it.images }.distinct()
             val audios = notes.flatMap { it.audios }.distinct()

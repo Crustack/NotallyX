@@ -32,6 +32,8 @@ import com.google.android.material.transition.platform.MaterialFade
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.model.BaseNote
+import com.philkes.notallyx.data.model.Folder
+import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.databinding.ActivityMainBinding
 import com.philkes.notallyx.presentation.activity.LockedActivity
 import com.philkes.notallyx.presentation.activity.main.fragment.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
@@ -268,8 +270,8 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
 
     private var labelsMenuItems: List<MenuItem> = listOf()
     private var labelsMoreMenuItem: MenuItem? = null
-    private var labels: List<String> = listOf()
-    private var labelsLiveData: LiveData<List<String>>? = null
+    private var labels: List<Label> = listOf()
+    private var labelsLiveData: LiveData<List<Label>>? = null
 
     private fun setupMenu() {
         binding.NavigationView.menu.apply {
@@ -318,19 +320,19 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             .setIcon(R.drawable.label_more)
     }
 
-    private fun Menu.setupLabelsMenuItems(labels: List<String>, maxLabelsToDisplay: Int) {
+    private fun Menu.setupLabelsMenuItems(labels: List<Label>, maxLabelsToDisplay: Int) {
         removeGroup(1)
         addStaticLabelsMenuItems()
         labelsMenuItems =
             labels
                 .mapIndexed { index, label ->
-                    add(1, R.id.DisplayLabel, CATEGORY_CONTAINER + index + 3, label)
+                    add(1, R.id.DisplayLabel, CATEGORY_CONTAINER + index + 3, label.value)
                         .setCheckable(true)
-                        .setChecked(baseModel.currentLabel == label)
+                        .setChecked(baseModel.currentLabel == label.value)
                         .setVisible(index < maxLabelsToDisplay)
                         .setIcon(R.drawable.label)
                         .setOnMenuItemClickListener {
-                            navigateToLabel(label)
+                            navigateToLabel(label.value)
                             false
                         }
                 }

@@ -5,6 +5,16 @@
   android:layout_height="wrap_content"
   android:orientation="horizontal">
 
+  <ImageView
+    android:id="@+id/DragHandle"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_vertical"
+    android:padding="8dp"
+    android:src="@drawable/drag_handle"
+    app:tint="?attr/colorControlNormal"
+    android:contentDescription="@null" />
+
   <TextView
     android:id="@+id/LabelText"
     android:layout_width="0dp"
@@ -13,6 +23,7 @@
     android:ellipsize="end"
     android:maxLines="1"
     android:padding="16dp"
+    android:layout_marginStart="8dp"
     android:textAppearance="?attr/textAppearanceBodyLarge" />
 
   <ImageButton

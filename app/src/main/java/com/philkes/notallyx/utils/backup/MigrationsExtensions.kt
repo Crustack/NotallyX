@@ -24,7 +24,11 @@ fun Context.getPreviousLabels(): List<Label> {
             preferences.getStringSet("labelItems", emptySet()),
             { "preference do not have 'labelItems' String set" },
         )
-    return labels.map { value -> Label(value) }
+    // Initialize order starting from 0, since this is for a legacy migration
+    // where we presumably start with an empty or fresh database.
+    // If this is called when labels already exist, BaseNoteModel.init (where it's called)
+    // should ideally handle the order offset.
+    return labels.sorted().mapIndexed { index, value -> Label(value, index) }
 }
 
 fun Context.getPreviousNotes(): List<BaseNote> {

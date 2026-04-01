@@ -1,6 +1,7 @@
 package com.philkes.notallyx.presentation.view.main.label
 
 import androidx.recyclerview.widget.RecyclerView
+import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.databinding.RecyclerSelectableLabelBinding
 
 class SelectableLabelVH(
@@ -14,9 +15,9 @@ class SelectableLabelVH(
         }
     }
 
-    fun bind(value: String, checked: Boolean) {
+    fun bind(label: Label, checked: Boolean) {
         binding.root.apply {
-            text = value
+            text = label.value
             isChecked = checked
         }
     }

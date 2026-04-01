@@ -11,7 +11,6 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
-import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.databinding.ActivityLabelBinding
 import com.philkes.notallyx.databinding.DialogInputBinding
 import com.philkes.notallyx.presentation.activity.LockedActivity
@@ -107,8 +106,7 @@ class SelectLabelsActivity : LockedActivity<ActivityLabelBinding>() {
             .setPositiveButton(R.string.save) { dialog, _ ->
                 val value = binding.EditText.text.toString().trim()
                 if (value.isNotEmpty()) {
-                    val label = Label(value)
-                    baseModel.insertLabel(label) { success ->
+                    baseModel.insertLabel(value) { success ->
                         if (success) {
                             dialog.dismiss()
                         } else showToast(R.string.label_exists)
@@ -124,10 +122,10 @@ class SelectLabelsActivity : LockedActivity<ActivityLabelBinding>() {
             if (position != -1) {
                 val label = labelAdapter.currentList[position]
                 if (checked) {
-                    if (!selectedLabels.contains(label)) {
-                        selectedLabels.add(label)
+                    if (!selectedLabels.contains(label.value)) {
+                        selectedLabels.add(label.value)
                     }
-                } else selectedLabels.remove(label)
+                } else selectedLabels.remove(label.value)
             }
         }
 

@@ -111,7 +111,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     lateinit var selectedExportMimeType: ExportMimeType
 
-    var labels: LiveData<List<String>> = NotNullLiveData(mutableListOf())
+    var labels: LiveData<List<Label>> = NotNullLiveData(mutableListOf())
     var reminders: LiveData<List<NoteReminder>> = NotNullLiveData(mutableListOf())
     private var allNotes: LiveData<List<BaseNote>>? = NotNullLiveData(mutableListOf())
     private var allNotesObserver: Observer<List<BaseNote>>? = null
@@ -209,7 +209,12 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             val previousLabels = app.getPreviousLabels()
             if (previousNotes.isNotEmpty() || previousLabels.isNotEmpty()) {
                 database.withTransaction {
-                    labelDao.insert(previousLabels)
+                    val maxOrder = labelDao.getMaxOrder() ?: -1
+                    labelDao.insert(
+                        previousLabels.mapIndexed { index, label ->
+                            Label(label.value, maxOrder + 1 + index)
+                        }
+                    )
                     baseNoteDao.insertSafe(app, previousNotes)
                     app.clearAllLabels()
                     app.clearAllFolders()
@@ -771,8 +776,15 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun insertLabel(label: Label, onComplete: (success: Boolean) -> Unit) =
-        executeAsyncWithCallback({ labelDao.insert(label) }, onComplete)
+    fun insertLabel(label: String, onComplete: (success: Boolean) -> Unit) =
+        executeAsyncWithCallback(
+            { labelDao.insert(Label(label, (labelDao.getMaxOrder() ?: -1) + 1)) },
+            onComplete,
+        )
+
+    fun updateLabels(labels: List<Label>) {
+        viewModelScope.launch(Dispatchers.IO) { labelDao.update(labels) }
+    }
 
     fun updateLabel(oldValue: String, newValue: String, onComplete: (success: Boolean) -> Unit) {
         executeAsyncWithCallback({ commonDao.updateLabel(oldValue, newValue) }, onComplete)

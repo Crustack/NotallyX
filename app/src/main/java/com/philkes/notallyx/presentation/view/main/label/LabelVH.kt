@@ -1,15 +1,25 @@
 package com.philkes.notallyx.presentation.view.main.label
 
+import android.annotation.SuppressLint
 import androidx.recyclerview.widget.RecyclerView
 import com.philkes.notallyx.R
 import com.philkes.notallyx.databinding.RecyclerLabelBinding
 
+@SuppressLint("ClickableViewAccessibility")
 class LabelVH(private val binding: RecyclerLabelBinding, listener: LabelListener) :
     RecyclerView.ViewHolder(binding.root) {
 
     init {
         binding.apply {
             LabelText.setOnClickListener { listener.onClick(absoluteAdapterPosition) }
+            LabelText.setOnLongClickListener { _ ->
+                listener.onStartDrag(this@LabelVH)
+                false
+            }
+            DragHandle.setOnLongClickListener { _ ->
+                listener.onStartDrag(this@LabelVH)
+                false
+            }
             EditButton.setOnClickListener { listener.onEdit(absoluteAdapterPosition) }
             DeleteButton.setOnClickListener { listener.onDelete(absoluteAdapterPosition) }
             VisibilityButton.setOnClickListener {
@@ -19,7 +29,7 @@ class LabelVH(private val binding: RecyclerLabelBinding, listener: LabelListener
     }
 
     fun bind(value: LabelData) {
-        binding.LabelText.text = value.label
+        binding.LabelText.text = value.value
         binding.VisibilityButton.setImageResource(
             if (value.visibleInNavigation) R.drawable.visibility else R.drawable.visibility_off
         )
