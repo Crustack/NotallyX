@@ -393,6 +393,9 @@ class ThreadLocalDateInstance(private val style: Int) {
     }
 }
 
+private fun oneDayAgo(): Date =
+    java.util.Calendar.getInstance().apply { add(java.util.Calendar.DAY_OF_YEAR, -1) }.time
+
 private val ISO_DATE_FORMAT = ThreadLocalDateFormat("yyyy-MM-dd", Locale.US)
 private val MM_DD_YY_FORMAT = ThreadLocalDateFormat("MM/dd/yy", Locale.US)
 private val DD_MM_YY_FORMAT = ThreadLocalDateFormat("dd/MM/yy", Locale.UK)
@@ -412,8 +415,7 @@ enum class DateFormat(val format: (Date) -> String, private val textHint: String
     override fun getText(context: Context): String {
         return when (this) {
             NONE -> context.getString(R.string.none)
-            else ->
-                Date(System.currentTimeMillis() - 86400000).format(this, TimeFormat.NONE) + textHint
+            else -> oneDayAgo().format(this, TimeFormat.NONE) + textHint
         }
     }
 }
@@ -429,9 +431,7 @@ enum class TimeFormat(val format: (Date) -> String) : TextProvider {
     override fun getText(context: Context): String {
         return when (this) {
             NONE -> context.getString(R.string.none)
-            else ->
-                Date(System.currentTimeMillis() - 86400000)
-                    .format(dateFormat = DateFormat.NONE, timeFormat = this)
+            else -> oneDayAgo().format(dateFormat = DateFormat.NONE, timeFormat = this)
         }
     }
 }
