@@ -365,6 +365,7 @@
     <string name="time_format_overview">Time format Overview</string>
     <string name="title">Title</string>
     <string name="to_record_audio">To record audio, allow NotallyX access to your microphone. Tap Settings &gt; Permissions and turn Microphone on</string>
+    <string name="to_pin_note_status_bar">To pin a note to the status bar, allow NotallyX to send notifications. Tap Settings &gt; Permissions and allow Notifications</string>
     <string name="unarchive">Unarchive</string>
     <plurals name="unarchived_selected_notes">
         <item quantity="one">Unarchived %1$d note</item>

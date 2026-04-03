@@ -326,10 +326,18 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                         grantResults[0] == PackageManager.PERMISSION_GRANTED
                 ) {
                     actionHandler.startRecordAudioActivity()
-                } else actionHandler.handleRejection()
+                } else handleRejection(R.string.to_record_audio)
             }
-            NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS ->
-                actionHandler.notifyPinToStatus()
+            NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS -> {
+                if (
+                    grantResults.isNotEmpty() &&
+                        grantResults[0] == PackageManager.PERMISSION_GRANTED
+                ) {
+                    notallyModel.isPinnedToStatus = true
+                    bindPinned()
+                    refreshStatusBarPin(notallyModel.getBaseNote())
+                } else handleRejection(R.string.to_pin_note_status_bar)
+            }
         }
     }
 

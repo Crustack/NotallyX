@@ -214,6 +214,9 @@ interface BaseNoteDao {
     @Query("UPDATE BaseNote SET isPinnedToStatus = :isPinnedToStatus WHERE id = :id")
     fun updatePinnedToStatus(id: Long, isPinnedToStatus: Boolean)
 
+    @Query("UPDATE BaseNote SET isPinnedToStatus = :isPinnedToStatus WHERE id IN (:ids)")
+    fun updatePinnedToStatus(ids: LongArray, isPinnedToStatus: Boolean)
+
     @Query("UPDATE BaseNote SET labels = :labels WHERE id = :id")
     suspend fun updateLabels(id: Long, labels: List<String>)
 

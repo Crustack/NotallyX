@@ -1,6 +1,8 @@
 package com.philkes.notallyx.presentation.activity.main
 
 import android.content.Intent
+import android.content.Intent.ACTION_SEARCH
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.transition.TransitionManager
 import android.view.Menu
@@ -43,7 +45,10 @@ import com.philkes.notallyx.presentation.activity.main.fragment.NotallyFragment
 import com.philkes.notallyx.presentation.activity.main.fragment.SearchFragment
 import com.philkes.notallyx.presentation.activity.note.EditListActivity
 import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
+import com.philkes.notallyx.presentation.activity.note.NoteActionHandler
+import com.philkes.notallyx.presentation.activity.note.handleRejection
 import com.philkes.notallyx.presentation.add
+import com.philkes.notallyx.presentation.checkNotificationPermission
 import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.movedToResId
@@ -132,6 +137,28 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     }
 
     override fun initViewModel() {}
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS -> {
+                if (
+                    grantResults.isNotEmpty() &&
+                        grantResults[0] == PackageManager.PERMISSION_GRANTED
+                ) {
+                    val baseNotes = baseModel.actionMode.selectedNotes.values
+                    baseModel.pinBaseNotesToStatusBar(
+                        this@MainActivity,
+                        baseNotes.any { !it.isPinnedToStatus },
+                    )
+                } else handleRejection(R.string.to_pin_note_status_bar)
+            }
+        }
+    }
 
     private fun checkForMigrations(savedInstanceState: Bundle?) {
         // Run migrations first (blocking dialog), then proceed with initial navigation
@@ -647,10 +674,15 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                     }
                     menu.add(R.string.archive, R.drawable.archive) { moveNotes(Folder.ARCHIVED) }
                     menu.addChangeColor()
+                    val pinnedToStatus = menu.addPinnedToStatus()
                     val share = menu.addShare()
                     menu.addExportMenu()
-                    menu.addExportMenu()
-                    model.actionMode.count.observeCountAndPinned(this@MainActivity, share, pinned)
+                    model.actionMode.count.observeCountAndPinned(
+                        this@MainActivity,
+                        share,
+                        pinned,
+                        pinnedToStatus,
+                    )
                 }
 
                 Folder.ARCHIVED -> {
@@ -669,8 +701,14 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                     val pinned = menu.addPinned()
                     menu.addLabels()
                     menu.addChangeColor()
+                    val pinnedToStatus = menu.addPinnedToStatus()
                     val share = menu.addShare()
-                    model.actionMode.count.observeCountAndPinned(this@MainActivity, share, pinned)
+                    model.actionMode.count.observeCountAndPinned(
+                        this@MainActivity,
+                        share,
+                        pinned,
+                        pinnedToStatus,
+                    )
                 }
 
                 Folder.DELETED -> {
@@ -694,6 +732,12 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
 
         private fun Menu.addPinned(showAsAction: Int = MenuItem.SHOW_AS_ACTION_IF_ROOM): MenuItem {
             return add(R.string.pin, R.drawable.pin, showAsAction) {}
+        }
+
+        private fun Menu.addPinnedToStatus(
+            showAsAction: Int = MenuItem.SHOW_AS_ACTION_IF_ROOM
+        ): MenuItem {
+            return add(R.string.pin_to_status_bar, R.drawable.pinboard, showAsAction) {}
         }
 
         private fun Menu.addLabels(showAsAction: Int = MenuItem.SHOW_AS_ACTION_IF_ROOM): MenuItem {
@@ -787,6 +831,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             lifecycleOwner: LifecycleOwner,
             share: MenuItem,
             pinned: MenuItem,
+            pinnedToStatus: MenuItem,
         ) {
             observeCount(lifecycleOwner, share) {
                 val baseNotes = model.actionMode.selectedNotes.values
@@ -798,6 +843,24 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                     pinned.setTitle(R.string.unpin).setIcon(R.drawable.unpin).onClick {
                         model.pinBaseNotes(false)
                     }
+                }
+                if (baseNotes.any { !it.isPinnedToStatus }) {
+                    pinnedToStatus
+                        .setTitle(R.string.pin_to_status_bar)
+                        .setIcon(R.drawable.pinboard)
+                        .onClick {
+                            this@MainActivity.checkNotificationPermission(
+                                NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
+                                alsoCheckAlarmPermission = false,
+                            ) {
+                                model.pinBaseNotesToStatusBar(this@MainActivity, true)
+                            }
+                        }
+                } else {
+                    pinnedToStatus
+                        .setTitle(R.string.unpin_from_status_bar)
+                        .setIcon(R.drawable.pinboard_filled)
+                        .onClick { model.pinBaseNotesToStatusBar(this@MainActivity, false) }
                 }
             }
         }

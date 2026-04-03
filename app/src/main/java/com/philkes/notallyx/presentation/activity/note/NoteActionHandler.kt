@@ -1,6 +1,7 @@
 package com.philkes.notallyx.presentation.activity.note
 
 import android.Manifest
+import android.app.Activity
 import android.app.Activity.RESULT_OK
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -18,12 +19,14 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.model.Audio
+import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.ColorString
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.createNoteUrl
+import com.philkes.notallyx.presentation.activity.note.NoteActionHandler.Companion.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS
 import com.philkes.notallyx.presentation.activity.note.PickNoteActivity.Companion.EXTRA_EXCLUDE_NOTE_ID
 import com.philkes.notallyx.presentation.activity.note.PickNoteActivity.Companion.EXTRA_PICKED_NOTE_ID
 import com.philkes.notallyx.presentation.activity.note.PickNoteActivity.Companion.EXTRA_PICKED_NOTE_TITLE
@@ -251,26 +254,20 @@ class NoteActionHandler(
         activity.bindPinned()
     }
 
-    private fun pinToStatus() {
-        notallyModel.isPinnedToStatus = !notallyModel.isPinnedToStatus
-        activity.bindPinned()
-        if (notallyModel.isPinnedToStatus) {
+    fun pinToStatus() {
+        if (!notallyModel.isPinnedToStatus) {
             activity.checkNotificationPermission(
                 REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
                 alsoCheckAlarmPermission = false,
             ) {
-                notifyPinToStatus()
+                notallyModel.isPinnedToStatus = true
+                activity.bindPinned()
+                activity.refreshStatusBarPin(notallyModel.getBaseNote())
             }
         } else {
-            notifyPinToStatus()
-        }
-    }
-
-    fun notifyPinToStatus() {
-        if (notallyModel.isPinnedToStatus) {
-            PinnedNotificationManager.notify(activity, notallyModel.getBaseNote())
-        } else {
-            PinnedNotificationManager.cancel(activity, notallyModel.id)
+            notallyModel.isPinnedToStatus = false
+            activity.bindPinned()
+            activity.refreshStatusBarPin(notallyModel.getBaseNote())
         }
     }
 
@@ -449,18 +446,6 @@ class NoteActionHandler(
         } else activity.showToast(R.string.insert_an_sd_card_audio)
     }
 
-    fun handleRejection() {
-        MaterialAlertDialogBuilder(activity)
-            .setMessage(R.string.to_record_audio)
-            .setCancelButton()
-            .setPositiveButton(R.string.settings) { _, _ ->
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                intent.data = Uri.parse("package:${activity.packageName}")
-                activity.startActivity(intent)
-            }
-            .show()
-    }
-
     fun addImages() {
         if (notallyModel.imageRoot != null) {
             val intent =
@@ -527,4 +512,36 @@ class NoteActionHandler(
     companion object {
         const val REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS = 37
     }
+}
+
+fun Activity.refreshStatusBarPin(note: BaseNote) {
+    val refresh = {
+        if (note.isPinnedToStatus) {
+            PinnedNotificationManager.notify(this, note)
+        } else {
+            PinnedNotificationManager.cancel(this, note.id)
+        }
+    }
+    if (note.isPinnedToStatus) {
+        checkNotificationPermission(
+            REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
+            alsoCheckAlarmPermission = false,
+        ) {
+            refresh()
+        }
+    } else {
+        refresh()
+    }
+}
+
+fun Activity.handleRejection(msgResId: Int) {
+    MaterialAlertDialogBuilder(this)
+        .setMessage(msgResId)
+        .setCancelButton()
+        .setPositiveButton(R.string.settings) { _, _ ->
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            intent.data = Uri.parse("package:${this.packageName}")
+            startActivity(intent)
+        }
+        .show()
 }

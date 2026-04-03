@@ -1,5 +1,6 @@
 package com.philkes.notallyx.presentation.viewmodel
 
+import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.content.Intent
@@ -43,6 +44,7 @@ import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.SearchResult
 import com.philkes.notallyx.data.model.deepCopy
 import com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment.Companion.EXTRA_SHOW_IMPORT_BACKUPS_FOLDER
+import com.philkes.notallyx.presentation.activity.note.refreshStatusBarPin
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.restartApplication
 import com.philkes.notallyx.presentation.setCancelButton
@@ -616,9 +618,19 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     fun pinBaseNotes(pinned: Boolean) {
-        val id = actionMode.selectedIds.toLongArray()
+        val ids = actionMode.selectedIds.toLongArray()
         actionMode.close(true)
-        viewModelScope.launch(Dispatchers.IO) { baseNoteDao.updatePinned(id, pinned) }
+        viewModelScope.launch(Dispatchers.IO) { baseNoteDao.updatePinned(ids, pinned) }
+    }
+
+    fun pinBaseNotesToStatusBar(activity: Activity, pinnedToStatusbar: Boolean) {
+        val ids = actionMode.selectedIds.toLongArray()
+        actionMode.close(true)
+        viewModelScope.launch(Dispatchers.IO) {
+            baseNoteDao.updatePinnedToStatus(ids, pinnedToStatusbar)
+            val updatedNotes = baseNoteDao.getByIds(ids)
+            updatedNotes.forEach { activity.refreshStatusBarPin(it) }
+        }
     }
 
     fun colorBaseNote(color: String) {

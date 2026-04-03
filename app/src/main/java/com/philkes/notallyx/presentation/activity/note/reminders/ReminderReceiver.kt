@@ -20,6 +20,8 @@ import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.findLastNotified
 import com.philkes.notallyx.data.model.lastNotification
 import com.philkes.notallyx.presentation.format
+import com.philkes.notallyx.presentation.getQuantityString
+import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.utils.PinnedNotificationManager
 import com.philkes.notallyx.utils.canScheduleAlarms
 import com.philkes.notallyx.utils.cancelReminder
@@ -102,6 +104,9 @@ class ReminderReceiver : BroadcastReceiver() {
                         Log.d(TAG, "Deleting noteId: $noteId")
                         if (noteId != -1L) {
                             deleteNote(context, noteId)
+                            context.showToast(
+                                context.getQuantityString(R.plurals.deleted_selected_notes, 1)
+                            )
                         }
                     }
 
