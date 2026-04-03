@@ -17,7 +17,6 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
-import com.philkes.notallyx.data.dao.NoteIdReminder
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.ColorString
 import com.philkes.notallyx.data.model.FileAttachment
@@ -42,7 +41,7 @@ import com.philkes.notallyx.presentation.viewmodel.NotallyModel
 import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 import com.philkes.notallyx.utils.PinnedNotificationManager
 import com.philkes.notallyx.utils.backup.exportNote
-import com.philkes.notallyx.utils.cancelNoteReminders
+import com.philkes.notallyx.utils.cancelPinAndReminders
 import com.philkes.notallyx.utils.openNote
 import com.philkes.notallyx.utils.shareNote
 import com.philkes.notallyx.utils.showColorSelectDialog
@@ -367,9 +366,7 @@ class NoteActionHandler(
 
     private fun moveNote(toFolder: Folder) {
         if (toFolder != Folder.NOTES) {
-            val noteIdReminders: List<NoteIdReminder> =
-                listOf(NoteIdReminder(notallyModel.id, notallyModel.reminders.value))
-            this.activity.cancelNoteReminders(noteIdReminders)
+            this.activity.cancelPinAndReminders(notallyModel.id, notallyModel.reminders.value)
         }
         val resultIntent =
             Intent().apply {

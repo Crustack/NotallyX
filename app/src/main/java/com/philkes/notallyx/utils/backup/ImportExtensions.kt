@@ -35,7 +35,7 @@ import com.philkes.notallyx.utils.FileError
 import com.philkes.notallyx.utils.SUBFOLDER_AUDIOS
 import com.philkes.notallyx.utils.SUBFOLDER_FILES
 import com.philkes.notallyx.utils.SUBFOLDER_IMAGES
-import com.philkes.notallyx.utils.cancelNoteReminders
+import com.philkes.notallyx.utils.cancelPinAndReminders
 import com.philkes.notallyx.utils.clearDirectory
 import com.philkes.notallyx.utils.copyToFile
 import com.philkes.notallyx.utils.determineMimeTypeAndExtension
@@ -45,8 +45,8 @@ import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import com.philkes.notallyx.utils.getFileName
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.mimeTypeToFileExtension
+import com.philkes.notallyx.utils.pinAndScheduleReminders
 import com.philkes.notallyx.utils.rename
-import com.philkes.notallyx.utils.scheduleNoteReminders
 import com.philkes.notallyx.utils.security.SQLCipherUtils
 import com.philkes.notallyx.utils.security.decryptDatabase
 import java.io.File
@@ -218,9 +218,9 @@ suspend fun ContextWrapper.importZip(
                     NotallyDatabase.getDatabase(this@importZip, observePreferences = false).value
                 val importResult =
                     notallyDatabase.getCommonDao().importBackup(baseNotes, originalIds, labels)
-                val reminders = notallyDatabase.getBaseNoteDao().getAllReminders()
-                cancelNoteReminders(reminders)
-                scheduleNoteReminders(reminders)
+                val notesToRemind = notallyDatabase.getBaseNoteDao().getAllWithRemindersOrPinned()
+                cancelPinAndReminders(notesToRemind)
+                pinAndScheduleReminders(notesToRemind)
                 importResult
             }
         databaseFolder.clearDirectory()

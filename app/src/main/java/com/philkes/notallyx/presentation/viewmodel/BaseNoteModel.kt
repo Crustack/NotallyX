@@ -25,6 +25,7 @@ import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.dao.CommonDao
 import com.philkes.notallyx.data.dao.LabelDao
 import com.philkes.notallyx.data.dao.NoteReminder
+import com.philkes.notallyx.data.dao.moveBaseNotes
 import com.philkes.notallyx.data.imports.ImportException
 import com.philkes.notallyx.data.imports.ImportProgress
 import com.philkes.notallyx.data.imports.ImportSource
@@ -41,7 +42,6 @@ import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.SearchResult
 import com.philkes.notallyx.data.model.deepCopy
-import com.philkes.notallyx.data.model.toNoteIdReminders
 import com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment.Companion.EXTRA_SHOW_IMPORT_BACKUPS_FOLDER
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.restartApplication
@@ -74,7 +74,7 @@ import com.philkes.notallyx.utils.backup.getPreviousLabels
 import com.philkes.notallyx.utils.backup.getPreviousNotes
 import com.philkes.notallyx.utils.backup.importZip
 import com.philkes.notallyx.utils.backup.readAsBackup
-import com.philkes.notallyx.utils.cancelNoteReminders
+import com.philkes.notallyx.utils.cancelPinAndReminders
 import com.philkes.notallyx.utils.copyToLarge
 import com.philkes.notallyx.utils.deleteAttachments
 import com.philkes.notallyx.utils.getBackupDir
@@ -82,7 +82,6 @@ import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import com.philkes.notallyx.utils.getExternalMediaDirectory
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.migrateAllAttachments
-import com.philkes.notallyx.utils.scheduleNoteReminders
 import com.philkes.notallyx.utils.security.DecryptionException
 import com.philkes.notallyx.utils.security.EncryptionException
 import com.philkes.notallyx.utils.security.decryptDatabase
@@ -644,21 +643,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     fun moveBaseNotes(ids: LongArray, folder: Folder) {
-        viewModelScope.launch(
-            Dispatchers.IO
-        ) { // Only reminders of notes in NOTES folder are active
-            if (folder == Folder.DELETED) {
-                baseNoteDao.move(ids, folder, System.currentTimeMillis())
-            } else {
-                baseNoteDao.move(ids, folder)
-            }
-            val notes = baseNoteDao.getByIds(ids).toNoteIdReminders()
-            // Only reminders of notes in NOTES folder are active
-            when (folder) {
-                Folder.NOTES -> app.scheduleNoteReminders(notes)
-                else -> app.cancelNoteReminders(notes)
-            }
-        }
+        viewModelScope.launch(Dispatchers.IO) { app.moveBaseNotes(baseNoteDao, ids, folder) }
     }
 
     fun updateBaseNoteLabels(labels: List<String>, id: Long) {
@@ -676,7 +661,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 withContext(Dispatchers.IO) {
                     Pair(baseNoteDao.getAllIds().toLongArray(), baseNoteDao.getAllReminders())
                 }
-            app.cancelNoteReminders(noteReminders)
+            noteReminders.forEach { app.cancelPinAndReminders(it.id, it.reminders) }
             deleteBaseNotes(ids)
             withContext(Dispatchers.IO) { labelDao.deleteAll() }
             savePreference(preferences.startView, START_VIEW_DEFAULT)
@@ -695,7 +680,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 attachments.addAll(note.audios)
             }
             actionMode.close(false)
-            app.cancelNoteReminders(notes.toNoteIdReminders())
+            app.cancelPinAndReminders(notes)
             withContext(Dispatchers.IO) {
                 baseNoteDao.delete(ids)
                 app.deleteAttachments(attachments, ids, progress)

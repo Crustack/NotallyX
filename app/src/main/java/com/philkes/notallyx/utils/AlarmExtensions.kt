@@ -2,13 +2,15 @@ package com.philkes.notallyx.utils
 
 import android.annotation.SuppressLint
 import android.app.AlarmManager
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.service.notification.StatusBarNotification
 import android.util.Log
 import androidx.core.content.getSystemService
-import com.philkes.notallyx.data.dao.NoteIdReminder
+import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.nextRepetition
 import com.philkes.notallyx.presentation.activity.note.reminders.ReminderReceiver
@@ -37,16 +39,22 @@ fun Context.scheduleReminder(noteId: Long, reminder: Reminder, forceRepetition: 
     }
 }
 
-fun Context.scheduleNoteReminders(noteReminders: List<NoteIdReminder>) {
-    noteReminders.forEach { (noteId, reminders) ->
-        reminders.forEach { reminder -> scheduleReminder(noteId, reminder) }
+fun Context.pinAndScheduleReminders(notes: List<BaseNote>) {
+    notes.forEach { note ->
+        note.reminders.forEach { reminder -> scheduleReminder(note.id, reminder) }
+        if (note.isPinnedToStatus) {
+            PinnedNotificationManager.notify(this, note)
+        }
     }
 }
 
-fun Context.cancelNoteReminders(noteReminders: List<NoteIdReminder>) {
-    noteReminders.forEach { (noteId, reminders) ->
-        reminders.forEach { reminder -> cancelReminder(noteId, reminder.id) }
-    }
+fun Context.cancelPinAndReminders(noteId: Long, reminders: List<Reminder>) {
+    reminders.forEach { reminder -> cancelReminder(noteId, reminder.id) }
+    PinnedNotificationManager.cancel(this, noteId)
+}
+
+fun Context.cancelPinAndReminders(notes: List<BaseNote>) {
+    notes.forEach { note -> cancelPinAndReminders(note.id, note.reminders) }
 }
 
 @SuppressLint("ScheduleExactAlarm")
@@ -66,12 +74,28 @@ private fun Context.scheduleReminder(noteId: Long, reminderId: Long, dateTime: D
     }
 }
 
+fun Array<StatusBarNotification>.noneExceptFor(noteId: Long, reminderId: Long) = none {
+    ReminderReceiver.isReminderNotification(it.tag) &&
+        !(it.tag == ReminderReceiver.reminderNotificationTag(noteId) && it.id == reminderId.toInt())
+}
+
 fun Context.cancelReminder(noteId: Long, reminderId: Long) {
     Log.d(TAG, "cancelReminder: noteId: $noteId reminderId: $reminderId")
     val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
     val pendingIntent = createReminderAlarmIntent(noteId, reminderId)
     alarmManager.cancel(pendingIntent)
     pendingIntent.cancel()
+    getSystemService<NotificationManager>()?.let { manager ->
+        val notificationTag = ReminderReceiver.reminderNotificationTag(noteId)
+        manager.cancel(notificationTag, reminderId.toInt())
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                manager.activeNotifications.noneExceptFor(noteId, reminderId)
+        ) {
+            Log.d(TAG, "cancelReminder: cancel reminder summary notification")
+            manager.cancel(ReminderReceiver.SUMMARY_ID)
+        }
+    }
 }
 
 private fun Context.createReminderAlarmIntent(noteId: Long, reminderId: Long): PendingIntent {

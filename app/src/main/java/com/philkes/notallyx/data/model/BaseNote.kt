@@ -61,6 +61,14 @@ data class BaseNote(
         return true
     }
 
+    fun equalContents(other: BaseNote?): Boolean {
+        if (other == null) return false
+        return title == other.title &&
+            body == other.body &&
+            spans == other.spans &&
+            items == other.items
+    }
+
     override fun hashCode(): Int {
         var result = id.hashCode()
         result = 31 * result + type.hashCode()

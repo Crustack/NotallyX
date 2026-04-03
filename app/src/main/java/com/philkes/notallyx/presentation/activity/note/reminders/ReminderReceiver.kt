@@ -8,11 +8,14 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.service.notification.StatusBarNotification
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.dao.moveBaseNotes
+import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.findLastNotified
 import com.philkes.notallyx.data.model.lastNotification
@@ -94,16 +97,58 @@ class ReminderReceiver : BroadcastReceiver() {
                         }
                     }
 
-                    intent.action == ACTION_DELETE_REMINDER -> {
+                    intent.action == ACTION_DELETE_NOTE -> {
                         val noteId = intent.getLongExtra(EXTRA_NOTE_ID, -1L)
-                        val reminderId = intent.getLongExtra(EXTRA_REMINDER_ID, -1L)
-                        Log.d(TAG, "Deleting reminderId: $reminderId of noteId: $noteId")
-                        if (noteId != -1L && reminderId != -1L) {
-                            deleteReminder(context, noteId, reminderId)
+                        Log.d(TAG, "Deleting noteId: $noteId")
+                        if (noteId != -1L) {
+                            deleteNote(context, noteId)
+                        }
+                    }
+
+                    intent.action == ACTION_UPDATE_NOTIFICATIONS -> {
+                        val noteId = intent.getLongExtra(EXTRA_NOTE_ID, -1L)
+                        Log.d(TAG, "Updating notifications for noteId: $noteId")
+                        if (noteId != -1L) {
+                            updateNotifications(context, noteId)
                         }
                     }
                 }
             }
+        }
+    }
+
+    private suspend fun deleteNote(context: Context, noteId: Long) {
+        val database = getDatabase(context)
+        context.moveBaseNotes(database.getBaseNoteDao(), longArrayOf(noteId), Folder.DELETED)
+    }
+
+    private fun Array<StatusBarNotification>.ofNote(noteId: Long) = filter {
+        it.tag == reminderNotificationTag(noteId)
+    }
+
+    private suspend fun updateNotifications(context: Context, noteId: Long) {
+        val database = getDatabase(context)
+        database.getBaseNoteDao().get(noteId)?.let { note ->
+            if (note.isPinnedToStatus) {
+                PinnedNotificationManager.notify(context, note)
+            }
+            context.getSystemService<NotificationManager>()?.let { manager ->
+                manager.activeNotifications.ofNote(noteId).forEach { notification ->
+                    val reminderId = notification.id
+                    Log.d(TAG, "Updating notification for noteId: $noteId reminderId: $reminderId")
+                    notify(
+                        context,
+                        noteId,
+                        reminderId.toLong(),
+                        schedule = false,
+                        isOnlyUpdate = true,
+                    )
+                }
+            }
+            //            val mostRecentReminder = note.reminders.findLastNotified() ?: return
+            //            if (mostRecentReminder.isNotificationVisible) {
+            //                notify(context, note.id, mostRecentReminder.id, schedule = false)
+            //            }
         }
     }
 
@@ -122,31 +167,12 @@ class ReminderReceiver : BroadcastReceiver() {
         PinnedNotificationManager.cancel(context, noteId)
     }
 
-    private suspend fun deleteReminder(context: Context, noteId: Long, reminderId: Long) {
-        context.getSystemService<NotificationManager>()?.let { manager ->
-            manager.cancel(NOTIFICATION_TAG, noteId.toInt())
-            if (
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                    manager.activeNotifications.none {
-                        it.tag == NOTIFICATION_TAG && it.id != noteId.toInt()
-                    }
-            ) {
-                manager.cancel(SUMMARY_ID)
-            }
-        }
-        context.cancelReminder(noteId, reminderId)
-        val baseNoteDao = getDatabase(context).getBaseNoteDao()
-        baseNoteDao.get(noteId)?.let { note ->
-            val updatedReminders = note.reminders.filter { it.id != reminderId }
-            baseNoteDao.updateReminders(noteId, updatedReminders)
-        }
-    }
-
     private suspend fun notify(
         context: Context,
         noteId: Long,
         reminderId: Long,
         schedule: Boolean = true,
+        isOnlyUpdate: Boolean = false,
     ) {
         Log.d(TAG, "notify: noteId: $noteId reminderId: $reminderId")
         val database = getDatabase(context)
@@ -158,17 +184,16 @@ class ReminderReceiver : BroadcastReceiver() {
             )
         }
         database.getBaseNoteDao().get(noteId)?.let { note ->
-            val deleteReminderIntent =
+            val deleteNoteIntent =
                 Intent(context, ReminderReceiver::class.java).apply {
-                    action = ACTION_DELETE_REMINDER
+                    action = ACTION_DELETE_NOTE
                     putExtra(EXTRA_NOTE_ID, note.id)
-                    putExtra(EXTRA_REMINDER_ID, reminderId)
                 }
-            val deleteReminderPendingIntent =
+            val deleteNotePendingIntent =
                 PendingIntent.getBroadcast(
                     context,
-                    "${note.id}-${reminderId}".hashCode(),
-                    deleteReminderIntent,
+                    note.id.toInt(),
+                    deleteNoteIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 )
             val (notification, summaryNotification) =
@@ -178,12 +203,13 @@ class ReminderReceiver : BroadcastReceiver() {
                     NOTIFICATION_CHANNEL_ID,
                     GROUP_REMINDERS,
                     context.getString(R.string.reminders),
+                    silent = isOnlyUpdate,
                     actions =
                         listOf(
                             NotificationCompat.Action(
                                 R.drawable.notification_delete,
-                                context.getString(R.string.delete_reminder),
-                                deleteReminderPendingIntent,
+                                context.getString(R.string.delete),
+                                deleteNotePendingIntent,
                             )
                         ),
                 )
@@ -191,7 +217,11 @@ class ReminderReceiver : BroadcastReceiver() {
                 .find { it.id == reminderId }
                 ?.let { reminder: Reminder ->
                     setIsNotificationVisible(true, context, note.id, reminderId)
-                    manager.notify(NOTIFICATION_TAG, note.id.toInt(), notification)
+                    manager.notify(
+                        reminderNotificationTag(noteId),
+                        reminderId.toInt(),
+                        notification,
+                    )
                     manager.notify(SUMMARY_ID, summaryNotification)
                     if (schedule)
                         context.scheduleReminder(note.id, reminder, forceRepetition = true)
@@ -293,7 +323,7 @@ class ReminderReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "ReminderReceiver"
 
-        private const val SUMMARY_ID = -2
+        const val SUMMARY_ID = -2
         private const val NOTIFICATION_CHANNEL_ID = "Reminders"
         private const val GROUP_REMINDERS = "notallyx.notifications.group.2.reminders"
         private const val NOTIFICATION_TAG = "notallyx.notifications.note-reminders"
@@ -305,6 +335,11 @@ class ReminderReceiver : BroadcastReceiver() {
         const val ACTION_UNPIN_NOTE = "com.philkes.notallyx.ACTION_UNPIN_NOTE"
         const val ACTION_PINNED_NOTIFICATION_DISMISSED =
             "com.philkes.notallyx.ACTION_STATUS_NOTIFICATION_DISMISSED"
-        const val ACTION_DELETE_REMINDER = "com.philkes.notallyx.ACTION_DELETE_REMINDER"
+        const val ACTION_DELETE_NOTE = "com.philkes.notallyx.ACTION_DELETE_NOTE"
+        const val ACTION_UPDATE_NOTIFICATIONS = "com.philkes.notallyx.ACTION_UPDATE_NOTIFICATIONS"
+
+        fun reminderNotificationTag(noteId: Long) = "$NOTIFICATION_TAG.$noteId"
+
+        fun isReminderNotification(tag: String?) = tag?.startsWith(NOTIFICATION_TAG) == true
     }
 }

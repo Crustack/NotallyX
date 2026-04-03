@@ -649,6 +649,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                     menu.addChangeColor()
                     val share = menu.addShare()
                     menu.addExportMenu()
+                    menu.addExportMenu()
                     model.actionMode.count.observeCountAndPinned(this@MainActivity, share, pinned)
                 }
 

@@ -1,6 +1,7 @@
 package com.philkes.notallyx.presentation.viewmodel
 
 import android.app.Application
+import android.content.Intent
 import android.graphics.Typeface
 import android.net.Uri
 import android.text.Editable
@@ -18,7 +19,6 @@ import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.dao.BaseNoteDao
-import com.philkes.notallyx.data.dao.NoteIdReminder
 import com.philkes.notallyx.data.imports.txt.extractListItems
 import com.philkes.notallyx.data.imports.txt.findListSyntaxRegex
 import com.philkes.notallyx.data.model.Audio
@@ -33,6 +33,7 @@ import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.attachmentsDifferFrom
 import com.philkes.notallyx.data.model.copy
 import com.philkes.notallyx.data.model.deepCopy
+import com.philkes.notallyx.presentation.activity.note.reminders.ReminderReceiver
 import com.philkes.notallyx.presentation.activity.note.reminders.RemindersActivity.Companion.NEW_REMINDER_ID
 import com.philkes.notallyx.presentation.applySpans
 import com.philkes.notallyx.presentation.showToast
@@ -48,7 +49,7 @@ import com.philkes.notallyx.utils.FileError
 import com.philkes.notallyx.utils.backup.checkBackupOnSave
 import com.philkes.notallyx.utils.backup.importAudio
 import com.philkes.notallyx.utils.backup.importFile
-import com.philkes.notallyx.utils.cancelNoteReminders
+import com.philkes.notallyx.utils.cancelPinAndReminders
 import com.philkes.notallyx.utils.cancelReminder
 import com.philkes.notallyx.utils.deleteAttachments
 import com.philkes.notallyx.utils.getCurrentAudioDirectory
@@ -273,7 +274,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     suspend fun deleteBaseNote(checkAutoSave: Boolean = true) {
-        app.cancelNoteReminders(listOf(NoteIdReminder(id, reminders.value)))
+        app.cancelPinAndReminders(id, reminders.value)
         withContext(Dispatchers.IO) { baseNoteDao.delete(id) }
         WidgetProvider.sendBroadcast(app, longArrayOf(id))
         val attachments = ArrayList(images.value + files.value + audios.value)
@@ -296,6 +297,14 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
             val id = baseNoteDao.insertSafe(app, note)
             if (checkBackupOnSave) {
                 checkBackupOnSave(note)
+            }
+            if (!note.equalContents(originalNote)) {
+                app.sendBroadcast(
+                    Intent(app, ReminderReceiver::class.java).apply {
+                        action = ReminderReceiver.ACTION_UPDATE_NOTIFICATIONS
+                        putExtra(ReminderReceiver.EXTRA_NOTE_ID, id)
+                    }
+                )
             }
             originalNote = note.deepCopy()
             return@withContext id
