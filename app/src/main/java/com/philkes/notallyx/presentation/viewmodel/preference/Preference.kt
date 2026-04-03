@@ -363,15 +363,46 @@ enum class Theme(override val textResId: Int) : StaticTextProvider {
     FOLLOW_SYSTEM(R.string.follow_system),
 }
 
-private val ISO_DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-private val MM_DD_YY_FORMAT = SimpleDateFormat("MM/dd/yy", Locale.US)
-private val DD_MM_YY_FORMAT = SimpleDateFormat("dd/MM/yy", Locale.UK)
-private val DD_MM_YY_FORMAT_GER = SimpleDateFormat("dd.MM.yy", Locale.GERMANY)
+class ThreadLocalDateFormat(private val format: String, private val locale: Locale) {
+    private val threadLocal =
+        object : ThreadLocal<SimpleDateFormat>() {
+            override fun initialValue(): SimpleDateFormat {
+                return SimpleDateFormat(format, locale)
+            }
+        }
+
+    fun format(date: Date): String {
+        return threadLocal.get()!!.format(date)
+    }
+
+    fun toPattern(): String {
+        return threadLocal.get()!!.toPattern()
+    }
+}
+
+class ThreadLocalDateInstance(private val style: Int) {
+    private val threadLocal =
+        object : ThreadLocal<java.text.DateFormat>() {
+            override fun initialValue(): java.text.DateFormat {
+                return java.text.DateFormat.getDateInstance(style)
+            }
+        }
+
+    fun format(date: Date): String {
+        return threadLocal.get()!!.format(date)
+    }
+}
+
+private val ISO_DATE_FORMAT = ThreadLocalDateFormat("yyyy-MM-dd", Locale.US)
+private val MM_DD_YY_FORMAT = ThreadLocalDateFormat("MM/dd/yy", Locale.US)
+private val DD_MM_YY_FORMAT = ThreadLocalDateFormat("dd/MM/yy", Locale.UK)
+private val DD_MM_YY_FORMAT_GER = ThreadLocalDateFormat("dd.MM.yy", Locale.GERMANY)
+private val FULL_FORMAT = ThreadLocalDateInstance(java.text.DateFormat.FULL)
 
 enum class DateFormat(val format: (Date) -> String, private val textHint: String = "") :
     TextProvider {
     NONE({ "" }),
-    FULL({ java.text.DateFormat.getDateInstance(java.text.DateFormat.FULL).format(it) }),
+    FULL(FULL_FORMAT::format),
     RELATIVE({ PrettyTime().format(it) }),
     DD_MM_YY_GER(DD_MM_YY_FORMAT_GER::format, " (${DD_MM_YY_FORMAT_GER.toPattern()})"),
     DD_MM_YY(DD_MM_YY_FORMAT::format, " (${DD_MM_YY_FORMAT.toPattern()})"),
@@ -387,8 +418,8 @@ enum class DateFormat(val format: (Date) -> String, private val textHint: String
     }
 }
 
-private val TWENTY_FOUR_H_FORMAT = SimpleDateFormat("HH:mm", Locale.GERMANY)
-private val AM_PM_FORMAT = SimpleDateFormat("hh:mm a", Locale.US)
+private val TWENTY_FOUR_H_FORMAT = ThreadLocalDateFormat("HH:mm", Locale.GERMANY)
+private val AM_PM_FORMAT = ThreadLocalDateFormat("hh:mm a", Locale.US)
 
 enum class TimeFormat(val format: (Date) -> String) : TextProvider {
     NONE({ "" }),

@@ -468,7 +468,10 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.delete_reminder)
             .setMessage(
-                "${reminder.dateTime.format(ensureFullFormat = true)}\n${reminder.repetition?.toText(this) ?: getString(R.string.reminder_no_repetition)}"
+                "${reminder.dateTime.format(
+                    preferences.dateFormatNoteView.value,
+                    preferences.timeFormatNoteView.value,
+                    ensureFullFormat = true,)}\n${reminder.repetition?.toText(this) ?: getString(R.string.reminder_no_repetition)}"
             )
             .setPositiveButton(R.string.delete) { _, _ ->
                 lifecycleScope.launch { model.removeReminder(reminder) }
