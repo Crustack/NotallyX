@@ -2,6 +2,8 @@ name: Update Translation Coverage in README
 
 on:
   push:
+    branches:
+      - main
     paths:
       - app/src/main/res/values*/strings.xml
   workflow_dispatch:
