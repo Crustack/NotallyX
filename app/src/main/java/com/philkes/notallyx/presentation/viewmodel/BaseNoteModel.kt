@@ -627,7 +627,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         actionMode.close(true)
         viewModelScope.launch {
             val updatedNotes =
-                with(Dispatchers.IO) {
+                withContext(Dispatchers.IO) {
                     baseNoteDao.updatePinnedToStatus(ids, pinnedToStatusBar)
                     baseNoteDao.getByIds(ids)
                 }
