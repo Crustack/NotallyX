@@ -163,7 +163,7 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
     }
 
     private fun restorePinnedNotifications() {
-        runOnIODispatcher<Unit> {
+        runOnIODispatcher {
             NotallyDatabase.getDatabase(this@NotallyXApplication, false)
                 .value
                 .getBaseNoteDao()
