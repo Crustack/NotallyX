@@ -88,6 +88,7 @@ class PlainTextImporter : ExternalImporter {
                             audios = listOf(),
                             reminders = listOf(),
                             NoteViewMode.EDIT,
+                            false,
                         )
                     )
                 }

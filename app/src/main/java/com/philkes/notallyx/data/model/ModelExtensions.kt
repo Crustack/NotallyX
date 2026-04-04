@@ -123,6 +123,7 @@ fun String.toBaseNote(): BaseNote {
             ?: COLOR_DEFAULT
     val title = jsonObject.getStringOrDefault("title", "")
     val pinned = jsonObject.getBooleanOrDefault("pinned", false)
+    val pinnedToStatusBar = jsonObject.getBooleanOrDefault("isPinnedToStatus", false)
     val timestamp = jsonObject.getLongOrDefault("timestamp", System.currentTimeMillis())
     val modifiedTimestamp = jsonObject.getLongOrDefault("modifiedTimestamp", timestamp)
     val labels = Converters.jsonToLabels(jsonObject.getArrayOrEmpty("labels"))
@@ -152,6 +153,7 @@ fun String.toBaseNote(): BaseNote {
         audios,
         reminders,
         viewMode,
+        pinnedToStatusBar,
     )
 }
 

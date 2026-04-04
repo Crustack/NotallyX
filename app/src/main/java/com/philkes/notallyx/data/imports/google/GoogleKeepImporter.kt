@@ -164,6 +164,7 @@ class GoogleKeepImporter : ExternalImporter {
             audios = audios,
             reminders = mutableListOf(),
             NoteViewMode.EDIT,
+            false,
         )
     }
 

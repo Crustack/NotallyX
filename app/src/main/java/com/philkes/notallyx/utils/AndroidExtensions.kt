@@ -451,7 +451,11 @@ fun Context.getOpenNoteIntent(noteId: Long, noteType: Type): Intent {
         Type.LIST -> Intent(this, EditListActivity::class.java)
     }.apply {
         putExtra(EXTRA_SELECTED_BASE_NOTE, noteId)
-        addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                Intent.FLAG_ACTIVITY_CLEAR_TOP
+        )
     }
 }
 

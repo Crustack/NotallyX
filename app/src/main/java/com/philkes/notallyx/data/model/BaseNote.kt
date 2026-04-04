@@ -26,7 +26,7 @@ data class BaseNote(
     val audios: List<Audio>,
     val reminders: List<Reminder>,
     val viewMode: NoteViewMode,
-    val isPinnedToStatus: Boolean = false,
+    val isPinnedToStatus: Boolean,
 ) : Item {
 
     companion object {

@@ -320,6 +320,16 @@ private fun Cursor.toBaseNote(sourceDb: SQLiteDatabase): BaseNote {
             else -> throw IllegalArgumentException("pinned must be 0 or 1")
         }
 
+    val isPinnedToStatusColumn = getColumnIndexOrThrow("isPinnedToStatus")
+    val pinnedToStatusBar =
+        if (isPinnedToStatusColumn != -1) {
+            when (getInt(isPinnedToStatusColumn)) {
+                0 -> false
+                1 -> true
+                else -> false
+            }
+        } else false
+
     val type = Type.valueOfOrDefault(typeTmp)
     val folder = Folder.valueOfOrDefault(folderTmp)
 
@@ -374,6 +384,7 @@ private fun Cursor.toBaseNote(sourceDb: SQLiteDatabase): BaseNote {
         audios,
         reminders,
         viewMode,
+        pinnedToStatusBar,
     )
 }
 

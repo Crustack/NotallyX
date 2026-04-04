@@ -647,15 +647,18 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) { baseNoteDao.updateColor(oldColor, newColor) }
     }
 
-    fun moveBaseNotes(folder: Folder): LongArray {
+    fun moveBaseNotes(folder: Folder, callable: (() -> Unit)? = null): LongArray {
         val ids = actionMode.selectedIds.toLongArray()
         actionMode.close(false)
-        moveBaseNotes(ids, folder)
+        moveBaseNotes(ids, folder, callable)
         return ids
     }
 
-    fun moveBaseNotes(ids: LongArray, folder: Folder) {
-        viewModelScope.launch(Dispatchers.IO) { app.moveBaseNotes(baseNoteDao, ids, folder) }
+    fun moveBaseNotes(ids: LongArray, folder: Folder, callable: (() -> Unit)? = null) {
+        viewModelScope.launch(Dispatchers.IO) {
+            app.moveBaseNotes(baseNoteDao, ids, folder)
+            callable?.invoke()
+        }
     }
 
     fun updateBaseNoteLabels(labels: List<String>, id: Long) {
