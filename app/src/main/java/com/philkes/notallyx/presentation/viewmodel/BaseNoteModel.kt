@@ -625,9 +625,12 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     fun pinBaseNotesToStatusBar(activity: Activity, pinnedToStatusBar: Boolean) {
         val ids = actionMode.selectedIds.toLongArray()
         actionMode.close(true)
-        viewModelScope.launch(Dispatchers.IO) {
-            baseNoteDao.updatePinnedToStatus(ids, pinnedToStatusBar)
-            val updatedNotes = baseNoteDao.getByIds(ids)
+        viewModelScope.launch {
+            val updatedNotes =
+                with(Dispatchers.IO) {
+                    baseNoteDao.updatePinnedToStatus(ids, pinnedToStatusBar)
+                    baseNoteDao.getByIds(ids)
+                }
             updatedNotes.forEach { activity.refreshStatusBarPin(it) }
         }
     }
@@ -655,8 +658,11 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     fun moveBaseNotes(ids: LongArray, folder: Folder, callable: (() -> Unit)? = null) {
         viewModelScope.launch(Dispatchers.IO) {
-            app.moveBaseNotes(baseNoteDao, ids, folder)
-            callable?.invoke()
+            try {
+                app.moveBaseNotes(baseNoteDao, ids, folder)
+            } finally {
+                callable?.invoke()
+            }
         }
     }
 
