@@ -59,7 +59,6 @@ import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.START_VIEW_DEFAULT
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.START_VIEW_UNLABELED
 import com.philkes.notallyx.presentation.viewmodel.preference.Theme
-import com.philkes.notallyx.presentation.viewmodel.progress.DeleteProgress
 import com.philkes.notallyx.presentation.viewmodel.progress.ExportNotesProgress
 import com.philkes.notallyx.utils.ActionMode
 import com.philkes.notallyx.utils.Cache
@@ -666,8 +665,8 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) { baseNoteDao.updateLabels(id, labels) }
     }
 
-    fun deleteSelectedBaseNotes() {
-        deleteBaseNotes(actionMode.selectedIds.toLongArray())
+    suspend fun deleteSelectedBaseNotes(): Collection<BaseNote> {
+        return deleteBaseNotes(actionMode.selectedIds.toLongArray())
     }
 
     fun deleteAll() {
@@ -684,22 +683,13 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun deleteBaseNotes(ids: LongArray) {
-        val attachments = ArrayList<Attachment>()
-        viewModelScope.launch {
-            progress.value = DeleteProgress(indeterminate = true)
-            val notes = withContext(Dispatchers.IO) { baseNoteDao.getByIds(ids) }
-            notes.forEach { note ->
-                attachments.addAll(note.images)
-                attachments.addAll(note.files)
-                attachments.addAll(note.audios)
-            }
-            actionMode.close(false)
-            app.cancelPinAndReminders(notes)
-            withContext(Dispatchers.IO) {
-                baseNoteDao.delete(ids)
-                app.deleteAttachments(attachments, ids, progress)
-            }
+    private suspend fun deleteBaseNotes(ids: LongArray): Collection<BaseNote> {
+        val notes = withContext(Dispatchers.IO) { baseNoteDao.getByIds(ids) }
+        actionMode.close(false)
+        app.cancelPinAndReminders(notes)
+        return withContext(Dispatchers.IO) {
+            baseNoteDao.delete(ids)
+            return@withContext notes
         }
     }
 

@@ -9,6 +9,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.model.Attachment
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.presentation.activity.note.NoteActionHandler
@@ -22,6 +23,8 @@ import com.philkes.notallyx.presentation.view.misc.tristatecheckbox.TriStateChec
 import com.philkes.notallyx.presentation.view.misc.tristatecheckbox.setMultiChoiceTriStateItems
 import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
+import com.philkes.notallyx.presentation.viewmodel.progress.DeleteProgress
+import com.philkes.notallyx.utils.deleteAttachments
 import com.philkes.notallyx.utils.shareNote
 import com.philkes.notallyx.utils.showColorSelectDialog
 import kotlinx.coroutines.Dispatchers
@@ -257,17 +260,45 @@ class ModelFolderObserver(
             .setMessage(R.string.delete_selected_notes)
             .setPositiveButton(R.string.delete) { _, _ ->
                 val removedNotes = baseModel.actionMode.selectedNotes.values.toList()
-                baseModel.deleteSelectedBaseNotes()
-                Snackbar.make(
-                        activity.findViewById(R.id.DrawerLayout),
-                        activity.getQuantityString(
-                            R.plurals.deleted_selected_notes,
-                            removedNotes.size,
-                        ),
-                        Snackbar.LENGTH_SHORT,
-                    )
-                    .apply { setAction(R.string.undo) { baseModel.saveNotes(removedNotes) } }
-                    .show()
+                activity.lifecycleScope.launch {
+                    val deletedNotes = baseModel.deleteSelectedBaseNotes()
+                    Snackbar.make(
+                            activity.findViewById(R.id.DrawerLayout),
+                            activity.getQuantityString(
+                                R.plurals.deleted_selected_notes,
+                                removedNotes.size,
+                            ),
+                            Snackbar.LENGTH_SHORT,
+                        )
+                        .apply {
+                            setAction(R.string.undo) { baseModel.saveNotes(removedNotes) }
+                            addCallback(
+                                object : Snackbar.Callback() {
+                                    override fun onDismissed(
+                                        transientBottomBar: Snackbar?,
+                                        event: Int,
+                                    ) {
+                                        if (event == DISMISS_EVENT_ACTION) {
+                                            val attachments = ArrayList<Attachment>()
+                                            deletedNotes.forEach { note ->
+                                                attachments.addAll(note.images)
+                                                attachments.addAll(note.files)
+                                                attachments.addAll(note.audios)
+                                            }
+                                            baseModel.progress.value =
+                                                DeleteProgress(indeterminate = true)
+                                            activity.deleteAttachments(
+                                                attachments,
+                                                deletedNotes.map { it.id }.toLongArray(),
+                                                baseModel.progress,
+                                            )
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                        .show()
+                }
             }
             .setCancelButton()
             .show()
