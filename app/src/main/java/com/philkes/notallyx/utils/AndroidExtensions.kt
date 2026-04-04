@@ -462,7 +462,7 @@ fun Context.getOpenNoteIntent(noteId: Long, noteType: Type): Intent {
 fun Context.getOpenNotePendingIntent(noteId: Long, noteType: Type): PendingIntent {
     return PendingIntent.getActivity(
         this,
-        0,
+        noteId.hashCode(),
         getOpenNoteIntent(noteId, noteType),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
     )

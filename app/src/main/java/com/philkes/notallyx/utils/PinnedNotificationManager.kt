@@ -49,7 +49,7 @@ object PinnedNotificationManager {
                 actions =
                     listOf(
                         NotificationCompat.Action(
-                            R.drawable.notification_unpin,
+                            R.drawable.pin,
                             context.getString(R.string.unpin),
                             unpinPendingIntent,
                         )

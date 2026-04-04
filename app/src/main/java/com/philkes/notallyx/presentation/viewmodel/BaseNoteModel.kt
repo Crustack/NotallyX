@@ -682,7 +682,8 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                     Pair(baseNoteDao.getAllIds().toLongArray(), baseNoteDao.getAllReminders())
                 }
             noteReminders.forEach { app.cancelPinAndReminders(it.id, it.reminders) }
-            deleteBaseNotes(ids)
+            val deletedNotes = deleteBaseNotes(ids)
+            app.deleteAttachments(deletedNotes)
             withContext(Dispatchers.IO) { labelDao.deleteAll() }
             savePreference(preferences.startView, START_VIEW_DEFAULT)
             app.showToast(R.string.cleared_data)

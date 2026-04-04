@@ -9,7 +9,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
-import com.philkes.notallyx.data.model.Attachment
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.presentation.activity.note.NoteActionHandler
@@ -23,7 +22,6 @@ import com.philkes.notallyx.presentation.view.misc.tristatecheckbox.TriStateChec
 import com.philkes.notallyx.presentation.view.misc.tristatecheckbox.setMultiChoiceTriStateItems
 import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
-import com.philkes.notallyx.presentation.viewmodel.progress.DeleteProgress
 import com.philkes.notallyx.utils.deleteAttachments
 import com.philkes.notallyx.utils.shareNote
 import com.philkes.notallyx.utils.showColorSelectDialog
@@ -279,18 +277,9 @@ class ModelFolderObserver(
                                         transientBottomBar: Snackbar?,
                                         event: Int,
                                     ) {
-                                        if (event == DISMISS_EVENT_ACTION) {
-                                            val attachments = ArrayList<Attachment>()
-                                            deletedNotes.forEach { note ->
-                                                attachments.addAll(note.images)
-                                                attachments.addAll(note.files)
-                                                attachments.addAll(note.audios)
-                                            }
-                                            baseModel.progress.value =
-                                                DeleteProgress(indeterminate = true)
+                                        if (event != DISMISS_EVENT_ACTION) {
                                             activity.deleteAttachments(
-                                                attachments,
-                                                deletedNotes.map { it.id }.toLongArray(),
+                                                deletedNotes,
                                                 baseModel.progress,
                                             )
                                         }

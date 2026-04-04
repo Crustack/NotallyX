@@ -85,6 +85,9 @@ fun Context.createDeleteReminderIntent(
     reminderId: Long?,
     requestCodePostfix: String? = null,
 ): PendingIntent? {
+    require(reminderId != null || requestCodePostfix != null) {
+        "Either reminderId or requestCodePostfix must be non-null"
+    }
     val deleteIntent =
         Intent(this, ReminderReceiver::class.java).apply {
             action =

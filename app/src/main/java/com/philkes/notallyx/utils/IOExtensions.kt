@@ -13,6 +13,7 @@ import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.data.NotallyDatabase.Companion.DATABASE_NAME
 import com.philkes.notallyx.data.model.Attachment
 import com.philkes.notallyx.data.model.Audio
+import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.isImage
 import com.philkes.notallyx.presentation.view.misc.Progress
@@ -27,6 +28,7 @@ import java.io.OutputStream
 import java.nio.file.Files
 import java.security.MessageDigest
 import java.util.zip.CRC32
+import kotlin.collections.map
 import net.lingala.zip4j.ZipFile
 
 private const val TAG = "IO"
@@ -285,6 +287,19 @@ fun File.copyToLarge(
 
 fun InputStream.copyToLarge(target: OutputStream, bufferSize: Int = BUFFER_SIZE): Long {
     return copyTo(out = target, bufferSize = bufferSize)
+}
+
+fun ContextWrapper.deleteAttachments(
+    notes: Collection<BaseNote>,
+    progress: MutableLiveData<Progress>? = null,
+) {
+    val attachments = ArrayList<Attachment>()
+    notes.forEach { note ->
+        attachments.addAll(note.images)
+        attachments.addAll(note.files)
+        attachments.addAll(note.audios)
+    }
+    deleteAttachments(attachments, notes.map { it.id }.toLongArray(), progress)
 }
 
 fun ContextWrapper.deleteAttachments(
