@@ -376,9 +376,13 @@ class SettingsFragment : Fragment() {
         }
 
         autoRemoveDeletedNotesAfterDays.observe(viewLifecycleOwner) { value ->
-            binding.AutoEmptyBin.setupAutoEmptyBin(
+            binding.AutoEmptyBin.setup(
                 autoRemoveDeletedNotesAfterDays,
                 requireContext(),
+                labelFormatter = { v ->
+                    if (v == 0) requireContext().getString(R.string.off)
+                    else "$v ${requireContext().getString(R.string.days)}"
+                },
             ) { newValue ->
                 model.savePreference(autoRemoveDeletedNotesAfterDays, newValue)
                 val workManager = WorkManager.getInstance(requireContext())
@@ -768,8 +772,13 @@ class SettingsFragment : Fragment() {
                     }
                 }
             }
-            AutoSaveAfterIdle.setupAutoSaveIdleTime(autoSaveAfterIdleTime, requireContext()) {
-                newValue ->
+            AutoSaveAfterIdle.setup(
+                autoSaveAfterIdleTime,
+                requireContext(),
+                labelFormatter = { v ->
+                    if (v == -1) requireContext().getString(R.string.off) else "${v}s"
+                },
+            ) { newValue ->
                 model.savePreference(autoSaveAfterIdleTime, newValue)
             }
 

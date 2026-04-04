@@ -71,11 +71,11 @@
 
         <include
           android:id="@+id/AutoSaveAfterIdle"
-          layout="@layout/preference_seekbar" />
+          layout="@layout/preference_stepper" />
 
         <include
             android:id="@+id/AutoEmptyBin"
-            layout="@layout/preference_seekbar" />
+            layout="@layout/preference_stepper" />
 
         <View
             android:layout_width="match_parent"
@@ -102,7 +102,7 @@
 
         <include
           android:id="@+id/MaxLabels"
-          layout="@layout/preference_seekbar" />
+          layout="@layout/preference_stepper" />
 
         <include
           android:id="@+id/LabelsHiddenInOverview"
@@ -172,11 +172,11 @@
 
         <include
           android:id="@+id/PeriodicBackupsPeriodInDays"
-          layout="@layout/preference_seekbar" />
+          layout="@layout/preference_stepper" />
 
         <include
           android:id="@+id/PeriodicBackupsMax"
-          layout="@layout/preference_seekbar" />
+          layout="@layout/preference_stepper" />
 
         <View
           android:layout_width="match_parent"

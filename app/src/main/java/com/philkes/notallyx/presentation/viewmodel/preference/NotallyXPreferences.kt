@@ -146,7 +146,7 @@ class NotallyXPreferences private constructor(private val context: Context) {
             preferences,
             5,
             0,
-            20,
+            200,
             R.string.max_labels_to_display,
         )
 
@@ -163,7 +163,7 @@ class NotallyXPreferences private constructor(private val context: Context) {
             preferences,
             0,
             0,
-            365,
+            3650,
             R.string.auto_remove_deleted_notes,
         )
 
@@ -182,7 +182,7 @@ class NotallyXPreferences private constructor(private val context: Context) {
             preferences,
             5,
             -1,
-            20,
+            60 * 60 * 5,
             R.string.auto_save_after_idle_time,
         )
 

@@ -1,13 +1,19 @@
 package com.philkes.notallyx.presentation.activity.main.fragment.settings
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.hardware.biometrics.BiometricManager
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.text.method.PasswordTransformationMethod
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
+import android.view.inputmethod.EditorInfo
 import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import androidx.documentfile.provider.DocumentFile
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -23,11 +29,14 @@ import com.philkes.notallyx.databinding.DialogSelectionBoxBinding
 import com.philkes.notallyx.databinding.DialogTextInputBinding
 import com.philkes.notallyx.databinding.PreferenceBinding
 import com.philkes.notallyx.databinding.PreferenceSeekbarBinding
+import com.philkes.notallyx.databinding.PreferenceStepperBinding
 import com.philkes.notallyx.presentation.checkedTag
+import com.philkes.notallyx.presentation.hideKeyboard
 import com.philkes.notallyx.presentation.select
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.setTextSizeSp
 import com.philkes.notallyx.presentation.showAndFocus
+import com.philkes.notallyx.presentation.showKeyboard
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.MenuDialog
 import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
@@ -501,43 +510,146 @@ fun PreferenceSeekbarBinding.setupTextSizePreference(
     }
 }
 
-fun PreferenceSeekbarBinding.setupAutoSaveIdleTime(
-    preference: IntPreference,
+@SuppressLint("ClickableViewAccessibility")
+fun PreferenceStepperBinding.setup(
+    value: Int,
+    titleResId: Int,
+    min: Int,
+    max: Int,
     context: Context,
-    value: Int = preference.value,
+    enabled: Boolean = true,
+    labelFormatter: ((Int) -> String)? = null,
     onChange: (newValue: Int) -> Unit,
 ) {
-    Slider.apply {
-        setLabelFormatter { sliderValue ->
-            if (sliderValue == -1f) {
-                context.getString(R.string.disabled)
-            } else "${sliderValue.toInt()}s"
+    Title.setText(titleResId)
+    ValueInput.setText(labelFormatter?.invoke(value) ?: value.toString())
+    ValueInput.isEnabled = enabled
+
+    fun updateButtons(value: Int) {
+        MinusButton.isEnabled = enabled && value > min
+        PlusButton.isEnabled = enabled && value < max
+    }
+
+    updateButtons(value)
+
+    val handler = Handler(Looper.getMainLooper())
+    fun updateValue(increment: Int, commit: Boolean): Boolean {
+        val newValue = (ValueInput.tag as? Int ?: value) + increment
+        val valid = newValue in min..max
+        if (valid) {
+            ValueInput.tag = newValue
+            ValueInput.setText(labelFormatter?.invoke(newValue) ?: newValue.toString())
+            updateButtons(newValue)
+            if (commit) {
+                onChange(newValue)
+            }
         }
-        addOnChangeListener { _, value, _ ->
-            if (value == -1f) {
-                setAlpha(0.6f) // Reduce opacity to make it look disabled
-            } else {
-                setAlpha(1f) // Restore normal appearance
+        ValueInput.clearFocus()
+        return valid
+    }
+
+    fun stepperRunnable(isIncrement: Boolean) =
+        object : Runnable {
+            override fun run() {
+                if (updateValue(if (isIncrement) 1 else -1, false)) {
+                    handler.postDelayed(this, 100)
+                }
+            }
+        }
+    var runnable: Runnable? = null
+    val startAutoIncrement = { isIncrement: Boolean ->
+        runnable?.let { handler.removeCallbacks(it) }
+        runnable =
+            if (isIncrement) stepperRunnable(isIncrement = true)
+            else stepperRunnable(isIncrement = false)
+        handler.postDelayed(runnable!!, 100)
+    }
+
+    MinusButton.setOnClickListener { updateValue(-1, true) }
+
+    MinusButton.setOnLongClickListener {
+        startAutoIncrement(false)
+        true
+    }
+
+    MinusButton.setOnTouchListener { _, event ->
+        if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
+            runnable?.let { handler.removeCallbacks(it) }
+            onChange(ValueInput.tag as? Int ?: value)
+        }
+        false
+    }
+
+    PlusButton.setOnClickListener { updateValue(1, true) }
+
+    PlusButton.setOnLongClickListener {
+        startAutoIncrement(true)
+        true
+    }
+
+    PlusButton.setOnTouchListener { _, event ->
+        if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
+            runnable?.let { handler.removeCallbacks(it) }
+            onChange(ValueInput.tag as? Int ?: value)
+        }
+        false
+    }
+
+    ValueInput.tag = value
+    ValueInput.doAfterTextChanged { text ->
+        if (ValueInput.hasFocus()) {
+            val newValue = text.toString().toIntOrNull()
+            if (newValue != null) {
+                val clampedValue = newValue.coerceIn(min, max)
+                if (clampedValue != ValueInput.tag) {
+                    ValueInput.tag = clampedValue
+                    updateButtons(clampedValue)
+                }
             }
         }
     }
-    setup(preference, context, value, onChange = onChange)
+    ValueInput.setOnFocusChangeListener { _, hasFocus ->
+        if (hasFocus) {
+            val currentValue = ValueInput.tag as? Int ?: value
+            val text = currentValue.toString()
+            ValueInput.setText(text)
+            ValueInput.setSelection(text.length)
+            context.showKeyboard(ValueInput)
+        } else {
+            val currentValue = ValueInput.tag as? Int ?: value
+            ValueInput.setText(labelFormatter?.invoke(currentValue) ?: currentValue.toString())
+            updateButtons(currentValue)
+            onChange(currentValue)
+        }
+    }
+    ValueInput.setOnEditorActionListener { v, actionId, _ ->
+        if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_ACTION_NEXT) {
+            context.hideKeyboard(ValueInput)
+            v.clearFocus() // This triggers the OnFocusChangeListener logic
+            true
+        } else {
+            false
+        }
+    }
 }
 
-fun PreferenceSeekbarBinding.setupAutoEmptyBin(
+fun PreferenceStepperBinding.setup(
     preference: IntPreference,
     context: Context,
     value: Int = preference.value,
+    labelFormatter: ((Int) -> String)? = null,
     onChange: (newValue: Int) -> Unit,
 ) {
-    Slider.apply {
-        setLabelFormatter { sliderValue ->
-            if (sliderValue == 0f) {
-                context.getString(R.string.disabled)
-            } else "${sliderValue.toInt()} ${context.getString(R.string.days)}"
-        }
+    setup(
+        value,
+        preference.titleResId!!,
+        preference.min,
+        preference.max,
+        context,
+        labelFormatter = labelFormatter,
+    ) { newValue ->
+        onChange(newValue)
     }
-    setup(preference, context, value, R.string.auto_remove_deleted_notes_hint, onChange)
 }
 
 fun PreferenceBinding.setupStartView(
