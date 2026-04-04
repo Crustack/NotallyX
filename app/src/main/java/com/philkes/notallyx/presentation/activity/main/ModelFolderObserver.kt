@@ -234,7 +234,7 @@ class ModelFolderObserver(
             baseModel.actionMode.loading.value = true
             val folderFrom = baseModel.actionMode.getFirstNote().folder
             val ids =
-                baseModel.moveBaseNotes(folderTo) { baseModel.actionMode.loading.value = false }
+                baseModel.moveBaseNotes(folderTo) { baseModel.actionMode.loading.postValue(false) }
             Snackbar.make(
                     activity.findViewById(R.id.DrawerLayout),
                     activity.getQuantityString(folderTo.movedToResId(), ids.size),
@@ -243,7 +243,7 @@ class ModelFolderObserver(
                 .apply { setAction(R.string.undo) { baseModel.moveBaseNotes(ids, folderFrom) } }
                 .show()
         } catch (_: Exception) {
-            baseModel.actionMode.loading.value = false
+            baseModel.actionMode.loading.postValue(false)
         }
     }
 
