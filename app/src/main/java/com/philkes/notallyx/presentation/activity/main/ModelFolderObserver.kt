@@ -85,9 +85,8 @@ class ModelFolderObserver(
         val pinned = menu.addPinned()
         menu.addLabels()
         menu.addChangeColor()
-        val pinnedToStatus = menu.addPinnedToStatus()
         val share = menu.addShare()
-        model.actionMode.count.observeCountAndPinned(activity, share, pinned, pinnedToStatus)
+        model.actionMode.count.observeCountAndPinned(activity, share, pinned, null)
     }
 
     private fun initDeletedFolderMenu() {
@@ -195,7 +194,7 @@ class ModelFolderObserver(
         lifecycleOwner: LifecycleOwner,
         share: MenuItem,
         pinned: MenuItem,
-        pinnedToStatus: MenuItem,
+        pinnedToStatus: MenuItem?,
     ) {
         observeCount(lifecycleOwner, share) {
             val baseNotes = model.actionMode.selectedNotes.values
@@ -208,23 +207,25 @@ class ModelFolderObserver(
                     model.pinBaseNotes(false)
                 }
             }
-            if (baseNotes.any { !it.isPinnedToStatus }) {
-                pinnedToStatus
-                    .setTitle(R.string.pin_to_status_bar)
-                    .setIcon(R.drawable.pinboard)
-                    .onClick {
-                        activity.checkNotificationPermission(
-                            NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
-                            alsoCheckAlarmPermission = false,
-                        ) {
-                            model.pinBaseNotesToStatusBar(activity, true)
+            pinnedToStatus?.let {
+                if (baseNotes.any { !it.isPinnedToStatus }) {
+                    pinnedToStatus
+                        .setTitle(R.string.pin_to_status_bar)
+                        .setIcon(R.drawable.pinboard)
+                        .onClick {
+                            activity.checkNotificationPermission(
+                                NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
+                                alsoCheckAlarmPermission = false,
+                            ) {
+                                model.pinBaseNotesToStatusBar(activity, true)
+                            }
                         }
-                    }
-            } else {
-                pinnedToStatus
-                    .setTitle(R.string.unpin_from_status_bar)
-                    .setIcon(R.drawable.pinboard_filled)
-                    .onClick { model.pinBaseNotesToStatusBar(activity, false) }
+                } else {
+                    pinnedToStatus
+                        .setTitle(R.string.unpin_from_status_bar)
+                        .setIcon(R.drawable.pinboard_filled)
+                        .onClick { model.pinBaseNotesToStatusBar(activity, false) }
+                }
             }
         }
     }

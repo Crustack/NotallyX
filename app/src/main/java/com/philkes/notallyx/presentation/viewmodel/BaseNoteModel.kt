@@ -622,11 +622,11 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) { baseNoteDao.updatePinned(ids, pinned) }
     }
 
-    fun pinBaseNotesToStatusBar(activity: Activity, pinnedToStatusbar: Boolean) {
+    fun pinBaseNotesToStatusBar(activity: Activity, pinnedToStatusBar: Boolean) {
         val ids = actionMode.selectedIds.toLongArray()
         actionMode.close(true)
         viewModelScope.launch(Dispatchers.IO) {
-            baseNoteDao.updatePinnedToStatus(ids, pinnedToStatusbar)
+            baseNoteDao.updatePinnedToStatus(ids, pinnedToStatusBar)
             val updatedNotes = baseNoteDao.getByIds(ids)
             updatedNotes.forEach { activity.refreshStatusBarPin(it) }
         }
