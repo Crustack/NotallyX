@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.Settings
 import android.text.method.PasswordTransformationMethod
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -384,6 +385,7 @@ class SettingsFragment : Fragment() {
                     else "$v ${requireContext().getString(R.string.days)}"
                 },
             ) { newValue ->
+                Log.d("Stepper", "save auto remove")
                 model.savePreference(autoRemoveDeletedNotesAfterDays, newValue)
                 val workManager = WorkManager.getInstance(requireContext())
                 if (newValue > 0) {

@@ -521,8 +521,9 @@ fun PreferenceStepperBinding.setup(
     labelFormatter: ((Int) -> String)? = null,
     onChange: (newValue: Int) -> Unit,
 ) {
+    val initialValue = value.coerceIn(min, max)
     Title.setText(titleResId)
-    ValueInput.setText(labelFormatter?.invoke(value) ?: value.toString())
+    ValueInput.setText(labelFormatter?.invoke(initialValue) ?: initialValue.toString())
     ValueInput.isEnabled = enabled
 
     fun updateButtons(value: Int) {
@@ -530,11 +531,11 @@ fun PreferenceStepperBinding.setup(
         PlusButton.isEnabled = enabled && value < max
     }
 
-    updateButtons(value)
+    updateButtons(initialValue)
 
     val handler = Handler(Looper.getMainLooper())
     fun updateValue(increment: Int, commit: Boolean): Boolean {
-        val newValue = (ValueInput.tag as? Int ?: value) + increment
+        val newValue = (ValueInput.tag as? Int ?: initialValue) + increment
         val valid = newValue in min..max
         if (valid) {
             ValueInput.tag = newValue
@@ -565,70 +566,80 @@ fun PreferenceStepperBinding.setup(
         handler.postDelayed(runnable!!, 100)
     }
 
-    MinusButton.setOnClickListener { updateValue(-1, true) }
-
-    MinusButton.setOnLongClickListener {
-        startAutoIncrement(false)
-        true
-    }
-
-    MinusButton.setOnTouchListener { _, event ->
-        if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
-            runnable?.let { handler.removeCallbacks(it) }
-            onChange(ValueInput.tag as? Int ?: value)
+    MinusButton.apply {
+        setOnClickListener { updateValue(-1, true) }
+        setOnLongClickListener {
+            startAutoIncrement(false)
+            true
         }
-        false
-    }
-
-    PlusButton.setOnClickListener { updateValue(1, true) }
-
-    PlusButton.setOnLongClickListener {
-        startAutoIncrement(true)
-        true
-    }
-
-    PlusButton.setOnTouchListener { _, event ->
-        if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
-            runnable?.let { handler.removeCallbacks(it) }
-            onChange(ValueInput.tag as? Int ?: value)
+        setOnTouchListener { _, event ->
+            if (
+                runnable != null &&
+                    (event.action == MotionEvent.ACTION_UP ||
+                        event.action == MotionEvent.ACTION_CANCEL)
+            ) {
+                handler.removeCallbacks(runnable!!)
+                onChange(ValueInput.tag as? Int ?: value)
+            }
+            false
         }
-        false
     }
 
-    ValueInput.tag = value
-    ValueInput.doAfterTextChanged { text ->
-        if (ValueInput.hasFocus()) {
-            val newValue = text.toString().toIntOrNull()
-            if (newValue != null) {
-                val clampedValue = newValue.coerceIn(min, max)
-                if (clampedValue != ValueInput.tag) {
-                    ValueInput.tag = clampedValue
-                    updateButtons(clampedValue)
+    PlusButton.apply {
+        setOnClickListener { updateValue(1, true) }
+        setOnLongClickListener {
+            startAutoIncrement(true)
+            true
+        }
+        setOnTouchListener { _, event ->
+            if (
+                runnable != null &&
+                    (event.action == MotionEvent.ACTION_UP ||
+                        event.action == MotionEvent.ACTION_CANCEL)
+            ) {
+                handler.removeCallbacks(runnable!!)
+                onChange(ValueInput.tag as? Int ?: value)
+            }
+            false
+        }
+    }
+
+    ValueInput.apply {
+        tag = value
+        doAfterTextChanged { text ->
+            if (ValueInput.hasFocus()) {
+                val newValue = text.toString().toIntOrNull()
+                if (newValue != null) {
+                    val clampedValue = newValue.coerceIn(min, max)
+                    if (clampedValue != ValueInput.tag) {
+                        ValueInput.tag = clampedValue
+                        updateButtons(clampedValue)
+                    }
                 }
             }
         }
-    }
-    ValueInput.setOnFocusChangeListener { _, hasFocus ->
-        if (hasFocus) {
-            val currentValue = ValueInput.tag as? Int ?: value
-            val text = currentValue.toString()
-            ValueInput.setText(text)
-            ValueInput.setSelection(text.length)
-            context.showKeyboard(ValueInput)
-        } else {
-            val currentValue = ValueInput.tag as? Int ?: value
-            ValueInput.setText(labelFormatter?.invoke(currentValue) ?: currentValue.toString())
-            updateButtons(currentValue)
-            onChange(currentValue)
+        setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                val currentValue = ValueInput.tag as? Int ?: initialValue
+                val text = currentValue.toString()
+                ValueInput.setText(text)
+                ValueInput.setSelection(text.length)
+                context.showKeyboard(ValueInput)
+            } else {
+                val currentValue = ValueInput.tag as? Int ?: initialValue
+                ValueInput.setText(labelFormatter?.invoke(currentValue) ?: currentValue.toString())
+                updateButtons(currentValue)
+                onChange(currentValue)
+            }
         }
-    }
-    ValueInput.setOnEditorActionListener { v, actionId, _ ->
-        if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_ACTION_NEXT) {
-            context.hideKeyboard(ValueInput)
-            v.clearFocus() // This triggers the OnFocusChangeListener logic
-            true
-        } else {
-            false
+        setOnEditorActionListener { v, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_ACTION_NEXT) {
+                context.hideKeyboard(ValueInput)
+                v.clearFocus() // This triggers the OnFocusChangeListener logic
+                true
+            } else {
+                false
+            }
         }
     }
 }
