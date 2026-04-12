@@ -297,6 +297,6 @@ dependencies {
     testImplementation("org.json:json:20180813")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
     testImplementation("org.mockito:mockito-core:5.13.0")
-    testImplementation("org.robolectric:robolectric:4.15.1")
+    testImplementation("org.robolectric:robolectric:4.16.1")
     testImplementation("com.github.luben:zstd-jni:1.5.7-6")
 }

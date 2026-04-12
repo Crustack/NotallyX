@@ -27,6 +27,7 @@ Whether you need to jot down quick thoughts, create detailed task lists, or orga
 - **Widgets**: Access important notes directly from your home screen
 - **Audio Notes**: Create quick audio recordings
 - **Customization**: Extensive preferences to adjust the app to your liking
+- **Import from Other Apps**: Import notes from Google Keep, Evernote, Quillpad, and plain text files
 
 ## Getting Started
 
@@ -95,6 +96,7 @@ Keep your notes safe:
 Currently you can import notes from:
 - Google Keep
 - Evernote
+- Quillpad
 - Plain Text files
 - JSON Files
 
@@ -148,6 +150,7 @@ For more detailed information about specific features, check out the following p
 - 🛡️ [Security and Privacy](security-privacy.mdx)
 - ⚙️ [Settings](settings.mdx)
 - 🛠️ [Customizing Edit Actions](features/edit-actions.mdx)
+- ⬇️ [Import from Other Apps](features/import-other-apps.mdx)
 
 ## Contributing
 
