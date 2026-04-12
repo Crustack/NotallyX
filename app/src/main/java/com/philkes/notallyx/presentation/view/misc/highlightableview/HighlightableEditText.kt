@@ -28,7 +28,11 @@ open class HighlightableEditText(context: Context, attrs: AttributeSet) :
      */
     protected fun removeSpan(span: CharacterStyle, removeText: Boolean = false) {
         val (start, end) = getSpanRange(span)
-        text?.removeSelectionFromSpans(start, end)
+        if (span is HighlightSpan) {
+            text?.removeSpan(span)
+        } else {
+            text?.removeSelectionFromSpans(start, end)
+        }
         if (removeText) {
             text?.delete(start, end)
         }
