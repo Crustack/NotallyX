@@ -39,6 +39,7 @@ import com.philkes.notallyx.data.model.toTxt
 import com.philkes.notallyx.presentation.activity.LockedActivity
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment
+import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.viewmodel.BackupFile
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
@@ -314,13 +315,15 @@ fun ContextWrapper.modifiedNoteBackupExists(backupPath: String): Boolean {
         ?.exists() ?: false
 }
 
+typealias NotesAndAttachments = Pair<Int, Int>
+
 fun ContextWrapper.exportAsZip(
     fileUri: Uri,
     compress: Boolean = false,
     password: String = PASSWORD_EMPTY,
     backupProgress: MutableLiveData<Progress>? = null,
     retryOnFail: Boolean = true,
-): Int {
+): NotesAndAttachments {
     backupProgress?.postValue(BackupProgress(indeterminate = true))
     val tempFile = createTempFile("export", "tmp", cacheDir)
     try {
@@ -345,7 +348,13 @@ fun ContextWrapper.exportAsZip(
         val files = databaseOriginal.getBaseNoteDao().getAllFiles().toFileAttachments()
         val audios = databaseOriginal.getBaseNoteDao().getAllAudios()
         val totalAttachments = images.count() + files.count() + audios.size
-        backupProgress?.postValue(BackupProgress(0, totalAttachments))
+        backupProgress?.postValue(
+            BackupProgress(
+                0,
+                totalAttachments,
+                countSuffix = getQuantityString(R.plurals.attachments, totalAttachments),
+            )
+        )
 
         val counter = AtomicInteger(0)
         val missingAttachments = ArrayList<String>()
@@ -389,7 +398,11 @@ fun ContextWrapper.exportAsZip(
                     log(TAG, throwable = exception)
                 } finally {
                     backupProgress?.postValue(
-                        BackupProgress(counter.incrementAndGet(), totalAttachments)
+                        BackupProgress(
+                            counter.incrementAndGet(),
+                            totalAttachments,
+                            countSuffix = getQuantityString(R.plurals.attachments, totalAttachments),
+                        )
                     )
                 }
             }
@@ -442,7 +455,7 @@ fun ContextWrapper.exportAsZip(
         if (missingAttachments.isNotEmpty()) {
             postSkippedAttachmentsNotification(missingAttachments)
         }
-        return totalNotes
+        return Pair(totalNotes, totalAttachments)
     } finally {
         tempFile.delete()
     }
@@ -566,7 +579,13 @@ private fun Sequence<FileAttachment>.export(
         } catch (exception: Exception) {
             context.log(TAG, throwable = exception)
         } finally {
-            backupProgress?.postValue(BackupProgress(counter.incrementAndGet(), total))
+            backupProgress?.postValue(
+                BackupProgress(
+                    counter.incrementAndGet(),
+                    total,
+                    countSuffix = context.getQuantityString(R.plurals.attachments, total),
+                )
+            )
         }
     }
 }

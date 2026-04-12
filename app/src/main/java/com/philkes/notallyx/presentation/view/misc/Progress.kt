@@ -6,4 +6,5 @@ abstract class Progress(
     val total: Int = 0,
     val inProgress: Boolean = true,
     val indeterminate: Boolean = false,
+    val countSuffix: String? = null,
 )

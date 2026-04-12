@@ -14,7 +14,7 @@ import com.philkes.notallyx.R.string.auto_backup_failed
 import com.philkes.notallyx.R.string.crash_export_backup_failed
 import com.philkes.notallyx.R.string.report_bug
 import com.philkes.notallyx.databinding.ActivityErrorBinding
-import com.philkes.notallyx.presentation.getQuantityString
+import com.philkes.notallyx.presentation.exportedText
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.setupProgressDialog
 import com.philkes.notallyx.presentation.showToast
@@ -102,7 +102,7 @@ class ErrorActivity : AppCompatActivity() {
                             )
                         }
                         lifecycleScope.launch(exceptionHandler) {
-                            val exportedNotes =
+                            val exportedNotesAndAttachments =
                                 withContext(Dispatchers.IO) {
                                     return@withContext application.exportAsZip(
                                         uri,
@@ -110,11 +110,7 @@ class ErrorActivity : AppCompatActivity() {
                                         backupProgress = exportBackupProgress,
                                     )
                                 }
-                            val message =
-                                application.getQuantityString(
-                                    R.plurals.exported_notes,
-                                    exportedNotes,
-                                )
+                            val message = application.exportedText(exportedNotesAndAttachments)
                             application.showToast(message)
                         }
                     }

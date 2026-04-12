@@ -8,4 +8,5 @@ open class BackupProgress(
     total: Int = 0,
     inProgress: Boolean = true,
     indeterminate: Boolean = false,
-) : Progress(R.string.export_backup, current, total, inProgress, indeterminate)
+    countSuffix: String? = null,
+) : Progress(R.string.export_backup, current, total, inProgress, indeterminate, countSuffix)

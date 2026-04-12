@@ -20,6 +20,10 @@
     </plurals>
     <string name="ascending">Ascending</string>
     <string name="attach_file">Attach file</string>
+    <plurals name="attachments">
+        <item quantity="one">Attachment</item>
+        <item quantity="other">Attachments</item>
+    </plurals>
     <string name="audio_recordings">Audio Recordings</string>
     <string name="auto_backup">Auto Backups</string>
     <string name="auto_backup_error_message">An error occurred during auto backup:\n\'%1$s\'\nPlease check your settings or report a bug</string>
@@ -176,6 +180,7 @@
     <string name="export_settings_failure">Failed to export settings, did you choose an invalid path\?</string>
     <string name="export_settings_message">All Settings will be exported to a JSON file, which can be used to re-import stored settings.\n\nBe aware, that this does not include encrypted settings like the auto-backup password or the biometric encryption key</string>
     <string name="export_settings_success">Successfully exported settings</string>
+    <string name="exported">Exported</string>
     <plurals name="exported_notes">
         <item quantity="one">Exported %1$s Note</item>
         <item quantity="other">Exported %1$s Notes</item>
@@ -269,6 +274,10 @@
     <string name="note_text_too_long_truncated">Text too long, truncated to %1$d characters</string>
     <string name="note_too_big_truncating">Note is too big to save, it was truncated to %1$s characters (was: %2$s)</string>
     <string name="notes">Notes</string>
+    <plurals name="notes">
+        <item quantity="one">Note</item>
+        <item quantity="other">Notes</item>
+    </plurals>
     <string name="notes_sorted_by">Notes sorted by</string>
     <plurals name="notes_too_big_truncating">
         <item quantity="one">%1$s Note is too big to save, it was truncated to %2$s characters</item>

@@ -112,6 +112,7 @@ import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.TimeFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.displayBodySize
+import com.philkes.notallyx.utils.backup.NotesAndAttachments
 import com.philkes.notallyx.utils.changehistory.ChangeHistory
 import com.philkes.notallyx.utils.changehistory.EditTextState
 import com.philkes.notallyx.utils.changehistory.EditTextWithHistoryChange
@@ -505,7 +506,8 @@ private fun <T : Progress> MutableLiveData<T>.setupProgressDialog(
                     }
                     if (renderProgress == null) {
                         Count.text =
-                            context.getString(R.string.count, progress.current, progress.total)
+                            context.getString(R.string.count, progress.current, progress.total) +
+                                (progress.countSuffix?.let { " $it" } ?: "")
                     } else renderProgress.invoke(context, this, progress)
                 }
             }
@@ -1186,3 +1188,6 @@ fun Chip.setupReminderChip(
             else paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
     }
 }
+
+fun Context.exportedText(notesAndAttachments: NotesAndAttachments) =
+    "${getString(R.string.exported)} ${notesAndAttachments.first} ${if(notesAndAttachments.first == 1) getString(R.string.note) else getString(R.string.notes)} (${notesAndAttachments.second} ${getQuantityString(R.plurals.attachments, notesAndAttachments.second)})"

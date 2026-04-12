@@ -45,6 +45,7 @@ import com.philkes.notallyx.data.model.SearchResult
 import com.philkes.notallyx.data.model.deepCopy
 import com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment.Companion.EXTRA_SHOW_IMPORT_BACKUPS_FOLDER
 import com.philkes.notallyx.presentation.activity.note.refreshStatusBarPin
+import com.philkes.notallyx.presentation.exportedText
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.restartApplication
 import com.philkes.notallyx.presentation.setCancelButton
@@ -410,7 +411,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     fun exportBackup(uri: Uri, onComplete: (() -> Unit)? = null) {
         viewModelScope.launch {
-            val exportedNotes =
+            val exportedNotesAndAttachments =
                 withContext(Dispatchers.IO) {
                     app.log(TAG, msg = "Exporting backup to '$uri'...")
                     return@withContext app.exportAsZip(
@@ -420,8 +421,8 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         )
                         .also { app.log(TAG, msg = "Finished exporting backup to '$uri'") }
                 }
-            val message = app.getQuantityString(R.plurals.exported_notes, exportedNotes)
-            app.showToast(message)
+
+            app.showToast(app.exportedText(exportedNotesAndAttachments))
             onComplete?.invoke()
         }
     }
