@@ -173,6 +173,7 @@
     <string name="error_while_renaming_image">Error while renaming image</string>
     <string name="evernote">Evernote</string>
     <string name="evernote_help">In order to import your Notes from Evernote you must export your Evernote Notebook as ENEX. Click Help to get more information.\n\nIf you already have a ENEX file, click Import and choose it.</string>
+    <string name="quillpad_help">In order to import your Notes from Quillpad you must export your Quillpad Notes as a .ZIP Backup file. To do that, open Quillpad, go to Settings > Backup > Create a backup, and save the .ZIP on your phone. \n\nIf you already have a Quillpad Backup .ZIP file, click Import and choose it.</string>
     <string name="every">Every</string>
     <string name="export">Export</string>
     <string name="export_backup">Export backup</string>
@@ -221,6 +222,7 @@
     <string name="invalid_backup">Invalid backup</string>
     <string name="invalid_evernote">Invalid Evernote ENEX File provided</string>
     <string name="invalid_google_keep">Invalid Google Takeout ZIP File provided</string>
+    <string name="invalid_quillpad">Invalid Quillpad ZIP File provided</string>
     <string name="invalid_image">Invalid image</string>
     <string name="invalid_link">Copy a valid link into your clipboard</string>
     <string name="italic">Italic</string>
@@ -400,4 +402,5 @@
     <string name="yearly">Yearly</string>
     <string name="years">Years</string>
     <string name="your_notes_associated">Your notes attached to this label will not be deleted</string>
+    <string name="quillpad" translatable="false">Quillpad</string>
 </resources>

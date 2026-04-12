@@ -287,6 +287,19 @@ fun File.copyToLarge(
     return copyTo(target = target, overwrite = overwrite, bufferSize = bufferSize)
 }
 
+fun File.moveAllFiles(to: File) {
+    if (!exists() || !isDirectory) return
+
+    if (!to.exists()) {
+        to.mkdirs()
+    }
+
+    listFiles()?.forEach { file ->
+        val targetFile = File(to, file.name)
+        file.renameTo(targetFile)
+    }
+}
+
 fun InputStream.copyToLarge(target: OutputStream, bufferSize: Int = BUFFER_SIZE): Long {
     return copyTo(out = target, bufferSize = bufferSize)
 }
@@ -394,7 +407,8 @@ private fun Context.getEmptyFolder(name: String): File {
 fun String.mimeTypeToFileExtension(): String? {
     return when (this) {
         "image/png" -> "png"
-        "image/jpeg" -> "jpg"
+        "image/jpeg",
+        "image/jpg" -> "jpg"
         "image/webp" -> "webp"
         else -> null
     }

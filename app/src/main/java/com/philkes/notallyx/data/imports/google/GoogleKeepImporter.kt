@@ -25,11 +25,12 @@ import java.io.InputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 
+@OptIn(InternalSerializationApi::class, ExperimentalSerializationApi::class)
 class GoogleKeepImporter : ExternalImporter {
 
-    @OptIn(ExperimentalSerializationApi::class)
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true

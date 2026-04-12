@@ -45,6 +45,7 @@
 * Use **Home Screen Widget** to access important notes fast
 * **Lock your notes via Biometric/PIN**
 * Configurable **auto-backups**
+* **Import from other apps** such as [Evernote](https://evernote.com/), [Google Keep](https://keep.google.com/), [Quillpad](https://quillpad.github.io/)
 * Create quick audio notes
 * Display the notes either in a **List or Grid**
 * Quickly share notes by text
