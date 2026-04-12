@@ -20,6 +20,7 @@ import com.philkes.notallyx.data.imports.ImportProgress
 import com.philkes.notallyx.data.imports.ImportStage
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
+import com.philkes.notallyx.data.model.BaseNote.Companion
 import com.philkes.notallyx.data.model.Converters
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Folder
@@ -32,6 +33,7 @@ import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel.FileType
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.utils.FileError
+import com.philkes.notallyx.utils.NotallyReminderJson
 import com.philkes.notallyx.utils.SUBFOLDER_AUDIOS
 import com.philkes.notallyx.utils.SUBFOLDER_FILES
 import com.philkes.notallyx.utils.SUBFOLDER_IMAGES
@@ -49,6 +51,7 @@ import com.philkes.notallyx.utils.pinAndScheduleReminders
 import com.philkes.notallyx.utils.rename
 import com.philkes.notallyx.utils.security.SQLCipherUtils
 import com.philkes.notallyx.utils.security.decryptDatabase
+import com.philkes.notallyx.utils.toNotallyXReminder
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
@@ -63,6 +66,30 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 private const val TAG = "ImportExtensions"
+
+fun getOptionalColumns(db: SQLiteDatabase, tableName: String): Array<String> {
+    val existingColumns = mutableSetOf<String>()
+
+    // 1. Get the actual columns currently in the DB
+    db.rawQuery("PRAGMA table_info($tableName)", null).use { cursor ->
+        val nameIndex = cursor.getColumnIndex("name")
+        while (cursor.moveToNext()) {
+            existingColumns.add(cursor.getString(nameIndex))
+        }
+    }
+
+    // 2. Map your targets to either the real column or a default value
+    return existingColumns
+        .mapNotNull { colName ->
+            when {
+                // Special handling for your body substr logic
+                colName == "body" && existingColumns.contains("body") ->
+                    "SUBSTR(body, 1, $MAX_BODY_CHAR_LENGTH) AS body"
+                else -> colName
+            }
+        }
+        .toTypedArray()
+}
 
 /**
  * We only import the images/files referenced in notes. e.g If someone has added garbage to the ZIP
@@ -122,28 +149,11 @@ suspend fun ContextWrapper.importZip(
                     SQLiteDatabase.openDatabase(dbFile.path, null, SQLiteDatabase.OPEN_READONLY)
 
                 val labelCursor = database.query("Label", null, null, null, null, null, null)
-                val columns =
-                    arrayOf(
-                        "id",
-                        "type",
-                        "folder",
-                        "color",
-                        "title",
-                        "pinned",
-                        "timestamp",
-                        "modifiedTimestamp",
-                        "labels",
-                        "SUBSTR(body, 1, ${MAX_BODY_CHAR_LENGTH}) AS body",
-                        "spans",
-                        "items",
-                        "images",
-                        "files",
-                        "audios",
-                        "reminders",
-                        "viewMode",
-                    )
+
+                val safeColumns = getOptionalColumns(database, "BaseNote")
+
                 val baseNoteCursor =
-                    database.query("BaseNote", columns, null, null, null, null, null)
+                    database.query("BaseNote", safeColumns, null, null, null, null, null)
                 val labels = labelCursor.toList { cursor -> cursor.toLabel() }
 
                 var total = baseNoteCursor.count
@@ -320,7 +330,7 @@ private fun Cursor.toBaseNote(sourceDb: SQLiteDatabase): BaseNote {
             else -> throw IllegalArgumentException("pinned must be 0 or 1")
         }
 
-    val isPinnedToStatusColumn = getColumnIndexOrThrow("isPinnedToStatus")
+    val isPinnedToStatusColumn = getColumnIndex("isPinnedToStatus")
     val pinnedToStatusBar =
         if (isPinnedToStatusColumn != -1) {
             when (getInt(isPinnedToStatusColumn)) {
@@ -359,7 +369,15 @@ private fun Cursor.toBaseNote(sourceDb: SQLiteDatabase): BaseNote {
     val reminders =
         if (remindersIndex != -1) {
             Converters.jsonToReminders(getString(remindersIndex))
-        } else emptyList()
+        } else {
+            // Notally introduced "reminder" column
+            val reminderIndex = getColumnIndex("reminder")
+            if (reminderIndex != -1) {
+                val reminder =
+                    (getString(reminderIndex) as NotallyReminderJson).toNotallyXReminder()
+                reminder?.let { listOf(it) } ?: emptyList()
+            } else emptyList()
+        }
 
     val viewModeIndex = getColumnIndex("viewMode")
     val viewMode =

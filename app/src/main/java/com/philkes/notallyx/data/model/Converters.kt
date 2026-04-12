@@ -236,25 +236,9 @@ object Converters {
         }
     }
 
-    private fun JSONObject.getSafeString(name: String): String? {
-        return try {
-            getString(name)
-        } catch (exception: JSONException) {
-            null
-        }
-    }
-
     private fun JSONObject.getSafeInt(name: String): Int? {
         return try {
             getInt(name)
-        } catch (exception: JSONException) {
-            null
-        }
-    }
-
-    private fun JSONObject.getSafeLong(name: String): Long? {
-        return try {
-            getLong(name)
         } catch (exception: JSONException) {
             null
         }
@@ -274,5 +258,21 @@ object Converters {
                 return index < length()
             }
         }
+    }
+}
+
+fun JSONObject.getSafeString(name: String): String? {
+    return try {
+        getString(name)
+    } catch (exception: JSONException) {
+        null
+    }
+}
+
+fun JSONObject.getSafeLong(name: String): Long? {
+    return try {
+        getLong(name)
+    } catch (exception: JSONException) {
+        null
     }
 }

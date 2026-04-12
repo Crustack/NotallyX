@@ -16,7 +16,14 @@ data class Reminder(
 data class Repetition(
     var value: Int,
     var unit: RepetitionTimeUnit,
+    /**
+     * If unit is MONTHS this can be set to repeat every nth occurrence of dayOfWeek in the month.
+     */
     var occurrence: Int? = null,
+    /**
+     * If unit is MONTHS and occurence is set this can be set to repeat every nth occurrence of
+     * dayOfWeek in the month.
+     */
     var dayOfWeek: Int? = null,
 ) : Parcelable
 
