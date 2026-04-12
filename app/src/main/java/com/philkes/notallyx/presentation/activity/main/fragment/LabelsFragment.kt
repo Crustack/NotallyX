@@ -98,7 +98,6 @@ class LabelsFragment : Fragment(), LabelListener {
                     }
                     didReorder = false
                 }
-                }
             }
         itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
         itemTouchHelper?.attachToRecyclerView(recyclerView)
