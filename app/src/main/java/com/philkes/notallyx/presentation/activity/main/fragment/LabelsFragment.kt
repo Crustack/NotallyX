@@ -63,6 +63,7 @@ class LabelsFragment : Fragment(), LabelListener {
             object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
 
                 private var currentList = labelAdapter?.currentList
+                private var didReorder = false
 
                 override fun onMove(
                     recyclerView: RecyclerView,
@@ -72,7 +73,8 @@ class LabelsFragment : Fragment(), LabelListener {
                     val fromPosition = viewHolder.bindingAdapterPosition
                     val toPosition = target.bindingAdapterPosition
                     currentList = labelAdapter?.onItemMove(fromPosition, toPosition)
-                    return true
+                    didReorder = fromPosition != toPosition
+                    return didReorder
                 }
 
                 override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
@@ -84,6 +86,8 @@ class LabelsFragment : Fragment(), LabelListener {
                     viewHolder: RecyclerView.ViewHolder,
                 ) {
                     super.clearView(recyclerView, viewHolder)
+                    if (!didReorder) return
+
                     currentList?.let { list ->
                         val size = list.size
                         val updatedLabels =
@@ -92,6 +96,8 @@ class LabelsFragment : Fragment(), LabelListener {
                             }
                         model.updateLabels(updatedLabels)
                     }
+                    didReorder = false
+                }
                 }
             }
         itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
