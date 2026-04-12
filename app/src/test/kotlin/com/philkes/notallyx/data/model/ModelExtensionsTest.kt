@@ -117,6 +117,7 @@ class ModelExtensionsTest {
                 listOf(Audio("audio", 10L, 12312334L)),
                 listOf(Reminder(1, Date(1743253506957), Repetition(10, RepetitionTimeUnit.WEEKS))),
                 NoteViewMode.READ_ONLY,
+                isPinnedToStatus = false,
             )
 
         val json = baseNote.toJson()

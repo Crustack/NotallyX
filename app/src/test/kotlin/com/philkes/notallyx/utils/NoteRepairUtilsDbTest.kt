@@ -69,6 +69,7 @@ class NoteRepairUtilsDbTest {
             audios = emptyList(),
             reminders = emptyList<Reminder>(),
             viewMode = NoteViewMode.EDIT,
+            isPinnedToStatus = false,
         )
     }
 

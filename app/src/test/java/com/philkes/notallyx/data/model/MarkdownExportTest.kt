@@ -25,6 +25,7 @@ class MarkdownExportTest {
             audios = emptyList(),
             reminders = emptyList(),
             viewMode = NoteViewMode.EDIT,
+            isPinnedToStatus = false,
         )
     }
 
@@ -117,6 +118,7 @@ class MarkdownExportTest {
                 audios = emptyList(),
                 reminders = emptyList(),
                 viewMode = NoteViewMode.EDIT,
+                isPinnedToStatus = false,
             )
         val md = note.toMarkdown().trimEnd()
         val expected = "- [ ] Task 1\n- [x] Task 2\n    - [ ] Sub"

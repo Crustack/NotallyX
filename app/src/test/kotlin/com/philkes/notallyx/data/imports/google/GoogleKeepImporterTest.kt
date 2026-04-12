@@ -254,6 +254,7 @@ class GoogleKeepImporterTest {
                 audios,
                 reminders,
                 NoteViewMode.EDIT,
+                isPinnedToStatus = false,
             )
         }
     }

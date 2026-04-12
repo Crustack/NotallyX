@@ -35,6 +35,7 @@ class NoteSplitUtilsTest {
             audios = emptyList(),
             reminders = emptyList<Reminder>(),
             viewMode = NoteViewMode.EDIT,
+            isPinnedToStatus = false,
         )
     }
 

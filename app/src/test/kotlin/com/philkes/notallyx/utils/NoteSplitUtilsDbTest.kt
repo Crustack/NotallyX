@@ -68,6 +68,7 @@ class NoteSplitUtilsDbTest {
             audios = emptyList(),
             reminders = emptyList<Reminder>(),
             viewMode = NoteViewMode.EDIT,
+            isPinnedToStatus = false,
         )
 
     @Test
