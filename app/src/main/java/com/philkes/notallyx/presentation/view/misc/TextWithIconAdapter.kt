@@ -10,7 +10,7 @@ import com.philkes.notallyx.presentation.dp
 
 class TextWithIconAdapter<T>(
     context: Context,
-    objects: MutableList<T>,
+    objects: List<T>,
     private val getText: (T) -> String,
     private val getIconResId: (T) -> Int,
 ) : ArrayAdapter<T>(context, R.layout.simple_list_item_1, R.id.text1, objects) {

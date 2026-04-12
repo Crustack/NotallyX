@@ -33,7 +33,6 @@ import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel.FileType
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.utils.FileError
-import com.philkes.notallyx.utils.NotallyReminderJson
 import com.philkes.notallyx.utils.SUBFOLDER_AUDIOS
 import com.philkes.notallyx.utils.SUBFOLDER_FILES
 import com.philkes.notallyx.utils.SUBFOLDER_IMAGES
@@ -373,8 +372,7 @@ private fun Cursor.toBaseNote(sourceDb: SQLiteDatabase): BaseNote {
             // Notally introduced "reminder" column
             val reminderIndex = getColumnIndex("reminder")
             if (reminderIndex != -1) {
-                val reminder =
-                    (getString(reminderIndex) as NotallyReminderJson).toNotallyXReminder()
+                val reminder = getString(reminderIndex).toNotallyXReminder()
                 reminder?.let { listOf(it) } ?: emptyList()
             } else emptyList()
         }

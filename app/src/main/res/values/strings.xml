@@ -173,7 +173,6 @@
     <string name="error_while_renaming_image">Error while renaming image</string>
     <string name="evernote">Evernote</string>
     <string name="evernote_help">In order to import your Notes from Evernote you must export your Evernote Notebook as ENEX. Click Help to get more information.\n\nIf you already have a ENEX file, click Import and choose it.</string>
-    <string name="quillpad_help">In order to import your Notes from Quillpad you must export your Quillpad Notes as a .ZIP Backup file. To do that, open Quillpad, go to Settings > Backup > Create a backup, and save the .ZIP on your phone. \n\nIf you already have a Quillpad Backup .ZIP file, click Import and choose it.</string>
     <string name="every">Every</string>
     <string name="export">Export</string>
     <string name="export_backup">Export backup</string>
@@ -202,6 +201,7 @@
     <string name="import_action">Import</string>
     <string name="import_backup">Import backup</string>
     <string name="import_backup_password_hint">If your backup is not password-protected simply press Import, otherwise enter the correct password.</string>
+    <string name="import_from_notally">To import from Notally, simply use \"%1$s\" instead</string>
     <string name="import_other">Import Notes from other App</string>
     <string name="import_settings">Import Settings</string>
     <string name="import_settings_failure">Failed to import settings, did you choose the correct file\?</string>
@@ -222,9 +222,9 @@
     <string name="invalid_backup">Invalid backup</string>
     <string name="invalid_evernote">Invalid Evernote ENEX File provided</string>
     <string name="invalid_google_keep">Invalid Google Takeout ZIP File provided</string>
-    <string name="invalid_quillpad">Invalid Quillpad ZIP File provided</string>
     <string name="invalid_image">Invalid image</string>
     <string name="invalid_link">Copy a valid link into your clipboard</string>
+    <string name="invalid_quillpad">Invalid Quillpad ZIP File provided</string>
     <string name="italic">Italic</string>
     <string name="item">Item</string>
     <string name="json_files">JSON Files</string>
@@ -272,6 +272,7 @@
     <string name="no_auto_sort">No Autosort</string>
     <string name="none">None</string>
     <string name="not_exists">\'%1$s\' does not exist</string>
+    <string name="notally" translatable="false">Notally</string>
     <string name="note">Note</string>
     <string name="note_text_too_long_truncated">Text too long, truncated to %1$d characters</string>
     <string name="note_too_big_truncating">Note is too big to save, it was truncated to %1$s characters (was: %2$s)</string>
@@ -304,6 +305,8 @@
     <string name="please_grant_notally_notification">Please grant NotallyX the permission to send notifications</string>
     <string name="please_grant_notally_notification_auto_backup">If an auto backup fails you can receive a notification, if you grant NotallyX permission to send notifications</string>
     <string name="previous">Previous</string>
+    <string name="quillpad" translatable="false">Quillpad</string>
+    <string name="quillpad_help">In order to import your Notes from Quillpad you must export your Quillpad Notes as a .ZIP Backup file. To do that, open Quillpad, go to Settings &gt; Backup &gt; Create a backup, and save the .ZIP on your phone. \n\nIf you already have a Quillpad Backup .ZIP file, click Import and choose it.</string>
     <string name="rate">Rate this app</string>
     <string name="read_only">Read Only</string>
     <string name="ready_to_record">Ready to record</string>
@@ -402,5 +405,4 @@
     <string name="yearly">Yearly</string>
     <string name="years">Years</string>
     <string name="your_notes_associated">Your notes attached to this label will not be deleted</string>
-    <string name="quillpad" translatable="false">Quillpad</string>
 </resources>

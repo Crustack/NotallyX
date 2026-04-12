@@ -31,6 +31,7 @@ import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_T
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
 import com.philkes.notallyx.cancelAutoRemoveOldDeletedNotes
+import com.philkes.notallyx.data.imports.Display
 import com.philkes.notallyx.data.imports.FOLDER_OR_FILE_MIMETYPE
 import com.philkes.notallyx.data.imports.ImportSource
 import com.philkes.notallyx.data.imports.txt.APPLICATION_TEXT_MIME_TYPES
@@ -520,17 +521,41 @@ class SettingsFragment : Fragment() {
     }
 
     private fun importFromOtherApp() {
+        val notallyItem =
+            mutableListOf(
+                object : Display {
+                    override fun getTextId(): Int {
+                        return R.string.notally
+                    }
+
+                    override fun getIconId(): Int {
+                        return R.drawable.icon_notally
+                    }
+                }
+            )
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.choose_other_app)
             .setAdapter(
                 TextWithIconAdapter(
                     requireContext(),
-                    ImportSource.entries.toMutableList(),
-                    { item -> getString(item.displayNameResId) },
-                    ImportSource::iconResId,
+                    notallyItem + ImportSource.entries.toMutableList(),
+                    { item -> getString(item.getTextId()) },
+                    Display::getIconId,
                 )
             ) { _, which ->
-                selectedImportSource = ImportSource.entries[which]
+                if (which == 0) {
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setMessage(
+                            getString(
+                                R.string.import_from_notally,
+                                getString(R.string.import_backup),
+                            )
+                        )
+                        .setPositiveButton(android.R.string.ok) { dialog, _ -> dialog.dismiss() }
+                        .show()
+                    return@setAdapter
+                }
+                selectedImportSource = ImportSource.entries[which - 1]
                 MaterialAlertDialogBuilder(requireContext())
                     .setMessage(selectedImportSource.helpTextResId)
                     .setPositiveButton(R.string.import_action) { dialog, _ ->

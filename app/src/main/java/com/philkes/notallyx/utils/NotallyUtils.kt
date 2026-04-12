@@ -15,7 +15,8 @@ typealias NotallyReminderJson = String
  *
  * [Notally/Reminder.kt](https://github.com/OmGodse/Notally/blob/master/app/src/main/java/com/omgodse/notally/room/Reminder.kt)
  */
-fun NotallyReminderJson.toNotallyXReminder(): Reminder? {
+fun NotallyReminderJson?.toNotallyXReminder(): Reminder? {
+    if (this == null) return null
     return with(JSONObject(this)) {
         val dateTime = getSafeLong("timestamp")?.let { Date(it) } ?: return null
         val repetition =

@@ -181,7 +181,7 @@ enum class ImportSource(
     val helpTextResId: Int,
     val documentationUrl: String?,
     val iconResId: Int,
-) {
+) : Display {
     GOOGLE_KEEP(
         R.string.google_keep,
         MIME_TYPE_ZIP,
@@ -216,7 +216,21 @@ enum class ImportSource(
         R.string.json_files_help,
         null,
         R.drawable.file_json,
-    ),
+    );
+
+    override fun getTextId(): Int {
+        return displayNameResId
+    }
+
+    override fun getIconId(): Int {
+        return iconResId
+    }
+}
+
+interface Display {
+    fun getTextId(): Int
+
+    fun getIconId(): Int
 }
 
 const val FOLDER_OR_FILE_MIMETYPE = "FOLDER_OR_FILE"
