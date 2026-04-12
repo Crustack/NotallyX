@@ -31,6 +31,6 @@ class LabelDiffCallback() : DiffUtil.ItemCallback<Label>() {
     }
 
     override fun areContentsTheSame(oldItem: Label, newItem: Label): Boolean {
-        return oldItem.value == newItem.value
+        return oldItem.value == newItem.value && oldItem.order == newItem.order
     }
 }

@@ -14,11 +14,11 @@ class LabelVH(private val binding: RecyclerLabelBinding, listener: LabelListener
             LabelText.setOnClickListener { listener.onClick(absoluteAdapterPosition) }
             LabelText.setOnLongClickListener { _ ->
                 listener.onStartDrag(this@LabelVH)
-                false
+                true
             }
             DragHandle.setOnLongClickListener { _ ->
                 listener.onStartDrag(this@LabelVH)
-                false
+                true
             }
             EditButton.setOnClickListener { listener.onEdit(absoluteAdapterPosition) }
             DeleteButton.setOnClickListener { listener.onDelete(absoluteAdapterPosition) }

@@ -21,6 +21,13 @@ class LabelAdapter(private val listener: LabelListener) :
     }
 
     fun onItemMove(fromPosition: Int, toPosition: Int): List<LabelData> {
+        if (
+            fromPosition !in currentList.indices ||
+                toPosition !in currentList.indices ||
+                fromPosition == toPosition
+        ) {
+            return currentList
+        }
         val list = currentList.toMutableList()
         val fromLabel = list.removeAt(fromPosition)
         list.add(toPosition, fromLabel)

@@ -17,7 +17,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
-import androidx.room.withTransaction
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
@@ -64,16 +63,12 @@ import com.philkes.notallyx.presentation.viewmodel.progress.ExportNotesProgress
 import com.philkes.notallyx.utils.ActionMode
 import com.philkes.notallyx.utils.Cache
 import com.philkes.notallyx.utils.MIME_TYPE_JSON
-import com.philkes.notallyx.utils.backup.clearAllFolders
-import com.philkes.notallyx.utils.backup.clearAllLabels
 import com.philkes.notallyx.utils.backup.copyDatabase
 import com.philkes.notallyx.utils.backup.exportAsZip
 import com.philkes.notallyx.utils.backup.exportPdfFile
 import com.philkes.notallyx.utils.backup.exportPdfFileFolder
 import com.philkes.notallyx.utils.backup.exportPlainTextFile
 import com.philkes.notallyx.utils.backup.exportPlainTextFileFolder
-import com.philkes.notallyx.utils.backup.getPreviousLabels
-import com.philkes.notallyx.utils.backup.getPreviousNotes
 import com.philkes.notallyx.utils.backup.importZip
 import com.philkes.notallyx.utils.backup.readAsBackup
 import com.philkes.notallyx.utils.cancelPinAndReminders
@@ -202,24 +197,6 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             searchResults = SearchResult(app, viewModelScope, baseNoteDao, ::transform)
         } else {
             searchResults!!.baseNoteDao = baseNoteDao
-        }
-
-        viewModelScope.launch {
-            val previousNotes = app.getPreviousNotes()
-            val previousLabels = app.getPreviousLabels()
-            if (previousNotes.isNotEmpty() || previousLabels.isNotEmpty()) {
-                database.withTransaction {
-                    val maxOrder = labelDao.getMaxOrder() ?: -1
-                    labelDao.insert(
-                        previousLabels.mapIndexed { index, label ->
-                            Label(label.value, maxOrder + 1 + index)
-                        }
-                    )
-                    baseNoteDao.insertSafe(app, previousNotes)
-                    app.clearAllLabels()
-                    app.clearAllFolders()
-                }
-            }
         }
     }
 

@@ -61,6 +61,9 @@ class LabelsFragment : Fragment(), LabelListener {
     private fun setupItemTouchHelper(recyclerView: RecyclerView) {
         val itemTouchHelperCallback =
             object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
+
+                private var currentList = labelAdapter?.currentList
+
                 override fun onMove(
                     recyclerView: RecyclerView,
                     viewHolder: RecyclerView.ViewHolder,
@@ -68,7 +71,7 @@ class LabelsFragment : Fragment(), LabelListener {
                 ): Boolean {
                     val fromPosition = viewHolder.bindingAdapterPosition
                     val toPosition = target.bindingAdapterPosition
-                    labelAdapter?.onItemMove(fromPosition, toPosition)
+                    currentList = labelAdapter?.onItemMove(fromPosition, toPosition)
                     return true
                 }
 
@@ -81,7 +84,7 @@ class LabelsFragment : Fragment(), LabelListener {
                     viewHolder: RecyclerView.ViewHolder,
                 ) {
                     super.clearView(recyclerView, viewHolder)
-                    labelAdapter?.currentList?.let { list ->
+                    currentList?.let { list ->
                         val size = list.size
                         val updatedLabels =
                             list.mapIndexed { index, labelData ->
