@@ -17,7 +17,9 @@ import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Type
+import com.philkes.notallyx.utils.getMimeType
 import com.philkes.notallyx.utils.moveAllFiles
+import com.philkes.notallyx.utils.toMillis
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -28,10 +30,9 @@ import java.util.zip.ZipInputStream
 import kotlin.collections.forEach
 import kotlin.collections.map
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 
-@OptIn(InternalSerializationApi::class, ExperimentalSerializationApi::class)
+@OptIn(ExperimentalSerializationApi::class)
 class QuillpadImporter : ExternalImporter {
 
     internal val json = Json {
@@ -75,10 +76,6 @@ class QuillpadImporter : ExternalImporter {
             }
 
         val notebookMap = quillpadBackup.notebooks.associate { it.id to it.name }
-        val noteReminders = quillpadBackup.reminders.groupBy { it.noteId }
-        val noteTags = quillpadBackup.joins.groupBy { it.noteId }
-        val tagMap = quillpadBackup.tags.associate { it.id to it.name }
-
         val total = quillpadBackup.notes.size
         progress?.postValue(ImportProgress(0, total, stage = ImportStage.IMPORT_NOTES))
         var counter = 1
@@ -125,17 +122,17 @@ class QuillpadImporter : ExternalImporter {
                         Audio(
                             name = attachment.fileName,
                             duration = null,
-                            timestamp = modifiedDate * 1000,
+                            timestamp = modifiedDate.toMillis(),
                         )
                     )
                 else -> {
-                    val extension = File(attachment.fileName).extension.lowercase()
-                    if (extension in listOf("jpg", "jpeg", "png", "webp", "gif")) {
+                    val mimetype = attachment.fileName.getMimeType()
+                    if (mimetype?.startsWith("image/") == true) {
                         images.add(
                             FileAttachment(
                                 localName = attachment.fileName,
                                 originalName = attachment.description ?: attachment.fileName,
-                                mimeType = "image/$extension",
+                                mimeType = mimetype,
                             )
                         )
                     } else {
@@ -143,7 +140,7 @@ class QuillpadImporter : ExternalImporter {
                             FileAttachment(
                                 localName = attachment.fileName,
                                 originalName = attachment.description ?: attachment.fileName,
-                                mimeType = "application/octet-stream",
+                                mimeType = mimetype ?: "application/octet-stream",
                             )
                         )
                     }
@@ -170,8 +167,8 @@ class QuillpadImporter : ExternalImporter {
             color = BaseNote.COLOR_DEFAULT,
             title = title ?: "",
             pinned = isPinned,
-            timestamp = creationDate,
-            modifiedTimestamp = modifiedDate,
+            timestamp = creationDate.toMillis(),
+            modifiedTimestamp = modifiedDate.toMillis(),
             labels = labels.sorted().toList(),
             body = body,
             spans = spans,

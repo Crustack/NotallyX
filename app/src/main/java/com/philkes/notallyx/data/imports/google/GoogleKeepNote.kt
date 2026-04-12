@@ -1,10 +1,8 @@
 package com.philkes.notallyx.data.imports.google
 
 import com.philkes.notallyx.data.model.BaseNote
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 
-@InternalSerializationApi
 @Serializable
 data class GoogleKeepNote(
     val attachments: List<GoogleKeepAttachment> = listOf(),
@@ -21,12 +19,8 @@ data class GoogleKeepNote(
     val listContent: List<GoogleKeepListItem> = listOf(),
 )
 
-@InternalSerializationApi @Serializable data class GoogleKeepLabel(val name: String)
+@Serializable data class GoogleKeepLabel(val name: String)
 
-@InternalSerializationApi
-@Serializable
-data class GoogleKeepAttachment(val filePath: String, val mimetype: String)
+@Serializable data class GoogleKeepAttachment(val filePath: String, val mimetype: String)
 
-@InternalSerializationApi
-@Serializable
-data class GoogleKeepListItem(val text: String, val isChecked: Boolean)
+@Serializable data class GoogleKeepListItem(val text: String, val isChecked: Boolean)

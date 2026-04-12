@@ -10,7 +10,6 @@ import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
 import java.util.Date
-import kotlinx.serialization.InternalSerializationApi
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -19,7 +18,6 @@ class QuillpadImporterTest {
 
     private val importer = QuillpadImporter()
 
-    @OptIn(InternalSerializationApi::class)
     fun String.parseToBaseNote(notebookMap: Map<Long, String> = mapOf()) =
         with(importer) {
             json.decodeFromString<QuillpadNote>(this@parseToBaseNote).toBaseNote(notebookMap)
@@ -33,8 +31,8 @@ class QuillpadImporterTest {
           {
               "title": "Normal Note",
               "content": "This is some note, nothing special",
-              "creationDate": 1729518341059,
-              "modifiedDate": 1729518341059,
+              "creationDate": 1729518341,
+              "modifiedDate": 1729518341,
               "notebookId": 2,
               "id": 4,
               "tags": [
@@ -49,8 +47,8 @@ class QuillpadImporterTest {
         val expected =
             createBaseNote(
                 title = "Normal Note",
-                timestamp = 1729518341059,
-                modifiedTimestamp = 1729518341059,
+                timestamp = 1729518341000,
+                modifiedTimestamp = 1729518341000,
                 labels = listOf("Notebook1", "Tag1"),
                 body = "This is some note, nothing special",
             )
@@ -194,7 +192,7 @@ class QuillpadImporterTest {
             .extracting("title", "images")
             .containsExactly(
                 "Image Note",
-                listOf(FileAttachment("image.jpg", "image.jpg", "image/jpg")),
+                listOf(FileAttachment("image.jpg", "image.jpg", "image/jpeg")),
             )
     }
 

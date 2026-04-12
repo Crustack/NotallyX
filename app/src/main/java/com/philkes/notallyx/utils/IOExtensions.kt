@@ -26,6 +26,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.net.URLConnection
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
 import java.security.MessageDigest
@@ -407,11 +408,14 @@ private fun Context.getEmptyFolder(name: String): File {
 fun String.mimeTypeToFileExtension(): String? {
     return when (this) {
         "image/png" -> "png"
-        "image/jpeg",
-        "image/jpg" -> "jpg"
+        "image/jpeg" -> "jpg"
         "image/webp" -> "webp"
         else -> null
     }
+}
+
+fun String.getMimeType(): String? {
+    return URLConnection.guessContentTypeFromName(this)
 }
 
 fun File.listFilesRecursive(filter: FileFilter? = null): List<File> {

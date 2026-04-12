@@ -4,7 +4,6 @@ package com.philkes.notallyx.data.imports
 //  see https://github.com/robolectric/robolectric/pull/9680
 
 import android.app.Application
-import android.os.Environment
 import androidx.core.net.toUri
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -29,7 +28,6 @@ class NotesImporterTest {
     @Before
     fun setup() {
         application = ApplicationProvider.getApplicationContext()
-        application.getExternalFilesDir(Environment.MEDIA_MOUNTED)
         database =
             Room.inMemoryDatabaseBuilder(application, NotallyDatabase::class.java)
                 .allowMainThreadQueries()

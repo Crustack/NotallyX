@@ -1,9 +1,7 @@
 package com.philkes.notallyx.data.imports.quillpad
 
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 
-@InternalSerializationApi
 @Serializable
 data class QuillpadBackup(
     val notes: List<QuillpadNote> = emptyList(),
@@ -13,7 +11,6 @@ data class QuillpadBackup(
     val joins: List<QuillpadJoin> = emptyList(),
 )
 
-@InternalSerializationApi
 @Serializable
 data class QuillpadNote(
     val id: Long,
@@ -32,15 +29,12 @@ data class QuillpadNote(
     val reminders: List<QuillpadReminder> = emptyList(),
 )
 
-@InternalSerializationApi
-@Serializable
-data class QuillpadTask(val id: Int, val content: String, val isDone: Boolean)
+@Serializable data class QuillpadTask(val id: Int, val content: String, val isDone: Boolean)
 
-@InternalSerializationApi @Serializable data class QuillpadNotebook(val id: Long, val name: String)
+@Serializable data class QuillpadNotebook(val id: Long, val name: String)
 
-@InternalSerializationApi @Serializable data class QuillpadTag(val id: Long, val name: String)
+@Serializable data class QuillpadTag(val id: Long, val name: String)
 
-@InternalSerializationApi
 @Serializable
 data class QuillpadReminder(
     val id: Long,
@@ -49,9 +43,8 @@ data class QuillpadReminder(
     val name: String? = null,
 )
 
-@InternalSerializationApi @Serializable data class QuillpadJoin(val tagId: Long, val noteId: Long)
+@Serializable data class QuillpadJoin(val tagId: Long, val noteId: Long)
 
-@InternalSerializationApi
 @Serializable
 data class QuillpadAttachment(
     val type: String? = null,

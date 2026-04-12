@@ -136,3 +136,7 @@ fun uniqueCurrentMillis(): Long {
     Thread.sleep(1)
     return System.currentTimeMillis()
 }
+
+typealias Seconds = Long
+
+fun Seconds.toMillis() = this * 1000
