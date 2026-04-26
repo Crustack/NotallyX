@@ -19,6 +19,10 @@
     </plurals>
     <string name="ascending">За зростанням</string>
     <string name="attach_file">Прикріпити файл</string>
+    <plurals name="attachments">
+        <item quantity="one">Вкладення</item>
+        <item quantity="other">Вкладення</item>
+    </plurals>
     <string name="audio_recordings">Аудіозаписи</string>
     <string name="auto_backup">Автоматичне резервне копіювання</string>
     <string name="auto_backup_error_message">Під час автоматичного резервного копіювання сталася помилка:\n\'%1$s\'\nБудь ласка, перевірте налаштування або повідомте про помилку</string>
@@ -108,10 +112,18 @@
     <string name="date_format">Формат дати</string>
     <string name="date_format_apply_in_note_view">Застосовувати також у режимі перегляду нотатки</string>
     <string name="date_format_hint">Застосовує вибраний формат дати у списку нотаток</string>
-    <string name="day">День</string>
-    <string name="days">Дні</string>
+    <string name="date_format_note_view">Формат дати й часу в нотатці</string>
+    <string name="date_format_overview">Формат дати й часу в огляді нотаток</string>
+    <plurals name="days">
+        <item quantity="few">Дні</item>
+        <item quantity="many">Днів</item>
+        <item quantity="one">День</item>
+        <item quantity="other">Дня</item>
+        <item quantity="two">Дні</item>
+        <item quantity="zero">Днів</item>
+    </plurals>
     <string name="default_color_hint">Це колір за замовчуванням для нових нотаток. Щоб змінити його, зробіть інший колір стандартним.</string>
-    <string name="default_list_note_view_mode">Режим перегляду списку нотаток за замовчуванням</string>
+    <string name="default_list_note_view_mode">Режим перегляду списку за замовчуванням</string>
     <string name="delete">Видалити</string>
     <string name="delete_all">Видалити все</string>
     <string name="delete_all_notes">Видалити всі нотатки\?</string>
@@ -164,7 +176,7 @@
     <string name="enabled">Увімкнено</string>
     <string name="error_while_renaming_file">Помилка під час перейменування файлу</string>
     <string name="error_while_renaming_image">Помилка під час перейменування зображення</string>
-    <string name="evernote">Імпортувати із Evernote</string>
+    <string name="evernote">Імпортувати з Evernote</string>
     <string name="evernote_help">Щоб імпортувати нотатки з Evernote, вам потрібно експортувати блокнот Evernote у форматі ENEX. Натисніть «Довідка», щоб дізнатися більше.\n\nЯкщо у вас уже є файл ENEX, натисніть «Імпортувати» та виберіть його.</string>
     <string name="every">Кожні</string>
     <string name="export">Експорт</string>
@@ -173,6 +185,7 @@
     <string name="export_settings_failure">Не вдалося експортувати налаштування. Можливо, ви обрали неправильний шлях.</string>
     <string name="export_settings_message">Усі налаштування будуть експортовані у файл JSON, який можна використовувати для повторного імпорту збережених параметрів.\n\nЗверніть увагу: сюди не входять зашифровані дані, як-от пароль автокопіювання або ключ біометричного шифрування.</string>
     <string name="export_settings_success">Налаштування успішно експортовано</string>
+    <string name="exported">Експортовано</string>
     <plurals name="exported_notes">
         <item quantity="one">Експортовано нотаток: %1$s</item>
         <item quantity="other">Експортовано нотаток: %1$s</item>
@@ -189,10 +202,11 @@
     <string name="hours">Години</string>
     <string name="image_format_not_supported">Формат зображення не підтримується</string>
     <string name="images_hidden_in_overview">Якщо ввімкнути цей параметр, зображення в нотатках будуть приховані у загальному списку</string>
-    <string name="images_hidden_in_overview_title">Приховати зображення у списку нотаток </string>
+    <string name="images_hidden_in_overview_title">Приховати зображення в огляді нотаток </string>
     <string name="import_action">Імпортувати</string>
     <string name="import_backup">Імпорт резервної копії</string>
     <string name="import_backup_password_hint">Якщо ваша резервна копія не захищена паролем, просто натисніть «Імпортувати», інакше введіть правильний пароль.</string>
+    <string name="import_from_notally">Щоб імпортувати з Notally, просто скористайтеся \"%1$s\"</string>
     <string name="import_other">Імпортувати нотатки з іншого додатка</string>
     <string name="import_settings">Імпорт налаштувань</string>
     <string name="import_settings_failure">Не вдалося імпортувати налаштування. Можливо, вибрано некоректний файл.</string>
@@ -215,6 +229,7 @@
     <string name="invalid_google_keep">Надано некоректний ZIP-файл Google Takeout</string>
     <string name="invalid_image">Некоректне зображення</string>
     <string name="invalid_link">Скопіюйте коректне посилання в буфер обміну</string>
+    <string name="invalid_quillpad">Надано некоректний ZIP-файл Quillpad</string>
     <string name="italic">Курсив</string>
     <string name="item">Пункт</string>
     <string name="json_files">JSON-файли</string>
@@ -254,8 +269,12 @@
     <string name="months">Місяці</string>
     <string name="more">ще %1$d</string>
     <plurals name="more_files">
+        <item quantity="few">…ще %1$d файли</item>
+        <item quantity="many">…ще %1$d файлів</item>
         <item quantity="one">…ще %1$d файл</item>
         <item quantity="other">…ще %1$d файлів</item>
+        <item quantity="two">…ще %1$d файли</item>
+        <item quantity="zero">…ще %1$d файлів</item>
     </plurals>
     <string name="new_color">Новий колір</string>
     <string name="next">Наступне</string>
@@ -266,6 +285,14 @@
     <string name="note_text_too_long_truncated">Текст занадто довгий, скорочено до %1$d символів</string>
     <string name="note_too_big_truncating">Нотатка занадто велика для збереження, її було скорочено до %1$s символів (було: %2$s)</string>
     <string name="notes">Нотатки</string>
+    <plurals name="notes">
+        <item quantity="few">Нотатки</item>
+        <item quantity="many">Нотаток</item>
+        <item quantity="one">Нотатка</item>
+        <item quantity="other">Нотаток</item>
+        <item quantity="two">Нотатки</item>
+        <item quantity="zero">Нотаток</item>
+    </plurals>
     <string name="notes_sorted_by">Сортувати за</string>
     <plurals name="notes_too_big_truncating">
         <item quantity="one">Нотатка %1$s занадто велика для збереження; її було скорочено до %2$s символів.</item>
@@ -273,12 +300,14 @@
     </plurals>
     <string name="of_the_month">%1$s місяця</string>
     <string name="of_the_month_last">Останній/-я %1$s місяця</string>
+    <string name="off">Вимк.</string>
     <string name="open_link">Відкрити посилання</string>
     <string name="open_note">Відкрити нотатку</string>
     <string name="others">Інші</string>
     <string name="pause">Призупинити</string>
     <string name="paused">Призупинено</string>
     <string name="pin">Закріпити</string>
+    <string name="pin_to_status_bar">Закріпити в рядку стану</string>
     <string name="pinned">Закріплено</string>
     <string name="plain_text_files">Файли Markdown/Plain Text</string>
     <string name="plain_text_files_help">Щоб імпортувати ваші нотатки з файлів Markdown/plain text (окремий файл або папка), натисніть «Імпортувати». Кожен файл імпортується як окрема нотатка, а назва файлу стає заголовком нотатки. Якщо текстовий вміст починається з синтаксису списку (наприклад, markdown ’- [x]’, синтаксис NotallyX ’[✓]’ або ’*’, ’-’), він буде перетворений на нотатку-список.</string>
@@ -288,6 +317,7 @@
     <string name="please_grant_notally_notification">Надайте NotallyX дозвіл на надсилання сповіщень</string>
     <string name="please_grant_notally_notification_auto_backup">Якщо автоматичне резервне копіювання не вдасться, ви можете отримати сповіщення, якщо надасте NotallyX дозвіл на надсилання сповіщень</string>
     <string name="previous">Попередній</string>
+    <string name="quillpad_help">Щоб імпортувати ваші Нотатки з Quillpad, ви повинні експортувати ваші Нотатки Quillpad як ZIP-файл резервної копії. Для цього відкрийте Quillpad, перейдіть у Налаштування &gt; Резервне копіювання &gt; Створити резервну копію та збережіть .ZIP на своєму телефоні.\nЯкщо у вас уже є ZIP-файл резервної копії Quillpad, натисніть Імпортувати та виберіть його.</string>
     <string name="rate">Оцініть цей додаток</string>
     <string name="read_only">Лише для читання</string>
     <string name="ready_to_record">Готовий до запису</string>
@@ -352,7 +382,13 @@
     <string name="text_size_preview">Зразок розміру тексту</string>
     <string name="theme">Тема</string>
     <string name="theme_use_dynamic_colors">Використовувати кольори системних шпалер</string>
+    <string name="time">Час</string>
+    <string name="time_24h">24-годинний</string>
+    <string name="time_am_pm">12-годинний</string>
+    <string name="time_format_note_view">Формат часу в нотатці</string>
+    <string name="time_format_overview">Формат часу в огляді нотаток</string>
     <string name="title">Назва</string>
+    <string name="to_pin_note_status_bar">Щоб закріпити нотатку в рядку стану, дозвольте NotallyX надсилати сповіщення. Перейдіть у Налаштування &gt; Дозволи та дозвольте Сповіщення</string>
     <string name="to_record_audio">Щоб записувати аудіо, дозвольте застосунку NotallyX доступ до мікрофона. Торкніться Налаштування &gt; Дозволи та ввімкніть Мікрофон</string>
     <string name="unarchive">Розархівувати</string>
     <plurals name="unarchived_selected_notes">
@@ -367,6 +403,7 @@
     <string name="unlock">Розблокувати за допомогою біометрії або PIN-коду</string>
     <string name="unlock_with_biometrics_not_setup">Ви раніше ввімкнули біометричне блокування, але біометрію або PIN-код на вашому пристрої не налаштовано.\n\nЯкщо ви хочете вимкнути біометричне блокування, натисніть «Вимкнути», інакше — налаштуйте біометрію або PIN-код на своєму пристрої.</string>
     <string name="unpin">Відкріпити</string>
+    <string name="unpin_from_status_bar">Відкріпити з рядка стану</string>
     <string name="upcoming">Заплановані</string>
     <string name="updated_link">Посилання оновлено</string>
     <string name="view">Вигляд</string>
