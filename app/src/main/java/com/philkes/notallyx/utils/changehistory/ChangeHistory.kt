@@ -70,8 +70,8 @@ class ChangeHistory(
     }
 
     fun reset() {
-        stackPointer.value = -1
         changeStack.clear()
+        stackPointer.value = -1
     }
 
     internal fun lookUp(position: Int = 0): Change {
