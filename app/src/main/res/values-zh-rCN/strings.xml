@@ -19,6 +19,10 @@
     </plurals>
     <string name="ascending">升序</string>
     <string name="attach_file">附件</string>
+    <plurals name="attachments">
+        <item quantity="one">个附件</item>
+        <item quantity="other">个附件</item>
+    </plurals>
     <string name="audio_recordings">录音</string>
     <string name="auto_backup">自动备份</string>
     <string name="auto_backup_error_message">自动备份时出错：\'%1$s\' 请检查你的设置或报告故障</string>
@@ -35,6 +39,7 @@
     <string name="auto_remove_deleted_notes_hint">启用后，被删除的笔记将在 X 天后被永久性删除</string>
     <string name="auto_save_after_idle_time">在指定的空闲时间后自动保存笔记</string>
     <string name="auto_sort_by_checked">将所选项目排到末尾</string>
+    <string name="auto_sort_by_checked_timestamp">按勾选时间排序勾选项</string>
     <string name="back">返回</string>
     <string name="backup">备份</string>
     <string name="backup_password">备份密码</string>
@@ -107,9 +112,12 @@
     <string name="date_format">日期格式</string>
     <string name="date_format_apply_in_note_view">同样应用于笔记视图</string>
     <string name="date_format_hint">将所选日期格式应用于笔记概览</string>
+    <string name="date_format_note_view">日期时间格式的笔记视图</string>
+    <string name="date_format_overview">日期时间格式概览</string>
     <string name="day">天</string>
     <string name="days">天</string>
     <string name="default_color_hint">这是新笔记的默认颜色。要更改它，请让另一个颜色成为默认颜色</string>
+    <string name="default_list_note_view_mode">默认清单笔记视图模式</string>
     <string name="delete">删除</string>
     <string name="delete_all">删除全部</string>
     <string name="delete_all_notes">删除全部笔记？</string>
@@ -170,6 +178,7 @@
     <string name="export_settings_failure">未能导出设置，你选择的路径有效吗？</string>
     <string name="export_settings_message">所有设置都导出为 JSON 文件，该文件可用于重新导所存储的设置。请注意，这个文件中并不包含已加密的设置，如自动备份密码或生物特征加密密钥</string>
     <string name="export_settings_success">成功地导出了设置</string>
+    <string name="exported">已导出</string>
     <plurals name="exported_notes">
         <item quantity="one">导出了%1$s则笔记</item>
         <item quantity="other">导出了%1$s则笔记</item>
@@ -224,6 +233,7 @@
     <string name="labels_hidden_in_overview">启用本选项后，概览中将看不到笔记的标签</string>
     <string name="labels_hidden_in_overview_title">在概览中隐藏标签</string>
     <string name="large">大</string>
+    <string name="last_used">上次使用</string>
     <string name="libraries">库</string>
     <string name="light">浅</string>
     <string name="link">链接</string>
@@ -262,6 +272,10 @@
     <string name="note_text_too_long_truncated">文本过长，缩短到了 %1$d 个字符</string>
     <string name="note_too_big_truncating">笔记过大无法保存。被缩短到 %1$s 个字符（先前为：%2$s 个）</string>
     <string name="notes">笔记</string>
+    <plurals name="notes">
+        <item quantity="one">则笔记</item>
+        <item quantity="other">则笔记</item>
+    </plurals>
     <string name="notes_sorted_by">笔记排序方式</string>
     <plurals name="notes_too_big_truncating">
         <item quantity="one">%1$s 则笔记过大无法保存。被缩短到 %2$s 个字符</item>
@@ -269,13 +283,15 @@
     </plurals>
     <string name="of_the_month">当月的 %1$s</string>
     <string name="of_the_month_last">当月的最后 %1$s</string>
+    <string name="off">关</string>
     <string name="open_link">打开链接</string>
     <string name="open_note">打开笔记</string>
     <string name="others">其他</string>
     <string name="pause">暂停</string>
     <string name="paused">已暂停</string>
-    <string name="pin">置于顶部</string>
-    <string name="pinned">已置顶</string>
+    <string name="pin">固定</string>
+    <string name="pin_to_status_bar">固定到状态栏</string>
+    <string name="pinned">已固定</string>
     <string name="plain_text_files">Markdown/纯文本文件</string>
     <string name="plain_text_files_help">要从纯文本（单文件或文件夹）导入笔记，单击“导入”。每个文件被导入为单独的笔记，文件的名称变成笔记的标题。如果文本内容以清单语法开头（如   Markdown ’- [x]’, NotallyX 语法 ’[✓]’, 或 ’*’, ’-’），它将被转换为清单笔记。</string>
     <string name="play">播放</string>
@@ -348,7 +364,13 @@
     <string name="text_size_preview">乱数假文</string>
     <string name="theme">主题</string>
     <string name="theme_use_dynamic_colors">使用系统的壁纸颜色</string>
+    <string name="time">时间</string>
+    <string name="time_24h">24小时</string>
+    <string name="time_am_pm">上/下午</string>
+    <string name="time_format_note_view">时间格式笔记视图</string>
+    <string name="time_format_overview">时间格式概览</string>
     <string name="title">标题</string>
+    <string name="to_pin_note_status_bar">要将笔记固定到状态栏，请允许 NotallyX 发送通知。轻触设置&gt;权限，允许通知</string>
     <string name="to_record_audio">要录音，请允许 NotallyX 访问你的麦克风。轻按“设置”&gt;“权限”，打开麦克风</string>
     <string name="unarchive">取消存档</string>
     <plurals name="unarchived_selected_notes">
@@ -362,7 +384,8 @@
     <string name="unlabeled">未加标签</string>
     <string name="unlock">通过生物特征/PIN解除锁定</string>
     <string name="unlock_with_biometrics_not_setup">你先前已启用了生物特征锁，但生物特征/PIN目前在你的设备上没有配置好。如果你希望停用生物特征锁，请按下“停用”，不然请为你的设备配置生物特征/PIN</string>
-    <string name="unpin">取消置顶</string>
+    <string name="unpin">取消固定</string>
+    <string name="unpin_from_status_bar">取消状态栏固定</string>
     <string name="upcoming">即将到来</string>
     <string name="updated_link">更新了链接</string>
     <string name="view">视图</string>
