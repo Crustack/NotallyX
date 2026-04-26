@@ -108,8 +108,10 @@
     <string name="date">Datum</string>
     <string name="date_format">Formát data</string>
     <string name="date_format_hint">Nastaví vybraný formát data v přehledu poznámek</string>
-    <string name="day">Den</string>
-    <string name="days">Dny</string>
+    <plurals name="days">
+        <item quantity="one">Den</item>
+        <item quantity="other">Dny</item>
+    </plurals>
     <string name="delete">Smazat</string>
     <string name="delete_all">Smazat vše</string>
     <string name="delete_all_notes">Smazat všechny poznámky\?</string>

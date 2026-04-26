@@ -91,7 +91,10 @@
     <string name="date">Data</string>
     <string name="date_format">Formatul datei</string>
     <string name="date_format_hint">Aplică formatul de dată selectat în Prezentarea generală a notelor</string>
-    <string name="days">Zile</string>
+    <plurals name="days">
+        <item quantity="one">Zi</item>
+        <item quantity="other">Zile</item>
+    </plurals>
     <string name="delete">Şterge</string>
     <string name="delete_all">Șterge tot</string>
     <string name="delete_all_notes">Ștergi toate notele\?</string>

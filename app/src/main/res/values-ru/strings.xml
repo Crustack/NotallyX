@@ -96,7 +96,11 @@
     <string name="date">Дата</string>
     <string name="date_format">Формат даты</string>
     <string name="date_format_hint">Применяет выбранный формат даты в общем списке заметок</string>
-    <string name="days">Дней</string>
+    <plurals name="days">
+        <item quantity="few">Дня</item>
+        <item quantity="one">День</item>
+        <item quantity="other">Дней</item>
+    </plurals>
     <string name="delete">Удалить</string>
     <string name="delete_all">Удалить всё</string>
     <string name="delete_all_notes">Удалить все заметки\?</string>

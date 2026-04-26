@@ -39,6 +39,7 @@ import com.philkes.notallyx.databinding.DialogTextInputBinding
 import com.philkes.notallyx.databinding.FragmentSettingsBinding
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.presentation.format
+import com.philkes.notallyx.presentation.getQuantityStringPlain
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.setEnabledSecureFlag
 import com.philkes.notallyx.presentation.setupImportProgressDialog
@@ -383,7 +384,7 @@ class SettingsFragment : Fragment() {
                 requireContext(),
                 labelFormatter = { v ->
                     if (v == 0) requireContext().getString(R.string.off)
-                    else "$v ${requireContext().getString(R.string.days)}"
+                    else "$v ${requireContext().getQuantityStringPlain(R.plurals.days, v)}"
                 },
             ) { newValue ->
                 Log.d("Stepper", "save auto remove")

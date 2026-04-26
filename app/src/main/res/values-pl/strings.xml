@@ -97,7 +97,12 @@
     <string name="date">Data</string>
     <string name="date_format">Format daty</string>
     <string name="date_format_hint">Stosuje wybrany format daty w przeglądzie notatek</string>
-    <string name="days">Dni</string>
+    <plurals name="days">
+        <item quantity="few">Dni</item>
+        <item quantity="many">Dni</item>
+        <item quantity="one">Dzień</item>
+        <item quantity="other">Dni</item>
+    </plurals>
     <string name="delete">Usuń</string>
     <string name="delete_all">Usuń wszystkie</string>
     <string name="delete_all_notes">Usunąć wszystkie notatki\?</string>

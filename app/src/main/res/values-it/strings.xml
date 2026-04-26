@@ -86,7 +86,10 @@
     <string name="date">Data</string>
     <string name="date_format">Formato data</string>
     <string name="date_format_hint">Applica il formato data selezionato nella panoramica delle note</string>
-    <string name="days">Giorni</string>
+    <plurals name="days">
+        <item quantity="one">Giorno</item>
+        <item quantity="other">Giorni</item>
+    </plurals>
     <string name="delete">Elimina</string>
     <string name="delete_all">Elimina tutto</string>
     <string name="delete_all_notes">Eliminare tutte le note\?</string>

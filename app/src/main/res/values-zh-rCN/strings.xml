@@ -114,8 +114,10 @@
     <string name="date_format_hint">将所选日期格式应用于笔记概览</string>
     <string name="date_format_note_view">日期时间格式的笔记视图</string>
     <string name="date_format_overview">日期时间格式概览</string>
-    <string name="day">天</string>
-    <string name="days">天</string>
+    <plurals name="days">
+        <item quantity="one">天</item>
+        <item quantity="other">天</item>
+    </plurals>
     <string name="default_color_hint">这是新笔记的默认颜色。要更改它，请让另一个颜色成为默认颜色</string>
     <string name="default_list_note_view_mode">默认清单笔记视图模式</string>
     <string name="delete">删除</string>

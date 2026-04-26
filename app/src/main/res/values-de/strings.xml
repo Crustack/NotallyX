@@ -105,8 +105,10 @@
     <string name="date">Datum</string>
     <string name="date_format">Datumsformat</string>
     <string name="date_format_hint">Wendet ausgewähltes Datumsformat in Notizen-Übersicht an</string>
-    <string name="day">Tag</string>
-    <string name="days">Tage</string>
+    <plurals name="days">
+        <item quantity="one">Tag</item>
+        <item quantity="other">Tage</item>
+    </plurals>
     <string name="delete">Löschen</string>
     <string name="delete_all">Alles löschen</string>
     <string name="delete_all_notes">Alle Notizen löschen\?</string>

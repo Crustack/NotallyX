@@ -115,8 +115,10 @@
     <string name="date_format_hint">Applies selected datetime format in Notes Overview</string>
     <string name="date_format_note_view">Datetime Format Note View</string>
     <string name="date_format_overview">Datetime Format Overview</string>
-    <string name="day">Day</string>
-    <string name="days">Days</string>
+    <plurals name="days">
+        <item quantity="one">Day</item>
+        <item quantity="other">Days</item>
+    </plurals>
     <string name="default_color_hint">This is the default color for new notes. To change it, make another color the default</string>
     <string name="default_list_note_view_mode">Default List-Note View Mode</string>
     <string name="delete">Delete</string>

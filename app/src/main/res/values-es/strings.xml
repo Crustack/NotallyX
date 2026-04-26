@@ -108,8 +108,10 @@
     <string name="date_format">Formato de fecha</string>
     <string name="date_format_apply_in_note_view">Aplicar también en la vista de nota</string>
     <string name="date_format_hint">Aplica el formato de fecha seleccionado en la vista general de notas</string>
-    <string name="day">Día</string>
-    <string name="days">Días</string>
+    <plurals name="days">
+        <item quantity="one">Día</item>
+        <item quantity="other">Días</item>
+    </plurals>
     <string name="default_color_hint">Este es color por defecto para nuevas notas. Para cambiarlo, hacer otro color por defecto</string>
     <string name="default_list_note_view_mode">Modo de vista de lista de notas por defecto</string>
     <string name="delete">Eliminar</string>

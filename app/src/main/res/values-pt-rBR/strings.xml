@@ -99,7 +99,10 @@
     <string name="date">Data</string>
     <string name="date_format">Formato de data</string>
     <string name="date_format_hint">Aplica o formato de data selecionado na visão geral das notas</string>
-    <string name="days">Dias</string>
+    <plurals name="days">
+        <item quantity="one">Dia</item>
+        <item quantity="other">Dias</item>
+    </plurals>
     <string name="delete">Deletar</string>
     <string name="delete_all">Deletar todas</string>
     <string name="delete_all_notes">Deletar todas as notas\?</string>

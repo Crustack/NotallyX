@@ -103,7 +103,10 @@
     <string name="date">Date</string>
     <string name="date_format">Format de la date</string>
     <string name="date_format_hint">Applique le format de date sélectionné dans la vue d’ensemble</string>
-    <string name="days">Jours</string>
+    <plurals name="days">
+        <item quantity="one">Jour</item>
+        <item quantity="other">Jours</item>
+    </plurals>
     <string name="delete">Supprimer</string>
     <string name="delete_all">Tout supprimer</string>
     <string name="delete_all_notes">Supprimer toutes les notes \?</string>

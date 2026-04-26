@@ -689,6 +689,10 @@ fun Context.getQuantityString(id: Int, quantity: Int, vararg formatArgs: Any): S
     return resources.getQuantityString(id, quantity, quantity, *formatArgs)
 }
 
+fun Context.getQuantityStringPlain(id: Int, quantity: Int): String {
+    return resources.getQuantityString(id, quantity)
+}
+
 @ColorInt
 fun @receiver:ColorInt Int.withAlpha(alpha: Float): Int {
     return android.graphics.Color.argb(

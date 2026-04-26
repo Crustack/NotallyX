@@ -109,8 +109,10 @@
     <string name="date_format_hint">يطبق تنسيق التاريخ والوقت المحدد في عرض الملاحظات</string>
     <string name="date_format_note_view">تنسيق التاريخ والوقت في عرض الملاحظة</string>
     <string name="date_format_overview">تنسيق التاريخ والوقت في العرض العام</string>
-    <string name="day">يوم</string>
-    <string name="days">أيام</string>
+    <plurals name="days">
+        <item quantity="one">يوم</item>
+        <item quantity="other">أيام</item>
+    </plurals>
     <string name="default_color_hint">هذا هو اللون الافتراضي للملاحظات الجديدة. لتغييره، عيّن لونًا آخر كافتراضي</string>
     <string name="default_list_note_view_mode">وضع عرض الملاحظات (قائمة) الافتراضي</string>
     <string name="delete">حذف</string>

@@ -33,6 +33,7 @@ import com.philkes.notallyx.presentation.add
 import com.philkes.notallyx.presentation.checkAlarmPermission
 import com.philkes.notallyx.presentation.checkNotificationPermission
 import com.philkes.notallyx.presentation.format
+import com.philkes.notallyx.presentation.getQuantityStringPlain
 import com.philkes.notallyx.presentation.initListView
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showAndFocus
@@ -326,9 +327,9 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
 
         val monthlyOptionText =
             if (isLastDayOfMonth) {
-                getString(R.string.of_the_month_last, getString(R.string.day))
+                getString(R.string.of_the_month_last, getQuantityStringPlain(R.plurals.days, 1))
             } else {
-                "$dayOfMonth. ${getString(R.string.of_the_month, getString(R.string.day))}"
+                "$dayOfMonth. ${getString(R.string.of_the_month, getQuantityStringPlain(R.plurals.days, 1))}"
             }
 
         val options =
@@ -471,7 +472,7 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
                 "${reminder.dateTime.format(
                     preferences.dateFormatNoteView.value,
                     preferences.timeFormatNoteView.value,
-                    ensureFullFormat = true)}\n${reminder.repetition?.toText(this) ?: getString(R.string.reminder_no_repetition)}"
+                    ensureFullFormat = true,)}\n${reminder.repetition?.toText(this) ?: getString(R.string.reminder_no_repetition)}"
             )
             .setPositiveButton(R.string.delete) { _, _ ->
                 lifecycleScope.launch { model.removeReminder(reminder) }
