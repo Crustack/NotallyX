@@ -162,8 +162,15 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        val selectedId = intent?.getLongExtra(EXTRA_SELECTED_BASE_NOTE, 0L) ?: 0L
-        lifecycleScope.launch { loadNote(selectedId, null, null) }
+        if (intent == null) return
+        setIntent(intent)
+        val selectedId = intent.getLongExtra(EXTRA_SELECTED_BASE_NOTE, -1L)
+        if (selectedId != -1L) {
+            lifecycleScope.launch {
+                checkSave()
+                loadNote(selectedId, null, null)
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
