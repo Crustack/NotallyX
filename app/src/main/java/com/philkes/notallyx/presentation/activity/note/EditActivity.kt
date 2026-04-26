@@ -168,7 +168,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         if (selectedId != -1L) {
             lifecycleScope.launch {
                 checkSave()
-                loadNote(selectedId, null, null)
+                loadNote(selectedId, null, null, false)
             }
         }
     }
@@ -188,10 +188,8 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             val persistedId = savedInstanceState?.getLong("id")
             val selectedId = intent.getLongExtra(EXTRA_SELECTED_BASE_NOTE, 0L)
             val id = persistedId ?: selectedId
-            loadNote(id, persistedId, savedInstanceState)
+            loadNote(id, persistedId, savedInstanceState, true)
         }
-        setupListeners()
-        configureUI()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             try {
                 updateModel()
@@ -205,7 +203,12 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         }
     }
 
-    private suspend fun loadNote(id: Long, persistedId: Long?, savedInstanceState: Bundle?) {
+    private suspend fun loadNote(
+        id: Long,
+        persistedId: Long?,
+        savedInstanceState: Bundle?,
+        initListeners: Boolean,
+    ) {
         changeHistory.reset()
         if (persistedId == null || notallyModel.originalNote == null) {
             notallyModel.setState(id, intent.data == null)
@@ -225,6 +228,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
         initBottomMenu()
         resetToolbars()
+        if (initListeners) setupListeners()
         setStateFromModel(savedInstanceState)
 
         if (
@@ -234,7 +238,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             notallyModel.viewMode.value =
                 preferences.defaultListNoteViewMode.value.toNoteViewMode(lastUsedViewMode)
         }
-
+        if (initListeners) configureUI()
         binding.ScrollView.visibility = VISIBLE
         setupEditNoteReminderChip()
     }
