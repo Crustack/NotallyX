@@ -113,6 +113,8 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     var baseNotes: Content? = Content(MutableLiveData(), ::transform)
     var deletedNotes: Content? = Content(MutableLiveData(), ::transform)
     var archivedNotes: Content? = Content(MutableLiveData(), ::transform)
+
+    var hiddenNotes: Content? = Content(MutableLiveData(), ::transform)
     var reminderNotes: Content? = Content(MutableLiveData(), ::transform)
 
     val folder = NotNullLiveData(Folder.NOTES)
@@ -185,6 +187,12 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             archivedNotes = Content(baseNoteDao.getFrom(Folder.ARCHIVED), ::transform)
         } else {
             archivedNotes!!.setObserver(baseNoteDao.getFrom(Folder.ARCHIVED))
+        }
+
+        if (hiddenNotes == null) {
+            hiddenNotes = Content(baseNoteDao.getFrom(Folder.HIDDEN), ::transform)
+        } else {
+            hiddenNotes!!.setObserver(baseNoteDao.getFrom(Folder.HIDDEN))
         }
 
         if (reminderNotes == null) {

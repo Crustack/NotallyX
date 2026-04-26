@@ -27,7 +27,35 @@ android {
         versionCode = project.findProperty("app.versionCode").toString().toInt()
         versionName = project.findProperty("app.versionName").toString()
         resourceConfigurations += listOf(
-            "en", "ca", "cs", "da", "de", "el", "es", "fr", "hu", "in", "it", "ja", "my", "nb", "nl", "nn", "pl", "pt-rBR", "pt-rPT", "ro", "ru", "sk", "sv", "tl", "tr", "uk", "vi", "zh-rCN", "zh-rTW"
+            "en",
+            "ca",
+            "cs",
+            "da",
+            "de",
+            "el",
+            "es",
+            "fr",
+            "hu",
+            "in",
+            "it",
+            "ja",
+            "my",
+            "nb",
+            "nl",
+            "nn",
+            "pl",
+            "pt-rBR",
+            "pt-rPT",
+            "ro",
+            "ru",
+            "sk",
+            "sv",
+            "tl",
+            "tr",
+            "uk",
+            "vi",
+            "zh-rCN",
+            "zh-rTW"
         )
         vectorDrawables.generatedDensities?.clear()
         ndk {
@@ -64,7 +92,7 @@ android {
             )
             signingConfig = signingConfigs.getByName("release")
         }
-        create("beta"){
+        create("beta") {
             initWith(getByName("release"))
             applicationIdSuffix = ".beta"
             versionNameSuffix = "-BETA"
@@ -82,10 +110,15 @@ android {
         if (buildType.isMinifyEnabled) {
             // Function to copy proguard mapping.txt file
             fun copyMapping(suffix: String) {
-                val mappingFile = layout.buildDirectory.file("outputs/mapping/${buildType.name}/mapping.txt").get().asFile
+                val mappingFile =
+                    layout.buildDirectory.file("outputs/mapping/${buildType.name}/mapping.txt")
+                        .get().asFile
                 if (mappingFile.exists()) {
                     val target =
-                        File(project.projectDir, "obfuscation/mapping-${buildType.name}-$suffix.txt")
+                        File(
+                            project.projectDir,
+                            "obfuscation/mapping-${buildType.name}-$suffix.txt"
+                        )
                     target.parentFile.mkdirs()
                     mappingFile.copyTo(target, overwrite = true)
                     println("Copied mapping to: ${target.absolutePath}")
@@ -100,7 +133,7 @@ android {
             tasks.matching { it.name == "bundle${name.capitalize()}" }
                 .forEach { bundleTask ->
                     bundleTask.doLast {
-                        copyMapping( "bundle")
+                        copyMapping("bundle")
                     }
                 }
 
@@ -118,13 +151,17 @@ android {
                             return@doLast
                         }
                         // Target zip file
-                        val outputZip = File(project.projectDir, "obfuscation/${buildType.name}-debug-symbols.zip")
+                        val outputZip = File(
+                            project.projectDir,
+                            "obfuscation/${buildType.name}-debug-symbols.zip"
+                        )
                         outputZip.parentFile.mkdirs()
                         ZipOutputStream(outputZip.outputStream()).use { zipOut ->
                             nativeLibsDir.walkTopDown().forEach { file ->
                                 if (file.isFile) {
                                     // Preserve "lib/ABI/..." folder structure in the zip
-                                    val relativePath = nativeLibsDir.toPath().relativize(file.toPath()).toString()
+                                    val relativePath =
+                                        nativeLibsDir.toPath().relativize(file.toPath()).toString()
                                     zipOut.putNextEntry(ZipEntry(relativePath))
                                     file.inputStream().use { it.copyTo(zipOut) }
                                     zipOut.closeEntry()

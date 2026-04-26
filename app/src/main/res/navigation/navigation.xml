@@ -35,35 +35,34 @@
     <fragment
         android:id="@+id/Deleted"
         android:name="com.philkes.notallyx.presentation.activity.main.fragment.DeletedFragment"
-      android:label="@string/deleted" >
+        android:label="@string/deleted">
 
         <action
-          android:id="@+id/DeletedToSearch"
-          app:destination="@id/Search"
-          app:enterAnim="@anim/nav_default_enter_anim"
-          app:exitAnim="@anim/nav_default_exit_anim"
-          app:popEnterAnim="@anim/nav_default_pop_enter_anim"
-          app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+            android:id="@+id/DeletedToSearch"
+            app:destination="@id/Search"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
     </fragment>
 
     <fragment
         android:id="@+id/Archived"
         android:name="com.philkes.notallyx.presentation.activity.main.fragment.ArchivedFragment"
-      android:label="@string/archived" >
+        android:label="@string/archived">
         <action
-          android:id="@+id/ArchivedToSearch"
-          app:destination="@id/Search"
-          app:enterAnim="@anim/nav_default_enter_anim"
-          app:exitAnim="@anim/nav_default_exit_anim"
-          app:popEnterAnim="@anim/nav_default_pop_enter_anim"
-          app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+            android:id="@+id/ArchivedToSearch"
+            app:destination="@id/Search"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
     </fragment>
 
     <fragment
-      android:id="@+id/Reminders"
-      android:name="com.philkes.notallyx.presentation.activity.main.fragment.RemindersFragment"
-      android:label="@string/reminders">
-    </fragment>
+        android:id="@+id/Reminders"
+        android:name="com.philkes.notallyx.presentation.activity.main.fragment.RemindersFragment"
+        android:label="@string/reminders"></fragment>
 
     <fragment
         android:id="@+id/Settings"
@@ -74,8 +73,8 @@
         android:id="@+id/Search"
         android:name="com.philkes.notallyx.presentation.activity.main.fragment.SearchFragment">
         <argument
-          android:name="initialFolder"
-          app:argType="com.philkes.notallyx.data.model.Folder" />
+            android:name="initialFolder"
+            app:argType="com.philkes.notallyx.data.model.Folder" />
     </fragment>
 
     <fragment
@@ -87,5 +86,10 @@
         android:id="@+id/Unlabeled"
         android:name="com.philkes.notallyx.presentation.activity.main.fragment.UnlabeledFragment"
         android:label="@string/unlabeled" />
+
+    <fragment
+        android:id="@+id/Hidden"
+        android:name="com.philkes.notallyx.presentation.activity.main.fragment.HiddenFragment"
+        android:label="@string/hiddens" />
 
 </navigation>

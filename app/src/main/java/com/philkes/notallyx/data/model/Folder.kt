@@ -5,6 +5,7 @@ import java.io.Serializable
 enum class Folder : Serializable {
     NOTES,
     DELETED,
+    HIDDEN,
     ARCHIVED;
 
     companion object {

@@ -18,6 +18,10 @@
         <item quantity="one">Archived %1$d note</item>
         <item quantity="other">Archived %1$d notes</item>
     </plurals>
+    <plurals name="hidden_selected_notes">
+        <item quantity="one">Hidden %1$d note</item>
+        <item quantity="other">Hidden %1$d notes</item>
+    </plurals>
     <string name="ascending">Ascending</string>
     <string name="attach_file">Attach file</string>
     <plurals name="attachments">
@@ -405,4 +409,8 @@
     <string name="yearly">Yearly</string>
     <string name="years">Years</string>
     <string name="your_notes_associated">Your notes attached to this label will not be deleted</string>
+    <string name="hiddens">Hidden</string>
+    <string name="hidden">Hidden</string>
+    <string name="unhidden">Unhidden</string>
+    <string name="hidden_lock_title">Show hidden</string>
 </resources>

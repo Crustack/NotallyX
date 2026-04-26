@@ -1,5 +1,6 @@
 package com.philkes.notallyx.presentation.activity.note
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
@@ -12,6 +13,7 @@ import android.os.Looper
 import android.text.Editable
 import android.text.Spanned
 import android.text.style.URLSpan
+import android.util.AttributeSet
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
@@ -19,6 +21,7 @@ import android.view.View.GONE
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.VISIBLE
+import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.viewModels
 import androidx.annotation.ColorInt
@@ -34,6 +37,7 @@ import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.generateBaseNote
@@ -124,6 +128,27 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         }
     }
 
+    override fun onCreateView(name: String, context: Context, attrs: AttributeSet): View? {
+        if (notallyModel.folder == Folder.HIDDEN) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+        return super.onCreateView(name, context, attrs)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (notallyModel.folder == Folder.HIDDEN) {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+    }
+
+    override fun onPause() {
+        if (notallyModel.folder == Folder.HIDDEN) {
+            finish()
+        }
+        super.onPause()
+    }
+
     override fun finish() {
         lifecycleScope.launch(Dispatchers.Main) {
             checkSave()
@@ -183,6 +208,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                     Intent.ACTION_SEND,
                     Intent.ACTION_SEND_MULTIPLE,
                     Intent.ACTION_VIEW -> handleSharedNote()
+
                     else ->
                         intent.getStringExtra(EXTRA_DISPLAYED_LABEL)?.let {
                             notallyModel.setLabels(listOf(it))
@@ -478,6 +504,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                     Type.NOTE ->
                         (manualSize ?: binding.EnterBody.lineCount) >
                             (if (isInLandscapeMode) 30 else 75)
+
                     Type.LIST ->
                         (manualSize ?: notallyModel.items.size) >
                             (if (isInLandscapeMode) 15 else 25)
@@ -647,6 +674,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         binding.EnterTitle.initHistory(changeHistory) { text ->
             notallyModel.title = text.trim().toString()
         }
+
         val textMaxLengthFilter = application.textMaxLengthFilter()
         binding.EnterTitle.filters = textMaxLengthFilter
         binding.EnterBody.filters = textMaxLengthFilter
@@ -688,6 +716,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 NotesSortBy.CREATION_DATE -> Pair(notallyModel.timestamp, R.string.creation_date)
                 NotesSortBy.MODIFIED_DATE ->
                     Pair(notallyModel.modifiedTimestamp, R.string.modified_date)
+
                 else -> Pair(null, null)
             }
         binding.Date.apply {
@@ -943,6 +972,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 binding.MainListView.visibility = GONE
                 binding.CheckedListView.visibility = GONE
             }
+
             Type.LIST -> {
                 binding.EnterBody.visibility = GONE
                 binding.CheckedListView.visibility =

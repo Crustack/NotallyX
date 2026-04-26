@@ -26,12 +26,13 @@ class SearchFragment : NotallyFragment() {
 
         val initialLabel = arguments?.getString(EXTRA_INITIAL_LABEL)
         model.currentLabel = initialLabel
-        if (initialLabel?.isEmpty() == true) {
+        if (initialLabel?.isEmpty() == true && model.folder.value != Folder.HIDDEN) {
             val checked =
                 when (initialFolder ?: model.folder.value) {
                     Folder.NOTES -> R.id.Notes
                     Folder.DELETED -> R.id.Deleted
                     Folder.ARCHIVED -> R.id.Archived
+                    Folder.HIDDEN -> R.id.Hidden
                 }
 
             binding?.ChipGroup?.apply {
@@ -40,6 +41,7 @@ class SearchFragment : NotallyFragment() {
                         R.id.Notes -> model.folder.value = Folder.NOTES
                         R.id.Deleted -> model.folder.value = Folder.DELETED
                         R.id.Archived -> model.folder.value = Folder.ARCHIVED
+                        R.id.Hidden -> model.folder.value = Folder.HIDDEN
                     }
                 }
                 check(checked)

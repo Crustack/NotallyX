@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import com.philkes.notallyx.R
+import com.philkes.notallyx.utils.canAuthenticateWithBiometrics
 import javax.crypto.Cipher
 
 fun Activity.showBiometricOrPinPrompt(
@@ -54,6 +55,81 @@ fun Fragment.showBiometricOrPinPrompt(
         onSuccess,
         onFailure,
     )
+}
+
+fun showBiometricOrPinPromptHidden(
+    fragment: Fragment,
+    titleResId: Int,
+    onSuccess: () -> Unit,
+    onFailure: (errorCode: Int?) -> Unit,
+) {
+    when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> {
+            if (
+                BiometricManager.BIOMETRIC_SUCCESS !=
+                    BiometricManager.from(fragment.requireContext())
+                        .canAuthenticate(
+                            BiometricManager.Authenticators.DEVICE_CREDENTIAL or
+                                BiometricManager.Authenticators.BIOMETRIC_STRONG
+                        )
+            ) {
+                onSuccess.invoke()
+                return
+            }
+            val promptInfo =
+                BiometricPrompt.PromptInfo.Builder()
+                    .apply {
+                        setTitle(fragment.getString(titleResId))
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            setAllowedAuthenticators(
+                                BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                                    BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                            )
+                        } else {
+                            setNegativeButtonText(fragment.getString(R.string.cancel))
+                            setAllowedAuthenticators(
+                                BiometricManager.Authenticators.BIOMETRIC_STRONG
+                            )
+                        }
+                    }
+                    .build()
+            val authCallback =
+                object : BiometricPrompt.AuthenticationCallback() {
+                    override fun onAuthenticationSucceeded(
+                        result: BiometricPrompt.AuthenticationResult
+                    ) {
+                        super.onAuthenticationSucceeded(result)
+                        onSuccess.invoke()
+                    }
+
+                    override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                        super.onAuthenticationError(errorCode, errString)
+                        onFailure.invoke(errorCode)
+                    }
+                }
+            val prompt =
+                BiometricPrompt(
+                    fragment,
+                    ContextCompat.getMainExecutor(fragment.requireContext()),
+                    authCallback,
+                )
+
+            prompt.authenticate(promptInfo)
+        }
+
+        else -> {
+            if (
+                fragment.requireContext().canAuthenticateWithBiometrics() !=
+                    android.hardware.biometrics.BiometricManager.BIOMETRIC_SUCCESS
+            ) {
+                onSuccess.invoke()
+                return
+            }
+            // API 21-22: No biometric support, fallback to PIN/Password
+            promptPinAuthentication(fragment.requireContext(), null, titleResId, onFailure)
+            onSuccess.invoke()
+        }
+    }
 }
 
 private fun showBiometricOrPinPrompt(
@@ -103,11 +179,6 @@ private fun showBiometricOrPinPrompt(
                         onSuccess.invoke(result.cryptoObject!!.cipher!!)
                     }
 
-                    override fun onAuthenticationFailed() {
-                        super.onAuthenticationFailed()
-                        onFailure.invoke(null)
-                    }
-
                     override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                         super.onAuthenticationError(errorCode, errString)
                         onFailure.invoke(errorCode)
@@ -127,7 +198,7 @@ private fun showBiometricOrPinPrompt(
 
 private fun promptPinAuthentication(
     context: Context,
-    activityResultLauncher: ActivityResultLauncher<Intent>,
+    activityResultLauncher: ActivityResultLauncher<Intent>?,
     titleResId: Int,
     onFailure: (errorCode: Int?) -> Unit,
 ) {
@@ -141,7 +212,7 @@ private fun promptPinAuthentication(
                     null,
                 )
             if (intent != null) {
-                activityResultLauncher.launch(intent)
+                activityResultLauncher?.launch(intent)
             } else {
                 onFailure.invoke(null)
             }
@@ -157,7 +228,7 @@ private fun promptPinAuthentication(
                     null,
                 )
             if (intent != null) {
-                activityResultLauncher.launch(intent)
+                activityResultLauncher?.launch(intent)
             } else {
                 onFailure.invoke(null)
             }

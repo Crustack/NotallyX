@@ -402,6 +402,7 @@ fun Folder.movedToResId(): Int {
         Folder.DELETED -> R.plurals.deleted_selected_notes
         Folder.ARCHIVED -> R.plurals.archived_selected_notes
         Folder.NOTES -> R.plurals.restored_selected_notes
+        Folder.HIDDEN -> R.plurals.hidden_selected_notes
     }
 }
 

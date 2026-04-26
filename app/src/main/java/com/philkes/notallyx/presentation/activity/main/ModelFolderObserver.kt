@@ -53,6 +53,7 @@ class ModelFolderObserver(
             Folder.NOTES -> initNotesFolderMenu()
             Folder.ARCHIVED -> initArchivedFolderMenu()
             Folder.DELETED -> initDeletedFolderMenu()
+            Folder.HIDDEN -> initHiddenFolderMenu()
         }
     }
 
@@ -64,6 +65,7 @@ class ModelFolderObserver(
             baseModel.duplicateSelectedBaseNotes()
         }
         menu.add(R.string.archive, R.drawable.archive) { moveNotes(Folder.ARCHIVED) }
+        menu.add(R.string.hidden, R.drawable.hidden) { moveNotes(Folder.HIDDEN) }
         menu.addChangeColor()
         val pinnedToStatus = menu.addPinnedToStatus()
         val share = menu.addShare()
@@ -98,6 +100,23 @@ class ModelFolderObserver(
         menu.addChangeColor()
         val share = menu.add(R.string.share, R.drawable.share) { share() }
         model.actionMode.count.observeCount(activity, share)
+    }
+
+    private fun initHiddenFolderMenu() {
+        menu.add(
+            R.string.unhidden,
+            R.drawable.unhidden,
+            MenuItem.SHOW_AS_ACTION_ALWAYS,
+        ) {
+            moveNotes(Folder.NOTES)
+        }
+        menu.addDelete(MenuItem.SHOW_AS_ACTION_ALWAYS)
+        menu.addLabels(MenuItem.SHOW_AS_ACTION_ALWAYS)
+        menu.addExportMenu()
+        menu.addChangeColor()
+        val share = menu.add(R.string.share, R.drawable.share) { share() }
+        model.actionMode.count.observeCount(activity, share)
+
     }
 
     private fun Menu.addPinned(showAsAction: Int = MenuItem.SHOW_AS_ACTION_IF_ROOM): MenuItem {
@@ -238,10 +257,10 @@ class ModelFolderObserver(
             val ids =
                 baseModel.moveBaseNotes(folderTo) { baseModel.actionMode.loading.postValue(false) }
             Snackbar.make(
-                    activity.findViewById(R.id.DrawerLayout),
-                    activity.getQuantityString(folderTo.movedToResId(), ids.size),
-                    Snackbar.LENGTH_SHORT,
-                )
+                activity.findViewById(R.id.DrawerLayout),
+                activity.getQuantityString(folderTo.movedToResId(), ids.size),
+                Snackbar.LENGTH_SHORT,
+            )
                 .apply { setAction(R.string.undo) { baseModel.moveBaseNotes(ids, folderFrom) } }
                 .show()
         } catch (_: Exception) {
@@ -262,13 +281,13 @@ class ModelFolderObserver(
                 activity.lifecycleScope.launch {
                     val deletedNotes = baseModel.deleteSelectedBaseNotes()
                     Snackbar.make(
-                            activity.findViewById(R.id.DrawerLayout),
-                            activity.getQuantityString(
-                                R.plurals.deleted_selected_notes,
-                                removedNotes.size,
-                            ),
-                            Snackbar.LENGTH_SHORT,
-                        )
+                        activity.findViewById(R.id.DrawerLayout),
+                        activity.getQuantityString(
+                            R.plurals.deleted_selected_notes,
+                            removedNotes.size,
+                        ),
+                        Snackbar.LENGTH_SHORT,
+                    )
                         .apply {
                             setAction(R.string.undo) { baseModel.saveNotes(removedNotes) }
                             addCallback(

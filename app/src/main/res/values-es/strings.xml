@@ -272,7 +272,7 @@
         <item quantity="other">%1$s notas son demasiado grandes para guardarlas, han sido truncadas a %2$s caracteres</item>
     </plurals>
     <string name="of_the_month">%1$s de mes</string>
-    <string name="of_the_month_last">Último %1$s de mes</string>
+    <string name="of_the_month_last">Último %1$s del mes</string>
     <string name="open_link">Abrir enlace</string>
     <string name="open_note">Abrir nota</string>
     <string name="others">Otros</string>
@@ -379,4 +379,12 @@
     <string name="yearly">Anual</string>
     <string name="years">Años</string>
     <string name="your_notes_associated">Tus notas asociadas con esta etiqueta no serán eliminadas</string>
+    <string name="hiddens">Ocultas</string>
+    <string name="hidden">Ocultar</string>
+    <string name="unhidden">Desocultar</string>
+    <plurals name="hidden_selected_notes">
+        <item quantity="one">%1$d nota oculta</item>
+        <item quantity="other">%1$d notas ocultas</item>
+    </plurals>
+    <string name="hidden_lock_title">Mostrar ocultas</string>
 </resources>

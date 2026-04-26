@@ -239,9 +239,11 @@ class NoteActionHandler(
                 ExportBottomSheet(activity.colorInt, ::export)
                     .show(activity.supportFragmentManager, ExportBottomSheet.TAG)
             }
+
             EditAction.SHARE -> share()
             EditAction.DELETE -> delete()
             EditAction.ARCHIVE -> archive()
+            EditAction.HIDDEN -> hidden()
             EditAction.TOGGLE_VIEW_MODE -> toggleViewMode()
             EditAction.CONVERT -> convertTo()
             EditAction.DELETE_FOREVER -> deleteForever()
@@ -358,6 +360,14 @@ class NoteActionHandler(
             restore()
         } else {
             moveNote(Folder.ARCHIVED)
+        }
+    }
+
+    private fun hidden() {
+        if (notallyModel.folder == Folder.HIDDEN) {
+            restore()
+        } else {
+            moveNote(Folder.HIDDEN)
         }
     }
 

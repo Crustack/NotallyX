@@ -468,6 +468,7 @@ fun ListItemSort.callback(adapterChecked: CheckedListItemAdapter) =
     when (this) {
         ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP ->
             ListItemCheckedTimestampSortCallback(adapterChecked)
+
         else -> ListItemParentSortCallback(adapterChecked)
     }
 
@@ -503,6 +504,7 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
     SHARE(R.string.share, R.drawable.share),
     DELETE(R.string.delete, R.drawable.delete),
     ARCHIVE(R.string.archive, R.drawable.archive),
+    HIDDEN(R.string.hidden, R.drawable.hidden),
     TOGGLE_VIEW_MODE(R.string.edit, R.drawable.visibility),
     CONVERT(R.string.convert_to_list_note, R.drawable.convert_to_text),
     DELETE_FOREVER(R.string.delete_forever, R.drawable.delete),
@@ -523,11 +525,15 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
                     if (isPinnedToStatus) R.drawable.pinboard_filled else R.drawable.pinboard
                 ARCHIVE ->
                     if (folder == Folder.ARCHIVED) R.drawable.unarchive else R.drawable.archive
+
                 RESTORE ->
                     if (folder == Folder.ARCHIVED) R.drawable.unarchive else R.drawable.restore
+
+                HIDDEN -> if (folder == Folder.HIDDEN) R.drawable.unhidden else R.drawable.hidden
                 TOGGLE_VIEW_MODE ->
                     if (viewMode == NoteViewMode.READ_ONLY) R.drawable.edit
                     else R.drawable.visibility
+
                 else -> drawableResId
             }
         val title =
@@ -537,12 +543,15 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
                     if (isPinnedToStatus) R.string.unpin_from_status_bar
                     else R.string.pin_to_status_bar
                 ARCHIVE -> if (folder == Folder.ARCHIVED) R.string.unarchive else R.string.archive
+                HIDDEN -> if (folder == Folder.HIDDEN) R.string.unhidden else R.string.hidden
                 RESTORE -> if (folder == Folder.ARCHIVED) R.string.unarchive else R.string.restore
                 TOGGLE_VIEW_MODE ->
                     if (viewMode == NoteViewMode.READ_ONLY) R.string.edit else R.string.read_only
+
                 CONVERT ->
                     if (type == Type.LIST) R.string.convert_to_text_note
                     else R.string.convert_to_list_note
+
                 else -> textResId
             }
         return title to icon
