@@ -190,7 +190,8 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             val id = persistedId ?: selectedId
             loadNote(id, persistedId, savedInstanceState)
         }
-
+        setupListeners()
+        configureUI()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             try {
                 updateModel()
@@ -224,7 +225,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
         initBottomMenu()
         resetToolbars()
-        setupListeners()
         setStateFromModel(savedInstanceState)
 
         if (
@@ -235,7 +235,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 preferences.defaultListNoteViewMode.value.toNoteViewMode(lastUsedViewMode)
         }
 
-        configureUI()
         binding.ScrollView.visibility = VISIBLE
         setupEditNoteReminderChip()
     }
