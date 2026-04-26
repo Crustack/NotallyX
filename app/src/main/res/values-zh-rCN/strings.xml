@@ -18,10 +18,10 @@
         <item quantity="other">存档了 %1$d 则笔记</item>
     </plurals>
     <string name="ascending">升序</string>
-    <string name="attach_file">附件</string>
+    <string name="attach_file">附件文件</string>
     <plurals name="attachments">
-        <item quantity="one">个附件</item>
-        <item quantity="other">个附件</item>
+        <item quantity="one">附件</item>
+        <item quantity="other">附件</item>
     </plurals>
     <string name="audio_recordings">录音</string>
     <string name="auto_backup">自动备份</string>
@@ -38,8 +38,8 @@
     <string name="auto_remove_deleted_notes">多久后对已删除笔记自动采取永久删除操作</string>
     <string name="auto_remove_deleted_notes_hint">启用后，被删除的笔记将在 X 天后被永久性删除</string>
     <string name="auto_save_after_idle_time">在指定的空闲时间后自动保存笔记</string>
-    <string name="auto_sort_by_checked">将所选项目排到末尾</string>
-    <string name="auto_sort_by_checked_timestamp">按勾选时间排序勾选项</string>
+    <string name="auto_sort_by_checked">将勾选项目排到末尾</string>
+    <string name="auto_sort_by_checked_timestamp">根据勾选时间排列勾选项顺序</string>
     <string name="back">返回</string>
     <string name="backup">备份</string>
     <string name="backup_password">备份密码</string>
@@ -112,7 +112,7 @@
     <string name="date_format">日期格式</string>
     <string name="date_format_apply_in_note_view">同样应用于笔记视图</string>
     <string name="date_format_hint">将所选日期格式应用于笔记概览</string>
-    <string name="date_format_note_view">日期时间格式的笔记视图</string>
+    <string name="date_format_note_view">日期时间格式笔记视图</string>
     <string name="date_format_overview">日期时间格式概览</string>
     <plurals name="days">
         <item quantity="one">天</item>
@@ -201,6 +201,7 @@
     <string name="import_action">导入</string>
     <string name="import_backup">导入备份</string>
     <string name="import_backup_password_hint">如果你的备份文件没有密码保护，按下“导入”即可。如有，请输入正确的密码。</string>
+    <string name="import_from_notally">要从 Notally 导入，请使用\" %1$s\" </string>
     <string name="import_other">从其它APP导入笔记</string>
     <string name="import_settings">导入设置</string>
     <string name="import_settings_failure">导入设置失败，选对文件了吗？</string>
@@ -223,6 +224,7 @@
     <string name="invalid_google_keep">提供的 Google Takeout ZIP 文件无效</string>
     <string name="invalid_image">无效图片</string>
     <string name="invalid_link">复制有效链接到你的剪贴板</string>
+    <string name="invalid_quillpad">提供的 Quillpad ZIP 文件无效</string>
     <string name="italic">斜体</string>
     <string name="item">项目</string>
     <string name="json_files">JSON 文件</string>
@@ -275,8 +277,8 @@
     <string name="note_too_big_truncating">笔记过大无法保存。被缩短到 %1$s 个字符（先前为：%2$s 个）</string>
     <string name="notes">笔记</string>
     <plurals name="notes">
-        <item quantity="one">则笔记</item>
-        <item quantity="other">则笔记</item>
+        <item quantity="one">笔记</item>
+        <item quantity="other">笔记</item>
     </plurals>
     <string name="notes_sorted_by">笔记排序方式</string>
     <plurals name="notes_too_big_truncating">
@@ -291,9 +293,9 @@
     <string name="others">其他</string>
     <string name="pause">暂停</string>
     <string name="paused">已暂停</string>
-    <string name="pin">固定</string>
+    <string name="pin">置于顶部</string>
     <string name="pin_to_status_bar">固定到状态栏</string>
-    <string name="pinned">已固定</string>
+    <string name="pinned">已置顶</string>
     <string name="plain_text_files">Markdown/纯文本文件</string>
     <string name="plain_text_files_help">要从纯文本（单文件或文件夹）导入笔记，单击“导入”。每个文件被导入为单独的笔记，文件的名称变成笔记的标题。如果文本内容以清单语法开头（如   Markdown ’- [x]’, NotallyX 语法 ’[✓]’, 或 ’*’, ’-’），它将被转换为清单笔记。</string>
     <string name="play">播放</string>
@@ -302,6 +304,7 @@
     <string name="please_grant_notally_notification">请授予 NotallyX 发送通知的权限</string>
     <string name="please_grant_notally_notification_auto_backup">如果自动备份失败，你会收到一则通知（前提是你授予了 NotallyX 发送通知的权限）</string>
     <string name="previous">前一个</string>
+    <string name="quillpad_help">要从 Quillpad 导入笔记，必须将 Quillpad 笔记导出为 .ZIP 备份文件。具体步骤为打开 Quillpad，转到设置&gt;备份&gt;创建备份，在手机上保存 .ZIP 。\n\n如果已经有 Quillpad 的 .ZIP 备份文件，单击导入并选中该文件。</string>
     <string name="rate">给应用打分</string>
     <string name="read_only">只读</string>
     <string name="ready_to_record">准备好录音了</string>
@@ -366,13 +369,13 @@
     <string name="text_size_preview">乱数假文</string>
     <string name="theme">主题</string>
     <string name="theme_use_dynamic_colors">使用系统的壁纸颜色</string>
-    <string name="time">时间</string>
-    <string name="time_24h">24小时</string>
-    <string name="time_am_pm">上/下午</string>
+    <string name="time">使用系统壁纸颜色</string>
+    <string name="time_24h">24 小时</string>
+    <string name="time_am_pm">时间</string>
     <string name="time_format_note_view">时间格式笔记视图</string>
     <string name="time_format_overview">时间格式概览</string>
     <string name="title">标题</string>
-    <string name="to_pin_note_status_bar">要将笔记固定到状态栏，请允许 NotallyX 发送通知。轻触设置&gt;权限，允许通知</string>
+    <string name="to_pin_note_status_bar">要固定笔记到状态栏，请允许本应用发送通知。轻按系统设置&gt;权限，允许通知</string>
     <string name="to_record_audio">要录音，请允许 NotallyX 访问你的麦克风。轻按“设置”&gt;“权限”，打开麦克风</string>
     <string name="unarchive">取消存档</string>
     <plurals name="unarchived_selected_notes">
