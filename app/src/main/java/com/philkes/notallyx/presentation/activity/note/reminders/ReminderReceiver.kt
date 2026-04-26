@@ -194,6 +194,9 @@ class ReminderReceiver : BroadcastReceiver() {
             )
         }
         database.getBaseNoteDao().get(noteId)?.let { note ->
+            if (note.folder != Folder.NOTES) {
+                return@let
+            }
             val deleteNoteIntent =
                 Intent(context, ReminderReceiver::class.java).apply {
                     action = ACTION_DELETE_NOTE
