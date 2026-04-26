@@ -259,7 +259,7 @@
     <string name="monospace">Dòng đơn</string>
     <string name="monthly">Hàng tháng</string>
     <string name="months">Tháng</string>
-    <string name="more">hơn %1%d</string>
+    <string name="more">hơn %1$d</string>
     <plurals name="more_files">
         <item quantity="one">... hơn %1$d tệp</item>
         <item quantity="other">... hơn %1$d tệp</item>
@@ -268,10 +268,10 @@
     <string name="next">Tiếp tục</string>
     <string name="no_auto_sort">Không tự động sắp xếp</string>
     <string name="none">Không</string>
-    <string name="not_exists">%1$s\' không tồn tại</string>
+    <string name="not_exists">\'%1$s\' không tồn tại</string>
     <string name="note">Ghi chú</string>
     <string name="note_text_too_long_truncated">Văn bản quá dài, cắt xuống còn %1$d ký tự</string>
-    <string name="note_too_big_truncating">Ghi chú quá dài để lưu, đã cắt xuống còn %1$d ký tự (gốc %2$s ký tự)</string>
+    <string name="note_too_big_truncating">Ghi chú quá dài để lưu, đã cắt xuống còn %1$s ký tự (gốc %2$s ký tự)</string>
     <string name="notes">Ghi chú</string>
     <plurals name="notes">
         <item quantity="one">Ghi chú</item>
@@ -344,7 +344,7 @@
     <string name="share">Chia sẻ</string>
     <string name="single_file">Tệp lẻ</string>
     <string name="single_note_or_list">Ghi chú hoặc liệt kê</string>
-    <string name="skip">Bỏ qua %1$d tệp/ảnh đính kèm bị thiếu</string>
+    <string name="skip">Bỏ qua</string>
     <string name="small">Nhỏ</string>
     <string name="something_went_wrong">Có lỗi xảy ra. Vui lòng thử lại.</string>
     <string name="something_went_wrong_audio">Có lỗi. Bản ghi âm có thể đã bị di chuyển hoặc xóa.\n\nLỗi: (%1$d, %2$d)</string>
