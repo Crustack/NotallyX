@@ -197,6 +197,37 @@ fun BaseNote.toHtml(showDateCreated: Boolean, imagesRootFolder: File?) = buildSt
     append("<!DOCTYPE html>")
     append("<html><head>")
     append("<meta charset=\"UTF-8\"><title>$title</title>")
+    append(
+        """
+    <style>
+        @page {
+            margin: 1in;
+        }
+
+        body {
+            font-family: sans-serif;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 12px;
+            margin-bottom: 12px;
+        }
+
+        h2, h3 {
+            margin-bottom: 12px;
+        }
+
+        p {
+            margin-bottom: 10px;
+        }
+    </style>
+    """
+            .trimIndent()
+    )
     append("</head><body>")
     append("<h2>$title</h2>")
 
@@ -557,7 +588,7 @@ fun Date.toCalendar() = Calendar.getInstance().apply { timeInMillis = this@toCal
 
 fun List<ListItem>.toText() = buildString {
     for (item in this@toText) {
-        val check = if (item.checked) "[✓]" else "[ ]"
+        val check = if (item.checked) "[?]" else "[ ]"
         val childIndentation = if (item.isChild) "    " else ""
         appendLine("$childIndentation$check ${item.body}")
     }
