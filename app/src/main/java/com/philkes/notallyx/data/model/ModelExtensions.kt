@@ -588,7 +588,7 @@ fun Date.toCalendar() = Calendar.getInstance().apply { timeInMillis = this@toCal
 
 fun List<ListItem>.toText() = buildString {
     for (item in this@toText) {
-        val check = if (item.checked) "[?]" else "[ ]"
+        val check = if (item.checked) "[✓]" else "[ ]"
         val childIndentation = if (item.isChild) "    " else ""
         appendLine("$childIndentation$check ${item.body}")
     }
