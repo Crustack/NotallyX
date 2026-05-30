@@ -21,6 +21,7 @@ import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.annotation.ColorInt
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
@@ -232,7 +233,7 @@ fun Activity.showErrorDialog(
     originalStacktrace: String? = null,
     neutralButtonTextResId: Int? = null,
     neutralButtonClickListener: DialogInterface.OnClickListener? = null,
-) {
+): AlertDialog? {
     val stacktrace = throwable.stackTraceToString()
     val layout =
         DialogErrorBinding.inflate(layoutInflater, null, false).apply {
@@ -240,7 +241,7 @@ fun Activity.showErrorDialog(
             ExceptionDetails.text = stacktrace
             CopyButton.setOnClickListener { copyToClipBoard(stacktrace) }
         }
-    MaterialAlertDialogBuilder(this)
+    return MaterialAlertDialogBuilder(this)
         .apply {
             setTitle(titleResId)
             setView(layout.root)

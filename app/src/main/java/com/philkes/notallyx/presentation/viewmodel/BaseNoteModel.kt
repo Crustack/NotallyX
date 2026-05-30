@@ -942,6 +942,14 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) { baseNoteDao.insert(notes) }
     }
 
+    fun cleanupDatabase(onComplete: () -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val allNotes = baseNoteDao.getAllSync()
+            baseNoteDao.updateAll(allNotes)
+            withContext(Dispatchers.Main) { onComplete() }
+        }
+    }
+
     companion object {
         private const val TAG = "BaseNoteModel"
 

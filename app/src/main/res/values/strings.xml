@@ -173,6 +173,8 @@
     <string name="enable_lock_description">This will also encrypt the database</string>
     <string name="enable_lock_title">Enable lock via Biometric/PIN</string>
     <string name="enabled">Enabled</string>
+    <string name="error">Error</string>
+    <string name="error_loading_data">Error while loading some data from the database. Corrupted notes will not be displayed.\nYou can cleanup (deleting corrupted notes) the database by using \'%1$s\'</string>
     <string name="error_while_renaming_file">Error while renaming file</string>
     <string name="error_while_renaming_image">Error while renaming image</string>
     <string name="evernote">Evernote</string>

@@ -104,11 +104,11 @@ interface BaseNoteDao {
 
     @Insert suspend fun insert(baseNotes: List<BaseNote>): List<Long>
 
+    @Update suspend fun updateAll(baseNotes: List<BaseNote>)
+
     @Update(entity = BaseNote::class) suspend fun update(labelsInBaseNotes: List<LabelsInBaseNote>)
 
     @Query("SELECT COUNT(*) FROM BaseNote") fun count(): Int
-
-    @Query("DELETE FROM BaseNote") suspend fun deleteAll()
 
     @Query("DELETE FROM BaseNote WHERE id = :id") suspend fun delete(id: Long)
 
@@ -130,6 +130,8 @@ interface BaseNoteDao {
     @Query("SELECT * FROM BaseNote") fun getAllAsync(): LiveData<List<BaseNote>>
 
     @Query("SELECT * FROM BaseNote") fun getAll(): List<BaseNote>
+
+    @Query("SELECT * FROM BaseNote") fun getAllSync(): List<BaseNote>
 
     @Query("SELECT * FROM BaseNote WHERE id IN (:ids)") fun getByIds(ids: LongArray): List<BaseNote>
 

@@ -139,7 +139,6 @@ class ErrorActivity : AppCompatActivity() {
                             )
                         }
                         lifecycleScope.launch(exceptionHandler) {
-                            throw IllegalArgumentException("Export failed") // TODO: Remove
                             val exportedNotesAndAttachments =
                                 withContext(Dispatchers.IO) {
                                     return@withContext application.exportAsZip(
