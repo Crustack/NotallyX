@@ -320,7 +320,10 @@ typealias NotesAndAttachments = Pair<Int, Int>
 
 fun ContextWrapper.exportRawDatabase(fileUri: Uri) {
     val (_, databaseCopy) = copyDatabase()
-    contentResolver.openOutputStream(fileUri)?.use { outputStream ->
+    val outputStream =
+        contentResolver.openOutputStream(fileUri)
+            ?: throw IOException("Failed to open output stream for $fileUri")
+    outputStream.use { outputStream ->
         FileInputStream(databaseCopy).use { inputStream ->
             inputStream.copyToLarge(outputStream)
             outputStream.flush()

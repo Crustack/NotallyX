@@ -32,7 +32,7 @@ import com.google.android.material.transition.platform.MaterialFade
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.model.BaseNote
-import com.philkes.notallyx.data.model.Folder
+import com.philkes.notallyx.data.model.ConverterErrorReporter
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.databinding.ActivityMainBinding
 import com.philkes.notallyx.presentation.activity.LockedActivity
@@ -40,11 +40,11 @@ import com.philkes.notallyx.presentation.activity.main.fragment.DisplayLabelFrag
 import com.philkes.notallyx.presentation.activity.main.fragment.NotallyFragment
 import com.philkes.notallyx.presentation.activity.main.fragment.SearchFragment
 import com.philkes.notallyx.presentation.activity.note.EditListActivity
-import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
 import com.philkes.notallyx.presentation.activity.note.NoteActionHandler
 import com.philkes.notallyx.presentation.activity.note.handleRejection
 import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.setupProgressDialog
+import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel.Companion.CURRENT_LABEL_EMPTY
 import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel.Companion.CURRENT_LABEL_NONE
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
@@ -53,7 +53,9 @@ import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreference
 import com.philkes.notallyx.presentation.viewmodel.progress.MigrationProgress
 import com.philkes.notallyx.utils.LATEST_DATA_SCHEMA
 import com.philkes.notallyx.utils.backup.exportNotes
+import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.runMigrations
+import com.philkes.notallyx.utils.showErrorDialog
 import kotlinx.coroutines.launch
 
 class MainActivity : LockedActivity<ActivityMainBinding>() {
@@ -95,6 +97,25 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         preferences.alwaysShowSearchBar.observe(this) { invalidateOptionsMenu() }
 
         checkForMigrations(savedInstanceState)
+
+        lifecycleScope.launch {
+            ConverterErrorReporter.errors.collect { throwable ->
+                application.log("Converters", throwable = throwable)
+                showErrorDialog(
+                        throwable,
+                        R.string.error,
+                        getString(R.string.error_loading_data, getString(R.string.clean_up)),
+                        neutralButtonTextResId = R.string.clean_up,
+                        neutralButtonClickListener = { dialog, _ ->
+                            ConverterErrorReporter.dismissAllDialogs()
+                            baseModel.cleanupDatabase {
+                                showToast(getString(R.string.cleanup_finished_title))
+                            }
+                        },
+                    )
+                    ?.let { ConverterErrorReporter.registerDialog(it) }
+            }
+        }
 
         onBackPressedDispatcher.addCallback(
             this,
