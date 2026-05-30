@@ -944,7 +944,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     fun cleanupDatabase(onComplete: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
-            val allNotes = baseNoteDao.getAllSync()
+            val allNotes = baseNoteDao.getAll()
             baseNoteDao.updateAll(allNotes)
             withContext(Dispatchers.Main) { onComplete() }
         }

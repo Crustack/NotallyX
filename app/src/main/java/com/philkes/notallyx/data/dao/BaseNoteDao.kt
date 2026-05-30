@@ -131,8 +131,6 @@ interface BaseNoteDao {
 
     @Query("SELECT * FROM BaseNote") fun getAll(): List<BaseNote>
 
-    @Query("SELECT * FROM BaseNote") fun getAllSync(): List<BaseNote>
-
     @Query("SELECT * FROM BaseNote WHERE id IN (:ids)") fun getByIds(ids: LongArray): List<BaseNote>
 
     @Query("SELECT B.id FROM BaseNote B") fun getAllIds(): List<Long>

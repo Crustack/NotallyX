@@ -170,7 +170,7 @@ abstract class CommonDao(private val database: NotallyDatabase) {
         return ImportResult(
             inserted = insertedCount,
             duplicates = duplicates,
-            corruptedNotes = readCorrupted,
+            corruptedNotes = corrupted,
         )
     }
 

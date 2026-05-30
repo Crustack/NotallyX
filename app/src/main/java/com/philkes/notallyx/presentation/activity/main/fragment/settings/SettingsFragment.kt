@@ -594,7 +594,7 @@ class SettingsFragment : Fragment() {
                         return@setAdapter
                     }
                 }
-                selectedImportSource = ImportSource.entries[which - 1]
+                selectedImportSource = ImportSource.entries[which - notallyItems.size]
                 MaterialAlertDialogBuilder(requireContext())
                     .setMessage(selectedImportSource.helpTextResId)
                     .setPositiveButton(R.string.import_action) { dialog, _ ->

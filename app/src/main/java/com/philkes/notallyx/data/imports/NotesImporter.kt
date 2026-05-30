@@ -108,7 +108,7 @@ class NotesImporter(private val app: Application, private val database: NotallyD
             progress?.postValue(ImportProgress(inProgress = false))
             return ImportResult(
                 inserted = insertedCount,
-                duplicates = (totalCandidates - insertedCount),
+                duplicates = (totalCandidates - insertedCount - corruptedCount),
                 corruptedNotes = corruptedCount,
             )
         } finally {

@@ -114,7 +114,15 @@ abstract class NotallyDatabase : RoomDatabase() {
                 }
         }
 
-        fun clearInstance() {
+        fun clearInstance(context: Context) {
+            val preferences = NotallyXPreferences.getInstance(context)
+            instance?.value?.biometricLockObserver?.let {
+                preferences.biometricLock.removeObserver(it)
+            }
+            instance?.value?.dataInPublicFolderObserver?.let {
+                preferences.dataInPublicFolder.removeObserver(it)
+            }
+            instance?.value?.close()
             instance = null
         }
 

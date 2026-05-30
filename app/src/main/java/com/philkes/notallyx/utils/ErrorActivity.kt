@@ -193,7 +193,7 @@ class ErrorActivity : AppCompatActivity() {
                                                         getString(report_bug),
                                                     ),
                                                     originalStacktrace =
-                                                        stacktrace, // TODO: which stacktrace?
+                                                        throwable.stackTraceToString(),
                                                 )
                                             }
                                         lifecycleScope.launch(exceptionHandler) {
@@ -203,7 +203,9 @@ class ErrorActivity : AppCompatActivity() {
                                                     val (_, databaseCopy) =
                                                         copyDatabase(suffix = "_BEFORE_REIMPORT")
                                                     deleteDatabase(NotallyDatabase.DATABASE_NAME)
-                                                    NotallyDatabase.clearInstance()
+                                                    NotallyDatabase.clearInstance(
+                                                        this@ErrorActivity
+                                                    )
                                                     application.importRawDatabase(
                                                         uri,
                                                         exportBackupProgress,

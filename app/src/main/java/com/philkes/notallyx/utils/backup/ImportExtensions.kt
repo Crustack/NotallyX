@@ -96,17 +96,23 @@ suspend fun ContextWrapper.importRawDatabase(
     dbFileUri: Uri,
     importProgress: MutableLiveData<Progress>? = null,
 ): ImportResult {
-    val stream =
-        requireNotNull(
-            contentResolver.openInputStream(dbFileUri),
-            { "InputStream for dbFileUri '$dbFileUri' is null" },
-        )
     val tempDbFile = File(cacheDir, DATABASE_NAME + "_IMPORT")
-    stream.copyToFile(tempDbFile)
-    val (baseNotes, originalIds, labels, corruptedNotes) = readBaseNotes(tempDbFile, importProgress)
-    val import = import(baseNotes, originalIds, labels, corruptedNotes)
-    importProgress?.postValue(ImportProgress(inProgress = false))
-    return import
+    try {
+        requireNotNull(
+                contentResolver.openInputStream(dbFileUri),
+                { "InputStream for dbFileUri '$dbFileUri' is null" },
+            )
+            .use { inputStream ->
+                inputStream.copyToFile(tempDbFile)
+                val (baseNotes, originalIds, labels, corruptedNotes) =
+                    readBaseNotes(tempDbFile, importProgress)
+                val import = import(baseNotes, originalIds, labels, corruptedNotes)
+                importProgress?.postValue(ImportProgress(inProgress = false))
+                return import
+            }
+    } finally {
+        tempDbFile.delete()
+    }
 }
 
 data class BaseNotesImport(
@@ -121,28 +127,31 @@ fun ContextWrapper.readBaseNotes(
     progress: MutableLiveData<Progress>? = null,
 ): BaseNotesImport {
     val database = SQLiteDatabase.openDatabase(dbFile.path, null, SQLiteDatabase.OPEN_READONLY)
+    try {
+        val labelCursor = database.query("Label", null, null, null, null, null, null)
 
-    val labelCursor = database.query("Label", null, null, null, null, null, null)
+        val safeColumns = getOptionalColumns(database, "BaseNote")
 
-    val safeColumns = getOptionalColumns(database, "BaseNote")
+        val baseNoteCursor = database.query("BaseNote", safeColumns, null, null, null, null, null)
+        val (labels, _) = labelCursor.toList { cursor -> cursor.toLabel() }
 
-    val baseNoteCursor = database.query("BaseNote", safeColumns, null, null, null, null, null)
-    val (labels, _) = labelCursor.toList { cursor -> cursor.toLabel() }
-
-    val total = baseNoteCursor.count
-    var counter = 1
-    progress?.postValue(ImportProgress(0, total))
-    val originalIds = ArrayList<Long>(baseNoteCursor.count)
-    val (baseNotes, corrupted) =
-        baseNoteCursor.toList { cursor ->
-            // TODO: add error handling if single note fails
-            val baseNote = cursor.toBaseNote(database)
-            val originalId = cursor.getLong(cursor.getColumnIndexOrThrow("id"))
-            originalIds.add(originalId)
-            progress?.postValue(ImportProgress(counter++, total))
-            baseNote
-        }
-    return BaseNotesImport(baseNotes, originalIds, labels, corrupted)
+        val total = baseNoteCursor.count
+        var counter = 1
+        progress?.postValue(ImportProgress(0, total))
+        val originalIds = ArrayList<Long>(baseNoteCursor.count)
+        val (baseNotes, corrupted) =
+            baseNoteCursor.toList { cursor ->
+                // TODO: add error handling if single note fails
+                val baseNote = cursor.toBaseNote(database)
+                val originalId = cursor.getLong(cursor.getColumnIndexOrThrow("id"))
+                originalIds.add(originalId)
+                progress?.postValue(ImportProgress(counter++, total))
+                baseNote
+            }
+        return BaseNotesImport(baseNotes, originalIds, labels, corrupted)
+    } finally {
+        database.close()
+    }
 }
 
 /**
