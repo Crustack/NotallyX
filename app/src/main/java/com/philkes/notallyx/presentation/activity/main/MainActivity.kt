@@ -40,6 +40,7 @@ import com.philkes.notallyx.presentation.activity.main.fragment.DisplayLabelFrag
 import com.philkes.notallyx.presentation.activity.main.fragment.NotallyFragment
 import com.philkes.notallyx.presentation.activity.main.fragment.SearchFragment
 import com.philkes.notallyx.presentation.activity.note.EditListActivity
+import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
 import com.philkes.notallyx.presentation.activity.note.NoteActionHandler
 import com.philkes.notallyx.presentation.activity.note.handleRejection
 import com.philkes.notallyx.presentation.dp
@@ -101,19 +102,21 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         lifecycleScope.launch {
             ConverterErrorReporter.errors.collect { throwable ->
                 application.log("Converters", throwable = throwable)
-                showErrorDialog(
-                        throwable,
-                        R.string.error,
-                        getString(R.string.error_loading_data, getString(R.string.clean_up)),
-                        neutralButtonTextResId = R.string.clean_up,
-                        neutralButtonClickListener = { dialog, _ ->
-                            ConverterErrorReporter.dismissAllDialogs()
-                            baseModel.cleanupDatabase {
-                                showToast(getString(R.string.cleanup_finished_title))
-                            }
-                        },
-                    )
-                    ?.let { ConverterErrorReporter.registerDialog(it) }
+                if (ConverterErrorReporter.activeDialogs.isEmpty()) {
+                    showErrorDialog(
+                            throwable,
+                            R.string.error,
+                            getString(R.string.error_loading_data, getString(R.string.clean_up)),
+                            neutralButtonTextResId = R.string.clean_up,
+                            neutralButtonClickListener = { dialog, _ ->
+                                ConverterErrorReporter.dismissAllDialogs()
+                                baseModel.cleanupDatabase {
+                                    showToast(getString(R.string.cleanup_finished_title))
+                                }
+                            },
+                        )
+                        ?.let { ConverterErrorReporter.registerDialog(it) }
+                }
             }
         }
 

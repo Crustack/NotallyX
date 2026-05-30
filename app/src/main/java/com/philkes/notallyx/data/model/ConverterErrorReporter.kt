@@ -8,12 +8,11 @@ import kotlinx.coroutines.flow.asSharedFlow
 object ConverterErrorReporter {
     private val _errors = MutableSharedFlow<Throwable>(extraBufferCapacity = 10)
     val errors = _errors.asSharedFlow()
+    val activeDialogs = mutableSetOf<Dialog>()
 
     fun reportError(throwable: Throwable) {
         _errors.tryEmit(throwable)
     }
-
-    private val activeDialogs = mutableSetOf<Dialog>()
 
     fun registerDialog(dialog: Dialog) {
         activeDialogs.add(dialog)
