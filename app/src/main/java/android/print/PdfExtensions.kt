@@ -2,10 +2,13 @@ package android.print
 
 import android.content.ContentResolver
 import android.content.Context
+import android.util.Log
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.documentfile.provider.DocumentFile
 import com.philkes.notallyx.utils.nameWithoutExtension
+
+private const val TAG = "PdfExtensions"
 
 /**
  * Needs to be in android.print package to access the package private methods of
@@ -20,6 +23,16 @@ fun Context.printPdf(file: DocumentFile, content: String, pdfPrintListener: PdfP
             override fun onPageFinished(view: WebView?, url: String?) {
                 val adapter = webView.createPrintDocumentAdapter(file.nameWithoutExtension!!)
                 contentResolver.printPdf(file, adapter, pdfPrintListener)
+            }
+
+            @Suppress("DEPRECATION")
+            override fun onReceivedError(
+                view: WebView?,
+                errorCode: Int,
+                description: String?,
+                failingUrl: String?,
+            ) {
+                Log.w(TAG, "PDF WebView load error $errorCode: $description @ $failingUrl")
             }
         }
 }
