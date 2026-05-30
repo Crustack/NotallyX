@@ -323,7 +323,7 @@
     <string name="redo">Redo</string>
     <string name="reimport_database">Reimport DB</string>
     <string name="reimport_database_failed">Reimporting Database failed</string>
-    <string name="reimport_database_message">You can now try to reimport a raw database. This &lt;b&gt;deletes the current corrupted database&lt;/b&gt; and then tries to import the raw database by skipping corrupted notes if possible</string>
+    <string name="reimport_database_message">You can now try to reimport a raw database. This deletes the current corrupted database and then tries to import the raw database by skipping corrupted notes if possible</string>
     <string name="reminder_no_repetition">No repetition</string>
     <string name="reminders">Reminders</string>
     <string name="remove_link">Remove Link</string>

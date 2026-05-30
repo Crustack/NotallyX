@@ -1,17 +1,19 @@
 package com.philkes.notallyx.data.model
 
 import android.app.Dialog
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import androidx.lifecycle.MutableLiveData
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Helper to register Converter errors while accessing the database. */
 object ConverterErrorReporter {
-    private val _errors = MutableSharedFlow<Throwable>(extraBufferCapacity = 10)
-    val errors = _errors.asSharedFlow()
+    var enabled = AtomicBoolean(true)
+    val errors = MutableLiveData<Throwable?>(null)
     val activeDialogs = mutableSetOf<Dialog>()
 
     fun reportError(throwable: Throwable) {
-        _errors.tryEmit(throwable)
+        if (enabled.get() && errors.value == null) {
+            errors.postValue(throwable)
+        }
     }
 
     fun registerDialog(dialog: Dialog) {
@@ -23,5 +25,6 @@ object ConverterErrorReporter {
     fun dismissAllDialogs() {
         activeDialogs.forEach { it.dismiss() }
         activeDialogs.clear()
+        errors.postValue(null)
     }
 }

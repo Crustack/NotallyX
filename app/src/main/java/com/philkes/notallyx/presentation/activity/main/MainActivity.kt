@@ -99,24 +99,25 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
 
         checkForMigrations(savedInstanceState)
 
-        lifecycleScope.launch {
-            ConverterErrorReporter.errors.collect { throwable ->
-                application.log("Converters", throwable = throwable)
-                if (ConverterErrorReporter.activeDialogs.isEmpty()) {
-                    showErrorDialog(
-                            throwable,
-                            R.string.error,
-                            getString(R.string.error_loading_data, getString(R.string.clean_up)),
-                            neutralButtonTextResId = R.string.clean_up,
-                            neutralButtonClickListener = { dialog, _ ->
-                                ConverterErrorReporter.dismissAllDialogs()
-                                baseModel.cleanupDatabase {
-                                    showToast(getString(R.string.cleanup_finished_title))
-                                }
-                            },
-                        )
-                        ?.let { ConverterErrorReporter.registerDialog(it) }
-                }
+        ConverterErrorReporter.errors.observe(this@MainActivity) { throwable ->
+            if (throwable == null) {
+                return@observe
+            }
+            application.log("Converters", throwable = throwable)
+            if (ConverterErrorReporter.activeDialogs.isEmpty()) {
+                showErrorDialog(
+                        throwable,
+                        R.string.error,
+                        getString(R.string.error_loading_data, getString(R.string.clean_up)),
+                        neutralButtonTextResId = R.string.clean_up,
+                        neutralButtonClickListener = { dialog, _ ->
+                            ConverterErrorReporter.dismissAllDialogs()
+                            baseModel.cleanupDatabase {
+                                showToast(getString(R.string.cleanup_finished_title))
+                            }
+                        },
+                    )
+                    ?.let { ConverterErrorReporter.registerDialog(it) }
             }
         }
 

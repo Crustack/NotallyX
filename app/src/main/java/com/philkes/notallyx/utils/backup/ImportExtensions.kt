@@ -22,6 +22,7 @@ import com.philkes.notallyx.data.imports.ImportResult
 import com.philkes.notallyx.data.imports.ImportStage
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
+import com.philkes.notallyx.data.model.ConverterErrorReporter
 import com.philkes.notallyx.data.model.Converters
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Folder
@@ -330,123 +331,129 @@ private fun Cursor.toLabel(): Label {
 }
 
 private fun Cursor.toBaseNote(sourceDb: SQLiteDatabase): BaseNote {
-    val typeTmp = getString(getColumnIndexOrThrow("type"))
-    val folderTmp = getString(getColumnIndexOrThrow("folder"))
-    val color =
-        getString(getColumnIndexOrThrow("color"))?.parseToColorString() ?: BaseNote.COLOR_DEFAULT
-    val title = getString(getColumnIndexOrThrow("title"))
-    val pinnedTmp = getInt(getColumnIndexOrThrow("pinned"))
-    val timestamp = getLong(getColumnIndexOrThrow("timestamp"))
-    val modifiedTimestampIndex = getColumnIndex("modifiedTimestamp")
-    val modifiedTimestamp =
-        if (modifiedTimestampIndex == -1) {
-            timestamp
-        } else {
-            getLongOrNull(modifiedTimestampIndex) ?: timestamp
-        }
-    val labelsTmp = getString(getColumnIndexOrThrow("labels"))
-    val id = getLong(getColumnIndexOrThrow("id"))
-    val body =
-        try {
-            getString(getColumnIndexOrThrow("body"))
-        } catch (_: SQLiteBlobTooBigException) {
-            // Fall back to truncated read from source DB to avoid cursor window overflow
-            val cursor =
-                sourceDb.rawQuery(
-                    "SELECT substr(body, 1, ?) AS body FROM BaseNote WHERE id = ?",
-                    arrayOf(
-                        com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
-                            .toString(),
-                        id.toString(),
-                    ),
-                )
-            val value = if (cursor.moveToFirst()) cursor.getString(0) else ""
-            cursor.close()
-            value
-        }
-    val spansTmp = getString(getColumnIndexOrThrow("spans"))
-    val itemsTmp = getString(getColumnIndexOrThrow("items"))
+    ConverterErrorReporter.enabled.set(false)
+    try {
+        val typeTmp = getString(getColumnIndexOrThrow("type"))
+        val folderTmp = getString(getColumnIndexOrThrow("folder"))
+        val color =
+            getString(getColumnIndexOrThrow("color"))?.parseToColorString()
+                ?: BaseNote.COLOR_DEFAULT
+        val title = getString(getColumnIndexOrThrow("title"))
+        val pinnedTmp = getInt(getColumnIndexOrThrow("pinned"))
+        val timestamp = getLong(getColumnIndexOrThrow("timestamp"))
+        val modifiedTimestampIndex = getColumnIndex("modifiedTimestamp")
+        val modifiedTimestamp =
+            if (modifiedTimestampIndex == -1) {
+                timestamp
+            } else {
+                getLongOrNull(modifiedTimestampIndex) ?: timestamp
+            }
+        val labelsTmp = getString(getColumnIndexOrThrow("labels"))
+        val id = getLong(getColumnIndexOrThrow("id"))
+        val body =
+            try {
+                getString(getColumnIndexOrThrow("body"))
+            } catch (_: SQLiteBlobTooBigException) {
+                // Fall back to truncated read from source DB to avoid cursor window overflow
+                val cursor =
+                    sourceDb.rawQuery(
+                        "SELECT substr(body, 1, ?) AS body FROM BaseNote WHERE id = ?",
+                        arrayOf(
+                            com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
+                                .toString(),
+                            id.toString(),
+                        ),
+                    )
+                val value = if (cursor.moveToFirst()) cursor.getString(0) else ""
+                cursor.close()
+                value
+            }
+        val spansTmp = getString(getColumnIndexOrThrow("spans"))
+        val itemsTmp = getString(getColumnIndexOrThrow("items"))
 
-    val pinned =
-        when (pinnedTmp) {
-            0 -> false
-            1 -> true
-            else -> throw IllegalArgumentException("pinned must be 0 or 1")
-        }
-
-    val isPinnedToStatusColumn = getColumnIndex("isPinnedToStatus")
-    val pinnedToStatusBar =
-        if (isPinnedToStatusColumn != -1) {
-            when (getInt(isPinnedToStatusColumn)) {
+        val pinned =
+            when (pinnedTmp) {
                 0 -> false
                 1 -> true
-                else -> false
+                else -> throw IllegalArgumentException("pinned must be 0 or 1")
             }
-        } else false
 
-    val type = Type.valueOfOrDefault(typeTmp)
-    val folder = Folder.valueOfOrDefault(folderTmp)
+        val isPinnedToStatusColumn = getColumnIndex("isPinnedToStatus")
+        val pinnedToStatusBar =
+            if (isPinnedToStatusColumn != -1) {
+                when (getInt(isPinnedToStatusColumn)) {
+                    0 -> false
+                    1 -> true
+                    else -> false
+                }
+            } else false
 
-    val labels = Converters.jsonToLabels(labelsTmp)
-    val spans = Converters.jsonToSpans(spansTmp).filter { it.isInsideBounds() }
-    val items = Converters.jsonToItems(itemsTmp)
+        val type = Type.valueOfOrDefault(typeTmp)
+        val folder = Folder.valueOfOrDefault(folderTmp)
 
-    val imagesIndex = getColumnIndex("images")
-    val images =
-        if (imagesIndex != -1) {
-            Converters.jsonToFiles(getString(imagesIndex))
-        } else emptyList()
+        val labels = Converters.jsonToLabels(labelsTmp)
+        val spans = Converters.jsonToSpans(spansTmp).filter { it.isInsideBounds() }
+        val items = Converters.jsonToItems(itemsTmp)
 
-    val filesIndex = getColumnIndex("files")
-    val files =
-        if (filesIndex != -1) {
-            Converters.jsonToFiles(getString(filesIndex))
-        } else emptyList()
-
-    val audiosIndex = getColumnIndex("audios")
-    val audios =
-        if (audiosIndex != -1) {
-            Converters.jsonToAudios(getString(audiosIndex))
-        } else emptyList()
-
-    val remindersIndex = getColumnIndex("reminders")
-    val reminders =
-        if (remindersIndex != -1) {
-            Converters.jsonToReminders(getString(remindersIndex))
-        } else {
-            // Notally introduced "reminder" column
-            val reminderIndex = getColumnIndex("reminder")
-            if (reminderIndex != -1) {
-                val reminder = getString(reminderIndex).toNotallyXReminder()
-                reminder?.let { listOf(it) } ?: emptyList()
+        val imagesIndex = getColumnIndex("images")
+        val images =
+            if (imagesIndex != -1) {
+                Converters.jsonToFiles(getString(imagesIndex))
             } else emptyList()
-        }
 
-    val viewModeIndex = getColumnIndex("viewMode")
-    val viewMode =
-        if (viewModeIndex != -1) {
-            NoteViewMode.valueOfOrDefault(getString(viewModeIndex))
-        } else NoteViewMode.EDIT
-    return BaseNote(
-        0,
-        type,
-        folder,
-        color,
-        title,
-        pinned,
-        timestamp,
-        modifiedTimestamp,
-        labels,
-        body,
-        spans,
-        items,
-        images,
-        files,
-        audios,
-        reminders,
-        viewMode,
-        pinnedToStatusBar,
-    )
+        val filesIndex = getColumnIndex("files")
+        val files =
+            if (filesIndex != -1) {
+                Converters.jsonToFiles(getString(filesIndex))
+            } else emptyList()
+
+        val audiosIndex = getColumnIndex("audios")
+        val audios =
+            if (audiosIndex != -1) {
+                Converters.jsonToAudios(getString(audiosIndex))
+            } else emptyList()
+
+        val remindersIndex = getColumnIndex("reminders")
+        val reminders =
+            if (remindersIndex != -1) {
+                Converters.jsonToReminders(getString(remindersIndex))
+            } else {
+                // Notally introduced "reminder" column
+                val reminderIndex = getColumnIndex("reminder")
+                if (reminderIndex != -1) {
+                    val reminder = getString(reminderIndex).toNotallyXReminder()
+                    reminder?.let { listOf(it) } ?: emptyList()
+                } else emptyList()
+            }
+
+        val viewModeIndex = getColumnIndex("viewMode")
+        val viewMode =
+            if (viewModeIndex != -1) {
+                NoteViewMode.valueOfOrDefault(getString(viewModeIndex))
+            } else NoteViewMode.EDIT
+        return BaseNote(
+            0,
+            type,
+            folder,
+            color,
+            title,
+            pinned,
+            timestamp,
+            modifiedTimestamp,
+            labels,
+            body,
+            spans,
+            items,
+            images,
+            files,
+            audios,
+            reminders,
+            viewMode,
+            pinnedToStatusBar,
+        )
+    } finally {
+        ConverterErrorReporter.enabled.set(true)
+    }
 }
 
 private fun <T> Cursor.toList(convert: (cursor: Cursor) -> T): Pair<ArrayList<T>, Int> {

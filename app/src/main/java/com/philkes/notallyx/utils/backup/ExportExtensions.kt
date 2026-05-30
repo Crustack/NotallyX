@@ -332,7 +332,7 @@ fun ContextWrapper.exportRawDatabase(fileUri: Uri) {
     contentResolver.query(fileUri, null, null, null, null)?.use { cursor ->
         val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
         if (cursor.moveToFirst()) {
-            if (cursor.getLong(sizeIndex) > 0) {
+            if (cursor.getLong(sizeIndex) <= 0) {
                 throw IOException("Exported Raw Database file is empty!")
             }
         }
