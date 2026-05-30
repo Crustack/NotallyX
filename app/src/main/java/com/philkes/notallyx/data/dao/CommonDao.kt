@@ -1,5 +1,6 @@
 package com.philkes.notallyx.data.dao
 
+import android.util.Log
 import androidx.room.Dao
 import androidx.room.Transaction
 import com.philkes.notallyx.data.NotallyDatabase
@@ -46,7 +47,11 @@ abstract class CommonDao(private val database: NotallyDatabase) {
     }
 
     @Transaction
-    open suspend fun importBackup(baseNotes: List<BaseNote>, labels: List<Label>): ImportResult {
+    open suspend fun importBackup(
+        baseNotes: List<BaseNote>,
+        labels: List<Label>,
+        readCorrupted: Int,
+    ): ImportResult {
         val dao = database.getBaseNoteDao()
         // Insert notes, splitting oversized text notes instead of truncating
         var insertedCount = 0
@@ -70,7 +75,11 @@ abstract class CommonDao(private val database: NotallyDatabase) {
         labelDao.insert(
             labels.mapIndexed { index, label -> Label(label.value, maxOrder + 1 + index) }
         )
-        return ImportResult(inserted = insertedCount, duplicates = duplicates)
+        return ImportResult(
+            inserted = insertedCount,
+            duplicates = duplicates,
+            corruptedNotes = readCorrupted,
+        )
     }
 
     /**
@@ -83,6 +92,7 @@ abstract class CommonDao(private val database: NotallyDatabase) {
         baseNotes: List<BaseNote>,
         originalIds: List<Long>,
         labels: List<Label>,
+        readCorrupted: Int,
     ): ImportResult {
         val baseNoteDao = database.getBaseNoteDao()
 
@@ -90,7 +100,7 @@ abstract class CommonDao(private val database: NotallyDatabase) {
         val idMap = HashMap<Long, Long>(originalIds.size)
         // Keep all inserted note ids with their spans for remapping pass
         val insertedParts = ArrayList<Pair<Long, List<SpanRepresentation>>>()
-
+        var corrupted = readCorrupted
         var insertedCount = 0
         var duplicates = 0
         for (i in baseNotes.indices) {
@@ -105,11 +115,21 @@ abstract class CommonDao(private val database: NotallyDatabase) {
                 continue
             }
             val (firstId, parts) =
-                if (original.type == Type.NOTE && original.body.length > MAX_BODY_CHAR_LENGTH) {
-                    NoteSplitUtils.splitAndInsertForImport(original, baseNoteDao)
-                } else {
-                    val newId = baseNoteDao.insert(original.copy(id = 0))
-                    Pair(newId, listOf(Pair(newId, original.spans)))
+                try {
+                    if (original.type == Type.NOTE && original.body.length > MAX_BODY_CHAR_LENGTH) {
+                        NoteSplitUtils.splitAndInsertForImport(original, baseNoteDao)
+                    } else {
+                        val newId = baseNoteDao.insert(original.copy(id = 0))
+                        Pair(newId, listOf(Pair(newId, original.spans)))
+                    }
+                } catch (e: Exception) {
+                    Log.e(
+                        "Import",
+                        "Failed to import note ${original.title} (id: ${original.id}), skipping it as corrupted",
+                        e,
+                    )
+                    corrupted++
+                    continue
                 }
             val oldId = originalIds.getOrNull(i)
             if (oldId != null) idMap[oldId] = firstId
@@ -134,7 +154,11 @@ abstract class CommonDao(private val database: NotallyDatabase) {
                     } else span
                 }
             if (changed) {
-                baseNoteDao.updateSpans(noteId, updated)
+                try {
+                    baseNoteDao.updateSpans(noteId, updated)
+                } catch (e: Exception) {
+                    Log.e("Import", "Failed to update spans for noteId: ${noteId})", e)
+                }
             }
         }
 
@@ -143,7 +167,11 @@ abstract class CommonDao(private val database: NotallyDatabase) {
         labelDaoForRemap.insert(
             labels.mapIndexed { index, label -> Label(label.value, maxOrderForRemap + 1 + index) }
         )
-        return ImportResult(inserted = insertedCount, duplicates = duplicates)
+        return ImportResult(
+            inserted = insertedCount,
+            duplicates = duplicates,
+            corruptedNotes = readCorrupted,
+        )
     }
 
     /**

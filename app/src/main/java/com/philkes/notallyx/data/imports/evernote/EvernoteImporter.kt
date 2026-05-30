@@ -19,6 +19,7 @@ import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
+import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.startsWithAnyOf
 import com.philkes.notallyx.utils.write
@@ -39,7 +40,7 @@ class EvernoteImporter : ExternalImporter {
         app: Application,
         source: Uri,
         destination: File,
-        progress: MutableLiveData<ImportProgress>?,
+        progress: MutableLiveData<Progress>?,
     ): Pair<List<BaseNote>, File> {
         progress?.postValue(ImportProgress(indeterminate = true))
         if (MimeTypeMap.getFileExtensionFromUrl(source.toString()) != "enex") {
@@ -81,7 +82,7 @@ class EvernoteImporter : ExternalImporter {
         app: Application,
         resources: Collection<EvernoteResource>,
         dir: File,
-        progress: MutableLiveData<ImportProgress>? = null,
+        progress: MutableLiveData<Progress>? = null,
     ) {
         progress?.postValue(
             ImportProgress(total = resources.size, stage = ImportStage.EXTRACT_FILES)

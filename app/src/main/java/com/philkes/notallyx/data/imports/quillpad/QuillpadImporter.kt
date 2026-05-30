@@ -17,6 +17,7 @@ import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Type
+import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.utils.getMimeType
 import com.philkes.notallyx.utils.moveAllFiles
 import com.philkes.notallyx.utils.toMillis
@@ -45,7 +46,7 @@ class QuillpadImporter : ExternalImporter {
         app: Application,
         source: Uri,
         destination: File,
-        progress: MutableLiveData<ImportProgress>?,
+        progress: MutableLiveData<Progress>?,
     ): Pair<List<BaseNote>, File> {
         progress?.postValue(ImportProgress(indeterminate = true, stage = ImportStage.EXTRACT_FILES))
         val dataFolder =

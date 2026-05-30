@@ -4,6 +4,7 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.data.model.BaseNote
+import com.philkes.notallyx.presentation.view.misc.Progress
 import java.io.File
 
 interface ExternalImporter {
@@ -18,6 +19,6 @@ interface ExternalImporter {
         app: Application,
         source: Uri,
         destination: File,
-        progress: MutableLiveData<ImportProgress>? = null,
+        progress: MutableLiveData<Progress>? = null,
     ): Pair<List<BaseNote>, File?>
 }

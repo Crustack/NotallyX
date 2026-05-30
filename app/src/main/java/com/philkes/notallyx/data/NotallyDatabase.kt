@@ -114,6 +114,10 @@ abstract class NotallyDatabase : RoomDatabase() {
                 }
         }
 
+        fun clearInstance() {
+            instance = null
+        }
+
         private var testInstance: NotallyDatabase? = null
 
         private fun getTestDatabase(context: ContextWrapper): NotallyDatabase {
@@ -162,7 +166,7 @@ abstract class NotallyDatabase : RoomDatabase() {
                         Migration8,
                         Migration9,
                         Migration10,
-                        Migration11
+                        Migration11,
                     )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 System.loadLibrary("sqlcipher")

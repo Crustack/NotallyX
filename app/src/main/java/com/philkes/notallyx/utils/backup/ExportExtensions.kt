@@ -12,6 +12,7 @@ import android.net.Uri
 import android.os.Build
 import android.print.PdfPrintListener
 import android.print.printPdf
+import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.app.NotificationCompat
@@ -316,6 +317,22 @@ fun ContextWrapper.modifiedNoteBackupExists(backupPath: String): Boolean {
 }
 
 typealias NotesAndAttachments = Pair<Int, Int>
+
+fun ContextWrapper.exportRawDatabase(fileUri: Uri) {
+    val (_, databaseCopy) = copyDatabase()
+    contentResolver.openOutputStream(fileUri)?.use { outputStream ->
+        FileInputStream(databaseCopy).use { inputStream ->
+            inputStream.copyToLarge(outputStream)
+            outputStream.flush()
+        }
+    }
+    contentResolver.query(fileUri, null, null, null, null)?.use { cursor ->
+        val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+        if (cursor.moveToFirst()) {
+            assert(cursor.getLong(sizeIndex) > 0)
+        }
+    }
+}
 
 fun ContextWrapper.exportAsZip(
     fileUri: Uri,

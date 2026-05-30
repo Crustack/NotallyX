@@ -100,6 +100,7 @@
     <string name="copied_link">Copied Link to Clipboard</string>
     <string name="copy">Copy</string>
     <string name="count" translatable="false">%1$d / %2$d</string>
+    <string name="crash_export_backup">Unfortunately, exporting the backup failed.\nYou can use \'%1$s\' button to report the crash or try to export the raw database file (SQLite) via \'%2$s\'. It will only include notes contents, no attachments. But if it succeeds you can import it back via the Import from other apps option.</string>
     <string name="crash_export_backup_failed">Unfortunately, exporting the backup failed.\nPlease use the \'%1$s\' button to report the crash</string>
     <string name="crash_export_backup_message">You can try to create a backup of your notes by clicking \'%1$s\'.\nThis might fail if the crash lead to broken/corrupted data. In that case, please use the \'%2$s\' button to report the crash</string>
     <string name="crash_message">An unexpected error occurred.\nSorry for the inconvenience.</string>
@@ -110,6 +111,7 @@
     <string name="dark">Dark</string>
     <string name="data_in_public">Store data in public folder</string>
     <string name="data_in_public_message">By enabling this, the app’s internal database and attached files will be moved into the app’s public folder (Android/media/com.philkes.notallyx). In combination with file synchronization apps this can be used to synchronize NotallyX data between multiple devices.</string>
+    <string name="database">Database</string>
     <string name="date">Date</string>
     <string name="date_format">Date format</string>
     <string name="date_format_hint">Applies selected datetime format in Notes Overview</string>
@@ -178,6 +180,7 @@
     <string name="every">Every</string>
     <string name="export">Export</string>
     <string name="export_backup">Export backup</string>
+    <string name="export_database">Export DB</string>
     <string name="export_settings">Export Settings</string>
     <string name="export_settings_failure">Failed to export settings, did you choose an invalid path\?</string>
     <string name="export_settings_message">All Settings will be exported to a JSON file, which can be used to re-import stored settings.\n\nBe aware, that this does not include encrypted settings like the auto-backup password or the biometric encryption key</string>
@@ -275,6 +278,7 @@
     <string name="none">None</string>
     <string name="not_exists">\'%1$s\' does not exist</string>
     <string name="notally" translatable="false">Notally</string>
+    <string name="notallyx_raw_database" translatable="false">NotallyX Raw Database</string>
     <string name="note">Note</string>
     <string name="note_text_too_long_truncated">Text too long, truncated to %1$d characters</string>
     <string name="note_too_big_truncating">Note is too big to save, it was truncated to %1$s characters (was: %2$s)</string>
@@ -315,6 +319,9 @@
     <string name="record_audio">Record audio</string>
     <string name="recording">Recording…</string>
     <string name="redo">Redo</string>
+    <string name="reimport_database">Reimport DB</string>
+    <string name="reimport_database_failed">Reimporting Database failed</string>
+    <string name="reimport_database_message">You can now try to reimport a raw database. This &lt;b&gt;deletes the current corrupted database&lt;/b&gt; and then tries to import the raw database by skipping corrupted notes if possible</string>
     <string name="reminder_no_repetition">No repetition</string>
     <string name="reminders">Reminders</string>
     <string name="remove_link">Remove Link</string>
@@ -352,6 +359,10 @@
     <string name="single_file">Single File</string>
     <string name="single_note_or_list">Single note or list</string>
     <string name="skip">Skip</string>
+    <plurals name="skipped_corrupted_notes">
+        <item quantity="one">Skipped %1$s corrupted Note</item>
+        <item quantity="other">Skipped %1$s corrupted Notes</item>
+    </plurals>
     <string name="small">Small</string>
     <string name="something_went_wrong">Something went wrong. Please try again.</string>
     <string name="something_went_wrong_audio">Something went wrong. The audio recording may have been moved or deleted.\n\nError : (%1$d, %2$d)</string>
