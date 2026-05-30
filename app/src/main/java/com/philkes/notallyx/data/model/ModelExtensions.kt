@@ -197,6 +197,37 @@ fun BaseNote.toHtml(showDateCreated: Boolean, imagesRootFolder: File?) = buildSt
     append("<!DOCTYPE html>")
     append("<html><head>")
     append("<meta charset=\"UTF-8\"><title>$title</title>")
+    append(
+        """
+    <style>
+        @page {
+            margin: 1in;
+        }
+
+        body {
+            font-family: sans-serif;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 12px;
+            margin-bottom: 12px;
+        }
+
+        h2, h3 {
+            margin-bottom: 12px;
+        }
+
+        p {
+            margin-bottom: 10px;
+        }
+    </style>
+    """
+            .trimIndent()
+    )
     append("</head><body>")
     append("<h2>$title</h2>")
 
