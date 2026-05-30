@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /** Helper to register Converter errors while accessing the database. */
 object ConverterErrorReporter {
-    var enabled = AtomicBoolean(true)
+    val enabled = AtomicBoolean(true)
     val errors = MutableLiveData<Throwable?>(null)
     val activeDialogs = Collections.synchronizedSet(mutableSetOf<Dialog>())
 
