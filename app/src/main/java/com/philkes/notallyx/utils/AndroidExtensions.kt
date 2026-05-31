@@ -10,6 +10,7 @@ import android.content.ClipboardManager
 import android.content.ContentResolver
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
@@ -20,6 +21,7 @@ import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.annotation.ColorInt
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
@@ -33,6 +35,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.BuildConfig
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
+import com.philkes.notallyx.data.imports.ImportResult
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.toText
@@ -40,6 +43,7 @@ import com.philkes.notallyx.databinding.DialogErrorBinding
 import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
 import com.philkes.notallyx.presentation.activity.note.EditListActivity
 import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
+import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
@@ -227,7 +231,9 @@ fun Activity.showErrorDialog(
     titleResId: Int,
     message: String,
     originalStacktrace: String? = null,
-) {
+    neutralButtonTextResId: Int? = null,
+    neutralButtonClickListener: DialogInterface.OnClickListener? = null,
+): AlertDialog? {
     val stacktrace = throwable.stackTraceToString()
     val layout =
         DialogErrorBinding.inflate(layoutInflater, null, false).apply {
@@ -235,14 +241,17 @@ fun Activity.showErrorDialog(
             ExceptionDetails.text = stacktrace
             CopyButton.setOnClickListener { copyToClipBoard(stacktrace) }
         }
-    MaterialAlertDialogBuilder(this)
-        .setTitle(titleResId)
-        .setView(layout.root)
-        .setPositiveButton(R.string.report_bug) { dialog, _ ->
-            dialog.cancel()
-            reportBug(originalStacktrace ?: throwable.stackTraceToString())
+    return MaterialAlertDialogBuilder(this)
+        .apply {
+            setTitle(titleResId)
+            setView(layout.root)
+            setPositiveButton(R.string.report_bug) { dialog, _ ->
+                dialog.cancel()
+                reportBug(originalStacktrace ?: throwable.stackTraceToString())
+            }
+            neutralButtonTextResId?.let { setNeutralButton(it, neutralButtonClickListener) }
+            setCancelButton()
         }
-        .setCancelButton()
         .show()
 }
 
@@ -415,6 +424,26 @@ fun ContextWrapper.shareNote(note: BaseNote) {
             .map { getUriForFile(it) }
     shareNote(note.title, body, filesUris)
 }
+
+fun ContextWrapper.toMessage(importResult: ImportResult) =
+    StringBuilder()
+        .apply {
+            append(getQuantityString(R.plurals.imported_notes, importResult.inserted))
+            if (importResult.duplicates > 0) {
+                append("\n")
+                append(getQuantityString(R.plurals.duplicates, importResult.duplicates))
+            }
+            if (importResult.corruptedNotes > 0) {
+                append("\n")
+                append(
+                    getQuantityString(
+                        R.plurals.skipped_corrupted_notes,
+                        importResult.corruptedNotes,
+                    )
+                )
+            }
+        }
+        .toString()
 
 fun Context.textMaxLengthFilter() = arrayOf(LengthFilterWithToast(this, MAX_BODY_CHAR_LENGTH))
 

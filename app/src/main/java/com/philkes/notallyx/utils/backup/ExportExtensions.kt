@@ -8,10 +8,12 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.os.Build
 import android.print.PdfPrintListener
 import android.print.printPdf
+import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.app.NotificationCompat
@@ -316,6 +318,39 @@ fun ContextWrapper.modifiedNoteBackupExists(backupPath: String): Boolean {
 }
 
 typealias NotesAndAttachments = Pair<Int, Int>
+
+fun ContextWrapper.exportRawDatabase(fileUri: Uri) {
+    val (_, databaseCopy) = copyDatabase()
+    val database =
+        SQLiteDatabase.openDatabase(databaseCopy.path, null, SQLiteDatabase.OPEN_READONLY)
+    database
+        .rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+            arrayOf("BaseNote"),
+        )
+        .use { cursor ->
+            if (cursor.count < 1) {
+                throw IOException("Database does not contain 'BaseNote' table!")
+            }
+        }
+    val outputStream =
+        contentResolver.openOutputStream(fileUri)
+            ?: throw IOException("Failed to open output stream for $fileUri")
+    outputStream.use { outputStream ->
+        FileInputStream(databaseCopy).use { inputStream ->
+            inputStream.copyToLarge(outputStream)
+            outputStream.flush()
+        }
+    }
+    contentResolver.query(fileUri, null, null, null, null)?.use { cursor ->
+        val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+        if (cursor.moveToFirst()) {
+            if (cursor.getLong(sizeIndex) <= 0) {
+                throw IOException("Exported Raw Database file is empty!")
+            }
+        }
+    }
+}
 
 fun ContextWrapper.exportAsZip(
     fileUri: Uri,

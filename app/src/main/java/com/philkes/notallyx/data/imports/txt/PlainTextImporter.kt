@@ -5,13 +5,13 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.data.imports.ExternalImporter
-import com.philkes.notallyx.data.imports.ImportProgress
 import com.philkes.notallyx.data.imports.markdown.parseBodyAndSpansFromMarkdown
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
+import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
 import com.philkes.notallyx.utils.MIME_TYPE_JSON
 import com.philkes.notallyx.utils.log
@@ -24,7 +24,7 @@ class PlainTextImporter : ExternalImporter {
         app: Application,
         source: Uri,
         destination: File,
-        progress: MutableLiveData<ImportProgress>?,
+        progress: MutableLiveData<Progress>?,
     ): Pair<List<BaseNote>, File?> {
         val notes = mutableListOf<BaseNote>()
         fun readTxtFiles(file: DocumentFile) {

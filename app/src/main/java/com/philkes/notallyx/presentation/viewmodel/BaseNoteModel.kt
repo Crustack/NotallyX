@@ -27,13 +27,13 @@ import com.philkes.notallyx.data.dao.LabelDao
 import com.philkes.notallyx.data.dao.NoteReminder
 import com.philkes.notallyx.data.dao.moveBaseNotes
 import com.philkes.notallyx.data.imports.ImportException
-import com.philkes.notallyx.data.imports.ImportProgress
 import com.philkes.notallyx.data.imports.ImportSource
 import com.philkes.notallyx.data.imports.NotesImporter
 import com.philkes.notallyx.data.model.Attachment
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Content
+import com.philkes.notallyx.data.model.ConverterErrorReporter
 import com.philkes.notallyx.data.model.Converters
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Folder
@@ -69,6 +69,7 @@ import com.philkes.notallyx.utils.backup.exportPdfFile
 import com.philkes.notallyx.utils.backup.exportPdfFileFolder
 import com.philkes.notallyx.utils.backup.exportPlainTextFile
 import com.philkes.notallyx.utils.backup.exportPlainTextFileFolder
+import com.philkes.notallyx.utils.backup.importRawDatabase
 import com.philkes.notallyx.utils.backup.importZip
 import com.philkes.notallyx.utils.backup.readAsBackup
 import com.philkes.notallyx.utils.cancelPinAndReminders
@@ -85,6 +86,7 @@ import com.philkes.notallyx.utils.security.decryptDatabase
 import com.philkes.notallyx.utils.security.encryptDatabase
 import com.philkes.notallyx.utils.security.isEncryptedDatabase
 import com.philkes.notallyx.utils.security.isUnencryptedDatabase
+import com.philkes.notallyx.utils.toMessage
 import com.philkes.notallyx.utils.toReadablePath
 import com.philkes.notallyx.utils.viewFile
 import java.io.File
@@ -138,7 +140,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     val imageRoot
         get() = app.getCurrentImagesDirectory()
 
-    val importProgress = MutableLiveData<ImportProgress>()
+    val importProgress = MutableLiveData<Progress>()
     val progress = MutableLiveData<Progress>()
 
     val actionMode = ActionMode()
@@ -409,6 +411,19 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun importRawDatabase(uri: Uri) {
+        val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+            app.log(TAG, throwable = throwable)
+            app.showToast("${app.getString(R.string.invalid_backup)}: ${throwable.message}")
+        }
+
+        viewModelScope.launch(exceptionHandler) {
+            val importResult =
+                withContext(Dispatchers.IO) { app.importRawDatabase(uri, importProgress) }
+            app.showToast(app.toMessage(importResult))
+        }
+    }
+
     fun importZipBackup(uri: Uri, password: String) {
         val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
             app.log(TAG, throwable = throwable)
@@ -436,14 +451,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                             { "InputStream for '$uri' is null" },
                         )
                     val (baseNotes, labels) = stream.readAsBackup()
-                    commonDao.importBackup(baseNotes, labels)
+                    commonDao.importBackup(baseNotes, labels, 0)
                 }
-            val baseMsg = app.getQuantityString(R.plurals.imported_notes, result.inserted)
-            val message =
-                if (result.duplicates > 0)
-                    "$baseMsg (${app.getQuantityString(R.plurals.duplicates, result.duplicates)})"
-                else baseMsg
-            app.showToast(message)
+            app.showToast(app.toMessage(result))
         }
     }
 
@@ -463,11 +473,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 withContext(Dispatchers.IO) {
                     NotesImporter(app, database).import(uri, importSource, importProgress)
                 }
-            val baseMsg = app.getQuantityString(R.plurals.imported_notes, result.inserted)
-            val message =
-                if (result.duplicates > 0) "$baseMsg (${result.duplicates} duplicates skipped)"
-                else baseMsg
-            app.showToast(message)
+            app.showToast(app.toMessage(result))
         }
     }
 
@@ -935,6 +941,18 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     fun saveNotes(notes: List<BaseNote>) {
         viewModelScope.launch(Dispatchers.IO) { baseNoteDao.insert(notes) }
+    }
+
+    fun cleanupDatabase(onComplete: () -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            ConverterErrorReporter.enabled.set(false)
+            val allNotes = baseNoteDao.getAll()
+            baseNoteDao.updateAll(allNotes)
+            withContext(Dispatchers.Main) {
+                onComplete()
+                ConverterErrorReporter.enabled.set(true)
+            }
+        }
     }
 
     companion object {

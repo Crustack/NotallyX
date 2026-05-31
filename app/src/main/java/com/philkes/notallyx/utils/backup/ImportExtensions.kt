@@ -15,12 +15,14 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.NotallyDatabase.Companion.DATABASE_NAME
 import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
 import com.philkes.notallyx.data.imports.ImportProgress
+import com.philkes.notallyx.data.imports.ImportResult
 import com.philkes.notallyx.data.imports.ImportStage
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
-import com.philkes.notallyx.data.model.BaseNote.Companion
+import com.philkes.notallyx.data.model.ConverterErrorReporter
 import com.philkes.notallyx.data.model.Converters
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Folder
@@ -28,8 +30,8 @@ import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.parseToColorString
-import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.showToast
+import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel.FileType
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.utils.FileError
@@ -50,6 +52,7 @@ import com.philkes.notallyx.utils.pinAndScheduleReminders
 import com.philkes.notallyx.utils.rename
 import com.philkes.notallyx.utils.security.SQLCipherUtils
 import com.philkes.notallyx.utils.security.decryptDatabase
+import com.philkes.notallyx.utils.toMessage
 import com.philkes.notallyx.utils.toNotallyXReminder
 import java.io.File
 import java.io.FileInputStream
@@ -90,6 +93,67 @@ fun getOptionalColumns(db: SQLiteDatabase, tableName: String): Array<String> {
         .toTypedArray()
 }
 
+suspend fun ContextWrapper.importRawDatabase(
+    dbFileUri: Uri,
+    importProgress: MutableLiveData<Progress>? = null,
+): ImportResult {
+    val tempDbFile = File(cacheDir, DATABASE_NAME + "_IMPORT")
+    try {
+        requireNotNull(
+                contentResolver.openInputStream(dbFileUri),
+                { "InputStream for dbFileUri '$dbFileUri' is null" },
+            )
+            .use { inputStream ->
+                inputStream.copyToFile(tempDbFile)
+                val (baseNotes, originalIds, labels, corruptedNotes) =
+                    readBaseNotes(tempDbFile, importProgress)
+                val import = import(baseNotes, originalIds, labels, corruptedNotes)
+                importProgress?.postValue(ImportProgress(inProgress = false))
+                return import
+            }
+    } finally {
+        tempDbFile.delete()
+    }
+}
+
+data class BaseNotesImport(
+    val baseNotes: List<BaseNote>,
+    val originalIds: List<Long>,
+    val labels: List<Label>,
+    val corruptedNotes: Int,
+)
+
+fun ContextWrapper.readBaseNotes(
+    dbFile: File,
+    progress: MutableLiveData<Progress>? = null,
+): BaseNotesImport {
+    val database = SQLiteDatabase.openDatabase(dbFile.path, null, SQLiteDatabase.OPEN_READONLY)
+    try {
+        val labelCursor = database.query("Label", null, null, null, null, null, null)
+
+        val safeColumns = getOptionalColumns(database, "BaseNote")
+
+        val baseNoteCursor = database.query("BaseNote", safeColumns, null, null, null, null, null)
+        val (labels, _) = labelCursor.toList { cursor -> cursor.toLabel() }
+
+        val total = baseNoteCursor.count
+        var counter = 1
+        progress?.postValue(ImportProgress(0, total))
+        val originalIds = ArrayList<Long>(baseNoteCursor.count)
+        val (baseNotes, corrupted) =
+            baseNoteCursor.toList { cursor ->
+                val baseNote = cursor.toBaseNote(database)
+                val originalId = cursor.getLong(cursor.getColumnIndexOrThrow("id"))
+                originalIds.add(originalId)
+                progress?.postValue(ImportProgress(counter++, total))
+                baseNote
+            }
+        return BaseNotesImport(baseNotes, originalIds, labels, corrupted)
+    } finally {
+        database.close()
+    }
+}
+
 /**
  * We only import the images/files referenced in notes. e.g If someone has added garbage to the ZIP
  * file, like a 100 MB image, ignore it.
@@ -98,9 +162,9 @@ suspend fun ContextWrapper.importZip(
     zipFileUri: Uri,
     databaseFolder: File,
     zipPassword: String,
-    importingBackup: MutableLiveData<ImportProgress>? = null,
+    progress: MutableLiveData<Progress>? = null,
 ) {
-    importingBackup?.postValue(ImportProgress(indeterminate = true))
+    progress?.postValue(ImportProgress(indeterminate = true))
     try {
         val result =
             withContext(Dispatchers.IO) {
@@ -144,38 +208,15 @@ suspend fun ContextWrapper.importZip(
                         )
                     }
                 }
-                val database =
-                    SQLiteDatabase.openDatabase(dbFile.path, null, SQLiteDatabase.OPEN_READONLY)
 
-                val labelCursor = database.query("Label", null, null, null, null, null, null)
-
-                val safeColumns = getOptionalColumns(database, "BaseNote")
-
-                val baseNoteCursor =
-                    database.query("BaseNote", safeColumns, null, null, null, null, null)
-                val labels = labelCursor.toList { cursor -> cursor.toLabel() }
-
-                var total = baseNoteCursor.count
-                var counter = 1
-                importingBackup?.postValue(ImportProgress(0, total))
-                val originalIds = ArrayList<Long>(baseNoteCursor.count)
-                val baseNotes =
-                    baseNoteCursor.toList { cursor ->
-                        val baseNote = cursor.toBaseNote(database)
-                        val originalId = cursor.getLong(cursor.getColumnIndexOrThrow("id"))
-                        originalIds.add(originalId)
-                        importingBackup?.postValue(ImportProgress(counter++, total))
-                        baseNote
-                    }
                 delay(1000)
-
-                total =
+                val (baseNotes, originalIds, labels, corruptedNotes) =
+                    readBaseNotes(dbFile, progress)
+                val total =
                     baseNotes.fold(0) { acc, baseNote ->
                         acc + baseNote.images.size + baseNote.files.size + baseNote.audios.size
                     }
-                importingBackup?.postValue(
-                    ImportProgress(0, total, stage = ImportStage.IMPORT_FILES)
-                )
+                progress?.postValue(ImportProgress(0, total, stage = ImportStage.IMPORT_FILES))
 
                 val current = AtomicInteger(1)
                 val imageRoot = getCurrentImagesDirectory()
@@ -189,7 +230,7 @@ suspend fun ContextWrapper.importZip(
                         zipFile,
                         current,
                         total,
-                        importingBackup,
+                        progress,
                     )
                     importFiles(
                         baseNote.files,
@@ -198,7 +239,7 @@ suspend fun ContextWrapper.importZip(
                         zipFile,
                         current,
                         total,
-                        importingBackup,
+                        progress,
                     )
                     baseNote.audios.forEach { audio ->
                         try {
@@ -212,7 +253,7 @@ suspend fun ContextWrapper.importZip(
                         } catch (exception: Exception) {
                             log(TAG, throwable = exception)
                         } finally {
-                            importingBackup?.postValue(
+                            progress?.postValue(
                                 ImportProgress(
                                     current.getAndIncrement(),
                                     total,
@@ -222,23 +263,10 @@ suspend fun ContextWrapper.importZip(
                         }
                     }
                 }
-
-                val notallyDatabase =
-                    NotallyDatabase.getDatabase(this@importZip, observePreferences = false).value
-                val importResult =
-                    notallyDatabase.getCommonDao().importBackup(baseNotes, originalIds, labels)
-                val notesToRemind = notallyDatabase.getBaseNoteDao().getAllWithRemindersOrPinned()
-                cancelPinAndReminders(notesToRemind)
-                pinAndScheduleReminders(notesToRemind)
-                importResult
+                import(baseNotes, originalIds, labels, corruptedNotes)
             }
         databaseFolder.clearDirectory()
-        val baseMsg = getQuantityString(R.plurals.imported_notes, result.inserted)
-        val message =
-            if (result.duplicates > 0)
-                "$baseMsg (${getQuantityString(R.plurals.duplicates, result.duplicates)})"
-            else baseMsg
-        showToast(message)
+        showToast(toMessage(result))
     } catch (e: ZipException) {
         if (e.type == ZipException.Type.WRONG_PASSWORD) {
             log(TAG, throwable = e)
@@ -247,8 +275,23 @@ suspend fun ContextWrapper.importZip(
             throw e
         }
     } finally {
-        importingBackup?.value = ImportProgress(inProgress = false)
+        progress?.value = ImportProgress(inProgress = false)
     }
+}
+
+private suspend fun ContextWrapper.import(
+    baseNotes: List<BaseNote>,
+    originalIds: List<Long>,
+    labels: List<Label>,
+    readCorrupted: Int,
+): ImportResult {
+    val notallyDatabase = NotallyDatabase.getDatabase(this, observePreferences = false).value
+    val importResult =
+        notallyDatabase.getCommonDao().importBackup(baseNotes, originalIds, labels, readCorrupted)
+    val notesToRemind = notallyDatabase.getBaseNoteDao().getAllWithRemindersOrPinned()
+    cancelPinAndReminders(notesToRemind)
+    pinAndScheduleReminders(notesToRemind)
+    return importResult
 }
 
 private fun ContextWrapper.importFiles(
@@ -258,7 +301,7 @@ private fun ContextWrapper.importFiles(
     zipFile: ZipFile,
     current: AtomicInteger,
     total: Int,
-    importingBackup: MutableLiveData<ImportProgress>? = null,
+    importingBackup: MutableLiveData<Progress>? = null,
 ) {
     files.forEach { file ->
         try {
@@ -406,15 +449,24 @@ private fun Cursor.toBaseNote(sourceDb: SQLiteDatabase): BaseNote {
     )
 }
 
-private fun <T> Cursor.toList(convert: (cursor: Cursor) -> T): ArrayList<T> {
-    val list = ArrayList<T>(count)
-    while (moveToNext()) {
-        val item = convert(this)
-        list.add(item)
+private fun <T> Cursor.toList(convert: (cursor: Cursor) -> T): Pair<ArrayList<T>, Int> =
+    try {
+        ConverterErrorReporter.enabled.set(false)
+        val list = ArrayList<T>(count)
+        var corrupted = 0
+        while (moveToNext()) {
+            try {
+                list.add(convert(this))
+            } catch (e: Exception) {
+                Log.e(TAG, "Error while converting DB cursor", e)
+                corrupted++
+            }
+        }
+        close()
+        Pair(list, corrupted)
+    } finally {
+        ConverterErrorReporter.enabled.set(true)
     }
-    close()
-    return list
-}
 
 fun Context.importPreferences(jsonFile: Uri, to: SharedPreferences.Editor): Boolean {
     try {

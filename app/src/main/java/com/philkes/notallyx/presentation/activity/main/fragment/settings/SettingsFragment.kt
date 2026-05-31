@@ -24,6 +24,7 @@ import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.work.WorkManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -33,6 +34,7 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.cancelAutoRemoveOldDeletedNotes
 import com.philkes.notallyx.data.imports.Display
 import com.philkes.notallyx.data.imports.FOLDER_OR_FILE_MIMETYPE
+import com.philkes.notallyx.data.imports.ImportProgress
 import com.philkes.notallyx.data.imports.ImportSource
 import com.philkes.notallyx.data.imports.txt.APPLICATION_TEXT_MIME_TYPES
 import com.philkes.notallyx.databinding.DialogTextInputBinding
@@ -83,6 +85,7 @@ class SettingsFragment : Fragment() {
     private val model: BaseNoteModel by activityViewModels()
 
     private lateinit var importBackupActivityResultLauncher: ActivityResultLauncher<Intent>
+    private lateinit var importRawDatabaseActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var importOtherActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var exportBackupActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var chooseBackupFolderActivityResultLauncher: ActivityResultLauncher<Intent>
@@ -142,6 +145,12 @@ class SettingsFragment : Fragment() {
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
                     result.data?.data?.let { importBackup(it) }
+                }
+            }
+        importRawDatabaseActivityResultLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_OK) {
+                    result.data?.data?.let { model.importRawDatabase(it) }
                 }
             }
         importOtherActivityResultLauncher =
@@ -483,7 +492,9 @@ class SettingsFragment : Fragment() {
                 exportBackupActivityResultLauncher.launch(intent)
             }
         }
-        model.importProgress.setupImportProgressDialog(this@SettingsFragment)
+        (model.importProgress as? MutableLiveData<ImportProgress>)?.setupImportProgressDialog(
+            this@SettingsFragment
+        )
     }
 
     private fun NotallyXPreferences.setupAutoBackups(binding: FragmentSettingsBinding) {
@@ -522,7 +533,7 @@ class SettingsFragment : Fragment() {
     }
 
     private fun importFromOtherApp() {
-        val notallyItem =
+        val notallyItems =
             mutableListOf(
                 object : Display {
                     override fun getTextId(): Int {
@@ -532,31 +543,58 @@ class SettingsFragment : Fragment() {
                     override fun getIconId(): Int {
                         return R.drawable.icon_notally
                     }
-                }
+                },
+                object : Display {
+                    override fun getTextId(): Int {
+                        return R.string.notallyx_raw_database
+                    }
+
+                    override fun getIconId(): Int {
+                        return R.drawable.database
+                    }
+                },
             )
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.choose_other_app)
             .setAdapter(
                 TextWithIconAdapter(
                     requireContext(),
-                    notallyItem + ImportSource.entries.toMutableList(),
+                    notallyItems + ImportSource.entries.toMutableList(),
                     { item -> getString(item.getTextId()) },
                     Display::getIconId,
                 )
             ) { _, which ->
-                if (which == 0) {
-                    MaterialAlertDialogBuilder(requireContext())
-                        .setMessage(
-                            getString(
-                                R.string.import_from_notally,
-                                getString(R.string.import_backup),
+                when (which) {
+                    0 -> {
+                        MaterialAlertDialogBuilder(requireContext())
+                            .setMessage(
+                                getString(
+                                    R.string.import_from_notally,
+                                    getString(R.string.import_backup),
+                                )
                             )
+                            .setPositiveButton(android.R.string.ok) { dialog, _ ->
+                                dialog.dismiss()
+                            }
+                            .show()
+                        return@setAdapter
+                    }
+                    1 -> {
+                        importRawDatabaseActivityResultLauncher.launch(
+                            Intent(Intent.ACTION_OPEN_DOCUMENT)
+                                .apply {
+                                    type = "*/*"
+                                    addCategory(Intent.CATEGORY_OPENABLE)
+                                    val mimeTypes =
+                                        arrayOf("application/octet-stream", "application/x-sqlite3")
+                                    putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
+                                }
+                                .wrapWithChooser(requireContext())
                         )
-                        .setPositiveButton(android.R.string.ok) { dialog, _ -> dialog.dismiss() }
-                        .show()
-                    return@setAdapter
+                        return@setAdapter
+                    }
                 }
-                selectedImportSource = ImportSource.entries[which - 1]
+                selectedImportSource = ImportSource.entries[which - notallyItems.size]
                 MaterialAlertDialogBuilder(requireContext())
                     .setMessage(selectedImportSource.helpTextResId)
                     .setPositiveButton(R.string.import_action) { dialog, _ ->

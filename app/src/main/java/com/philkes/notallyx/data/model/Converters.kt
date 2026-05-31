@@ -7,27 +7,63 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 
+class ConverterException(message: String, cause: Throwable) : RuntimeException(message, cause)
+
 object Converters {
 
-    @TypeConverter fun labelsToJson(labels: List<String>) = JSONArray(labels).toString()
+    @TypeConverter
+    fun labelsToJson(labels: List<String>) =
+        try {
+            JSONArray(labels).toString()
+        } catch (e: Exception) {
+            ConverterErrorReporter.reportError(
+                ConverterException("Failed to convert Labels to JSON", e)
+            )
+            "[]"
+        }
 
-    @TypeConverter fun jsonToLabels(json: String) = jsonToLabels(JSONArray(json))
+    @TypeConverter
+    fun jsonToLabels(json: String) =
+        try {
+            jsonToLabels(JSONArray(json))
+        } catch (e: Exception) {
+            ConverterErrorReporter.reportError(
+                ConverterException("Failed to convert JSON to Labels", e)
+            )
+            emptyList()
+        }
 
     fun jsonToLabels(jsonArray: JSONArray) = jsonArray.iterable<String>().toList()
 
     @TypeConverter
     fun filesToJson(files: List<FileAttachment>): String {
-        val objects =
-            files.map { file ->
-                val jsonObject = JSONObject()
-                jsonObject.put("localName", file.localName)
-                jsonObject.put("originalName", file.originalName)
-                jsonObject.put("mimeType", file.mimeType)
-            }
-        return JSONArray(objects).toString()
+        return try {
+            val objects =
+                files.map { file ->
+                    val jsonObject = JSONObject()
+                    jsonObject.put("localName", file.localName)
+                    jsonObject.put("originalName", file.originalName)
+                    jsonObject.put("mimeType", file.mimeType)
+                }
+            JSONArray(objects).toString()
+        } catch (e: Exception) {
+            ConverterErrorReporter.reportError(
+                ConverterException("Failed to convert Files attachments to JSON", e)
+            )
+            "[]"
+        }
     }
 
-    @TypeConverter fun jsonToFiles(json: String) = jsonToFiles(JSONArray(json))
+    @TypeConverter
+    fun jsonToFiles(json: String) =
+        try {
+            jsonToFiles(JSONArray(json))
+        } catch (e: Exception) {
+            ConverterErrorReporter.reportError(
+                ConverterException("Failed to convert JSON to Files attachments", e)
+            )
+            emptyList()
+        }
 
     fun jsonToFiles(jsonArray: JSONArray): List<FileAttachment> {
         return jsonArray.iterable<JSONObject>().map { jsonObject ->
@@ -40,17 +76,33 @@ object Converters {
 
     @TypeConverter
     fun audiosToJson(audios: List<Audio>): String {
-        val objects =
-            audios.map { audio ->
-                val jsonObject = JSONObject()
-                jsonObject.put("name", audio.name)
-                jsonObject.put("duration", audio.duration)
-                jsonObject.put("timestamp", audio.timestamp)
-            }
-        return JSONArray(objects).toString()
+        return try {
+            val objects =
+                audios.map { audio ->
+                    val jsonObject = JSONObject()
+                    jsonObject.put("name", audio.name)
+                    jsonObject.put("duration", audio.duration)
+                    jsonObject.put("timestamp", audio.timestamp)
+                }
+            JSONArray(objects).toString()
+        } catch (e: Exception) {
+            ConverterErrorReporter.reportError(
+                ConverterException("Failed to convert Audios attachments to JSON", e)
+            )
+            "[]"
+        }
     }
 
-    @TypeConverter fun jsonToAudios(json: String) = jsonToAudios(JSONArray(json))
+    @TypeConverter
+    fun jsonToAudios(json: String) =
+        try {
+            jsonToAudios(JSONArray(json))
+        } catch (e: Exception) {
+            ConverterErrorReporter.reportError(
+                ConverterException("Failed to convert JSON to Audios attachments", e)
+            )
+            emptyList()
+        }
 
     fun jsonToAudios(json: JSONArray): List<Audio> {
         return json.iterable<JSONObject>().map { jsonObject ->
@@ -61,7 +113,16 @@ object Converters {
         }
     }
 
-    @TypeConverter fun jsonToSpans(json: String) = jsonToSpans(JSONArray(json))
+    @TypeConverter
+    fun jsonToSpans(json: String) =
+        try {
+            jsonToSpans(JSONArray(json))
+        } catch (e: Exception) {
+            ConverterErrorReporter.reportError(
+                ConverterException("Failed to convert JSON to Spans", e)
+            )
+            emptyList()
+        }
 
     fun jsonToSpans(jsonArray: JSONArray): List<SpanRepresentation> {
         return jsonArray
@@ -94,7 +155,15 @@ object Converters {
     }
 
     @TypeConverter
-    fun spansToJson(list: List<SpanRepresentation>) = spansToJSONArray(list).toString()
+    fun spansToJson(list: List<SpanRepresentation>) =
+        try {
+            spansToJSONArray(list).toString()
+        } catch (e: Exception) {
+            ConverterErrorReporter.reportError(
+                ConverterException("Failed to convert Spans to JSON", e)
+            )
+            "[]"
+        }
 
     fun spansToJSONArray(list: List<SpanRepresentation>): JSONArray {
         val objects =
@@ -112,7 +181,16 @@ object Converters {
         return JSONArray(objects)
     }
 
-    @TypeConverter fun jsonToItems(json: String) = jsonToItems(JSONArray(json))
+    @TypeConverter
+    fun jsonToItems(json: String) =
+        try {
+            jsonToItems(JSONArray(json))
+        } catch (e: Exception) {
+            ConverterErrorReporter.reportError(
+                ConverterException("Failed to convert JSON to List Items", e)
+            )
+            emptyList()
+        }
 
     fun jsonToItems(json: JSONArray): List<ListItem> {
         return json.iterable<JSONObject>().map { jsonObject ->
@@ -132,7 +210,16 @@ object Converters {
         }
     }
 
-    @TypeConverter fun itemsToJson(list: List<ListItem>) = itemsToJSONArray(list).toString()
+    @TypeConverter
+    fun itemsToJson(list: List<ListItem>) =
+        try {
+            itemsToJSONArray(list).toString()
+        } catch (e: Exception) {
+            ConverterErrorReporter.reportError(
+                ConverterException("Failed to convert List Items to JSON", e)
+            )
+            "[]"
+        }
 
     fun itemsToJSONArray(list: List<ListItem>): JSONArray {
         val objects =
@@ -148,7 +235,15 @@ object Converters {
     }
 
     @TypeConverter
-    fun remindersToJson(reminders: List<Reminder>) = remindersToJSONArray(reminders).toString()
+    fun remindersToJson(reminders: List<Reminder>) =
+        try {
+            remindersToJSONArray(reminders).toString()
+        } catch (e: Exception) {
+            ConverterErrorReporter.reportError(
+                ConverterException("Failed to convert Reminders to JSON", e)
+            )
+            "[]"
+        }
 
     fun remindersToJSONArray(reminders: List<Reminder>): JSONArray {
         val objects =
@@ -163,7 +258,16 @@ object Converters {
         return JSONArray(objects)
     }
 
-    @TypeConverter fun jsonToReminders(json: String) = jsonToReminders(JSONArray(json))
+    @TypeConverter
+    fun jsonToReminders(json: String) =
+        try {
+            jsonToReminders(JSONArray(json))
+        } catch (e: Exception) {
+            ConverterErrorReporter.reportError(
+                ConverterException("Failed to convert JSON to Reminders", e)
+            )
+            emptyList()
+        }
 
     fun jsonToReminders(jsonArray: JSONArray): List<Reminder> {
         return jsonArray.iterable<JSONObject>().map { jsonObject ->
@@ -177,7 +281,14 @@ object Converters {
 
     @TypeConverter
     fun repetitionToJson(repetition: Repetition): String {
-        return repetitionToJsonObject(repetition).toString()
+        return try {
+            repetitionToJsonObject(repetition).toString()
+        } catch (e: Exception) {
+            ConverterErrorReporter.reportError(
+                ConverterException("Failed to convert Reminder Repetition to JSON", e)
+            )
+            ""
+        }
     }
 
     fun repetitionToJsonObject(repetition: Repetition): JSONObject {
@@ -191,11 +302,18 @@ object Converters {
 
     @TypeConverter
     fun jsonToRepetition(json: String): Repetition {
-        val jsonObject = JSONObject(json)
-        val value = jsonObject.getInt("value").coerceAtLeast(1)
-        val unit = RepetitionTimeUnit.valueOf(jsonObject.getString("unit"))
-        val (occurrence, dayOfWeek) = getSafeRepetitionCustomization(jsonObject)
-        return Repetition(value, unit, occurrence, dayOfWeek)
+        return try {
+            val jsonObject = JSONObject(json)
+            val value = jsonObject.getInt("value").coerceAtLeast(1)
+            val unit = RepetitionTimeUnit.valueOf(jsonObject.getString("unit"))
+            val (occurrence, dayOfWeek) = getSafeRepetitionCustomization(jsonObject)
+            Repetition(value, unit, occurrence, dayOfWeek)
+        } catch (e: Exception) {
+            ConverterErrorReporter.reportError(
+                ConverterException("Failed to convert JSON to Reminder Repetition", e)
+            )
+            Repetition(1, RepetitionTimeUnit.DAYS)
+        }
     }
 
     private fun getSafeRepetitionCustomization(jsonObject: JSONObject): Pair<Int?, Int?> {

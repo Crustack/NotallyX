@@ -10,14 +10,15 @@ import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
 import com.philkes.notallyx.data.imports.evernote.EvernoteImporter
 import com.philkes.notallyx.data.imports.google.GoogleKeepImporter
+import com.philkes.notallyx.data.imports.json.JsonImporter
 import com.philkes.notallyx.data.imports.quillpad.QuillpadImporter
-import com.philkes.notallyx.data.imports.txt.JsonImporter
 import com.philkes.notallyx.data.imports.txt.PlainTextImporter
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.toText
+import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel
 import com.philkes.notallyx.utils.MIME_TYPE_ZIP
 import com.philkes.notallyx.utils.NoteSplitUtils
@@ -27,14 +28,14 @@ import com.philkes.notallyx.utils.backup.importImage
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 
-data class ImportResult(val inserted: Int, val duplicates: Int)
+data class ImportResult(val inserted: Int, val duplicates: Int, val corruptedNotes: Int)
 
 class NotesImporter(private val app: Application, private val database: NotallyDatabase) {
 
     suspend fun import(
         uri: Uri,
         importSource: ImportSource,
-        progress: MutableLiveData<ImportProgress>? = null,
+        progress: MutableLiveData<Progress>? = null,
     ): ImportResult {
         val tempDir = File(app.cacheDir, IMPORT_CACHE_FOLDER)
         if (!tempDir.exists()) {
@@ -80,24 +81,35 @@ class NotesImporter(private val app: Application, private val database: NotallyD
             // Insert notes with split handling for oversized text notes, skipping duplicates
             val dao = database.getBaseNoteDao()
             var insertedCount = 0
+            var corruptedCount = 0
             val totalCandidates = notes.size
             notes.forEach { note ->
                 val dup = findDuplicateId(note)
                 if (dup == null) {
-                    if (note.type == Type.NOTE && note.body.length > MAX_BODY_CHAR_LENGTH) {
-                        // Split into parts, preserving spans and adding navigation links
-                        NoteSplitUtils.splitAndInsertForImport(note, dao)
-                    } else {
-                        // Regular insert; ensure id is auto-generated
-                        dao.insert(note.copy(id = 0))
+                    try {
+                        if (note.type == Type.NOTE && note.body.length > MAX_BODY_CHAR_LENGTH) {
+                            // Split into parts, preserving spans and adding navigation links
+                            NoteSplitUtils.splitAndInsertForImport(note, dao)
+                        } else {
+                            // Regular insert; ensure id is auto-generated
+                            dao.insert(note.copy(id = 0))
+                        }
+                        insertedCount++
+                    } catch (e: Exception) {
+                        Log.e(
+                            "Import",
+                            "Failed to import note ${note.title} (id: ${note.id}), skipping it as corrupted",
+                            e,
+                        )
+                        corruptedCount++
                     }
-                    insertedCount++
                 }
             }
             progress?.postValue(ImportProgress(inProgress = false))
             return ImportResult(
                 inserted = insertedCount,
-                duplicates = (totalCandidates - insertedCount),
+                duplicates = (totalCandidates - insertedCount - corruptedCount),
+                corruptedNotes = corruptedCount,
             )
         } finally {
             tempDir.deleteRecursively()
@@ -108,7 +120,7 @@ class NotesImporter(private val app: Application, private val database: NotallyD
         files: List<FileAttachment>,
         sourceFolder: File,
         fileType: NotallyModel.FileType,
-        progress: MutableLiveData<ImportProgress>?,
+        progress: MutableLiveData<Progress>?,
         total: Int?,
         counter: AtomicInteger?,
     ) {
@@ -136,7 +148,7 @@ class NotesImporter(private val app: Application, private val database: NotallyD
     private suspend fun importAudios(
         audios: List<Audio>,
         sourceFolder: File,
-        progress: MutableLiveData<ImportProgress>?,
+        progress: MutableLiveData<Progress>?,
         totalFiles: Int,
         counter: AtomicInteger,
     ) {

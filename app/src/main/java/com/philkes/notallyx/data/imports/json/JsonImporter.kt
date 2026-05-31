@@ -1,13 +1,13 @@
-package com.philkes.notallyx.data.imports.txt
+package com.philkes.notallyx.data.imports.json
 
 import android.app.Application
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.data.imports.ExternalImporter
-import com.philkes.notallyx.data.imports.ImportProgress
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.toBaseNote
+import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.utils.MIME_TYPE_JSON
 import java.io.BufferedReader
 import java.io.File
@@ -19,7 +19,7 @@ class JsonImporter : ExternalImporter {
         app: Application,
         source: Uri,
         destination: File,
-        progress: MutableLiveData<ImportProgress>?,
+        progress: MutableLiveData<Progress>?,
     ): Pair<List<BaseNote>, File?> {
         val notes = mutableListOf<BaseNote>()
         fun readJsonFiles(file: DocumentFile) {
