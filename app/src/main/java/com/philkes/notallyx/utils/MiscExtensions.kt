@@ -56,12 +56,20 @@ fun String.findAllOccurrences(
     search: String,
     caseSensitive: Boolean = false,
 ): List<Pair<Int, Int>> {
+    val limit = 20_000
     if (search.isEmpty()) return emptyList()
-    val regex = Regex(Regex.escape(if (caseSensitive) search else search.lowercase()))
-    return regex
-        .findAll(if (caseSensitive) this else this.lowercase())
-        .map { match -> match.range.first to match.range.last + 1 }
-        .toList()
+    val result = mutableListOf<Pair<Int, Int>>()
+    var startIndex = 0
+    while (startIndex < length) {
+        // use ignoreCase parameter to avoid creating a new lowercased string
+        val index = this.indexOf(search, startIndex, ignoreCase = !caseSensitive)
+        if (index == -1) break
+        result.add(index to (index + search.length))
+        if (result.size >= limit) break
+        // Move pointer forward
+        startIndex = index + search.length
+    }
+    return result
 }
 
 fun String.removeTrailingParentheses(): String {

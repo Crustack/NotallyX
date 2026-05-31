@@ -684,8 +684,11 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
         binding.EnterSearchKeyword.apply {
             doAfterTextChanged { text ->
-                this@EditActivity.search.query = text.toString()
-                updateSearchResults(this@EditActivity.search.query)
+                val textStr = text.toString()
+                if (this@EditActivity.search.query != textStr) {
+                    this@EditActivity.search.query = textStr
+                    updateSearchResults(this@EditActivity.search.query)
+                }
             }
         }
         setupAdditionalListeners()

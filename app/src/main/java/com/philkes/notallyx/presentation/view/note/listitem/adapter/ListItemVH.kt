@@ -113,11 +113,17 @@ class ListItemVH(
         }
 
         highlights?.let {
-            it.forEach { highlight ->
-                binding.EditText.highlight(highlight.startIdx, highlight.endIdx, highlight.selected)
-            }
+            var selected: ListItemHighlight? = null
+            val pairs =
+                highlights.map { highlight ->
+                    if (highlight.selected) {
+                        selected = highlight
+                    }
+                    Pair(highlight.startIdx, highlight.endIdx)
+                }
+            binding.EditText.highlight(pairs, -1)
+            selected?.let { binding.EditText.select(it.startIdx, it.endIdx) }
         } ?: binding.EditText.clearHighlights()
-
         binding.root.setControlsContrastColorForAllViews(backgroundColor)
     }
 

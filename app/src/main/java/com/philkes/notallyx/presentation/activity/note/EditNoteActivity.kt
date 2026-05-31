@@ -81,10 +81,8 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
         }
         val text = notallyModel.body.toString()
         val occurrences = withContext(Dispatchers.Default) { text.findAllOccurrences(search) }
-        searchResultIndices =
-            occurrences.onEach { (startIdx, endIdx) ->
-                binding.EnterBody.highlight(startIdx, endIdx, false)
-            }
+        binding.EnterBody.highlight(occurrences, -1)
+        searchResultIndices = occurrences
         return searchResultIndices!!.size
     }
 
@@ -94,7 +92,7 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
             return
         }
         searchResultIndices?.get(resultPos)?.let { (startIdx, endIdx) ->
-            val selectedLineTop = binding.EnterBody.highlight(startIdx, endIdx, true)
+            val selectedLineTop = binding.EnterBody.select(startIdx, endIdx)
             selectedLineTop?.let { binding.ScrollView.scrollTo(0, it) }
         }
     }
