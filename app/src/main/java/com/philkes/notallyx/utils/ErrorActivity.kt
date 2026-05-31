@@ -43,7 +43,7 @@ class ErrorActivity : AppCompatActivity() {
 
     private lateinit var exportBackupActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var exportDatabaseActivityResultLauncher: ActivityResultLauncher<Intent>
-    private val exportBackupProgress = MutableLiveData<Progress>()
+    private val backupProgress = MutableLiveData<Progress>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -144,7 +144,7 @@ class ErrorActivity : AppCompatActivity() {
                                     return@withContext application.exportAsZip(
                                         uri,
                                         password = preferences.backupPassword.value,
-                                        backupProgress = exportBackupProgress,
+                                        backupProgress = backupProgress,
                                     )
                                 }
                             val message = application.exportedText(exportedNotesAndAttachments)
@@ -208,7 +208,7 @@ class ErrorActivity : AppCompatActivity() {
                                                     )
                                                     application.importRawDatabase(
                                                         uri,
-                                                        exportBackupProgress,
+                                                        backupProgress,
                                                     )
                                                 }
                                             MaterialAlertDialogBuilder(this@ErrorActivity)
@@ -229,7 +229,7 @@ class ErrorActivity : AppCompatActivity() {
                     }
                 }
             }
-        exportBackupProgress.setupProgressDialog(this)
+        backupProgress.setupProgressDialog(this)
     }
 
     companion object {

@@ -33,6 +33,7 @@ import com.philkes.notallyx.data.model.Attachment
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Content
+import com.philkes.notallyx.data.model.ConverterErrorReporter
 import com.philkes.notallyx.data.model.Converters
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Folder
@@ -944,9 +945,13 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     fun cleanupDatabase(onComplete: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
+            ConverterErrorReporter.enabled.set(false)
             val allNotes = baseNoteDao.getAll()
             baseNoteDao.updateAll(allNotes)
-            withContext(Dispatchers.Main) { onComplete() }
+            withContext(Dispatchers.Main) {
+                onComplete()
+                ConverterErrorReporter.enabled.set(true)
+            }
         }
     }
 

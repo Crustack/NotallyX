@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.os.Build
 import android.print.PdfPrintListener
@@ -320,6 +321,18 @@ typealias NotesAndAttachments = Pair<Int, Int>
 
 fun ContextWrapper.exportRawDatabase(fileUri: Uri) {
     val (_, databaseCopy) = copyDatabase()
+    val database =
+        SQLiteDatabase.openDatabase(databaseCopy.path, null, SQLiteDatabase.OPEN_READONLY)
+    database
+        .rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+            arrayOf("BaseNote"),
+        )
+        .use { cursor ->
+            if (cursor.count < 1) {
+                throw IOException("Database does not contain 'BaseNote' table!")
+            }
+        }
     val outputStream =
         contentResolver.openOutputStream(fileUri)
             ?: throw IOException("Failed to open output stream for $fileUri")
