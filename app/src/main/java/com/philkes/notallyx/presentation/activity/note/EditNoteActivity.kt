@@ -36,6 +36,8 @@ import com.philkes.notallyx.utils.copyToClipBoard
 import com.philkes.notallyx.utils.findAllOccurrences
 import com.philkes.notallyx.utils.openNote
 import com.philkes.notallyx.utils.wrapWithChooser
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class EditNoteActivity : EditActivity(Type.NOTE) {
 
@@ -72,15 +74,15 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
         }
     }
 
-    override fun highlightSearchResults(search: String): Int {
+    override suspend fun highlightSearchResults(search: String): Int {
         binding.EnterBody.clearHighlights()
         if (search.isEmpty()) {
             return 0
         }
-        searchResultIndices =
-            notallyModel.body.toString().findAllOccurrences(search).onEach { (startIdx, endIdx) ->
-                binding.EnterBody.highlight(startIdx, endIdx, false)
-            }
+        val text = notallyModel.body.toString()
+        val occurrences = withContext(Dispatchers.Default) { text.findAllOccurrences(search) }
+        binding.EnterBody.highlight(occurrences, -1)
+        searchResultIndices = occurrences
         return searchResultIndices!!.size
     }
 
@@ -90,7 +92,7 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
             return
         }
         searchResultIndices?.get(resultPos)?.let { (startIdx, endIdx) ->
-            val selectedLineTop = binding.EnterBody.highlight(startIdx, endIdx, true)
+            val selectedLineTop = binding.EnterBody.select(startIdx, endIdx)
             selectedLineTop?.let { binding.ScrollView.scrollTo(0, it) }
         }
     }

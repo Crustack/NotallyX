@@ -90,6 +90,7 @@ import com.philkes.notallyx.utils.textMaxLengthFilter
 import com.philkes.notallyx.utils.wrapWithChooser
 import java.io.File
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
@@ -421,18 +422,24 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         updateBottomActions(preferences.editNoteActivityBottomAction.value)
     }
 
+    private var searchJob: Job? = null
+
     protected fun updateSearchResults(query: String) {
         val amountBefore = search.results.value
-        val amount = highlightSearchResults(query)
-        this.search.results.value = amount
-        if (amount > 0) {
-            search.resultPos.value =
-                when {
-                    amountBefore < 1 -> 0
-                    search.resultPos.value >= amount -> amount - 1
-                    else -> search.resultPos.value
+        searchJob?.cancel()
+        searchJob =
+            lifecycleScope.launch {
+                val amount = highlightSearchResults(query)
+                this@EditActivity.search.results.value = amount
+                if (amount > 0) {
+                    search.resultPos.value =
+                        when {
+                            amountBefore < 1 -> 0
+                            search.resultPos.value >= amount -> amount - 1
+                            else -> search.resultPos.value
+                        }
                 }
-        }
+            }
     }
 
     /**
@@ -440,7 +447,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
      *
      * @return amount of search results found
      */
-    abstract fun highlightSearchResults(search: String): Int
+    abstract suspend fun highlightSearchResults(search: String): Int
 
     abstract fun selectSearchResult(resultPos: Int)
 
@@ -682,8 +689,11 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
         binding.EnterSearchKeyword.apply {
             doAfterTextChanged { text ->
-                this@EditActivity.search.query = text.toString()
-                updateSearchResults(this@EditActivity.search.query)
+                val textStr = text.toString()
+                if (this@EditActivity.search.query != textStr) {
+                    this@EditActivity.search.query = textStr
+                    updateSearchResults(this@EditActivity.search.query)
+                }
             }
         }
         setupAdditionalListeners()

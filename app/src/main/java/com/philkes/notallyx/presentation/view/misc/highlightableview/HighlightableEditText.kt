@@ -9,6 +9,8 @@ import com.philkes.notallyx.presentation.removeSelectionFromSpans
 import com.philkes.notallyx.presentation.view.misc.EditTextWithWatcher
 import com.philkes.notallyx.presentation.withAlpha
 
+private const val SEARCH_HIGHLIGHT_LIMIT = 1_000
+
 /**
  * [AppCompatEditText] whose changes (text edits or span changes) are pushed to [changeHistory].
  * *
@@ -58,31 +60,75 @@ open class HighlightableEditText(context: Context, attrs: AttributeSet) :
     }
 
     /**
-     * Visibly highlight text from [startIdx] to [endIdx]. If [selected] is true the text is
-     * highlighted uniquely. There can only be one [selected] highlight.
-     *
-     * @return Vertical offset to highlighted text line.
+     * Highlights all occurrences and returns the Y-offset of the selected match for scrolling
+     * purposes.
      */
-    fun highlight(startIdx: Int, endIdx: Int, selected: Boolean): Int? {
-        // TODO: Could be replaced with EditText.highlights? (API >= 34)
-        if (selected) {
-            selectedHighlightedSpan?.unselect()
+    fun highlight(newOccurrences: List<Pair<Int, Int>>, selectedIndex: Int = -1) {
+        val editable = text ?: return
+        highlightedSpans.forEach { editable.removeSpan(it) }
+        highlightedSpans.clear()
+        selectedHighlightedSpan = null
+
+        if (newOccurrences.isEmpty()) return
+
+        val nonSelectedColor = highlightColor.withAlpha(0.1f)
+        val selectedColor = highlightColor
+
+        newOccurrences.take(SEARCH_HIGHLIGHT_LIMIT).forEachIndexed { index, (start, end) ->
+            if (start >= 0 && end <= editable.length) {
+                val isSelected = (index == selectedIndex)
+                val span = HighlightSpan(if (isSelected) selectedColor else nonSelectedColor)
+
+                applySpan(span, start, end)
+                highlightedSpans.add(span)
+
+                if (isSelected) {
+                    selectedHighlightedSpan = span
+                }
+            }
         }
-        highlightedSpans
-            .filter { getSpanRange(it) == Pair(startIdx, endIdx) }
-            .forEach {
-                removeSpan(it)
+    }
+
+    /**
+     * Updates the selection state for a specific range without redrawing all spans. Returns the
+     * Y-offset of the newly selected range.
+     */
+    fun select(startIdx: Int, endIdx: Int): Int? {
+        val editable = text ?: return null
+        // 1. Revert the previous selection to a normal highlight
+        selectedHighlightedSpan?.let { oldSpan ->
+            val oldStart = editable.getSpanStart(oldSpan)
+            val oldEnd = editable.getSpanEnd(oldSpan)
+
+            if (oldStart != -1 && oldEnd != -1) {
+                editable.removeSpan(oldSpan)
+                val dimmedSpan = HighlightSpan(highlightColor.withAlpha(0.1f))
+                editable.setSpan(dimmedSpan, oldStart, oldEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                highlightedSpans.add(dimmedSpan)
+            }
+        }
+
+        // 2. Find and upgrade the span at the new indices
+        // We look for any existing HighlightSpan at this exact location to "upgrade" it
+        val existingSpans = editable.getSpans(startIdx, endIdx, HighlightSpan::class.java)
+        existingSpans.forEach {
+            if (editable.getSpanStart(it) == startIdx && editable.getSpanEnd(it) == endIdx) {
+                editable.removeSpan(it)
                 highlightedSpans.remove(it)
             }
-        val span = HighlightSpan(if (selected) highlightColor else highlightColor.withAlpha(0.1f))
-        applySpan(span, startIdx, endIdx)
-        highlightedSpans.add(span)
-        if (selected) {
-            selectedHighlightedSpan = span
         }
+
+        // 3. Create and apply the new "Selected" span
+        val newSelectedSpan = HighlightSpan(highlightColor)
+        editable.setSpan(newSelectedSpan, startIdx, endIdx, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        selectedHighlightedSpan = newSelectedSpan
+        highlightedSpans.add(newSelectedSpan)
+
+        // 4. Return Y-position for scrolling
         return layout?.let {
-            val line = layout.getLineForOffset(startIdx)
-            layout.getLineTop(line)
+            val line = it.getLineForOffset(startIdx)
+            it.getLineTop(line)
         }
     }
 
@@ -94,7 +140,7 @@ open class HighlightableEditText(context: Context, attrs: AttributeSet) :
         val (previousHighlightedStartIdx, previousHighlightedEndIdx) = getSpanRange(this)
         if (previousHighlightedStartIdx != -1) {
             removeSpan(this)
-            highlight(previousHighlightedStartIdx, previousHighlightedEndIdx, false)
+            highlight(listOf(Pair(previousHighlightedStartIdx, previousHighlightedEndIdx)), -1)
         }
     }
 }
