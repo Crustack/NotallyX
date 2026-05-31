@@ -10,6 +10,14 @@ fun <R, C> SortedList<R>.mapIndexed(transform: (Int, R) -> C): List<C> {
     return (0 until this.size()).mapIndexed { idx, it -> transform.invoke(idx, this[it]) }
 }
 
+suspend fun <R, C> SortedList<R>.mapIndexedSuspended(transform: suspend (Int, R) -> C): List<C> {
+    return (0 until this.size()).mapIndexed { idx, it -> transform.invoke(idx, this[it]) }
+}
+
+suspend fun <R, C> List<R>.mapIndexedSuspended(transform: suspend (Int, R) -> C): List<C> {
+    return mapIndexed { idx, it -> transform.invoke(idx, this[idx]) }
+}
+
 fun <R> SortedList<R>.forEach(function: (item: R) -> Unit) {
     return (0 until this.size()).forEach { function.invoke(this[it]) }
 }

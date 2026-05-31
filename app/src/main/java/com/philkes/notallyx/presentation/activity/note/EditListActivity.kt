@@ -27,8 +27,10 @@ import com.philkes.notallyx.presentation.viewmodel.preference.autoSortByCheckedE
 import com.philkes.notallyx.presentation.viewmodel.preference.callback
 import com.philkes.notallyx.utils.findAllOccurrences
 import com.philkes.notallyx.utils.indices
-import com.philkes.notallyx.utils.mapIndexed
+import com.philkes.notallyx.utils.mapIndexedSuspended
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class EditListActivity : EditActivity(Type.LIST) {
 
@@ -104,14 +106,15 @@ class EditListActivity : EditActivity(Type.LIST) {
             .show(supportFragmentManager, MoreListBottomSheet.TAG)
     }
 
-    private fun SortedList<ListItem>.highlightSearch(
+    private suspend fun SortedList<ListItem>.highlightSearch(
         search: String,
         adapter: HighlightText?,
         resultPosCounter: AtomicInteger,
         alreadyNotifiedItemPos: MutableSet<Int>,
     ): Int {
-        return mapIndexed { idx, item ->
-                val occurrences = item.body.findAllOccurrences(search)
+        return mapIndexedSuspended { idx, item ->
+                val occurrences =
+                    withContext(Dispatchers.Default) { item.body.findAllOccurrences(search) }
                 occurrences.onEach { (startIdx, endIdx) ->
                     adapter?.highlightText(
                         ListItemHighlight(
@@ -131,14 +134,15 @@ class EditListActivity : EditActivity(Type.LIST) {
             .sum()
     }
 
-    private fun List<ListItem>.highlightSearch(
+    private suspend fun List<ListItem>.highlightSearch(
         search: String,
         adapter: ListItemAdapter?,
         resultPosCounter: AtomicInteger,
         alreadyNotifiedItemPos: MutableSet<Int>,
     ): Int {
-        return mapIndexed { idx, item ->
-                val occurrences = item.body.findAllOccurrences(search)
+        return mapIndexedSuspended { idx, item ->
+                val occurrences =
+                    withContext(Dispatchers.Default) { item.body.findAllOccurrences(search) }
                 occurrences.onEach { (startIdx, endIdx) ->
                     adapter?.highlightText(
                         ListItemHighlight(
@@ -158,7 +162,7 @@ class EditListActivity : EditActivity(Type.LIST) {
             .sum()
     }
 
-    override fun highlightSearchResults(search: String): Int {
+    override suspend fun highlightSearchResults(search: String): Int {
         val resultPosCounter = AtomicInteger(0)
         val alreadyNotifiedItemPos = mutableSetOf<Int>()
         adapter?.clearHighlights()

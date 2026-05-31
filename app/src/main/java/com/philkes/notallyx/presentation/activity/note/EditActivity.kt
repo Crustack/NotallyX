@@ -423,15 +423,17 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
     protected fun updateSearchResults(query: String) {
         val amountBefore = search.results.value
-        val amount = highlightSearchResults(query)
-        this.search.results.value = amount
-        if (amount > 0) {
-            search.resultPos.value =
-                when {
-                    amountBefore < 1 -> 0
-                    search.resultPos.value >= amount -> amount - 1
-                    else -> search.resultPos.value
-                }
+        lifecycleScope.launch {
+            val amount = highlightSearchResults(query)
+            this@EditActivity.search.results.value = amount
+            if (amount > 0) {
+                search.resultPos.value =
+                    when {
+                        amountBefore < 1 -> 0
+                        search.resultPos.value >= amount -> amount - 1
+                        else -> search.resultPos.value
+                    }
+            }
         }
     }
 
@@ -440,7 +442,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
      *
      * @return amount of search results found
      */
-    abstract fun highlightSearchResults(search: String): Int
+    abstract suspend fun highlightSearchResults(search: String): Int
 
     abstract fun selectSearchResult(resultPos: Int)
 

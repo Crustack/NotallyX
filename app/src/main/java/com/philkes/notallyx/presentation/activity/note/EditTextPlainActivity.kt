@@ -104,13 +104,15 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
         }
     }
 
-    override fun highlightSearchResults(search: String): Int {
+    override suspend fun highlightSearchResults(search: String): Int {
         binding.EnterBody.clearHighlights()
         if (search.isEmpty()) {
             return 0
         }
+        val text = notallyModel.body.toString()
+        val occurrences = withContext(Dispatchers.Default) { text.findAllOccurrences(search) }
         searchResultIndices =
-            notallyModel.body.toString().findAllOccurrences(search).onEach { (startIdx, endIdx) ->
+            occurrences.onEach { (startIdx, endIdx) ->
                 binding.EnterBody.highlight(startIdx, endIdx, false)
             }
         return searchResultIndices!!.size
