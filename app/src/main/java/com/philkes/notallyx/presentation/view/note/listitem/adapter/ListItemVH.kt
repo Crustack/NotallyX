@@ -123,7 +123,7 @@ class ListItemVH(
                 }
             binding.EditText.highlight(pairs, -1)
             selected?.let { binding.EditText.select(it.startIdx, it.endIdx) }
-        } ?: binding.EditText.clearHighlights()
+        }
         binding.root.setControlsContrastColorForAllViews(backgroundColor)
     }
 

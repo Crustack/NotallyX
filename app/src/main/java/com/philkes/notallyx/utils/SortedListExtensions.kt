@@ -11,11 +11,13 @@ fun <R, C> SortedList<R>.mapIndexed(transform: (Int, R) -> C): List<C> {
 }
 
 suspend fun <R, C> SortedList<R>.mapIndexedSuspended(transform: suspend (Int, R) -> C): List<C> {
-    return (0 until this.size()).mapIndexed { idx, it -> transform.invoke(idx, this[it]) }
+    val snapshot = List(size()) { index -> this[index] }
+    return snapshot.mapIndexed { idx, item -> transform(idx, item) }
 }
 
 suspend fun <R, C> List<R>.mapIndexedSuspended(transform: suspend (Int, R) -> C): List<C> {
-    return mapIndexed { idx, it -> transform.invoke(idx, this[idx]) }
+    val snapshot = toList()
+    return snapshot.mapIndexed { idx, item -> transform(idx, item) }
 }
 
 fun <R> SortedList<R>.forEach(function: (item: R) -> Unit) {
