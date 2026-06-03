@@ -1,0 +1,4 @@
+- Möglichkeit, die Duplikatserkennung beim Import zu deaktivieren
+- Funktion zum Bereinigen beschädigter Notizen in der Datenbank hinzufügen
+- Ausweichen auf einen Rohdaten-Export, falls der Backup-Export fehlschlägt
+- Verbesserung der Suchleistung innerhalb der Notizen

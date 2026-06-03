@@ -1,0 +1,4 @@
+- Allow disabling duplicate detection on import
+- Add cleanup corrupted notes in database
+- Fallback to raw database export if backup export fails
+- Improve in-note search performance
