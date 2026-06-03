@@ -37,7 +37,7 @@ import com.philkes.notallyx.data.imports.FOLDER_OR_FILE_MIMETYPE
 import com.philkes.notallyx.data.imports.ImportProgress
 import com.philkes.notallyx.data.imports.ImportSource
 import com.philkes.notallyx.data.imports.txt.APPLICATION_TEXT_MIME_TYPES
-import com.philkes.notallyx.databinding.DialogTextInputBinding
+import com.philkes.notallyx.databinding.DialogImportBinding
 import com.philkes.notallyx.databinding.FragmentSettingsBinding
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.presentation.format
@@ -150,7 +150,7 @@ class SettingsFragment : Fragment() {
         importRawDatabaseActivityResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
-                    result.data?.data?.let { model.importRawDatabase(it) }
+                    result.data?.data?.let { model.importRawDatabase(it, false) }
                 }
             }
         importOtherActivityResultLauncher =
@@ -247,7 +247,7 @@ class SettingsFragment : Fragment() {
             }
 
             MIME_TYPE_ZIP -> {
-                val layout = DialogTextInputBinding.inflate(layoutInflater, null, false)
+                val layout = DialogImportBinding.inflate(layoutInflater, null, false)
                 val password = model.preferences.backupPassword.value
                 layout.InputText.apply {
                     if (password != PASSWORD_EMPTY) {
@@ -266,7 +266,8 @@ class SettingsFragment : Fragment() {
                     .setPositiveButton(R.string.import_backup) { dialog, _ ->
                         dialog.cancel()
                         val usedPassword = layout.InputText.text.toString()
-                        model.importZipBackup(uri, usedPassword)
+                        val checkDuplicates = layout.CheckDuplicates.isChecked
+                        model.importZipBackup(uri, usedPassword, checkDuplicates)
                     }
                     .setCancelButton()
                     .show()
