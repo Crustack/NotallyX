@@ -80,6 +80,7 @@
     <string name="change_color_message">Pick a color or create a new one.\nYou can also edit a Color by long pressing it.</string>
     <string name="change_note">Change Note</string>
     <string name="check_all_items">Check all items</string>
+    <string name="check_duplicates">Check for duplicates</string>
     <string name="choose_another_folder">Choose another folder</string>
     <string name="choose_folder">Choose folder</string>
     <string name="choose_other_app">Choose which app to import from</string>
@@ -323,7 +324,7 @@
     <string name="redo">Redo</string>
     <string name="reimport_database">Reimport DB</string>
     <string name="reimport_database_failed">Reimporting Database failed</string>
-    <string name="reimport_database_message">You can now try to reimport a raw database. This deletes the current corrupted database and then tries to import the raw database by skipping corrupted notes if possible</string>
+    <string name="reimport_database_message">You can now try to reimport the raw database. This deletes the current corrupted database (a backup will be stored in \'Android/media/com.philkes.notallyx/logs\') and then tries to import the raw database by skipping corrupted notes if possible</string>
     <string name="reminder_no_repetition">No repetition</string>
     <string name="reminders">Reminders</string>
     <string name="remove_link">Remove Link</string>

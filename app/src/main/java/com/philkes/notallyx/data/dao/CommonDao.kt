@@ -51,6 +51,7 @@ abstract class CommonDao(private val database: NotallyDatabase) {
         baseNotes: List<BaseNote>,
         labels: List<Label>,
         readCorrupted: Int,
+        checkDuplicates: Boolean,
     ): ImportResult {
         val dao = database.getBaseNoteDao()
         // Insert notes, splitting oversized text notes instead of truncating
@@ -58,7 +59,7 @@ abstract class CommonDao(private val database: NotallyDatabase) {
         var duplicates = 0
         baseNotes.forEach { note ->
             // Skip duplicates: same title and same content
-            val duplicateId = findDuplicateId(note)
+            val duplicateId = if (checkDuplicates) findDuplicateId(note) else null
             if (duplicateId == null) {
                 if (note.type == Type.NOTE && note.body.length > MAX_BODY_CHAR_LENGTH) {
                     NoteSplitUtils.splitAndInsertForImport(note, dao)
@@ -93,6 +94,7 @@ abstract class CommonDao(private val database: NotallyDatabase) {
         originalIds: List<Long>,
         labels: List<Label>,
         readCorrupted: Int,
+        checkDuplicates: Boolean,
     ): ImportResult {
         val baseNoteDao = database.getBaseNoteDao()
 
@@ -105,7 +107,7 @@ abstract class CommonDao(private val database: NotallyDatabase) {
         var duplicates = 0
         for (i in baseNotes.indices) {
             val original = baseNotes[i]
-            val duplicateId = findDuplicateId(original)
+            val duplicateId = if (checkDuplicates) findDuplicateId(original) else null
             if (duplicateId != null) {
                 // Map the old id to the existing duplicate and do not insert
                 val oldId = originalIds.getOrNull(i)

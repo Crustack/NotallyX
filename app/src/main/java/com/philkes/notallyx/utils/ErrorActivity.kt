@@ -29,6 +29,7 @@ import com.philkes.notallyx.utils.backup.copyDatabase
 import com.philkes.notallyx.utils.backup.exportAsZip
 import com.philkes.notallyx.utils.backup.exportRawDatabase
 import com.philkes.notallyx.utils.backup.importRawDatabase
+import java.io.File
 import java.util.Date
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
@@ -199,15 +200,24 @@ class ErrorActivity : AppCompatActivity() {
                                         lifecycleScope.launch(exceptionHandler) {
                                             val importResult =
                                                 withContext(Dispatchers.IO) {
-                                                    // Safety copy of internal database
                                                     val (_, databaseCopy) =
-                                                        copyDatabase(suffix = "_BEFORE_REIMPORT")
+                                                        copyDatabase(
+                                                            suffix = "_BACKUP_BEFORE_REIMPORT"
+                                                        )
+                                                    databaseCopy.copyToLarge(
+                                                        File(
+                                                            getLogsDir(),
+                                                            "${NotallyDatabase.DATABASE_NAME}_BACKUP_BEFORE_REIMPORT.sqlite",
+                                                        ),
+                                                        overwrite = true,
+                                                    )
                                                     deleteDatabase(NotallyDatabase.DATABASE_NAME)
                                                     NotallyDatabase.clearInstance(
                                                         this@ErrorActivity
                                                     )
                                                     application.importRawDatabase(
                                                         uri,
+                                                        false,
                                                         backupProgress,
                                                     )
                                                 }

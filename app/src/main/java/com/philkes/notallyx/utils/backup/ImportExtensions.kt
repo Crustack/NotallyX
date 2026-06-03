@@ -95,6 +95,7 @@ fun getOptionalColumns(db: SQLiteDatabase, tableName: String): Array<String> {
 
 suspend fun ContextWrapper.importRawDatabase(
     dbFileUri: Uri,
+    checkDuplicates: Boolean,
     importProgress: MutableLiveData<Progress>? = null,
 ): ImportResult {
     val tempDbFile = File(cacheDir, DATABASE_NAME + "_IMPORT")
@@ -107,7 +108,7 @@ suspend fun ContextWrapper.importRawDatabase(
                 inputStream.copyToFile(tempDbFile)
                 val (baseNotes, originalIds, labels, corruptedNotes) =
                     readBaseNotes(tempDbFile, importProgress)
-                val import = import(baseNotes, originalIds, labels, corruptedNotes)
+                val import = import(baseNotes, originalIds, labels, corruptedNotes, checkDuplicates)
                 importProgress?.postValue(ImportProgress(inProgress = false))
                 return import
             }
@@ -162,6 +163,7 @@ suspend fun ContextWrapper.importZip(
     zipFileUri: Uri,
     databaseFolder: File,
     zipPassword: String,
+    checkDuplicates: Boolean,
     progress: MutableLiveData<Progress>? = null,
 ) {
     progress?.postValue(ImportProgress(indeterminate = true))
@@ -263,7 +265,7 @@ suspend fun ContextWrapper.importZip(
                         }
                     }
                 }
-                import(baseNotes, originalIds, labels, corruptedNotes)
+                import(baseNotes, originalIds, labels, corruptedNotes, checkDuplicates)
             }
         databaseFolder.clearDirectory()
         showToast(toMessage(result))
@@ -284,10 +286,13 @@ private suspend fun ContextWrapper.import(
     originalIds: List<Long>,
     labels: List<Label>,
     readCorrupted: Int,
+    checkDuplicates: Boolean,
 ): ImportResult {
     val notallyDatabase = NotallyDatabase.getDatabase(this, observePreferences = false).value
     val importResult =
-        notallyDatabase.getCommonDao().importBackup(baseNotes, originalIds, labels, readCorrupted)
+        notallyDatabase
+            .getCommonDao()
+            .importBackup(baseNotes, originalIds, labels, readCorrupted, checkDuplicates)
     val notesToRemind = notallyDatabase.getBaseNoteDao().getAllWithRemindersOrPinned()
     cancelPinAndReminders(notesToRemind)
     pinAndScheduleReminders(notesToRemind)

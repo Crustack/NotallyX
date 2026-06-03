@@ -411,7 +411,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun importRawDatabase(uri: Uri) {
+    fun importRawDatabase(uri: Uri, checkDuplicates: Boolean) {
         val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
             app.log(TAG, throwable = throwable)
             app.showToast("${app.getString(R.string.invalid_backup)}: ${throwable.message}")
@@ -419,12 +419,14 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
         viewModelScope.launch(exceptionHandler) {
             val importResult =
-                withContext(Dispatchers.IO) { app.importRawDatabase(uri, importProgress) }
+                withContext(Dispatchers.IO) {
+                    app.importRawDatabase(uri, checkDuplicates, importProgress)
+                }
             app.showToast(app.toMessage(importResult))
         }
     }
 
-    fun importZipBackup(uri: Uri, password: String) {
+    fun importZipBackup(uri: Uri, password: String, checkDuplicates: Boolean) {
         val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
             app.log(TAG, throwable = throwable)
             app.showToast("${app.getString(R.string.invalid_backup)}: ${throwable.message}")
@@ -432,7 +434,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
         val backupDir = app.getBackupDir()
         viewModelScope.launch(exceptionHandler) {
-            app.importZip(uri, backupDir, password, importProgress)
+            app.importZip(uri, backupDir, password, checkDuplicates, importProgress)
         }
     }
 
@@ -451,7 +453,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                             { "InputStream for '$uri' is null" },
                         )
                     val (baseNotes, labels) = stream.readAsBackup()
-                    commonDao.importBackup(baseNotes, labels, 0)
+                    commonDao.importBackup(baseNotes, labels, 0, false)
                 }
             app.showToast(app.toMessage(result))
         }
