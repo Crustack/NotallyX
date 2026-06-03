@@ -1,5 +1,19 @@
 # Changelog
 
+## [v7.11.2](https://github.com/Crustack/NotallyX/tree/v7.11.2) (2026-06-03)
+
+[Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.11.1...v7.11.2)
+
+### Added Features
+
+- Feature Request: Skip duplicate detection [\#955](https://github.com/Crustack/NotallyX/issues/955)
+- PDF export has extremely small margins [\#948](https://github.com/Crustack/NotallyX/issues/948)
+- Log WebView load errors when exporting a note to PDF [\#1037](https://github.com/Crustack/NotallyX/pull/1037) ([jim-daf](https://github.com/jim-daf))
+
+### Fixed Bugs
+
+- App freezes on launch after large import [\#1033](https://github.com/Crustack/NotallyX/issues/1033)
+
 ## [v7.11.1](https://github.com/Crustack/NotallyX/tree/v7.11.1) (2026-04-27)
 
 [Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.11.0...v7.11.1)
