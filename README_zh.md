@@ -5,7 +5,7 @@
 <h2 align="center">
     <img src="fastlane/metadata/android/en-US/images/icon.png" alt="icon" width="90"/>
     <br />
-    <b><a href="https://crustack.github.io/NotallyX/">NotallyX | Minimalistic note taking app</a></b>
+    <b><a href="https://crustack.github.io/NotallyX/">NotallyX | 极简笔记应用</a></b>
     <p>
         <center>
             <a href="https://ko-fi.com/crustack"><img alt='Donate' height='30' src='documentation/static/img/kofi_donate.svg' /></a>
@@ -32,68 +32,67 @@
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/7.png" alt="Image 7" style="width: 32%;"/>
 </div>
 
+### 功能特性
 
-### Features
-[Notally](https://github.com/OmGodse/Notally), but eXtended
+[Notally](https://github.com/OmGodse/Notally)，但增强版（eXtended）
 
-<h4><a href="https://crustack.github.io/NotallyX/">See Documentation</a></h4>
+<h4><a href="https://crustack.github.io/NotallyX/">查看文档</a></h4>
 
-* Create **rich text** notes with support for bold, italics, mono space and strike-through
-* Create **task lists** and order them with subtasks (+ auto-sort checked items to the end)
-* Set **reminders** with notifications for important notes
-* Complement your notes with any type of file such as **pictures**, PDFs, etc.
-* **Sort notes** by title, last modified date, creation date
-* **Color, pin and label** your notes for quick organisation
-* Add **clickable links** to notes with support for phone numbers, email addresses and web urls
-* **Undo/Redo actions**
-* Use **Home Screen Widget** to access important notes fast
-* **Lock your notes via Biometric/PIN**
-* Configurable **auto-backups**
-* **Import from other apps** such as [Evernote](https://evernote.com/), [Google Keep](https://keep.google.com/), [Quillpad](https://quillpad.github.io/)
-* Create quick audio notes
-* Display the notes either in a **List or Grid**
-* Quickly share notes by text
-* Extensive preferences to adjust views to your liking
-* Actions to quickly remove checked tasks
-* Adaptive android app icon
-* Support for Lollipop devices and up
+* 创建**富文本**笔记，支持粗体、斜体、等宽字体和删除线
+* 创建**任务清单**并为其添加子任务，支持排序（已勾选的项目自动移至末尾）
+* 为重要笔记设置**提醒**并接收通知
+* 在笔记中添加任意类型的文件，例如**图片**、PDF 等
+* 按标题、最后修改时间、创建时间**排序笔记**
+* 使用**颜色、置顶和标签**快速整理笔记
+* 在笔记中添加**可点击的链接**，支持电话号码、电子邮件地址和网页 URL
+* **撤销/重做**操作
+* 使用**主屏幕小部件**快速访问重要笔记
+* 通过**生物识别或 PIN 码锁定**笔记
+* 可配置的**自动备份**
+* 从其他应用**导入笔记**，例如 [Evernote](https://evernote.com/)、[Google Keep](https://keep.google.com/)、[Quillpad](https://quillpad.github.io/)
+* 快速创建音频笔记
+* 以**列表或网格**形式显示笔记
+* 通过文本快速分享笔记
+* 丰富的偏好设置，可按喜好调整视图
+* 一键清除已完成任务
+* 自适应 Android 应用图标
+* 支持 Lollipop（Android 5.0）及更高版本设备
 
 ---
 
-### Bug Reports / Feature-Requests
-If you find any bugs or want to propose a new Feature/Enhancement, feel free to [create a new Issue](https://github.com/Crustack/NotallyX/issues/new/choose)
+### 问题反馈 / 功能建议
 
-When using the app and an unknown error occurs, causing the app to crash you will see a dialog (see showcase video in https://github.com/Crustack/NotallyX/pull/171) from which you can immediately create a bug report on Github with the crash details pre-filled.
+如果你发现任何 Bug 或希望提出新功能/增强建议，欢迎[创建新 Issue](https://github.com/Crustack/NotallyX/issues/new/choose)
 
+当应用发生未知错误导致崩溃时，你会看到一个对话框（参见 https://github.com/Crustack/NotallyX/pull/171 中的演示视频），你可以在该对话框中直接创建包含崩溃详情的 GitHub 问题报告。
 
-#### Beta Releases
+#### 测试版（Beta）发布
 
-I occasionally release BETA versions of the app during development, since its very valuable for me to get feedback before publicly releasing a new version.
-These BETA releases have another `applicationId` as the release versions, thats why when you install a BETA version it will show up on your device as a separate app called `NotallyX BETA`.
-BETA versions also have their own data, they do not use the data of your NotallyX app
-You can download the most recent BETA release [here on Github](https://github.com/Crustack/NotallyX/releases/tag/beta)
+在开发过程中，我会不定期发布 BETA 版本。在公开发布新版本之前，获得用户反馈对我非常宝贵。
+这些 BETA 版本使用不同的 `applicationId`，因此安装后会在你的设备上显示为一个独立的应用，名为 `NotallyX BETA`。
+BETA 版本拥有独立的数据，不会使用你正式版 NotallyX 的数据。
+你可以[在此 GitHub 链接](https://github.com/Crustack/NotallyX/releases/tag/beta)下载最新的 BETA 版本。
 
-#### APK Signing Certifcate Fingerprint
+#### APK 签名证书指纹
 
-If you wish to verify your downloaded .apk file, here is the app's certificate SHA256 fingerpint:
+如果你想验证下载的 .apk 文件，以下是该应用的证书 SHA256 指纹：
 `D2:14:B6:05:7B:79:F8:25:09:DD:CD:1E:35:19:65:B3:C6:EC:C4:B2:A3:89:6E:5C:DF:88:5A:70:A0:B6:1D:FD`
 
-### Translations
+### 翻译
 
-All translations are crowd sourced.
-For details on how to contribute translations and what languages are available, see [TRANSLATIONS](./TRANSLATIONS.md)
+所有翻译均由社区贡献。
+有关如何贡献翻译以及支持哪些语言的详细信息，请参阅 [TRANSLATIONS.md](./TRANSLATIONS.md)
 
-### Contributing
+### 贡献
 
-If you would like to contribute code yourself, just grab any open issue (that has no other developer assigned yet), leave a comment that you want to work on it and start developing by forking this repo.
+如果你想亲自贡献代码，只需任意选择一个未被他人认领的开放 Issue，留言表示你想要处理它，然后 fork 本仓库并开始开发。
 
-The project is a default Android project written in Kotlin, I highly recommend using Android Studio for development. Also be sure to test your changes with an Android device/emulator that uses the same Android SDK Version as defined in the `build.gradle` `targetSdk`.
+本项目是一个使用 Kotlin 编写的标准 Android 项目，我强烈推荐使用 Android Studio 进行开发。请确保在 `build.gradle` 中定义的 `targetSdk` 所对应的 Android 设备或模拟器上测试你的更改。
 
-Before submitting your proposed changes as a Pull-Request, make sure all tests are still working (`./gradlew test`), and run `./gradlew ktfmtFormat` for common formatting (also executed automatically as pre-commit hook).
+在提交 Pull Request 之前，请确保所有测试仍然通过（`./gradlew test`），并运行 `./gradlew ktfmtFormat` 进行统一格式化（该命令也会作为 pre-commit 钩子自动执行）。
 
-### Attribution
-The original Notally project was developed by [OmGodse](https://github.com/OmGodse) under the [GPL 3.0 License](https://github.com/OmGodse/Notally/blob/master/LICENSE.md).
+### 致谢
 
-In accordance to GPL 3.0, this project is licensed under the same [GPL 3.0 License](https://github.com/Crustack/NotallyX/blob/master/LICENSE.md).
+原版 Notally 项目由 [OmGodse](https://github.com/OmGodse) 开发，遵循 [GPL 3.0 许可证](https://github.com/OmGodse/Notally/blob/master/LICENSE.md)。
 
-
+根据 GPL 3.0 的规定，本项目采用相同的 [GPL 3.0 许可证](https://github.com/Crustack/NotallyX/blob/master/LICENSE.md)。
