@@ -1,3 +1,7 @@
+<p align="center">
+  <span style="color:gray;">English</span> | 
+  <a href="README_zh.md">简体中文</a>
+</p>
 <h2 align="center">
     <img src="fastlane/metadata/android/en-US/images/icon.png" alt="icon" width="90"/>
     <br />
