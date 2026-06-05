@@ -3,8 +3,6 @@
   <span style="color:gray;">简体中文</span>
 </p>
 
----
-
 <h2 align="center">
     <img src="fastlane/metadata/android/en-US/images/icon.png" alt="icon" width="90"/>
     <br />
