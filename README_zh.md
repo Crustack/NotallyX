@@ -62,7 +62,7 @@
 
 ### 问题反馈 / 功能建议
 
-如果你发现任何 Bug 或希望提出新功能/增强建议，欢迎[创建新 Issue](https://github.com/Crustack/NotallyX/issues/new/choose)
+如果你发现任何 Bug 或希望提出新功能/改进建议，欢迎[创建新 Issue](https://github.com/Crustack/NotallyX/issues/new/choose)
 
 当应用发生未知错误导致崩溃时，你会看到一个对话框（参见 https://github.com/Crustack/NotallyX/pull/171 中的演示视频），你可以在该对话框中直接创建包含崩溃详情的 GitHub 问题报告。
 
@@ -85,7 +85,7 @@ BETA 版本拥有独立的数据，不会使用你正式版 NotallyX 的数据�
 
 ### 贡献
 
-如果你想亲自贡献代码，只需任意选择一个未被他人认领的开放 Issue，留言表示你想要处理它，然后 fork 本仓库并开始开发。
+如果你想亲自贡献代码，只需任意选择一个无人负责的开放 Issue，留言表示你想要处理它，然后 fork 本仓库并开始开发。
 
 本项目是一个使用 Kotlin 编写的标准 Android 项目，我强烈推荐使用 Android Studio 进行开发。请确保在 `build.gradle` 中定义的 `targetSdk` 所对应的 Android 设备或模拟器上测试你的更改。
 
