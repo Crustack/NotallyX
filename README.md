@@ -1,6 +1,6 @@
 <p align="center">
-  <a href="README_zh.md">🇨🇳 中文</a> | 
-  <a href="README.md">🇬🇧 English</a>
+  <a href="README_zh.md">简体中文</a> | 
+  <a href="README.md">English</a>
 </p>
 <h2 align="center">
     <img src="fastlane/metadata/android/en-US/images/icon.png" alt="icon" width="90"/>
