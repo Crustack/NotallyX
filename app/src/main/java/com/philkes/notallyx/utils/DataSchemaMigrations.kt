@@ -48,11 +48,13 @@ suspend fun Application.runMigrations(onProgressTitle: (Int) -> Unit = {}): Bool
 
 private fun Application.moveAttachments(preferences: NotallyXPreferences) {
     val toPrivate = !preferences.dataInPublicFolder.value
+    val destination = if (toPrivate) "private" else "public"
+    log(TAG, "Running migration 1: Moving attachments to $destination folder")
+    val (moved, failed) = migrateAllAttachments(toPrivate)
     log(
         TAG,
-        "Running migration 1: Moving attachments to ${if(toPrivate) "private" else "public"} folder",
+        "Migration 1 finished. Moved $moved notes to $destination folder. Failed to move $failed notes.",
     )
-    migrateAllAttachments(toPrivate)
 }
 
 /**
