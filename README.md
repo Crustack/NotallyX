@@ -1,3 +1,4 @@
+🌐 **[简体中文](./README_zh.md)** | English
 <h2 align="center">
     <img src="fastlane/metadata/android/en-US/images/icon.png" alt="icon" width="90"/>
     <br />
