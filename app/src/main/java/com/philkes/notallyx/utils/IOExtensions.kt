@@ -137,6 +137,8 @@ fun ContextWrapper.resolveAttachmentFile(subfolder: String, localName: String): 
 /**
  * Move all attachment files between public and private storage to match current mode. If
  * [toPrivate] is true, move from external app media to private dirs; else the opposite.
+ *
+ * @return Pair of moved and failed file counts
  */
 fun ContextWrapper.migrateAllAttachments(toPrivate: Boolean): Pair<Int, Int> {
     var moved = 0
