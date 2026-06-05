@@ -34,7 +34,7 @@
 
 ### 功能特性
 
-[Notally](https://github.com/OmGodse/Notally)，但增强版（eXtended）
+[Notally](https://github.com/OmGodse/Notally)，但增强版
 
 <h4><a href="https://crustack.github.io/NotallyX/">查看文档</a></h4>
 
