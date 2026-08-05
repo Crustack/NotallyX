@@ -6,11 +6,13 @@ import android.view.MotionEvent
 import android.view.View.GONE
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import android.widget.ArrayAdapter
 import android.widget.CompoundButton.OnCheckedChangeListener
 import android.widget.EditText
 import android.widget.TextView.INVISIBLE
 import android.widget.TextView.VISIBLE
 import androidx.annotation.ColorInt
+import androidx.appcompat.widget.ListPopupWindow
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
@@ -28,6 +30,7 @@ import com.philkes.notallyx.presentation.setControlsContrastColorForAllViews
 import com.philkes.notallyx.presentation.setOnNextAction
 import com.philkes.notallyx.presentation.setTextSizeSp
 import com.philkes.notallyx.presentation.view.misc.EditTextAutoClearFocus
+import com.philkes.notallyx.presentation.view.note.listitem.CheckedItemSuggestion
 import com.philkes.notallyx.presentation.view.note.listitem.ListManager
 import com.philkes.notallyx.presentation.view.note.listitem.firstBodyOrEmptyString
 import com.philkes.notallyx.presentation.viewmodel.preference.ListItemSort
@@ -46,6 +49,9 @@ class ListItemVH(
 ) : RecyclerView.ViewHolder(binding.root) {
 
     private var dragHandleInitialY: Float = 0f
+    private val suggestionPopup = ListPopupWindow(binding.root.context)
+    private var suggestions: List<CheckedItemSuggestion> = emptyList()
+    private var boundItemId: Int = NO_POSITION
 
     init {
         val body = textSize.editBodySize
@@ -57,12 +63,27 @@ class ListItemVH(
                     listManager,
                     this@ListItemVH::getAdapterPosition,
                 ) { text, start, count ->
-                    if (count > 1) {
-                        checkListPasted(text, start, count, this)
-                    } else {
-                        false
+                    val listPasteHandled =
+                        if (count > 1) {
+                            checkListPasted(text, start, count, this)
+                        } else {
+                            false
+                        }
+                    if (!listPasteHandled) {
+                        updateSuggestions(text)
                     }
+                    listPasteHandled
                 }
+        }
+
+        suggestionPopup.apply {
+            anchorView = binding.EditText
+            isModal = false
+            setOnItemClickListener { _, _, position, _ ->
+                val suggestion = suggestions[position]
+                suggestionPopup.dismiss()
+                listManager.completeWithCheckedItem(boundItemId, suggestion.id)
+            }
         }
 
         binding.DragHandle.setOnTouchListener { _, event ->
@@ -95,6 +116,8 @@ class ListItemVH(
         autoSort: ListItemSort,
         viewMode: NoteViewMode,
     ) {
+        suggestionPopup.dismiss()
+        boundItemId = item.id
         updateEditText(item, position, viewMode)
 
         updateCheckBox(item, position)
@@ -164,6 +187,7 @@ class ListItemVH(
             if (viewMode == NoteViewMode.EDIT) {
                 setOnFocusChangeListener { _, hasFocus ->
                     binding.Delete.visibility = if (hasFocus) VISIBLE else INVISIBLE
+                    if (!hasFocus) suggestionPopup.dismiss()
                 }
                 binding.Content.descendantFocusability = ViewGroup.FOCUS_BEFORE_DESCENDANTS
             } else {
@@ -288,4 +312,25 @@ class ListItemVH(
     }
 
     fun getSelection() = with(binding.EditText) { Pair(selectionStart, selectionEnd) }
+
+    private fun updateSuggestions(text: CharSequence) {
+        if (!binding.EditText.hasFocus() || boundItemId == NO_POSITION || text.isBlank()) {
+            suggestionPopup.dismiss()
+            return
+        }
+        suggestions = listManager.getCheckedItemSuggestions(text, boundItemId)
+        if (suggestions.isEmpty()) {
+            suggestionPopup.dismiss()
+            return
+        }
+        suggestionPopup.setAdapter(
+            ArrayAdapter(
+                binding.root.context,
+                android.R.layout.simple_list_item_1,
+                suggestions.map { it.body },
+            )
+        )
+        suggestionPopup.width = binding.EditText.width
+        suggestionPopup.show()
+    }
 }

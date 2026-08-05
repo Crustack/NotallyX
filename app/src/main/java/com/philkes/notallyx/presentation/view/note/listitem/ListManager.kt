@@ -37,6 +37,8 @@ data class ListState(
     val cursorPos: Int? = null,
 )
 
+data class CheckedItemSuggestion(val id: Int, val body: String)
+
 /**
  * Should be used for all changes to the items list. Notifies the [RecyclerView.Adapter] and pushes
  * according changes to the [ChangeHistory]
@@ -401,6 +403,74 @@ class ListManager(
         return if (fromCheckedList) itemsChecked!![position] else items[position]
     }
 
+    internal fun getCheckedItemSuggestions(
+        query: CharSequence,
+        currentItemId: Int,
+    ): List<CheckedItemSuggestion> {
+        val checkedItems =
+            items.filter { it.checked } +
+                (itemsChecked?.toMutableList()?.filter { it.checked } ?: emptyList())
+        return checkedItems
+            .asSequence()
+            .filter { it.id != currentItemId && it.body.isNotBlank() }
+            .filter { matchesCheckedItem(query.toString(), it.body) }
+            .map { CheckedItemSuggestion(it.id, it.body.trim()) }
+            .distinctBy { it.body.lowercase() }
+            .take(MAX_AUTOCOMPLETE_SUGGESTIONS)
+            .toList()
+    }
+
+    internal fun completeWithCheckedItem(currentItemId: Int, checkedItemId: Int) {
+        val stateBefore = getState()
+        val stateAfter = createAutocompleteState(stateBefore, currentItemId, checkedItemId) ?: return
+        changeHistory.push(ListBatchChange(stateBefore, stateAfter, this))
+        setState(stateAfter)
+        onItemSizeChanged?.invoke(stateAfter.items.size + (stateAfter.checkedItems?.size ?: 0))
+    }
+
+    private fun createAutocompleteState(
+        stateBefore: ListState,
+        currentItemId: Int,
+        checkedItemId: Int,
+    ): ListState? {
+        val itemsAfter = stateBefore.items.cloneList()
+        val checkedItemsAfter = stateBefore.checkedItems?.cloneList()
+        val currentItem = itemsAfter.find { it.id == currentItemId } ?: return null
+        val sourceItems =
+            if (itemsAfter.any { it.id == checkedItemId && it.checked }) {
+                itemsAfter
+            } else {
+                checkedItemsAfter ?: return null
+            }
+        val checkedItem = sourceItems.find { it.id == checkedItemId && it.checked } ?: return null
+
+        currentItem.body = checkedItem.body.trim()
+        currentItem.check(false, checkChildren = false)
+
+        sourceItems.removeFromParent(checkedItem)
+        sourceItems.remove(checkedItem)
+        checkedItem.children.forEach { it.isChild = false }
+        checkedItem.children.clear()
+
+        val currentPosition = itemsAfter.indexOfFirst { it.id == currentItem.id }
+        if (currentPosition == -1) return null
+
+        val orderedIds =
+            (stateBefore.items + (stateBefore.checkedItems ?: emptyList()))
+                .sortedBy { it.order }
+                .map { it.id }
+                .filterNot { it == checkedItem.id }
+        val finalItems = itemsAfter + (checkedItemsAfter ?: emptyList())
+        orderedIds.forEachIndexed { order, id -> finalItems.find { it.id == id }?.order = order }
+
+        return ListState(
+            itemsAfter,
+            checkedItemsAfter,
+            focusedItemPos = currentPosition,
+            cursorPos = currentItem.body.length,
+        )
+    }
+
     private fun RecyclerView.getFocusedPositionAndCursor(): Pair<Int?, Int?> {
         return focusedChild?.let { view ->
             val position = getChildAdapterPosition(view)
@@ -579,5 +649,15 @@ class ListManager(
 
     companion object {
         private const val TAG = "ListManager"
+        private const val MAX_AUTOCOMPLETE_SUGGESTIONS = 2
     }
 }
+
+internal fun matchesCheckedItem(query: String, candidate: String): Boolean {
+    val normalizedQuery = query.trim()
+    val normalizedCandidate = candidate.trim()
+    return normalizedQuery.length >= MIN_AUTOCOMPLETE_QUERY_LENGTH &&
+        normalizedCandidate.startsWith(normalizedQuery, ignoreCase = true)
+}
+
+private const val MIN_AUTOCOMPLETE_QUERY_LENGTH = 2
