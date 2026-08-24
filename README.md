@@ -8,6 +8,9 @@
         </center>
     </p>
     <p>
+    <h1>Due to multiple users experiencing data loss (e.g. https://github.com/Crustack/NotallyX/issues/1066), I temporarily removed the App from the Google Play Store. If you use the app, ensure that you have setup auto-backup (e.g. daily) and ideally also backup on save!</h1>
+    </p>
+    <p>
         <center>
             <a href='https://play.google.com/store/apps/details?id=com.philkes.notallyx&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height='80'/></a>
             <a href="https://f-droid.org/en/packages/com.philkes.notallyx"><img alt='IzzyOnDroid' height='80' src='https://fdroid.gitlab.io/artwork/badge/get-it-on.png' /></a>
