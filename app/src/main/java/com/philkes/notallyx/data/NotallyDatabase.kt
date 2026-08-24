@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.Observer
 import androidx.room.Database
 import androidx.room.Room
@@ -90,6 +91,26 @@ abstract class NotallyDatabase : RoomDatabase() {
             )
         }
 
+        @VisibleForTesting
+        internal fun createBuilder(
+            context: Context,
+            databaseName: String,
+        ): RoomDatabase.Builder<NotallyDatabase> {
+            return Room.databaseBuilder(context, NotallyDatabase::class.java, databaseName)
+                .addMigrations(
+                    Migration2,
+                    Migration3,
+                    Migration4,
+                    Migration5,
+                    Migration6,
+                    Migration7,
+                    Migration8,
+                    Migration9,
+                    Migration10,
+                    Migration11,
+                )
+        }
+
         private fun getCurrentDatabaseName(
             context: ContextWrapper,
             dataInPublicFolder: Boolean,
@@ -159,23 +180,7 @@ abstract class NotallyDatabase : RoomDatabase() {
             dataInPublic: Boolean = preferences.dataInPublicFolder.value,
         ): NotallyDatabase {
             val instanceBuilder =
-                Room.databaseBuilder(
-                        context,
-                        NotallyDatabase::class.java,
-                        getCurrentDatabaseName(context, dataInPublic),
-                    )
-                    .addMigrations(
-                        Migration2,
-                        Migration3,
-                        Migration4,
-                        Migration5,
-                        Migration6,
-                        Migration7,
-                        Migration8,
-                        Migration9,
-                        Migration10,
-                        Migration11,
-                    )
+                createBuilder(context, getCurrentDatabaseName(context, dataInPublic))
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 System.loadLibrary("sqlcipher")
                 if (preferences.isLockEnabled) {
