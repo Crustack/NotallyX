@@ -290,6 +290,79 @@ fun File.copyToLarge(
     return copyTo(target = target, overwrite = overwrite, bufferSize = bufferSize)
 }
 
+/** Suffixes of the files SQLite maintains next to the actual database file. */
+private val DATABASE_COMPANION_SUFFIXES = listOf("-wal", "-shm", "-journal")
+
+/**
+ * The `-wal`/`-shm`/`-journal` files belonging to this database file. They only ever match the
+ * exact database file they were created for, so whenever the database file itself is replaced they
+ * have to be removed, otherwise SQLite recovers a write-ahead-log of a *different* database into
+ * the new one and reports `SQLITE_CORRUPT` afterwards.
+ */
+fun File.databaseCompanionFiles(): List<File> =
+    DATABASE_COMPANION_SUFFIXES.map { suffix -> File(parentFile, "$name$suffix") }
+
+fun File.deleteDatabaseCompanionFiles() {
+    databaseCompanionFiles().forEach { it.delete() }
+}
+
+/** Copies this file to [target], flushing all bytes to disk before returning. */
+private fun File.copyToSynced(target: File, bufferSize: Int = BUFFER_SIZE) {
+    inputStream().use { input ->
+        FileOutputStream(target).use { output ->
+            input.copyTo(output, bufferSize)
+            output.flush()
+            output.fd.sync()
+        }
+    }
+}
+
+/**
+ * Replaces the database file [target] with this file, as atomically as the filesystem allows:
+ * 1. this file is streamed into `<target>.tmp` and `fsync`ed, so a crash cannot leave a truncated
+ *    database behind (unlike [copyToLarge], which deletes [target] first and then streams into it),
+ * 2. the current [target] is moved aside as `<target>.rollback`,
+ * 3. `<target>.tmp` is renamed onto [target] and the stale `-wal`/`-shm`/`-journal` files of the
+ *    replaced database are deleted.
+ *
+ * If anything fails the previous database is renamed back, so [target] is always either the old or
+ * the new database, never a mixture of both.
+ *
+ * The database must not be open while this runs.
+ */
+fun File.replaceDatabaseFile(target: File, bufferSize: Int = BUFFER_SIZE): File {
+    if (!exists()) {
+        throw IOException("Cannot replace '${target.absolutePath}' with missing '$absolutePath'")
+    }
+    val directory =
+        target.parentFile ?: throw IOException("'${target.absolutePath}' has no parent directory")
+    directory.mkdirs()
+    val temporary = File(directory, "${target.name}.tmp")
+    val rollback = File(directory, "${target.name}.rollback")
+    temporary.delete()
+    rollback.delete()
+    copyToSynced(temporary, bufferSize)
+    val targetExisted = target.exists()
+    if (targetExisted && !target.renameTo(rollback)) {
+        temporary.delete()
+        throw IOException("Failed to move '${target.absolutePath}' aside")
+    }
+    try {
+        if (!temporary.renameTo(target)) {
+            throw IOException("Failed to move '${temporary.absolutePath}' into place")
+        }
+        target.deleteDatabaseCompanionFiles()
+    } catch (exception: Exception) {
+        if (targetExisted) {
+            rollback.renameTo(target)
+        }
+        temporary.delete()
+        throw exception
+    }
+    rollback.delete()
+    return target
+}
+
 fun File.moveAllFiles(to: File) {
     if (!exists() || !isDirectory) return
 

@@ -43,8 +43,31 @@ abstract class NotallyDatabase : RoomDatabase() {
 
     abstract fun getBaseNoteDao(): BaseNoteDao
 
-    fun checkpoint() {
-        getBaseNoteDao().query(SimpleSQLiteQuery("pragma wal_checkpoint(FULL)"))
+    /**
+     * Runs a full WAL checkpoint. The first column of `pragma wal_checkpoint` is `busy`, which is
+     * `1` when another connection held a read lock and the checkpoint could **not** be completed -
+     * in that case the database file alone does not contain the most recent commits, so copying it
+     * would silently lose them.
+     *
+     * @return `true` if all pages were written back into the database file
+     */
+    fun checkpoint(): Boolean {
+        return getBaseNoteDao().query(SimpleSQLiteQuery("pragma wal_checkpoint(FULL)")) == 0
+    }
+
+    /**
+     * Like [checkpoint], but retries a few times and throws if the write-ahead-log could not be
+     * written back. To be used before the database file is copied or replaced.
+     */
+    fun checkpointOrThrow(attempts: Int = 3) {
+        repeat(attempts) {
+            if (checkpoint()) {
+                return
+            }
+        }
+        throw IllegalStateException(
+            "Could not checkpoint the database after $attempts attempts, another connection is still using it"
+        )
     }
 
     fun ping() = getBaseNoteDao().query(SimpleSQLiteQuery("SELECT 1")) == 1
@@ -128,10 +151,16 @@ abstract class NotallyDatabase : RoomDatabase() {
         ): NotNullLiveData<NotallyDatabase> {
             return instance
                 ?: synchronized(this) {
-                    val preferences = NotallyXPreferences.getInstance(context)
-                    this.instance =
-                        NotNullLiveData(createInstance(context, preferences, observePreferences))
-                    return this.instance!!
+                    // Re-check inside the lock, otherwise concurrent callers each build their own
+                    // instance and all but the last one are leaked open, writing to the same file
+                    instance
+                        ?: run {
+                            val preferences = NotallyXPreferences.getInstance(context)
+                            NotNullLiveData(
+                                    createInstance(context, preferences, observePreferences)
+                                )
+                                .also { instance = it }
+                        }
                 }
         }
 
@@ -145,6 +174,23 @@ abstract class NotallyDatabase : RoomDatabase() {
             }
             instance?.value?.close()
             instance = null
+        }
+
+        /**
+         * Closes the currently held instance, so it does not keep a connection (and a
+         * write-ahead-log writer) on the database file after it has been replaced by another
+         * instance.
+         */
+        private fun closeInstance() {
+            instance?.value?.let { previous ->
+                try {
+                    if (previous.isOpen) {
+                        previous.close()
+                    }
+                } catch (_: Exception) {
+                    // Nothing can be done about a failing close, never prevent the replacement
+                }
+            }
         }
 
         private var testInstance: NotallyDatabase? = null
@@ -183,12 +229,13 @@ abstract class NotallyDatabase : RoomDatabase() {
                 createBuilder(context, getCurrentDatabaseName(context, dataInPublic))
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 System.loadLibrary("sqlcipher")
+                var cipherFactory: SupportOpenHelperFactory? = null
                 if (preferences.isLockEnabled) {
                     if (
                         SQLCipherUtils.getDatabaseState(getCurrentDatabaseFile(context)) ==
                             SQLCipherUtils.State.ENCRYPTED
                     ) {
-                        initializeDecryption(preferences, instanceBuilder)
+                        cipherFactory = initializeDecryption(preferences)
                     } else {
                         preferences.biometricLock.save(BiometricLock.DISABLED)
                     }
@@ -198,18 +245,26 @@ abstract class NotallyDatabase : RoomDatabase() {
                             SQLCipherUtils.State.ENCRYPTED
                     ) {
                         preferences.biometricLock.save(BiometricLock.ENABLED)
-                        initializeDecryption(preferences, instanceBuilder)
+                        cipherFactory = initializeDecryption(preferences)
                     }
                 }
-                val instance =
-                    instanceBuilder
-                        .openHelperFactory(NonDestructiveOpenHelperFactory(context))
-                        .build()
+                // Wrap the actual open helper (SQLCipher when the database is encrypted, the
+                // framework one otherwise) in the non-destructive factory, so a corruption is
+                // backed up instead of deleting the database - without discarding the cipher
+                // factory the encrypted database needs to be opened at all.
+                val openHelperFactory =
+                    if (cipherFactory != null) {
+                        NonDestructiveOpenHelperFactory(context, cipherFactory)
+                    } else {
+                        NonDestructiveOpenHelperFactory(context)
+                    }
+                val instance = instanceBuilder.openHelperFactory(openHelperFactory).build()
                 if (observePreferences) {
                     instance.biometricLockObserver = Observer {
                         NotallyDatabase.instance?.value?.biometricLockObserver?.let {
                             preferences.biometricLock.removeObserver(it)
                         }
+                        closeInstance()
                         val newInstance = createInstance(context, preferences, true)
                         NotallyDatabase.instance?.postValue(newInstance)
                         preferences.biometricLock.observeForeverSkipFirst(
@@ -224,6 +279,7 @@ abstract class NotallyDatabase : RoomDatabase() {
                         NotallyDatabase.instance?.value?.dataInPublicFolderObserver?.let {
                             preferences.dataInPublicFolder.removeObserver(it)
                         }
+                        closeInstance()
                         val newInstance = createInstance(context, preferences, true)
                         NotallyDatabase.instance?.postValue(newInstance)
                         preferences.dataInPublicFolder.observeForeverSkipFirst(
@@ -241,15 +297,13 @@ abstract class NotallyDatabase : RoomDatabase() {
 
         @RequiresApi(Build.VERSION_CODES.M)
         private fun initializeDecryption(
-            preferences: NotallyXPreferences,
-            instanceBuilder: Builder<NotallyDatabase>,
-        ) {
+            preferences: NotallyXPreferences
+        ): SupportOpenHelperFactory {
             val initializationVector = preferences.iv.value!!
             val cipher = getInitializedCipherForDecryption(iv = initializationVector)
             val encryptedPassphrase = preferences.databaseEncryptionKey.value
             val passphrase = cipher.doFinal(encryptedPassphrase)
-            val factory = SupportOpenHelperFactory(passphrase)
-            instanceBuilder.openHelperFactory(factory)
+            return SupportOpenHelperFactory(passphrase)
         }
 
         object Migration2 : Migration(1, 2) {

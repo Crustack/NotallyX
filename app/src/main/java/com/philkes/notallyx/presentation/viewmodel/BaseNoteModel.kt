@@ -80,6 +80,7 @@ import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import com.philkes.notallyx.utils.getExternalMediaDirectory
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.migrateAllAttachments
+import com.philkes.notallyx.utils.replaceDatabaseFile
 import com.philkes.notallyx.utils.security.DecryptionException
 import com.philkes.notallyx.utils.security.EncryptionException
 import com.philkes.notallyx.utils.security.decryptDatabase
@@ -263,12 +264,13 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val database = NotallyDatabase.getDatabase(app, observePreferences = false).value
-                database.checkpoint()
-                val targetDirectory = NotallyDatabase.getExternalDatabaseFile(app).parentFile
+                database.checkpointOrThrow()
+                // The database must not be written to while its file is being replaced
+                database.close()
+                val targetFile = NotallyDatabase.getExternalDatabaseFile(app)
+                val targetDirectory = targetFile.parentFile
                 val internalDatabaseFiles = NotallyDatabase.getInternalDatabaseFiles(app)
-                internalDatabaseFiles.forEach {
-                    it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
-                }
+                NotallyDatabase.getInternalDatabaseFile(app).replaceDatabaseFile(targetFile)
                 val notallyDatabase = NotallyDatabase.getFreshDatabase(app, true)
                 val ping =
                     try {
@@ -295,12 +297,13 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val database = NotallyDatabase.getDatabase(app, observePreferences = false).value
-                database.checkpoint()
-                val targetDirectory = NotallyDatabase.getInternalDatabaseFile(app).parentFile
+                database.checkpointOrThrow()
+                // The database must not be written to while its file is being replaced
+                database.close()
+                val targetFile = NotallyDatabase.getInternalDatabaseFile(app)
+                val targetDirectory = targetFile.parentFile
                 val externalDatabaseFiles = NotallyDatabase.getExternalDatabaseFiles(app)
-                externalDatabaseFiles.forEach {
-                    it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
-                }
+                NotallyDatabase.getExternalDatabaseFile(app).replaceDatabaseFile(targetFile)
                 val notallyDatabase = NotallyDatabase.getFreshDatabase(app, false)
                 val ping =
                     try {
@@ -332,9 +335,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             val (_, dbFileBackup) = app.copyDatabase(suffix = "-encrypt-backup")
             encryptDatabase(app, dbFileCopy, passphrase)
             val originalDbFile = NotallyDatabase.getCurrentDatabaseFile(app)
-            dbFileCopy.copyToLarge(originalDbFile, overwrite = true)
-            if (originalDbFile.isUnencryptedDatabase) {
-                dbFileBackup.copyToLarge(originalDbFile, overwrite = true)
+            dbFileCopy.replaceDatabaseFile(originalDbFile)
+            if (!originalDbFile.isEncryptedDatabase) {
+                dbFileBackup.replaceDatabaseFile(originalDbFile)
                 val externalBackupFile =
                     File(app.getExternalMediaDirectory(), "${DATABASE_NAME}_Backup-encrypt")
                 dbFileBackup.copyToLarge(externalBackupFile, overwrite = true)
@@ -359,9 +362,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             val (_, dbFileBackup) = app.copyDatabase(decrypt = false, suffix = "-decrypt-backup")
             decryptDatabase(app, dbFileCopy, passphrase)
             val originalDbFile = NotallyDatabase.getCurrentDatabaseFile(app)
-            dbFileCopy.copyToLarge(originalDbFile, overwrite = true)
-            if (originalDbFile.isEncryptedDatabase) {
-                dbFileBackup.copyToLarge(originalDbFile, overwrite = true)
+            dbFileCopy.replaceDatabaseFile(originalDbFile)
+            if (!originalDbFile.isUnencryptedDatabase) {
+                dbFileBackup.replaceDatabaseFile(originalDbFile)
                 val externalBackupFile =
                     File(app.getExternalMediaDirectory(), "${DATABASE_NAME}_Backup-decrypt")
                 dbFileBackup.copyToLarge(externalBackupFile, overwrite = true)

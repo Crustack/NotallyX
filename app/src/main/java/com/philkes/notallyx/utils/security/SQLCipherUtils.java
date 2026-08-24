@@ -35,7 +35,68 @@ public class SQLCipherUtils {
      * without a passphrase.
      */
     public enum State {
-        DOES_NOT_EXIST, UNENCRYPTED, ENCRYPTED
+        DOES_NOT_EXIST, UNENCRYPTED, ENCRYPTED,
+        /**
+         * The file exists but cannot be opened at all, e.g. because it is corrupted or truncated.
+         * Such a file must not be treated as {@link #ENCRYPTED}, otherwise the app tries to decrypt
+         * a plaintext database and turns a recoverable file into an unopenable one.
+         */
+        UNREADABLE
+    }
+
+    /**
+     * Suffixes of the files SQLite maintains next to the actual database file. They belong to exactly
+     * one database file, so they have to be removed whenever that file is replaced.
+     */
+    private static final String[] COMPANION_SUFFIXES = {"-wal", "-shm", "-journal"};
+
+    private static void deleteCompanionFiles(File databaseFile) {
+        File directory = databaseFile.getParentFile();
+        if (directory == null) {
+            return;
+        }
+        for (String suffix : COMPANION_SUFFIXES) {
+            new File(directory, databaseFile.getName() + suffix).delete();
+        }
+    }
+
+    /**
+     * Replaces {@code target} with {@code replacement} by renaming, keeping the previous file until
+     * the rename succeeded so it can be restored, and removing the stale {@code -wal}/{@code -shm}
+     * files of the replaced database.
+     */
+    private static void replaceDatabaseFile(File replacement, File target) throws IOException {
+        File rollback = new File(target.getParentFile(), target.getName() + ".rollback");
+        rollback.delete();
+        boolean targetExisted = target.exists();
+        if (targetExisted && !target.renameTo(rollback)) {
+            throw new IOException("Failed to move '" + target.getAbsolutePath() + "' aside");
+        }
+        deleteCompanionFiles(replacement);
+        if (!replacement.renameTo(target)) {
+            if (targetExisted) {
+                rollback.renameTo(target);
+            }
+            throw new IOException("Failed to move '" + replacement.getAbsolutePath()
+                    + "' to '" + target.getAbsolutePath() + "'");
+        }
+        deleteCompanionFiles(target);
+        rollback.delete();
+    }
+
+    private static boolean isCorruptionError(Exception e) {
+        for (Throwable cause = e; cause != null; cause = cause.getCause()) {
+            String message = cause.getMessage();
+            if (message == null) {
+                continue;
+            }
+            String lowerCase = message.toLowerCase();
+            if (lowerCase.contains("malformed") || lowerCase.contains("corrupt")
+                    || lowerCase.contains("disk i/o error")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -74,7 +135,7 @@ public class SQLCipherUtils {
 
                 return (State.UNENCRYPTED);
             } catch (Exception e) {
-                return (State.ENCRYPTED);
+                return (isCorruptionError(e) ? State.UNREADABLE : State.ENCRYPTED);
             } finally {
                 if (db != null) {
                     db.close();
@@ -215,8 +276,7 @@ public class SQLCipherUtils {
             st.close();
             db.close();
 
-            originalFile.delete();
-            newFile.renameTo(originalFile);
+            replaceDatabaseFile(newFile, originalFile);
         } else {
             throw new FileNotFoundException(originalFile.getAbsolutePath() + " not found");
         }
@@ -271,8 +331,7 @@ public class SQLCipherUtils {
                     File.createTempFile("sqlcipherutils", "tmp",
                         originalFile.getParentFile());
             decrypt(ctxt, originalFile, newFile, passphrase);
-            originalFile.delete();
-            newFile.renameTo(originalFile);
+            replaceDatabaseFile(newFile, originalFile);
         }
 
     }

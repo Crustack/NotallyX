@@ -567,7 +567,9 @@ fun ContextWrapper.copyDatabase(
     suffix: String = "",
 ): Pair<NotallyDatabase, File> {
     val database = NotallyDatabase.getDatabase(this, observePreferences = false).value
-    database.checkpoint()
+    // Only the database file itself is copied, so the write-ahead-log has to be written back into
+    // it first. If that fails the copy would silently lack the most recent notes.
+    database.checkpointOrThrow()
     val preferences = NotallyXPreferences.getInstance(this)
     val databaseFile = NotallyDatabase.getCurrentDatabaseFile(this)
     return if (

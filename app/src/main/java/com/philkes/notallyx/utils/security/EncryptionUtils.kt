@@ -21,7 +21,7 @@ fun encryptDatabase(context: ContextWrapper, dbFile: File, passphrase: ByteArray
     if (dbFile.isUnencryptedDatabase) {
         try {
             SQLCipherUtils.encrypt(context, dbFile, passphrase)
-            if (dbFile.isUnencryptedDatabase) {
+            if (!dbFile.isEncryptedDatabase) {
                 throw EncryptionException(
                     "Encrypt was executed, but database is still not encrypted"
                 )
@@ -36,7 +36,7 @@ fun decryptDatabase(context: ContextWrapper, dbFile: File, passphrase: ByteArray
     if (dbFile.isEncryptedDatabase) {
         try {
             SQLCipherUtils.decrypt(context, dbFile, passphrase)
-            if (SQLCipherUtils.getDatabaseState(dbFile) == SQLCipherUtils.State.ENCRYPTED) {
+            if (!dbFile.isUnencryptedDatabase) {
                 throw DecryptionException(
                     "Decrypt was executed, but database is still not decrypted"
                 )
