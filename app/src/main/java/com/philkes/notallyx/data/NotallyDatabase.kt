@@ -201,7 +201,10 @@ abstract class NotallyDatabase : RoomDatabase() {
                         initializeDecryption(preferences, instanceBuilder)
                     }
                 }
-                val instance = instanceBuilder.build()
+                val instance =
+                    instanceBuilder
+                        .openHelperFactory(NonDestructiveOpenHelperFactory(context))
+                        .build()
                 if (observePreferences) {
                     instance.biometricLockObserver = Observer {
                         NotallyDatabase.instance?.value?.biometricLockObserver?.let {
