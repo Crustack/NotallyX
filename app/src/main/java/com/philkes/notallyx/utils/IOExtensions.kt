@@ -44,6 +44,7 @@ const val SUBFOLDER_IMAGES = "Images"
 const val SUBFOLDER_FILES = "Files"
 const val SUBFOLDER_AUDIOS = "Audios"
 const val SUBFOLDER_CRASHES = "Crashes"
+const val SUBFOLDER_BACKUPS = "Backups"
 
 private fun ContextWrapper.getExternalImagesDirectory() =
     getExternalMediaDirectory(SUBFOLDER_IMAGES)
@@ -53,6 +54,8 @@ private fun ContextWrapper.getExternalAudioDirectory() = getExternalMediaDirecto
 private fun ContextWrapper.getExternalFilesDirectory() = getExternalMediaDirectory(SUBFOLDER_FILES)
 
 fun ContextWrapper.getExternalCrashesDirectory() = getExternalMediaDirectory(SUBFOLDER_CRASHES)
+
+fun ContextWrapper.getExternalBackupsDirectory() = getExternalMediaDirectory(SUBFOLDER_BACKUPS)
 
 // Private (internal) storage roots for attachments when biometric lock is enabled and
 // dataInPublicFolder is disabled.

@@ -12,6 +12,9 @@
     <files-path
         name="crashes_internal"
         path="/crashes" />
+    <files-path
+        name="backups_internal"
+        path="/Backups" />
     <external-media-path
       name="."
       path="." />
@@ -30,4 +33,7 @@
     <external-media-path
         name="crashes"
         path="/Crashes" />
+    <external-media-path
+        name="backups"
+        path="/Backups" />
 </paths>

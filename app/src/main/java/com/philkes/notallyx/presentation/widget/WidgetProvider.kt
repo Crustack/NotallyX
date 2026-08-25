@@ -45,7 +45,7 @@ class WidgetProvider : AppWidgetProvider() {
             ACTION_NOTES_MODIFIED,
             Intent.ACTION_LOCALE_CHANGED -> {
                 val app = context.applicationContext as NotallyXApplication
-                val preferences = NotallyXPreferences.getInstance(context)
+                val preferences = NotallyXPreferences.getInstance(app)
                 val noteIds = intent.getLongArrayExtra(EXTRA_MODIFIED_NOTES)
                 if (noteIds != null) {
                     updateWidgets(
@@ -89,7 +89,7 @@ class WidgetProvider : AppWidgetProvider() {
                     }
                 } finally {
                     val app = context.applicationContext as NotallyXApplication
-                    val preferences = NotallyXPreferences.getInstance(context)
+                    val preferences = NotallyXPreferences.getInstance(app)
                     updateWidgets(
                         context,
                         longArrayOf(noteId),
