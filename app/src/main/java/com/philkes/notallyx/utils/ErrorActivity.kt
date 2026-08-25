@@ -15,6 +15,7 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.R.string.auto_backup_failed
 import com.philkes.notallyx.R.string.crash_export_backup_failed
 import com.philkes.notallyx.R.string.report_bug
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.databinding.ActivityErrorBinding
 import com.philkes.notallyx.presentation.exportedText
@@ -212,7 +213,7 @@ class ErrorActivity : AppCompatActivity() {
                                                         overwrite = true,
                                                     )
                                                     deleteDatabase(NotallyDatabase.DATABASE_NAME)
-                                                    NotallyDatabase.clearInstance(
+                                                    DatabaseManager.clearInstance(
                                                         this@ErrorActivity
                                                     )
                                                     application.importRawDatabase(

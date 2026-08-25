@@ -13,6 +13,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.dao.moveBaseNotes
 import com.philkes.notallyx.data.model.Folder
@@ -319,7 +320,7 @@ class ReminderReceiver : BroadcastReceiver() {
     }
 
     private fun getDatabase(context: Context): NotallyDatabase {
-        return NotallyDatabase.getDatabase(context.applicationContext as Application, false).value
+        return DatabaseManager.getDatabase(context.applicationContext as Application).value
     }
 
     private fun goAsyncScope(codeBlock: suspend CoroutineScope.() -> Unit) {

@@ -156,16 +156,20 @@ fun ContextWrapper.log(
     throwable: Throwable? = null,
     stackTrace: String? = null,
 ) {
-    val folder = getLogsDir()
-    folder.mkdir()
-    logToFile(
-        tag,
-        DocumentFile.fromFile(folder),
-        "$APP_LOG_FILE_NAME.txt",
-        msg,
-        throwable,
-        stackTrace,
-    )
+    try {
+        val folder = getLogsDir()
+        folder.mkdirs()
+        logToFile(
+            tag,
+            DocumentFile.fromFile(folder),
+            "$APP_LOG_FILE_NAME.txt",
+            msg,
+            throwable,
+            stackTrace,
+        )
+    } catch (_: Exception) {
+        // Logging should never throw and crash callers
+    }
 }
 
 fun ContextWrapper.getLastExceptionLog(): String? {
@@ -268,68 +272,74 @@ private fun Context.logToFile(
     throwable: Throwable? = null,
     stackTrace: String? = null,
 ) {
-    msg?.let {
-        if (throwable != null) {
-            Log.e(tag, it, throwable)
-        } else if (stackTrace != null) {
-            Log.e(tag, "$it: $stackTrace")
-        } else {
-            Log.i(tag, it)
+    try {
+        msg?.let {
+            if (throwable != null) {
+                Log.e(tag, it, throwable)
+            } else if (stackTrace != null) {
+                Log.e(tag, "$it: $stackTrace")
+            } else {
+                Log.i(tag, it)
+            }
         }
-    }
-    throwable?.let { Log.e(tag, "Exception occurred", it) }
-    stackTrace?.let { Log.e(tag, "Exception occurred: $it") }
+        throwable?.let { Log.e(tag, "Exception occurred", it) }
+        stackTrace?.let { Log.e(tag, "Exception occurred: $it") }
 
-    val logFile =
-        folder.findFile(fileName).let {
-            if (it == null || !it.exists()) {
-                folder.createFileSafe("text/plain", fileName.removeSuffix(".txt"), ".txt")
-            } else if (it.isLargerThanKb(MAX_LOGS_FILE_SIZE_KB)) {
-                it.delete()
-                folder.createFileSafe("text/plain", fileName.removeSuffix(".txt"), ".txt")
-            } else it
-        }
+        val logFile =
+            folder.findFile(fileName).let {
+                if (it == null || !it.exists()) {
+                    folder.createFileSafe("text/plain", fileName.removeSuffix(".txt"), ".txt")
+                } else if (it.isLargerThanKb(MAX_LOGS_FILE_SIZE_KB)) {
+                    it.delete()
+                    folder.createFileSafe("text/plain", fileName.removeSuffix(".txt"), ".txt")
+                } else it
+            }
 
-    logFile?.let { file ->
         val contentResolver = contentResolver
         val (outputStream, logFileContents) =
             try {
-                Pair(contentResolver.openOutputStream(file.uri, "wa"), null)
+                Pair(contentResolver.openOutputStream(logFile.uri, "wa"), null)
             } catch (e: UnsupportedOperationException) {
                 Pair(
-                    contentResolver.openOutputStream(file.uri, "w"),
-                    contentResolver.readFileContents(file.uri),
+                    contentResolver.openOutputStream(logFile.uri, "w"),
+                    contentResolver.readFileContents(logFile.uri),
                 )
             }
 
-        outputStream?.use { output ->
-            val writer = PrintWriter(OutputStreamWriter(output, Charsets.UTF_8))
+        if (outputStream != null) {
+            outputStream.use { output ->
+                val writer = PrintWriter(OutputStreamWriter(output, Charsets.UTF_8))
 
-            val formatter = DateFormat.getDateTimeInstance()
-            val time = formatter.format(System.currentTimeMillis())
+                val formatter = DateFormat.getDateTimeInstance()
+                val time = formatter.format(System.currentTimeMillis())
 
-            logFileContents?.let { writer.println(it) }
-            if (throwable != null || stackTrace != null) {
-                writer.println("[Start]")
+                logFileContents?.let { writer.println(it) }
+                if (throwable != null || stackTrace != null) {
+                    writer.println("[Start]")
+                }
+                msg?.let { writer.println("${LOG_DATE_FORMATTER.format(Date())} - $tag - $msg") }
+                throwable?.printStackTrace(writer)
+                stackTrace?.let { writer.println(it) }
+                if (throwable != null || stackTrace != null) {
+                    writer.println("Version code : " + BuildConfig.VERSION_CODE)
+                    writer.println("Version name : " + BuildConfig.VERSION_NAME)
+                    writer.println("Model : " + Build.MODEL)
+                    writer.println("Device : " + Build.DEVICE)
+                    writer.println("Brand : " + Build.BRAND)
+                    writer.println("Manufacturer : " + Build.MANUFACTURER)
+                    writer.println("Android : " + Build.VERSION.SDK_INT)
+                    writer.println("Time : $time")
+                    writer.println("[End]")
+                }
+
+                writer.close()
             }
-            msg?.let { writer.println("${LOG_DATE_FORMATTER.format(Date())} - $tag - $msg") }
-            throwable?.printStackTrace(writer)
-            stackTrace?.let { writer.println(it) }
-            if (throwable != null || stackTrace != null) {
-                writer.println("Version code : " + BuildConfig.VERSION_CODE)
-                writer.println("Version name : " + BuildConfig.VERSION_NAME)
-                writer.println("Model : " + Build.MODEL)
-                writer.println("Device : " + Build.DEVICE)
-                writer.println("Brand : " + Build.BRAND)
-                writer.println("Manufacturer : " + Build.MANUFACTURER)
-                writer.println("Android : " + Build.VERSION.SDK_INT)
-                writer.println("Time : $time")
-                writer.println("[End]")
-            }
-
-            writer.close()
-        } ?: Log.e(tag, "Error opening output stream for log file")
-    } ?: Log.e(tag, "Error: log file could not be found or created")
+        } else {
+            Log.e(tag, "Error opening output stream for log file")
+        }
+    } catch (_: Exception) {
+        // Logging should not crash
+    }
 }
 
 fun Fragment.getExtraBooleanFromBundleOrIntent(

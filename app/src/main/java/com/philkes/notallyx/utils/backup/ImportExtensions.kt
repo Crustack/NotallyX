@@ -14,6 +14,7 @@ import androidx.core.database.getLongOrNull
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.NotallyDatabase.Companion.DATABASE_NAME
 import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
@@ -112,29 +113,6 @@ suspend fun ContextWrapper.importRawDatabase(
                 importProgress?.postValue(ImportProgress(inProgress = false))
                 return import
             }
-    } finally {
-        tempDbFile.delete()
-    }
-}
-
-/**
- * Copies the database behind [dbFileUri] to a temporary file and verifies that it can be read,
- * without touching the app's own database. Throws if it cannot be read.
- *
- * To be called before an existing database is replaced by an import, so a truncated or unreadable
- * source can never end up deleting the notes that are still there.
- *
- * @return the amount of notes the database contains
- */
-fun ContextWrapper.validateRawDatabase(dbFileUri: Uri): Int {
-    val tempDbFile = File(cacheDir, DATABASE_NAME + "_VALIDATE")
-    try {
-        requireNotNull(
-                contentResolver.openInputStream(dbFileUri),
-                { "InputStream for dbFileUri '$dbFileUri' is null" },
-            )
-            .use { inputStream -> inputStream.copyToFile(tempDbFile) }
-        return readBaseNotes(tempDbFile).baseNotes.size
     } finally {
         tempDbFile.delete()
     }
@@ -311,7 +289,7 @@ private suspend fun ContextWrapper.import(
     readCorrupted: Int,
     checkDuplicates: Boolean,
 ): ImportResult {
-    val notallyDatabase = NotallyDatabase.getDatabase(this, observePreferences = false).value
+    val notallyDatabase = DatabaseManager.getDatabase(this).value
     val importResult =
         notallyDatabase
             .getCommonDao()

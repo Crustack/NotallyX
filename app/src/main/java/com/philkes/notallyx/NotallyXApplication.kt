@@ -18,7 +18,7 @@ import androidx.work.WorkManager
 import com.google.android.material.color.DynamicColors
 import com.philkes.notallyx.NotallyXApplication.Companion.AUTO_REMOVE_DELETED_NOTES
 import com.philkes.notallyx.NotallyXApplication.Companion.TAG
-import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.presentation.setEnabledSecureFlag
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
 import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
@@ -167,7 +167,7 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
             // Runs at every cold start: a failing database read must never escape as an unhandled
             // exception, it would crash the app before any recovery option can be offered
             try {
-                NotallyDatabase.getDatabase(this@NotallyXApplication, false)
+                DatabaseManager.getDatabase(this@NotallyXApplication)
                     .value
                     .getBaseNoteDao()
                     .getAllPinnedToStatusNotes()

@@ -13,7 +13,7 @@ import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
-import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Type
@@ -70,12 +70,7 @@ class WidgetProvider : AppWidgetProvider() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 intent.getBooleanExtra(RemoteViews.EXTRA_CHECKED, false)
             } else null
-        val database =
-            NotallyDatabase.getDatabase(
-                    context.applicationContext as Application,
-                    observePreferences = false,
-                )
-                .value
+        val database = DatabaseManager.getDatabase(context.applicationContext as Application).value
         val pendingResult = goAsync()
         GlobalScope.launch {
             withContext(Dispatchers.IO) {
@@ -203,7 +198,7 @@ class WidgetProvider : AppWidgetProvider() {
             intent.embedIntentExtras()
 
             MainScope().launch {
-                val database = NotallyDatabase.getDatabase(context).value
+                val database = DatabaseManager.getDatabase(context).value
                 val color =
                     withContext(Dispatchers.IO) { database.getBaseNoteDao().getColorOfNote(noteId) }
                 if (color == null) {

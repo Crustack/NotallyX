@@ -18,7 +18,7 @@ import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
-import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.model.Converters
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.databinding.ActivityViewImageBinding
@@ -82,7 +82,7 @@ class ViewImageActivity : LockedActivity<ActivityViewImageBinding>() {
         val initial = intent.getIntExtra(EXTRA_POSITION, 0)
         binding.MainListView.scrollToPosition(initial)
 
-        val database = NotallyDatabase.getDatabase(application)
+        val database = DatabaseManager.getDatabase(application)
         val id = intent.getLongExtra(EXTRA_SELECTED_BASE_NOTE, 0)
 
         database.observe(this@ViewImageActivity) {

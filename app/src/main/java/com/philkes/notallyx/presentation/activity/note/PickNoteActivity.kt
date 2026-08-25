@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.philkes.notallyx.R
-import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Header
 import com.philkes.notallyx.databinding.ActivityPickNoteBinding
@@ -76,7 +76,7 @@ open class PickNoteActivity : LockedActivity<ActivityPickNoteBinding>(), ItemLis
                 } else LinearLayoutManager(this@PickNoteActivity)
         }
 
-        val database = NotallyDatabase.getDatabase(application)
+        val database = DatabaseManager.getDatabase(application)
 
         val pinned = Header(getString(R.string.pinned))
         val others = Header(getString(R.string.others))

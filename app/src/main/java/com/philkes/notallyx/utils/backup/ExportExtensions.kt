@@ -29,6 +29,7 @@ import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.NotallyDatabase.Companion.DATABASE_NAME
 import com.philkes.notallyx.data.model.BaseNote
@@ -566,7 +567,7 @@ fun ContextWrapper.copyDatabase(
     decrypt: Boolean = true,
     suffix: String = "",
 ): Pair<NotallyDatabase, File> {
-    val database = NotallyDatabase.getDatabase(this, observePreferences = false).value
+    val database = DatabaseManager.getDatabase(this).value
     // Only the database file itself is copied, so the write-ahead-log has to be written back into
     // it first. If that fails the copy would silently lack the most recent notes.
     database.checkpointOrThrow()

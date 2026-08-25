@@ -10,6 +10,7 @@ import android.os.Build
 import android.util.Log
 import androidx.core.net.toUri
 import androidx.lifecycle.MutableLiveData
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.NotallyDatabase.Companion.DATABASE_NAME
 import com.philkes.notallyx.data.model.Attachment
 import com.philkes.notallyx.data.model.Audio
@@ -331,36 +332,41 @@ private fun File.copyToSynced(target: File, bufferSize: Int = BUFFER_SIZE) {
  * The database must not be open while this runs.
  */
 fun File.replaceDatabaseFile(target: File, bufferSize: Int = BUFFER_SIZE): File {
-    if (!exists()) {
-        throw IOException("Cannot replace '${target.absolutePath}' with missing '$absolutePath'")
-    }
-    val directory =
-        target.parentFile ?: throw IOException("'${target.absolutePath}' has no parent directory")
-    directory.mkdirs()
-    val temporary = File(directory, "${target.name}.tmp")
-    val rollback = File(directory, "${target.name}.rollback")
-    temporary.delete()
-    rollback.delete()
-    copyToSynced(temporary, bufferSize)
-    val targetExisted = target.exists()
-    if (targetExisted && !target.renameTo(rollback)) {
-        temporary.delete()
-        throw IOException("Failed to move '${target.absolutePath}' aside")
-    }
-    try {
-        if (!temporary.renameTo(target)) {
-            throw IOException("Failed to move '${temporary.absolutePath}' into place")
+    return DatabaseManager.withSyncMaintenanceLock {
+        if (!exists()) {
+            throw IOException(
+                "Cannot replace '${target.absolutePath}' with missing '$absolutePath'"
+            )
         }
-        target.deleteDatabaseCompanionFiles()
-    } catch (exception: Exception) {
-        if (targetExisted) {
-            rollback.renameTo(target)
-        }
+        val directory =
+            target.parentFile
+                ?: throw IOException("'${target.absolutePath}' has no parent directory")
+        directory.mkdirs()
+        val temporary = File(directory, "${target.name}.tmp")
+        val rollback = File(directory, "${target.name}.rollback")
         temporary.delete()
-        throw exception
+        rollback.delete()
+        copyToSynced(temporary, bufferSize)
+        val targetExisted = target.exists()
+        if (targetExisted && !target.renameTo(rollback)) {
+            temporary.delete()
+            throw IOException("Failed to move '${target.absolutePath}' aside")
+        }
+        try {
+            if (!temporary.renameTo(target)) {
+                throw IOException("Failed to move '${temporary.absolutePath}' into place")
+            }
+            target.deleteDatabaseCompanionFiles()
+        } catch (exception: Exception) {
+            if (targetExisted) {
+                rollback.renameTo(target)
+            }
+            temporary.delete()
+            throw exception
+        }
+        rollback.delete()
+        target
     }
-    rollback.delete()
-    return target
 }
 
 fun File.moveAllFiles(to: File) {
@@ -429,8 +435,7 @@ fun Context.getBackupDir() = getEmptyFolder("backup")
 
 fun Context.getExportedPath() = getEmptyFolder("exported")
 
-fun ContextWrapper.getLogsDir() =
-    getExternalMediaDirectory("logs") ?: File(filesDir, "logs").also { it.mkdir() }
+fun ContextWrapper.getLogsDir() = getExternalMediaDirectory("logs").also { it.mkdir() }
 
 const val APP_LOG_FILE_NAME = "notallyx-logs"
 
@@ -439,12 +444,8 @@ fun ContextWrapper.getLogFile(): File {
 }
 
 private fun ContextWrapper.getExternalMediaDirectory(name: String): File {
-    return getDirectory(
-        requireNotNull(externalMediaDirs.firstOrNull()) {
-            "External media directory does not exist"
-        },
-        name,
-    )
+    val base = externalMediaDirs.firstOrNull() ?: File(filesDir, "media")
+    return getDirectory(base, name)
 }
 
 private fun getDirectory(dir: File, name: String): File {
