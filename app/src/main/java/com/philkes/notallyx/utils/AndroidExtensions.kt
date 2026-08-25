@@ -586,6 +586,25 @@ fun <T> LiveData<T>.observeOnce(observer: Observer<T>) {
     this.observeForever(wrapperObserver)
 }
 
+fun Context.getDocumentFolder(uri: Uri): DocumentFile? {
+    return try {
+        if (uri.scheme == ContentResolver.SCHEME_FILE || uri.scheme == null) {
+            val path = uri.path ?: uri.toString()
+            DocumentFile.fromFile(File(path))
+        } else if (uri.scheme == ContentResolver.SCHEME_CONTENT) {
+            if (uri.pathSegments.firstOrNull() == "tree") {
+                DocumentFile.fromTreeUri(this, uri)
+            } else {
+                DocumentFile.fromSingleUri(this, uri)
+            }
+        } else {
+            DocumentFile.fromFile(File(uri.toString()))
+        }
+    } catch (_: Exception) {
+        null
+    }
+}
+
 fun Context.toReadablePath(uri: Uri): String {
     if (uri.authority == "com.android.externalstorage.documents") {
         return toReadable(uri.path!!)
@@ -593,19 +612,22 @@ fun Context.toReadablePath(uri: Uri): String {
 
     val documentFile =
         try {
-            DocumentFile.fromTreeUri(this, uri)
+            getDocumentFolder(uri)
         } catch (_: Exception) {
             null
         }
-    return documentFile?.name?.let { "${uri.authority}/$it" }
-        ?: uri.path?.let { toReadable(it) }
-        ?: uri.toString()
+    return if (documentFile != null && !uri.authority.isNullOrEmpty()) {
+        "${uri.authority}/${documentFile.name}"
+    } else {
+        uri.path?.let { toReadable(it) } ?: documentFile?.name ?: uri.toString()
+    }
 }
 
 private fun toReadable(uriPath: String): String {
     return uriPath
         .replaceFirst("/tree/primary:", "Internal Storage/")
         .replace("^/tree/([^:]+):/?".toRegex(), "External Storage/$1/")
+        .replaceFirst("/storage/emulated/0/", "Internal Storage/")
 }
 
 val isBeforeVanillaIceCream

@@ -14,7 +14,6 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
-import androidx.documentfile.provider.DocumentFile
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.slider.Slider
@@ -59,6 +58,7 @@ import com.philkes.notallyx.presentation.viewmodel.preference.TextProvider
 import com.philkes.notallyx.presentation.viewmodel.preference.Theme
 import com.philkes.notallyx.presentation.viewmodel.preference.TimeFormat
 import com.philkes.notallyx.utils.canAuthenticateWithBiometrics
+import com.philkes.notallyx.utils.getDocumentFolder
 import com.philkes.notallyx.utils.toReadablePath
 
 inline fun <reified T> PreferenceBinding.setup(
@@ -399,12 +399,8 @@ fun PreferenceBinding.setupBackupsFolder(
         root.setOnClickListener { chooseBackupFolder() }
     } else {
         val uri = Uri.parse(value)
-        val folder =
-            requireNotNull(
-                DocumentFile.fromTreeUri(context, uri),
-                { "Folder with uri: '$uri' does not exist" },
-            )
-        if (folder.exists()) {
+        val folder = context.getDocumentFolder(uri)
+        if (folder != null && folder.exists()) {
             val path = context.toReadablePath(uri)
             Value.text = path
         } else Value.setText(R.string.cant_find_folder)

@@ -40,6 +40,7 @@ private const val TAG = "IO"
 const val SUBFOLDER_IMAGES = "Images"
 const val SUBFOLDER_FILES = "Files"
 const val SUBFOLDER_AUDIOS = "Audios"
+const val SUBFOLDER_BACKUPS = "Backups"
 
 private fun ContextWrapper.getExternalImagesDirectory() =
     getExternalMediaDirectory(SUBFOLDER_IMAGES)
@@ -48,7 +49,12 @@ private fun ContextWrapper.getExternalAudioDirectory() = getExternalMediaDirecto
 
 private fun ContextWrapper.getExternalFilesDirectory() = getExternalMediaDirectory(SUBFOLDER_FILES)
 
-fun ContextWrapper.getExternalMediaDirectory() = getExternalMediaDirectory("")
+fun Context.getExternalBackupsDirectory() = getExternalMediaDirectory(SUBFOLDER_BACKUPS)
+
+fun Context.getExternalMediaDirectory(name: String = ""): File {
+    val base = externalMediaDirs.firstOrNull() ?: File(filesDir, "media")
+    return getDirectory(base, name)
+}
 
 // Private (internal) storage roots for attachments when biometric lock is enabled and
 // dataInPublicFolder is disabled.
@@ -443,11 +449,6 @@ fun ContextWrapper.getLogFile(): File {
     return File(getLogsDir(), "$APP_LOG_FILE_NAME.txt")
 }
 
-private fun ContextWrapper.getExternalMediaDirectory(name: String): File {
-    val base = externalMediaDirs.firstOrNull() ?: File(filesDir, "media")
-    return getDirectory(base, name)
-}
-
 private fun getDirectory(dir: File, name: String): File {
     val file = File(dir, name)
     if (file.exists()) {
@@ -462,7 +463,7 @@ private fun getDirectory(dir: File, name: String): File {
 private fun File.createDirectory() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         try {
-            Files.createDirectory(toPath())
+            Files.createDirectories(toPath())
         } catch (e: FileAlreadyExistsException) {
             if (!isDirectory)
                 throw IOException(
@@ -470,7 +471,7 @@ private fun File.createDirectory() {
                     e,
                 )
         }
-    } else mkdir()
+    } else mkdirs()
 }
 
 private fun Context.getEmptyFolder(name: String): File {

@@ -63,6 +63,7 @@ import com.philkes.notallyx.utils.getCurrentAudioDirectory
 import com.philkes.notallyx.utils.getCurrentFilesDirectory
 import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import com.philkes.notallyx.utils.getCurrentMediaRoot
+import com.philkes.notallyx.utils.getDocumentFolder
 import com.philkes.notallyx.utils.getExportedPath
 import com.philkes.notallyx.utils.getLogFileUri
 import com.philkes.notallyx.utils.listZipFiles
@@ -167,7 +168,7 @@ suspend fun ContextWrapper.createBackup(): Result {
 }
 
 fun ContextWrapper.autoBackupOnSaveFileExists(backupPath: String): Boolean {
-    val backupFolderFile = DocumentFile.fromTreeUri(this, backupPath.toUri())
+    val backupFolderFile = getDocumentFolder(backupPath.toUri())
     return backupFolderFile?.let {
         val autoBackupFile = it.findFile("$ON_SAVE_BACKUP_FILE.zip")
         autoBackupFile != null && autoBackupFile.exists()
@@ -271,8 +272,9 @@ suspend fun ContextWrapper.autoBackupOnSave(
 
 private fun ContextWrapper.requireBackupFolder(path: String, msg: String): DocumentFile? {
     return try {
-        val folder = DocumentFile.fromTreeUri(this, path.toUri())!!
-        if (!folder.exists()) {
+        val uri = path.toUri()
+        val folder = getDocumentFolder(uri)
+        if (folder == null || !folder.exists()) {
             log(TAG, msg = msg)
             tryPostErrorNotification(BackupFolderNotExistsException(path))
             return null
@@ -307,15 +309,12 @@ suspend fun ContextWrapper.checkBackupOnSave(
 }
 
 fun ContextWrapper.deleteModifiedNoteBackup(backupPath: String) {
-    DocumentFile.fromTreeUri(this, backupPath.toUri())
-        ?.findFile("$ON_SAVE_BACKUP_FILE.zip")
-        ?.delete()
+    getDocumentFolder(backupPath.toUri())?.findFile("$ON_SAVE_BACKUP_FILE.zip")?.delete()
 }
 
 fun ContextWrapper.modifiedNoteBackupExists(backupPath: String): Boolean {
-    return DocumentFile.fromTreeUri(this, backupPath.toUri())
-        ?.findFile("$ON_SAVE_BACKUP_FILE.zip")
-        ?.exists() ?: false
+    return getDocumentFolder(backupPath.toUri())?.findFile("$ON_SAVE_BACKUP_FILE.zip")?.exists()
+        ?: false
 }
 
 typealias NotesAndAttachments = Pair<Int, Int>
