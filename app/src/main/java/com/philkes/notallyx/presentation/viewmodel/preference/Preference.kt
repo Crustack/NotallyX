@@ -3,6 +3,8 @@ package com.philkes.notallyx.presentation.viewmodel.preference
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.core.content.edit
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
@@ -71,7 +73,7 @@ abstract class BasePreference<T>(
     protected abstract fun SharedPreferences.Editor.put(value: T)
 
     fun observe(lifecycleOwner: LifecycleOwner, observer: Observer<T>) {
-        getData().observe(lifecycleOwner, observer)
+        runOnMainThread { getData().observe(lifecycleOwner, observer) }
     }
 
     fun <C> merge(other: BasePreference<C>): MediatorLiveData<Pair<T, C>> {
@@ -94,27 +96,37 @@ abstract class BasePreference<T>(
     }
 
     fun observeForever(observer: Observer<T>) {
-        getData().observeForever(observer)
+        runOnMainThread { getData().observeForever(observer) }
     }
 
     fun removeObserver(observer: Observer<T>) {
-        getData().removeObserver(observer)
+        runOnMainThread { getData().removeObserver(observer) }
     }
 
     fun removeObservers(lifecycleOwner: LifecycleOwner) {
-        getData().removeObservers(lifecycleOwner)
+        runOnMainThread { getData().removeObservers(lifecycleOwner) }
     }
 
     fun observeForeverWithPrevious(observer: Observer<Pair<T?, T>>) {
-        val mediator = MediatorLiveData<Pair<T?, T>>()
-        var previousValue: T? = null
+        runOnMainThread {
+            val mediator = MediatorLiveData<Pair<T?, T>>()
+            var previousValue: T? = null
 
-        mediator.addSource(getData()) { currentValue ->
-            mediator.value = Pair(previousValue, currentValue!!)
-            previousValue = currentValue
+            mediator.addSource(getData()) { currentValue ->
+                mediator.value = Pair(previousValue, currentValue!!)
+                previousValue = currentValue
+            }
+
+            mediator.observeForever(observer)
         }
+    }
 
-        mediator.observeForever(observer)
+    private fun runOnMainThread(block: () -> Unit) {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            block()
+        } else {
+            Handler(Looper.getMainLooper()).post(block)
+        }
     }
 
     fun refresh() {
