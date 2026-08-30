@@ -175,11 +175,11 @@ Verification of the proposed database fixes requires unit testing, migration tes
 
 # Delivery Steps
 
-### ✓ Step 1: Implement Centralized DatabaseManager & Thread-Safe Lifecycle
+### Step 1: Implement Centralized DatabaseManager & Thread-Safe Lifecycle
 A unified `DatabaseManager` handles database creation, lifecycle, and synchronized instance switching.
 
 - Eliminate the `observePreferences: Boolean` parameter bug in `NotallyDatabase.getDatabase` by ensuring preference observation is always consistently managed in a single manager.
-- Implement a thread-safe mutex/lock around database lifecycle transitions (location move, encryption/decryption toggle, database replacement).
+- Implement a thread-safe mutex/lock around database lifecycle transitions (location move, encryption/decryption toggle, database replacement, preference-driven updates, and close/reset transitions without lock re-entry).
 - Ensure `NotallyDatabase.closeInstance()` gracefully terminates active transactions, cancels background workers, and safely releases SQLite connection pools before file modifications.
 
 ### ✓ Step 2: Harden Database File Operations & Corruption Recovery

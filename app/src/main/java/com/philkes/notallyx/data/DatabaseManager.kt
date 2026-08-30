@@ -77,19 +77,21 @@ object DatabaseManager {
      * the database is open.
      */
     fun closeInstance() {
-        synchronized(this) {
-            instance?.value?.let { previous ->
-                try {
-                    if (previous.isOpen) {
-                        try {
-                            previous.checkpoint()
-                        } catch (_: Exception) {}
-                        previous.close()
-                    }
-                } catch (_: Exception) {
-                    // Nothing can be done about a failing close, never prevent subsequent
-                    // operations
+        withSyncMaintenanceLock { synchronized(this) { closeInstanceUnlocked() } }
+    }
+
+    private fun closeInstanceUnlocked() {
+        instance?.value?.let { previous ->
+            try {
+                if (previous.isOpen) {
+                    try {
+                        previous.checkpoint()
+                    } catch (_: Exception) {}
+                    previous.close()
                 }
+            } catch (_: Exception) {
+                // Nothing can be done about a failing close, never prevent subsequent
+                // operations
             }
         }
     }
@@ -99,11 +101,13 @@ object DatabaseManager {
      * used in testing and reset scenarios.
      */
     fun clearInstance(@Suppress("UNUSED_PARAMETER") context: Context? = null) {
-        synchronized(this) {
-            removePreferenceObservers()
-            closeInstance()
-            instance = null
-            testInstance = null
+        withSyncMaintenanceLock {
+            synchronized(this) {
+                removePreferenceObservers()
+                closeInstanceUnlocked()
+                instance = null
+                testInstance = null
+            }
         }
     }
 
@@ -139,18 +143,24 @@ object DatabaseManager {
         preferences: NotallyXPreferences = NotallyXPreferences.getInstance(context),
         dataInPublic: Boolean = preferences.dataInPublicFolder.value,
     ): NotallyDatabase {
-        return synchronized(this) {
-            closeInstance()
-            val newInstance = createDatabaseInstance(context, preferences, dataInPublic)
-            val liveData = instance
-            if (liveData != null) {
-                if (Looper.myLooper() == Looper.getMainLooper()) {
-                    liveData.value = newInstance
-                } else {
-                    liveData.postValue(newInstance)
+        return withSyncMaintenanceLock {
+            synchronized(this) {
+                removePreferenceObservers()
+                closeInstanceUnlocked()
+                val newInstance = createDatabaseInstance(context, preferences, dataInPublic)
+                val liveData = instance
+                if (liveData != null) {
+                    if (Looper.myLooper() == Looper.getMainLooper()) {
+                        liveData.value = newInstance
+                    } else {
+                        liveData.postValue(newInstance)
+                    }
                 }
+                if (!isTestRunner()) {
+                    setupPreferenceObservers(context, preferences)
+                }
+                newInstance
             }
-            newInstance
         }
     }
 

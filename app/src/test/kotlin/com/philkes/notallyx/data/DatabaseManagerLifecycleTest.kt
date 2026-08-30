@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
@@ -164,5 +165,48 @@ class DatabaseManagerLifecycleTest {
 
         assertThat(db.ping()).isTrue()
         db.close()
+    }
+
+    @Test
+    fun recreateInstance_serializesWithMaintenanceLock() {
+        runBlocking {
+            var lockHeld = false
+            var recreateExecutedWhileLockHeld = false
+
+            val holdLockJob =
+                launch(Dispatchers.Default) {
+                    DatabaseManager.withMaintenanceLock {
+                        lockHeld = true
+                        delay(100)
+                        lockHeld = false
+                    }
+                }
+
+            delay(20)
+
+            val recreateJob =
+                launch(Dispatchers.IO) {
+                    DatabaseManager.recreateInstance(application, preferences)
+                    if (lockHeld) {
+                        recreateExecutedWhileLockHeld = true
+                    }
+                }
+
+            holdLockJob.join()
+            recreateJob.join()
+
+            assertThat(recreateExecutedWhileLockHeld).isFalse()
+        }
+    }
+
+    @Test
+    fun closeAndClearInstance_serializeWithMaintenanceLock() {
+        runBlocking {
+            DatabaseManager.getDatabase(application)
+            DatabaseManager.closeInstance()
+            DatabaseManager.clearInstance(application)
+            val db = DatabaseManager.getDatabase(application)
+            assertThat(db.value).isNotNull
+        }
     }
 }
