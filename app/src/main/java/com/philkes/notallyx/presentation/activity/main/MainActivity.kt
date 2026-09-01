@@ -30,7 +30,7 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.google.android.material.transition.platform.MaterialFade
 import com.philkes.notallyx.R
-import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.ConverterErrorReporter
 import com.philkes.notallyx.data.model.Label
@@ -303,7 +303,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             add(0, R.id.Notes, 0, R.string.notes).setCheckable(true).setIcon(R.drawable.home)
 
             addStaticLabelsMenuItems()
-            NotallyDatabase.getDatabase(application).observe(this@MainActivity) { database ->
+            DatabaseManager.getDatabase(application).observe(this@MainActivity) { database ->
                 labelsLiveData?.removeObservers(this@MainActivity)
                 labelsLiveData =
                     database.getLabelDao().getAll().also {

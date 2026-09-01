@@ -7,7 +7,7 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
-import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.model.Converters
 import com.philkes.notallyx.presentation.format
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
@@ -42,7 +42,7 @@ suspend fun ContextWrapper.removeOldDeletedNotes(): ListenableWorker.Result {
         "Removing notes that have been deleted for $days days or more (since: ${Date(before).format()})",
     )
 
-    val database = NotallyDatabase.getDatabase(this, false).value
+    val database = DatabaseManager.getDatabase(this).value
     val baseNoteDao = database.getBaseNoteDao()
 
     return try {

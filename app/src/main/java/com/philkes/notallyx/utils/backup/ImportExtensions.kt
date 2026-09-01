@@ -14,6 +14,7 @@ import androidx.core.database.getLongOrNull
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.NotallyDatabase.Companion.DATABASE_NAME
 import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
@@ -288,7 +289,7 @@ private suspend fun ContextWrapper.import(
     readCorrupted: Int,
     checkDuplicates: Boolean,
 ): ImportResult {
-    val notallyDatabase = NotallyDatabase.getDatabase(this, observePreferences = false).value
+    val notallyDatabase = DatabaseManager.getDatabase(this).value
     val importResult =
         notallyDatabase
             .getCommonDao()

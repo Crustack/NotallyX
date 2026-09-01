@@ -8,7 +8,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.philkes.notallyx.R
-import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.presentation.activity.note.NoteActionHandler
@@ -119,7 +119,7 @@ class ModelFolderObserver(
             activity.lifecycleScope.launch {
                 val colors =
                     withContext(Dispatchers.IO) {
-                        NotallyDatabase.getDatabase(activity, observePreferences = false)
+                        DatabaseManager.getDatabase(activity)
                             .value
                             .getBaseNoteDao()
                             .getAllColors()

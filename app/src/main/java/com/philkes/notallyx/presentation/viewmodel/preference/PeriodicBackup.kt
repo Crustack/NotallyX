@@ -9,7 +9,7 @@ class PeriodicBackupsPreference(sharedPreferences: SharedPreferences) :
     override fun getValue(sharedPreferences: SharedPreferences): PeriodicBackup {
         val periodInDays =
             sharedPreferences.getInt(BACKUP_PERIOD_DAYS_KEY, defaultValue.periodInDays)
-        val maxBackups = sharedPreferences.getInt(BACKUP_MAX_KEY, defaultValue.periodInDays)
+        val maxBackups = sharedPreferences.getInt(BACKUP_MAX_KEY, defaultValue.maxBackups)
         return PeriodicBackup(periodInDays, maxBackups)
     }
 
@@ -24,7 +24,7 @@ class PeriodicBackupsPreference(sharedPreferences: SharedPreferences) :
     }
 }
 
-data class PeriodicBackup(val periodInDays: Int = 0, val maxBackups: Int = 3) {
+data class PeriodicBackup(val periodInDays: Int = 1, val maxBackups: Int = 3) {
     companion object {
 
         const val BACKUP_PERIOD_DAYS_MIN = 1

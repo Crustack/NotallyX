@@ -9,6 +9,7 @@ import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.ListItem
@@ -32,7 +33,7 @@ class WidgetFactory(
     private val preferences = NotallyXPreferences.getInstance(app)
 
     init {
-        NotallyDatabase.getDatabase(app).observeForever { database = it }
+        DatabaseManager.getDatabase(app).observeForever { database = it }
     }
 
     override fun onCreate() {}

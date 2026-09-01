@@ -10,6 +10,7 @@ import android.os.Build
 import android.util.Log
 import androidx.core.net.toUri
 import androidx.lifecycle.MutableLiveData
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.NotallyDatabase.Companion.DATABASE_NAME
 import com.philkes.notallyx.data.model.Attachment
 import com.philkes.notallyx.data.model.Audio
@@ -39,6 +40,7 @@ private const val TAG = "IO"
 const val SUBFOLDER_IMAGES = "Images"
 const val SUBFOLDER_FILES = "Files"
 const val SUBFOLDER_AUDIOS = "Audios"
+const val SUBFOLDER_BACKUPS = "Backups"
 
 private fun ContextWrapper.getExternalImagesDirectory() =
     getExternalMediaDirectory(SUBFOLDER_IMAGES)
@@ -47,7 +49,18 @@ private fun ContextWrapper.getExternalAudioDirectory() = getExternalMediaDirecto
 
 private fun ContextWrapper.getExternalFilesDirectory() = getExternalMediaDirectory(SUBFOLDER_FILES)
 
-fun ContextWrapper.getExternalMediaDirectory() = getExternalMediaDirectory("")
+fun Context.getExternalBackupsDirectory() = getExternalMediaDirectory(SUBFOLDER_BACKUPS)
+
+fun Context.getExternalMediaDirectory(name: String = "", fallbackToInternal: Boolean = true): File {
+    val base =
+        externalMediaDirs.firstOrNull()
+            ?: if (fallbackToInternal) {
+                File(filesDir, "media")
+            } else {
+                throw IOException("External media directory is unavailable")
+            }
+    return getDirectory(base, name)
+}
 
 // Private (internal) storage roots for attachments when biometric lock is enabled and
 // dataInPublicFolder is disabled.
@@ -137,6 +150,8 @@ fun ContextWrapper.resolveAttachmentFile(subfolder: String, localName: String): 
 /**
  * Move all attachment files between public and private storage to match current mode. If
  * [toPrivate] is true, move from external app media to private dirs; else the opposite.
+ *
+ * @return Pair of moved and failed file counts
  */
 fun ContextWrapper.migrateAllAttachments(toPrivate: Boolean): Pair<Int, Int> {
     var moved = 0
@@ -288,6 +303,84 @@ fun File.copyToLarge(
     return copyTo(target = target, overwrite = overwrite, bufferSize = bufferSize)
 }
 
+/** Suffixes of the files SQLite maintains next to the actual database file. */
+private val DATABASE_COMPANION_SUFFIXES = listOf("-wal", "-shm", "-journal")
+
+/**
+ * The `-wal`/`-shm`/`-journal` files belonging to this database file. They only ever match the
+ * exact database file they were created for, so whenever the database file itself is replaced they
+ * have to be removed, otherwise SQLite recovers a write-ahead-log of a *different* database into
+ * the new one and reports `SQLITE_CORRUPT` afterwards.
+ */
+fun File.databaseCompanionFiles(): List<File> =
+    DATABASE_COMPANION_SUFFIXES.map { suffix -> File(parentFile, "$name$suffix") }
+
+fun File.deleteDatabaseCompanionFiles() {
+    databaseCompanionFiles().forEach { it.delete() }
+}
+
+/** Copies this file to [target], flushing all bytes to disk before returning. */
+private fun File.copyToSynced(target: File, bufferSize: Int = BUFFER_SIZE) {
+    inputStream().use { input ->
+        FileOutputStream(target).use { output ->
+            input.copyTo(output, bufferSize)
+            output.flush()
+            output.fd.sync()
+        }
+    }
+}
+
+/**
+ * Replaces the database file [target] with this file, as atomically as the filesystem allows:
+ * 1. this file is streamed into `<target>.tmp` and `fsync`ed, so a crash cannot leave a truncated
+ *    database behind (unlike [copyToLarge], which deletes [target] first and then streams into it),
+ * 2. the current [target] is moved aside as `<target>.rollback`,
+ * 3. `<target>.tmp` is renamed onto [target] and the stale `-wal`/`-shm`/`-journal` files of the
+ *    replaced database are deleted.
+ *
+ * If anything fails the previous database is renamed back, so [target] is always either the old or
+ * the new database, never a mixture of both.
+ *
+ * The database must not be open while this runs.
+ */
+fun File.replaceDatabaseFile(target: File, bufferSize: Int = BUFFER_SIZE): File {
+    return DatabaseManager.withSyncMaintenanceLock {
+        if (!exists()) {
+            throw IOException(
+                "Cannot replace '${target.absolutePath}' with missing '$absolutePath'"
+            )
+        }
+        val directory =
+            target.parentFile
+                ?: throw IOException("'${target.absolutePath}' has no parent directory")
+        directory.mkdirs()
+        val temporary = File(directory, "${target.name}.tmp")
+        val rollback = File(directory, "${target.name}.rollback")
+        temporary.delete()
+        rollback.delete()
+        copyToSynced(temporary, bufferSize)
+        val targetExisted = target.exists()
+        if (targetExisted && !target.renameTo(rollback)) {
+            temporary.delete()
+            throw IOException("Failed to move '${target.absolutePath}' aside")
+        }
+        try {
+            if (!temporary.renameTo(target)) {
+                throw IOException("Failed to move '${temporary.absolutePath}' into place")
+            }
+            target.deleteDatabaseCompanionFiles()
+        } catch (exception: Exception) {
+            if (targetExisted) {
+                rollback.renameTo(target)
+            }
+            temporary.delete()
+            throw exception
+        }
+        rollback.delete()
+        target
+    }
+}
+
 fun File.moveAllFiles(to: File) {
     if (!exists() || !isDirectory) return
 
@@ -354,22 +447,12 @@ fun Context.getBackupDir() = getEmptyFolder("backup")
 
 fun Context.getExportedPath() = getEmptyFolder("exported")
 
-fun ContextWrapper.getLogsDir() =
-    getExternalMediaDirectory("logs") ?: File(filesDir, "logs").also { it.mkdir() }
+fun ContextWrapper.getLogsDir() = getExternalMediaDirectory("logs").also { it.mkdir() }
 
 const val APP_LOG_FILE_NAME = "notallyx-logs"
 
 fun ContextWrapper.getLogFile(): File {
     return File(getLogsDir(), "$APP_LOG_FILE_NAME.txt")
-}
-
-private fun ContextWrapper.getExternalMediaDirectory(name: String): File {
-    return getDirectory(
-        requireNotNull(externalMediaDirs.firstOrNull()) {
-            "External media directory does not exist"
-        },
-        name,
-    )
 }
 
 private fun getDirectory(dir: File, name: String): File {
@@ -386,7 +469,7 @@ private fun getDirectory(dir: File, name: String): File {
 private fun File.createDirectory() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         try {
-            Files.createDirectory(toPath())
+            Files.createDirectories(toPath())
         } catch (e: FileAlreadyExistsException) {
             if (!isDirectory)
                 throw IOException(
@@ -394,7 +477,7 @@ private fun File.createDirectory() {
                     e,
                 )
         }
-    } else mkdir()
+    } else mkdirs()
 }
 
 private fun Context.getEmptyFolder(name: String): File {

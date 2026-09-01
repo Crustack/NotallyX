@@ -19,6 +19,7 @@ import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.NotallyDatabase.Companion.DATABASE_NAME
 import com.philkes.notallyx.data.dao.BaseNoteDao
@@ -80,6 +81,7 @@ import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import com.philkes.notallyx.utils.getExternalMediaDirectory
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.migrateAllAttachments
+import com.philkes.notallyx.utils.replaceDatabaseFile
 import com.philkes.notallyx.utils.security.DecryptionException
 import com.philkes.notallyx.utils.security.EncryptionException
 import com.philkes.notallyx.utils.security.decryptDatabase
@@ -147,12 +149,24 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     internal var showRefreshBackupsFolderAfterThemeChange = false
     private var labelsHiddenObserver: Observer<Set<String>>? = null
+    private val dbObserver = Observer<NotallyDatabase> { init(it) }
+    private val folderObserver =
+        Observer<Folder> { newFolder -> searchResults?.fetch(keyword, newFolder, currentLabel) }
 
     fun startObserving() {
-        NotallyDatabase.getDatabase(app).observeForever(::init)
-        folder.observeForever { newFolder ->
-            searchResults!!.fetch(keyword, newFolder, currentLabel)
-        }
+        DatabaseManager.getDatabase(app).observeForever(dbObserver)
+        folder.observeForever(folderObserver)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        DatabaseManager.getDatabase(app).removeObserver(dbObserver)
+        folder.removeObserver(folderObserver)
+        allNotesObserver?.let { allNotes?.removeObserver(it) }
+        labelsHiddenObserver?.let { preferences.labelsHidden.removeObserver(it) }
+        allNotes = null
+        allNotesObserver = null
+        labelsHiddenObserver = null
     }
 
     private fun init(database: NotallyDatabase) {
@@ -262,14 +276,15 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     fun enableDataInPublic(callback: (() -> Unit)? = null) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val database = NotallyDatabase.getDatabase(app, observePreferences = false).value
-                database.checkpoint()
-                val targetDirectory = NotallyDatabase.getExternalDatabaseFile(app).parentFile
+                val database = DatabaseManager.getDatabase(app).value
+                database.checkpointOrThrow()
+                // The database must not be written to while its file is being replaced
+                database.close()
+                val targetFile = NotallyDatabase.getExternalDatabaseFile(app)
+                val targetDirectory = targetFile.parentFile
                 val internalDatabaseFiles = NotallyDatabase.getInternalDatabaseFiles(app)
-                internalDatabaseFiles.forEach {
-                    it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
-                }
-                val notallyDatabase = NotallyDatabase.getFreshDatabase(app, true)
+                NotallyDatabase.getInternalDatabaseFile(app).replaceDatabaseFile(targetFile)
+                val notallyDatabase = DatabaseManager.createStandaloneInstance(app, true)
                 val ping =
                     try {
                         notallyDatabase.ping()
@@ -294,14 +309,15 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     fun disableDataInPublic(callback: (() -> Unit)? = null) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val database = NotallyDatabase.getDatabase(app, observePreferences = false).value
-                database.checkpoint()
-                val targetDirectory = NotallyDatabase.getInternalDatabaseFile(app).parentFile
+                val database = DatabaseManager.getDatabase(app).value
+                database.checkpointOrThrow()
+                // The database must not be written to while its file is being replaced
+                database.close()
+                val targetFile = NotallyDatabase.getInternalDatabaseFile(app)
+                val targetDirectory = targetFile.parentFile
                 val externalDatabaseFiles = NotallyDatabase.getExternalDatabaseFiles(app)
-                externalDatabaseFiles.forEach {
-                    it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
-                }
-                val notallyDatabase = NotallyDatabase.getFreshDatabase(app, false)
+                NotallyDatabase.getExternalDatabaseFile(app).replaceDatabaseFile(targetFile)
+                val notallyDatabase = DatabaseManager.createStandaloneInstance(app, false)
                 val ping =
                     try {
                         notallyDatabase.ping()
@@ -332,9 +348,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             val (_, dbFileBackup) = app.copyDatabase(suffix = "-encrypt-backup")
             encryptDatabase(app, dbFileCopy, passphrase)
             val originalDbFile = NotallyDatabase.getCurrentDatabaseFile(app)
-            dbFileCopy.copyToLarge(originalDbFile, overwrite = true)
-            if (originalDbFile.isUnencryptedDatabase) {
-                dbFileBackup.copyToLarge(originalDbFile, overwrite = true)
+            dbFileCopy.replaceDatabaseFile(originalDbFile)
+            if (!originalDbFile.isEncryptedDatabase) {
+                dbFileBackup.replaceDatabaseFile(originalDbFile)
                 val externalBackupFile =
                     File(app.getExternalMediaDirectory(), "${DATABASE_NAME}_Backup-encrypt")
                 dbFileBackup.copyToLarge(externalBackupFile, overwrite = true)
@@ -359,9 +375,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             val (_, dbFileBackup) = app.copyDatabase(decrypt = false, suffix = "-decrypt-backup")
             decryptDatabase(app, dbFileCopy, passphrase)
             val originalDbFile = NotallyDatabase.getCurrentDatabaseFile(app)
-            dbFileCopy.copyToLarge(originalDbFile, overwrite = true)
-            if (originalDbFile.isEncryptedDatabase) {
-                dbFileBackup.copyToLarge(originalDbFile, overwrite = true)
+            dbFileCopy.replaceDatabaseFile(originalDbFile)
+            if (!originalDbFile.isUnencryptedDatabase) {
+                dbFileBackup.replaceDatabaseFile(originalDbFile)
                 val externalBackupFile =
                     File(app.getExternalMediaDirectory(), "${DATABASE_NAME}_Backup-decrypt")
                 dbFileBackup.copyToLarge(externalBackupFile, overwrite = true)
@@ -460,7 +476,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     fun importFromOtherApp(uri: Uri, importSource: ImportSource) {
-        val database = NotallyDatabase.getDatabase(app, observePreferences = false).value
+        val database = DatabaseManager.getDatabase(app).value
         val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
             app.log(TAG, throwable = throwable)
             if (throwable is ImportException) {

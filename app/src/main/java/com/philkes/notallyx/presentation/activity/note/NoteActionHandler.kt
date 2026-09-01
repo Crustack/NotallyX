@@ -17,7 +17,7 @@ import androidx.core.content.IntentCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
-import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.ColorString
@@ -296,7 +296,7 @@ class NoteActionHandler(
         activity.lifecycleScope.launch {
             val colors: MutableSet<ColorString> =
                 withContext(Dispatchers.IO) {
-                        NotallyDatabase.getDatabase(activity, observePreferences = false)
+                        DatabaseManager.getDatabase(activity)
                             .value
                             .getBaseNoteDao()
                             .getAllColors()

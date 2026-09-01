@@ -17,6 +17,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.imports.txt.extractListItems
@@ -66,7 +67,7 @@ typealias BackupFile = Pair<String?, File>
 
 class NotallyModel(private val app: Application) : AndroidViewModel(app) {
 
-    private val database = NotallyDatabase.getDatabase(app)
+    private val database = DatabaseManager.getDatabase(app)
     private lateinit var baseNoteDao: BaseNoteDao
 
     val preferences = NotallyXPreferences.getInstance(app)
@@ -108,8 +109,16 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
 
     var originalNote: BaseNote? = null
 
+    private val dbObserver =
+        androidx.lifecycle.Observer<NotallyDatabase> { baseNoteDao = it.getBaseNoteDao() }
+
     init {
-        database.observeForever { baseNoteDao = it.getBaseNoteDao() }
+        database.observeForever(dbObserver)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        database.removeObserver(dbObserver)
     }
 
     fun addAudio() {

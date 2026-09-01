@@ -9,7 +9,7 @@ import androidx.core.content.getSystemService
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.philkes.notallyx.R
-import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.utils.SUBFOLDER_AUDIOS
@@ -25,7 +25,7 @@ class CleanupMissingAttachmentsWorker(appContext: Context, params: WorkerParamet
 
     override suspend fun doWork(): Result {
         val ctx = ContextWrapper(applicationContext)
-        val database = NotallyDatabase.getDatabase(ctx, observePreferences = false).value
+        val database = DatabaseManager.getDatabase(ctx).value
         val dao = database.getBaseNoteDao()
 
         var removedImages = 0

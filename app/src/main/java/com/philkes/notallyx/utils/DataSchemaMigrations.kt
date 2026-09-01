@@ -2,8 +2,7 @@ package com.philkes.notallyx.utils
 
 import android.app.Application
 import android.content.ContextWrapper
-import android.database.sqlite.SQLiteBlobTooBigException
-import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
@@ -48,11 +47,13 @@ suspend fun Application.runMigrations(onProgressTitle: (Int) -> Unit = {}): Bool
 
 private fun Application.moveAttachments(preferences: NotallyXPreferences) {
     val toPrivate = !preferences.dataInPublicFolder.value
+    val destination = if (toPrivate) "private" else "public"
+    log(TAG, "Running migration 1: Moving attachments to $destination folder")
+    val (moved, failed) = migrateAllAttachments(toPrivate)
     log(
         TAG,
-        "Running migration 1: Moving attachments to ${if(toPrivate) "private" else "public"} folder",
+        "Migration 1 finished. Moved $moved notes to $destination folder. Failed to move $failed notes.",
     )
-    migrateAllAttachments(toPrivate)
 }
 
 /**
@@ -68,7 +69,7 @@ suspend fun Application.splitOversizedNotes() {
     )
 
     // Obtain a direct DB instance matching current storage location
-    val db = NotallyDatabase.getDatabase(this as ContextWrapper, false).value
+    val db = DatabaseManager.getDatabase(this as ContextWrapper).value
     val dao = db.getBaseNoteDao()
 
     // ID-first to avoid loading huge rows into a single cursor; repair per-row if needed
@@ -79,20 +80,22 @@ suspend fun Application.splitOversizedNotes() {
         val original =
             try {
                 dao.get(id)
-            } catch (e: SQLiteBlobTooBigException) {
+} catch (e: android.database.sqlite.SQLiteBlobTooBigException) {
                 // Repair the single offending row, then retry
                 log(
                     TAG,
-                    "Note (id: $id) threw SQLiteBlobTooBigException since body is too large to load. Repairing...",
+                    "Note (id: $id) threw exception (${e.javaClass.simpleName}) since body is too large or corrupted to load. Repairing...",
                     e,
                 )
                 repaired += 1
                 try {
                     truncateBodyAndFixSpans(dao, id)
                     dao.get(id)
-                } catch (e: SQLiteBlobTooBigException) {
-                    log(TAG, "Note (id: $id) could not be repaired. Deleting...", e)
-                    dao.delete(id)
+                } catch (e2: Exception) {
+                    log(TAG, "Note (id: $id) could not be repaired. Deleting...", e2)
+                    try {
+                        dao.delete(id)
+                    } catch (_: Exception) {}
                     null
                 }
             }

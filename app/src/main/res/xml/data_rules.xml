@@ -1,13 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
+    <!--
+        The database is excluded together with the SharedPreferences: 'dataInPublicFolder',
+        'dataSchemaId', 'biometricLock', 'iv' and 'databaseEncryptionKey' all live in the preferences,
+        so restoring the database without them makes the app look for the wrong file, re-run data
+        migrations or try to open an encrypted database without its key. On top of that a live WAL
+        database can only be backed up inconsistently, which restores as a corrupted database.
+        Users should use the app's own (ZIP) backups instead.
+    -->
     <cloud-backup>
         <exclude
             domain="sharedpref"
+            path="." />
+        <exclude
+            domain="database"
             path="." />
     </cloud-backup>
     <device-transfer>
         <exclude
             domain="sharedpref"
+            path="." />
+        <exclude
+            domain="database"
             path="." />
     </device-transfer>
 </data-extraction-rules>

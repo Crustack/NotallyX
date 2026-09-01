@@ -18,7 +18,7 @@ import androidx.work.WorkManager
 import com.google.android.material.color.DynamicColors
 import com.philkes.notallyx.NotallyXApplication.Companion.AUTO_REMOVE_DELETED_NOTES
 import com.philkes.notallyx.NotallyXApplication.Companion.TAG
-import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.presentation.setEnabledSecureFlag
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
 import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
@@ -164,15 +164,21 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
 
     private fun restorePinnedNotifications() {
         runOnIODispatcher {
-            NotallyDatabase.getDatabase(this@NotallyXApplication, false)
-                .value
-                .getBaseNoteDao()
-                .getAllPinnedToStatusNotes()
-                .forEach { note ->
-                    if (note.isPinnedToStatus) {
-                        PinnedNotificationManager.notify(this@NotallyXApplication, note)
+            // Runs at every cold start: a failing database read must never escape as an unhandled
+            // exception, it would crash the app before any recovery option can be offered
+            try {
+                DatabaseManager.getDatabase(this@NotallyXApplication)
+                    .value
+                    .getBaseNoteDao()
+                    .getAllPinnedToStatusNotes()
+                    .forEach { note ->
+                        if (note.isPinnedToStatus) {
+                            PinnedNotificationManager.notify(this@NotallyXApplication, note)
+                        }
                     }
-                }
+            } catch (e: Exception) {
+                log(TAG, msg = "Failed to restore pinned notifications", throwable = e)
+            }
         }
     }
 

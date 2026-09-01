@@ -3,6 +3,7 @@ package com.philkes.notallyx.presentation.viewmodel.preference
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.preference.PreferenceManager
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
@@ -11,6 +12,7 @@ import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.presentation.viewmodel.preference.Constants.PASSWORD_EMPTY
 import com.philkes.notallyx.utils.backup.importPreferences
+import com.philkes.notallyx.utils.getExternalBackupsDirectory
 import com.philkes.notallyx.utils.toCamelCase
 import org.json.JSONArray
 import org.json.JSONObject
@@ -151,7 +153,12 @@ class NotallyXPreferences private constructor(private val context: Context) {
         )
 
     val backupsFolder =
-        StringPreference("autoBackup", preferences, EMPTY_PATH, R.string.auto_backups_folder)
+        StringPreference(
+            "autoBackup",
+            preferences,
+            context.getExternalBackupsDirectory().toUri().toString(),
+            R.string.auto_backups_folder,
+        )
     val backupOnSave =
         BooleanPreference("backupOnSave", preferences, false, R.string.auto_backup_on_save)
     val periodicBackups = PeriodicBackupsPreference(preferences)
@@ -310,7 +317,9 @@ class NotallyXPreferences private constructor(private val context: Context) {
 
     fun reset() {
         preferences.edit().clear().commit()
-        encryptedPreferences.edit().clear().apply()
+        try {
+            encryptedPreferences.edit().clear().apply()
+        } catch (_: Exception) {}
         backupsFolder.refresh()
         dataInPublicFolder.refresh()
         theme.refresh()
@@ -323,6 +332,7 @@ class NotallyXPreferences private constructor(private val context: Context) {
 
     private fun reload() {
         setOf(
+                backupsFolder,
                 textSizeNoteEditor,
                 textSizeOverview,
                 dateFormatOverview,
@@ -372,6 +382,10 @@ class NotallyXPreferences private constructor(private val context: Context) {
                     Companion.instance = instance
                     return instance
                 }
+        }
+
+        fun clearInstance() {
+            synchronized(this) { instance = null }
         }
     }
 }
