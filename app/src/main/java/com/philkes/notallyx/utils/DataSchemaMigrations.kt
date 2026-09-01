@@ -80,7 +80,7 @@ suspend fun Application.splitOversizedNotes() {
         val original =
             try {
                 dao.get(id)
-            } catch (e: Exception) {
+} catch (e: android.database.sqlite.SQLiteBlobTooBigException) {
                 // Repair the single offending row, then retry
                 log(
                     TAG,
