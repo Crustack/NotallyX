@@ -1,6 +1,7 @@
 package com.philkes.notallyx.utils
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.provider.DocumentsContract
 import android.util.Log
@@ -17,6 +18,7 @@ import com.philkes.notallyx.R.string.crash_export_backup_failed
 import com.philkes.notallyx.R.string.report_bug
 import com.philkes.notallyx.data.DatabaseManager
 import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.imports.ImportResult
 import com.philkes.notallyx.databinding.ActivityErrorBinding
 import com.philkes.notallyx.presentation.exportedText
 import com.philkes.notallyx.presentation.restartApplication
@@ -29,7 +31,7 @@ import com.philkes.notallyx.utils.backup.BACKUP_TIMESTAMP_FORMATTER
 import com.philkes.notallyx.utils.backup.copyDatabase
 import com.philkes.notallyx.utils.backup.exportAsZip
 import com.philkes.notallyx.utils.backup.exportRawDatabase
-import com.philkes.notallyx.utils.backup.importRawDatabase
+import com.philkes.notallyx.utils.backup.readBaseNotes
 import java.io.File
 import java.util.Date
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -200,28 +202,7 @@ class ErrorActivity : AppCompatActivity() {
                                             }
                                         lifecycleScope.launch(exceptionHandler) {
                                             val importResult =
-                                                withContext(Dispatchers.IO) {
-                                                    val (_, databaseCopy) =
-                                                        copyDatabase(
-                                                            suffix = "_BACKUP_BEFORE_REIMPORT"
-                                                        )
-                                                    databaseCopy.copyToLarge(
-                                                        File(
-                                                            getLogsDir(),
-                                                            "${NotallyDatabase.DATABASE_NAME}_BACKUP_BEFORE_REIMPORT.sqlite",
-                                                        ),
-                                                        overwrite = true,
-                                                    )
-                                                    deleteDatabase(NotallyDatabase.DATABASE_NAME)
-                                                    DatabaseManager.clearInstance(
-                                                        this@ErrorActivity
-                                                    )
-                                                    application.importRawDatabase(
-                                                        uri,
-                                                        false,
-                                                        backupProgress,
-                                                    )
-                                                }
+                                                reimportDatabase(uri)
                                             MaterialAlertDialogBuilder(this@ErrorActivity)
                                                 .setMessage(
                                                     this@ErrorActivity.toMessage(importResult)
@@ -242,6 +223,95 @@ class ErrorActivity : AppCompatActivity() {
             }
         backupProgress.setupProgressDialog(this)
     }
+
+    private suspend fun reimportDatabase(uri: Uri): ImportResult =
+        withContext(Dispatchers.IO) {
+            val (_, databaseCopy) = copyDatabase(suffix = "_BACKUP_BEFORE_REIMPORT")
+            databaseCopy.copyToLarge(
+                File(
+                    getLogsDir(),
+                    "${NotallyDatabase.DATABASE_NAME}_BACKUP_BEFORE_REIMPORT.sqlite",
+                ),
+                overwrite = true,
+            )
+
+            val sourceDbFile = File(cacheDir, "${NotallyDatabase.DATABASE_NAME}_REIMPORT_SOURCE")
+            val reimportedDbFile = File(cacheDir, "${NotallyDatabase.DATABASE_NAME}_REIMPORT")
+            sourceDbFile.delete()
+            sourceDbFile.deleteDatabaseCompanionFiles()
+            reimportedDbFile.delete()
+            reimportedDbFile.deleteDatabaseCompanionFiles()
+
+            try {
+                requireNotNull(contentResolver.openInputStream(uri)) {
+                        "InputStream for dbFileUri '$uri' is null"
+                    }
+                    .use { inputStream -> inputStream.copyToFile(sourceDbFile) }
+
+                val (baseNotes, originalIds, labels, corruptedNotes) =
+                    application.readBaseNotes(sourceDbFile, backupProgress)
+                val reimportedDatabase =
+                    NotallyDatabase.createBuilder(application, reimportedDbFile.absolutePath)
+                        .build()
+                val importResult =
+                    try {
+                        reimportedDatabase
+                            .getCommonDao()
+                            .importBackup(
+                                baseNotes,
+                                originalIds,
+                                labels,
+                                corruptedNotes,
+                                false,
+                            )
+                            .also {
+                                reimportedDatabase.checkpointOrThrow()
+                                check(reimportedDatabase.ping()) {
+                                    "Reimported database validation failed"
+                                }
+                            }
+                    } finally {
+                        if (reimportedDatabase.isOpen) {
+                            reimportedDatabase.close()
+                        }
+                    }
+
+                val targetFile = NotallyDatabase.getCurrentDatabaseFile(application)
+                DatabaseManager.clearInstance(this@ErrorActivity)
+                try {
+                    reimportedDbFile.replaceDatabaseFile(targetFile)
+                    val validatedDatabase =
+                        DatabaseManager.createStandaloneInstance(
+                            application,
+                            NotallyXPreferences.getInstance(application).dataInPublicFolder.value,
+                        )
+                    try {
+                        check(validatedDatabase.ping()) {
+                            "Reimported database validation failed"
+                        }
+                        val notesToRemind =
+                            validatedDatabase.getBaseNoteDao().getAllWithRemindersOrPinned()
+                        cancelPinAndReminders(notesToRemind)
+                        pinAndScheduleReminders(notesToRemind)
+                    } finally {
+                        if (validatedDatabase.isOpen) {
+                            validatedDatabase.close()
+                        }
+                    }
+                } catch (exception: Exception) {
+                    runCatching { databaseCopy.replaceDatabaseFile(targetFile) }
+                        .onFailure { rollbackException -> exception.addSuppressed(rollbackException) }
+                    throw exception
+                }
+
+                importResult
+            } finally {
+                sourceDbFile.delete()
+                sourceDbFile.deleteDatabaseCompanionFiles()
+                reimportedDbFile.delete()
+                reimportedDbFile.deleteDatabaseCompanionFiles()
+            }
+        }
 
     companion object {
         private const val TAG = "ErrorActivity"
