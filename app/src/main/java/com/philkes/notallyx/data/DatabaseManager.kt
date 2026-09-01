@@ -52,24 +52,27 @@ object DatabaseManager {
      * as biometric encryption or storage folder switches) recreate and post the updated instance.
      */
     fun getDatabase(context: ContextWrapper): NotNullLiveData<NotallyDatabase> {
-        return instance
-            ?: synchronized(this) {
-                instance
-                    ?: run {
-                        val preferences = NotallyXPreferences.getInstance(context)
-                        val initialDb =
-                            if (isTestRunner()) {
-                                getTestDatabase(context)
-                            } else {
-                                createDatabaseInstance(context, preferences)
+        instance?.let { return it }
+        return withSyncMaintenanceLock {
+            instance
+                ?: synchronized(this) {
+                    instance
+                        ?: run {
+                            val preferences = NotallyXPreferences.getInstance(context)
+                            val initialDb =
+                                if (isTestRunner()) {
+                                    getTestDatabase(context)
+                                } else {
+                                    createDatabaseInstance(context, preferences)
+                                }
+                            val liveData = NotNullLiveData(initialDb).also { instance = it }
+                            if (!isTestRunner()) {
+                                setupPreferenceObservers(context, preferences)
                             }
-                        val liveData = NotNullLiveData(initialDb).also { instance = it }
-                        if (!isTestRunner()) {
-                            setupPreferenceObservers(context, preferences)
+                            liveData
                         }
-                        liveData
-                    }
-            }
+                }
+        }
     }
 
     /**

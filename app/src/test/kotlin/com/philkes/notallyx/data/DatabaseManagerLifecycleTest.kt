@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.utils.getExternalMediaDirectory
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -207,6 +208,38 @@ class DatabaseManagerLifecycleTest {
             DatabaseManager.clearInstance(application)
             val db = DatabaseManager.getDatabase(application)
             assertThat(db.value).isNotNull
+        }
+    }
+
+    @Test
+    fun getDatabase_serializesWithMaintenanceLock() {
+        runBlocking {
+            val lockHeld = AtomicBoolean(false)
+            val getDatabaseExecutedWhileLockHeld = AtomicBoolean(false)
+
+            val holdLockJob =
+                launch(Dispatchers.Default) {
+                    DatabaseManager.withMaintenanceLock {
+                        lockHeld.set(true)
+                        delay(100)
+                        lockHeld.set(false)
+                    }
+                }
+
+            delay(20)
+
+            val getDatabaseJob =
+                launch(Dispatchers.IO) {
+                    DatabaseManager.getDatabase(application)
+                    if (lockHeld.get()) {
+                        getDatabaseExecutedWhileLockHeld.set(true)
+                    }
+                }
+
+            holdLockJob.join()
+            getDatabaseJob.join()
+
+            assertThat(getDatabaseExecutedWhileLockHeld.get()).isFalse()
         }
     }
 }
