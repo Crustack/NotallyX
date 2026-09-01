@@ -51,8 +51,14 @@ private fun ContextWrapper.getExternalFilesDirectory() = getExternalMediaDirecto
 
 fun Context.getExternalBackupsDirectory() = getExternalMediaDirectory(SUBFOLDER_BACKUPS)
 
-fun Context.getExternalMediaDirectory(name: String = ""): File {
-    val base = externalMediaDirs.firstOrNull() ?: File(filesDir, "media")
+fun Context.getExternalMediaDirectory(name: String = "", fallbackToInternal: Boolean = true): File {
+    val base =
+        externalMediaDirs.firstOrNull()
+            ?: if (fallbackToInternal) {
+                File(filesDir, "media")
+            } else {
+                throw IOException("External media directory is unavailable")
+            }
     return getDirectory(base, name)
 }
 

@@ -86,14 +86,14 @@ abstract class NotallyDatabase : RoomDatabase() {
         }
 
         fun getExternalDatabaseFile(context: ContextWrapper): File {
-            return File(context.getExternalMediaDirectory(), DATABASE_NAME)
+            return File(context.getExternalMediaDirectory(fallbackToInternal = false), DATABASE_NAME)
         }
 
         fun getExternalDatabaseFiles(context: ContextWrapper): List<File> {
             return listOf(
-                File(context.getExternalMediaDirectory(), DATABASE_NAME),
-                File(context.getExternalMediaDirectory(), "$DATABASE_NAME-shm"),
-                File(context.getExternalMediaDirectory(), "$DATABASE_NAME-wal"),
+                File(context.getExternalMediaDirectory(fallbackToInternal = false), DATABASE_NAME),
+                File(context.getExternalMediaDirectory(fallbackToInternal = false), "$DATABASE_NAME-shm"),
+                File(context.getExternalMediaDirectory(fallbackToInternal = false), "$DATABASE_NAME-wal"),
             )
         }
 
