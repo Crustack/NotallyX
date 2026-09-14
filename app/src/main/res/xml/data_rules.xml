@@ -4,10 +4,16 @@
         <exclude
             domain="sharedpref"
             path="." />
+        <exclude
+            domain="database"
+            path="." />
     </cloud-backup>
     <device-transfer>
         <exclude
             domain="sharedpref"
+            path="." />
+        <exclude
+            domain="database"
             path="." />
     </device-transfer>
 </data-extraction-rules>

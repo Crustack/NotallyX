@@ -2,11 +2,14 @@ package com.philkes.notallyx.utils
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
+import android.provider.DocumentsContract
 import android.util.Log
 import androidx.core.net.toUri
 import androidx.lifecycle.MutableLiveData
@@ -16,6 +19,7 @@ import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.isImage
+import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.progress.DeleteAttachmentProgress
@@ -48,12 +52,7 @@ private fun ContextWrapper.getExternalAudioDirectory() = getExternalMediaDirecto
 
 private fun ContextWrapper.getExternalFilesDirectory() = getExternalMediaDirectory(SUBFOLDER_FILES)
 
-fun Context.getExternalBackupsDirectory() = getExternalMediaDirectory(SUBFOLDER_BACKUPS)
-
-fun Context.getExternalMediaDirectory(name: String = ""): File {
-    val base = externalMediaDirs.firstOrNull() ?: File(filesDir, "media")
-    return getDirectory(base, name)
-}
+fun ContextWrapper.getExternalBackupsDirectory() = getExternalMediaDirectory(SUBFOLDER_BACKUPS)
 
 // Private (internal) storage roots for attachments when biometric lock is enabled and
 // dataInPublicFolder is disabled.
@@ -214,6 +213,32 @@ fun Context.getTempAudioFile(): File {
     return File(externalCacheDir, "Temp.m4a")
 }
 
+fun Context.openExternalMediaFolder(folderFile: File) {
+    if (!folderFile.exists()) {
+        folderFile.mkdirs()
+    }
+    // 1. Calculate relative path from External Storage root
+    val primaryStoragePath = Environment.getExternalStorageDirectory().absolutePath
+    val relativePath = folderFile.absolutePath.removePrefix(primaryStoragePath).trimStart('/')
+    // 2. Build SAF Document URI (e.g., "primary:Android/media/com.package/Backups")
+    val documentId = "primary:$relativePath"
+    val uri =
+        DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", documentId)
+    // 3. Launch the System Files app
+    val intent =
+        Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "vnd.android.document/directory")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+    try {
+        startActivity(intent)
+    } catch (e: Exception) {
+        Log.e(TAG, "Failed to open external media folder", e)
+        showToast(com.philkes.notallyx.R.string.cant_open_link)
+    }
+}
+
 fun InputStream.copyToFile(destination: File) {
     val output = FileOutputStream(destination)
     copyToLarge(output)
@@ -370,7 +395,7 @@ fun ContextWrapper.getLogFile(): File {
     return File(getLogsDir(), "$APP_LOG_FILE_NAME.txt")
 }
 
-private fun ContextWrapper.getExternalMediaDirectory(name: String): File {
+fun ContextWrapper.getExternalMediaDirectory(name: String = ""): File {
     return getDirectory(
         requireNotNull(externalMediaDirs.firstOrNull()) {
             "External media directory does not exist"

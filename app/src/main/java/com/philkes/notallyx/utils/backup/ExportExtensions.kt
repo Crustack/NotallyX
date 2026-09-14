@@ -1065,12 +1065,13 @@ fun LockedActivity<*>.exportNote(
 
 fun ContextWrapper.backupDatabaseFiles(): File {
     val timestamp = BACKUP_TIMESTAMP_FORMATTER.format(Date())
-    val targetDir =
+    val backupRoot =
         try {
-            File(getExternalBackupsDirectory().apply { mkdirs() }, timestamp)
+            getExternalBackupsDirectory()
         } catch (_: Exception) {
-            File(filesDir, "corrupted_backups").apply { mkdirs() }
+            File(filesDir, "backups").apply { mkdirs() }
         }
+    val targetDir = File(backupRoot, timestamp).apply { mkdirs() }
     log(TAG, "Backing up raw database files to '$targetDir'")
     copyFiles(
         NotallyDatabase.getExternalDatabaseFiles(this),

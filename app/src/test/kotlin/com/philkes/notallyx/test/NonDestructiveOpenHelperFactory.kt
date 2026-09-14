@@ -1,19 +1,21 @@
-package com.philkes.notallyx.data
+package com.philkes.notallyx.test
 
-import android.content.ContextWrapper
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
-import com.philkes.notallyx.utils.backup.backupDatabaseFiles
-import com.philkes.notallyx.utils.log
+import java.util.concurrent.atomic.AtomicBoolean
 
-private const val TAG = "NonDestructiveOpenHelperFactory"
-
-/** Default [SupportSQLiteOpenHelper.Factory] deletes database on corruption. */
+/**
+ * Mirrors the planned P0 fix: the very same [FrameworkSQLiteOpenHelperFactory] Room uses by
+ * default, but with a [SupportSQLiteOpenHelper.Callback.onCorruption] that only *records* the event
+ * instead of calling `SQLiteDatabase.deleteDatabase`. Everything else is delegated to Room's own
+ * callback, so the only difference to the production configuration is the corruption handler.
+ */
 class NonDestructiveOpenHelperFactory(
-    private val app: ContextWrapper,
-    private val delegate: SupportSQLiteOpenHelper.Factory = FrameworkSQLiteOpenHelperFactory(),
+    private val delegate: SupportSQLiteOpenHelper.Factory = FrameworkSQLiteOpenHelperFactory()
 ) : SupportSQLiteOpenHelper.Factory {
+
+    val corruptionReported = AtomicBoolean(false)
 
     override fun create(
         configuration: SupportSQLiteOpenHelper.Configuration
@@ -22,15 +24,15 @@ class NonDestructiveOpenHelperFactory(
             SupportSQLiteOpenHelper.Configuration(
                 configuration.context,
                 configuration.name,
-                RecordingCallback(configuration.callback, app),
+                RecordingCallback(configuration.callback, corruptionReported),
                 configuration.useNoBackupDirectory,
                 configuration.allowDataLossOnRecovery,
             )
         )
 
-    internal class RecordingCallback(
+    private class RecordingCallback(
         private val delegate: SupportSQLiteOpenHelper.Callback,
-        private val app: ContextWrapper,
+        private val corruptionReported: AtomicBoolean,
     ) : SupportSQLiteOpenHelper.Callback(delegate.version) {
 
         override fun onConfigure(db: SupportSQLiteDatabase) = delegate.onConfigure(db)
@@ -45,12 +47,9 @@ class NonDestructiveOpenHelperFactory(
 
         override fun onOpen(db: SupportSQLiteDatabase) = delegate.onOpen(db)
 
+        /** The whole point: report, never delete. */
         override fun onCorruption(db: SupportSQLiteDatabase) {
-            app.log(TAG, stackTrace = "Database was corrupted")
-            app.backupDatabaseFiles()
-            throw RuntimeException(
-                "Database was corrupted, please report this via an issue on Github"
-            )
+            corruptionReported.set(true)
         }
     }
 }

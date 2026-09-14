@@ -6,6 +6,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
+import androidx.annotation.VisibleForTesting
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -154,23 +155,7 @@ abstract class NotallyDatabase : RoomDatabase() {
             )
             clearInstance()
             val instanceBuilder =
-                Room.databaseBuilder(
-                        context,
-                        NotallyDatabase::class.java,
-                        getCurrentDatabaseName(context, dataInPublic),
-                    )
-                    .addMigrations(
-                        Migration2,
-                        Migration3,
-                        Migration4,
-                        Migration5,
-                        Migration6,
-                        Migration7,
-                        Migration8,
-                        Migration9,
-                        Migration10,
-                        Migration11,
-                    )
+                createBuilder(context, getCurrentDatabaseName(context, dataInPublic))
                     .openHelperFactory(NonDestructiveOpenHelperFactory(context))
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (biometricLock == BiometricLock.ENABLED) {
@@ -195,6 +180,26 @@ abstract class NotallyDatabase : RoomDatabase() {
                 }
             }
             return instanceBuilder.build()
+        }
+
+        @VisibleForTesting
+        internal fun createBuilder(
+            context: Context,
+            databaseName: String,
+        ): Builder<NotallyDatabase> {
+            return Room.databaseBuilder(context, NotallyDatabase::class.java, databaseName)
+                .addMigrations(
+                    Migration2,
+                    Migration3,
+                    Migration4,
+                    Migration5,
+                    Migration6,
+                    Migration7,
+                    Migration8,
+                    Migration9,
+                    Migration10,
+                    Migration11,
+                )
         }
 
         @RequiresApi(Build.VERSION_CODES.M)
