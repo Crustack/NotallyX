@@ -3,4 +3,15 @@
     <exclude
         domain="sharedpref"
         path="." />
+    <!--
+        The database must not be backed up while the SharedPreferences are excluded: 'dataInPublicFolder',
+        'dataSchemaId', 'biometricLock', 'iv' and 'databaseEncryptionKey' all live in the preferences,
+        so restoring the database without them makes the app look for the wrong file, re-run data
+        migrations or try to open an encrypted database without its key. On top of that a live WAL
+        database can only be backed up inconsistently, which restores as a corrupted database.
+        Users should use the app's own (ZIP) backups instead.
+    -->
+    <exclude
+        domain="database"
+        path="." />
 </full-backup-content>
