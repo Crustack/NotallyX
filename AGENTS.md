@@ -234,7 +234,7 @@ class NoteHelperTest {
 
 ## Code Style & Quality Rules
 
-1. **Formatting**: All Kotlin source code must follow `ktfmt` Kotlin style (2-space indent, strict import ordering). Run `./gradlew ktfmtFormat` before committing.
+1. **Formatting**: All Kotlin source code must follow `ktfmt` Kotlin style (4-space indent, strict import ordering). Run `./gradlew ktfmtFormat` before committing.
 2. **Naming Conventions**:
    - Entities & Models: PascalCase data classes (`BaseNote`, `Label`, `Attachment`).
    - DAOs: Interface suffix `*Dao` (`BaseNoteDao`, `LabelDao`).

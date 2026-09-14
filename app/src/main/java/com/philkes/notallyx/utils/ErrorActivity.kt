@@ -1,9 +1,7 @@
 package com.philkes.notallyx.utils
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.os.Environment
 import android.provider.DocumentsContract
 import android.text.SpannableString
 import android.text.Spanned
@@ -12,7 +10,6 @@ import android.text.style.ClickableSpan
 import android.util.Log
 import android.view.View
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -54,7 +51,7 @@ class ErrorActivity : AppCompatActivity() {
 
     private lateinit var exportBackupActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var exportDatabaseActivityResultLauncher: ActivityResultLauncher<Intent>
-    private lateinit var backupPath: File
+    private var backupPath: File? = null
     private val backupProgress = MutableLiveData<Progress>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,69 +75,29 @@ class ErrorActivity : AppCompatActivity() {
             ReportButton.setOnClickListener { reportBug(stacktrace) }
             ViewLogsButton.setOnClickListener { viewLogs() }
             setupExportBackup(binding, stacktrace)
-            backupPath = application.backupDatabaseFiles()
-            setupFolderLink(CrashMessagehint, backupPath)
+        }
+        lifecycleScope.launch {
+            backupPath = withContext(Dispatchers.IO) { application.backupDatabaseFiles() }
+            setupFolderLink(
+                binding.CrashMessagehint,
+                backupPath!!,
+                this@ErrorActivity.getString(R.string.crash_message_hint, backupPath),
+            )
         }
     }
 
-    fun setupFolderLink(textView: TextView, folderPath: File) {
-        val fullText = getString(R.string.crash_message_hint, backupPath)
-        val spannable = SpannableString(fullText)
-
+    fun setupFolderLink(textView: TextView, folderPath: File, linkText: String) {
+        val spannable = SpannableString(linkText)
         val clickableSpan =
             object : ClickableSpan() {
                 override fun onClick(widget: View) {
-                    openExternalMediaFolder(widget.context, folderPath)
+                    widget.context.openExternalMediaFolder(folderPath)
                 }
             }
-
-        spannable.setSpan(clickableSpan, 0, fullText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-
+        spannable.setSpan(clickableSpan, 0, linkText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         textView.text = spannable
         // Required for ClickableSpan to handle clicks
         textView.movementMethod = LinkMovementMethod.getInstance()
-    }
-
-    fun openExternalMediaFolder(context: Context, folderFile: File) {
-        if (!folderFile.exists()) {
-            folderFile.mkdirs()
-        }
-
-        // 1. Calculate relative path from External Storage root
-        val primaryStoragePath = Environment.getExternalStorageDirectory().absolutePath
-        val absolutePath = folderFile.absolutePath
-
-        if (!absolutePath.startsWith(primaryStoragePath)) {
-            Toast.makeText(
-                    context,
-                    "Cannot open internal app folder externally",
-                    Toast.LENGTH_SHORT,
-                )
-                .show()
-            return
-        }
-
-        val relativePath = absolutePath.removePrefix(primaryStoragePath).trimStart('/')
-
-        // 2. Build SAF Document URI (e.g., "primary:Android/media/com.package/Backups")
-        val documentId = "primary:$relativePath"
-        val uri =
-            DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", documentId)
-
-        // 3. Launch the System Files app
-        val intent =
-            Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, "vnd.android.document/directory")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-
-        try {
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            Toast.makeText(context, "No app available to open local folders", Toast.LENGTH_SHORT)
-                .show()
-        }
     }
 
     private fun setupExportBackup(binding: ActivityErrorBinding, stacktrace: String?) {
@@ -267,7 +224,7 @@ class ErrorActivity : AppCompatActivity() {
                                     R.string.auto_backup_failed,
                                     getString(
                                         R.string.crash_export_raw_backup_failed,
-                                        backupPath,
+                                        backupPath ?: "null",
                                         getString(report_bug),
                                     ),
                                 )
