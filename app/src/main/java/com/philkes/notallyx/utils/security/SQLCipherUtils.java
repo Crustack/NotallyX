@@ -84,7 +84,7 @@ public class SQLCipherUtils {
                 if (context != null) {
                     AndroidExtensionsKt.log(context, "SQLCipherUtils", String.format("Getting database state of '%s' failed, assuming its encrypted", dbPath.getAbsolutePath()), e, null);
                 }
-                return State.DOES_NOT_EXIST;
+                throw new RuntimeException(e);
             }
         }
 

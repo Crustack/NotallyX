@@ -256,7 +256,7 @@
     <string name="next">Nächste</string>
     <string name="no_auto_sort">Nicht automatisch sortieren</string>
     <string name="none">Keines</string>
-    <string name="not_exists">\'%1$d’ existiert nicht</string>
+    <string name="not_exists">\'%1$s’ existiert nicht</string>
     <string name="note">Notiz</string>
     <string name="note_text_too_long_truncated">Text zu lang, wird auf %1$d Zeichen gekürzt</string>
     <string name="note_too_big_truncating">Notiz überschreitet Maximallänge, es wird auf %1$s Zeichen gekürzt (vorher: %2$s)</string>
