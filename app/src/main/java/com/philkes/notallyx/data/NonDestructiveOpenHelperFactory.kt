@@ -4,11 +4,8 @@ import android.content.ContextWrapper
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
-import com.philkes.notallyx.utils.backup.BACKUP_TIMESTAMP_FORMATTER
-import com.philkes.notallyx.utils.getExternalBackupsDirectory
+import com.philkes.notallyx.utils.backup.backupDatabaseFiles
 import com.philkes.notallyx.utils.log
-import java.io.File
-import java.util.Date
 
 private const val TAG = "NonDestructiveOpenHelperFactory"
 
@@ -50,53 +47,7 @@ class NonDestructiveOpenHelperFactory(
 
         override fun onCorruption(db: SupportSQLiteDatabase) {
             app.log(TAG, stackTrace = "Database was corrupted")
-            val timestamp = BACKUP_TIMESTAMP_FORMATTER.format(Date())
-            val targetDir =
-                try {
-                    app.getExternalBackupsDirectory().apply { mkdirs() }
-                } catch (_: Exception) {
-                    File(app.filesDir, "corrupted_backups").apply { mkdirs() }
-                }
-            backupDbFiles(
-                NotallyDatabase.getExternalDatabaseFiles(this@RecordingCallback.app),
-                targetDir,
-                timestamp,
-                "_EXTERNAL_",
-            )
-            backupDbFiles(
-                NotallyDatabase.getInternalDatabaseFiles(app),
-                targetDir,
-                timestamp,
-                "_INTERNAL_",
-            )
-        }
-
-        private fun backupDbFiles(
-            dbFiles: List<File>,
-            targetDir: File,
-            timestamp: String,
-            postfix: String,
-        ) {
-            dbFiles.forEach { dbFile ->
-                if (dbFile.exists()) {
-                    try {
-                        val destination =
-                            File(targetDir, "${dbFile.name}_${postfix}_CORRUPTED_$timestamp")
-                        app.log(
-                            TAG,
-                            msg =
-                                "Copying corrupted file '${dbFile.path}' to '${destination.path}'...",
-                        )
-                        dbFile.copyTo(destination, overwrite = true)
-                    } catch (e: Exception) {
-                        app.log(
-                            TAG,
-                            msg = "Failed to copy corrupted file '${dbFile.path}'",
-                            throwable = e,
-                        )
-                    }
-                }
-            }
+            app.backupDatabaseFiles()
         }
     }
 }

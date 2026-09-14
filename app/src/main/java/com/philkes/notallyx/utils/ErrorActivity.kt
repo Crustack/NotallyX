@@ -1,9 +1,18 @@
 package com.philkes.notallyx.utils
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Environment
 import android.provider.DocumentsContract
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
 import android.util.Log
+import android.view.View
+import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -25,6 +34,7 @@ import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.utils.backup.BACKUP_TIMESTAMP_FORMATTER
+import com.philkes.notallyx.utils.backup.backupDatabaseFiles
 import com.philkes.notallyx.utils.backup.copyDatabase
 import com.philkes.notallyx.utils.backup.exportAsZip
 import com.philkes.notallyx.utils.backup.exportRawDatabase
@@ -44,6 +54,7 @@ class ErrorActivity : AppCompatActivity() {
 
     private lateinit var exportBackupActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var exportDatabaseActivityResultLauncher: ActivityResultLauncher<Intent>
+    private lateinit var backupPath: File
     private val backupProgress = MutableLiveData<Progress>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,6 +78,68 @@ class ErrorActivity : AppCompatActivity() {
             ReportButton.setOnClickListener { reportBug(stacktrace) }
             ViewLogsButton.setOnClickListener { viewLogs() }
             setupExportBackup(binding, stacktrace)
+            backupPath = application.backupDatabaseFiles()
+            setupFolderLink(CrashMessagehint, backupPath)
+        }
+    }
+
+    fun setupFolderLink(textView: TextView, folderPath: File) {
+        val fullText = getString(R.string.crash_message_hint, backupPath)
+        val spannable = SpannableString(fullText)
+
+        val clickableSpan =
+            object : ClickableSpan() {
+                override fun onClick(widget: View) {
+                    openExternalMediaFolder(widget.context, folderPath)
+                }
+            }
+
+        spannable.setSpan(clickableSpan, 0, fullText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        textView.text = spannable
+        // Required for ClickableSpan to handle clicks
+        textView.movementMethod = LinkMovementMethod.getInstance()
+    }
+
+    fun openExternalMediaFolder(context: Context, folderFile: File) {
+        if (!folderFile.exists()) {
+            folderFile.mkdirs()
+        }
+
+        // 1. Calculate relative path from External Storage root
+        val primaryStoragePath = Environment.getExternalStorageDirectory().absolutePath
+        val absolutePath = folderFile.absolutePath
+
+        if (!absolutePath.startsWith(primaryStoragePath)) {
+            Toast.makeText(
+                    context,
+                    "Cannot open internal app folder externally",
+                    Toast.LENGTH_SHORT,
+                )
+                .show()
+            return
+        }
+
+        val relativePath = absolutePath.removePrefix(primaryStoragePath).trimStart('/')
+
+        // 2. Build SAF Document URI (e.g., "primary:Android/media/com.package/Backups")
+        val documentId = "primary:$relativePath"
+        val uri =
+            DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", documentId)
+
+        // 3. Launch the System Files app
+        val intent =
+            Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "vnd.android.document/directory")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "No app available to open local folders", Toast.LENGTH_SHORT)
+                .show()
         }
     }
 
@@ -174,7 +247,32 @@ class ErrorActivity : AppCompatActivity() {
                             )
                         }
                         lifecycleScope.launch(exceptionHandler) {
-                            withContext(Dispatchers.IO) { application.exportRawDatabase(uri) }
+                            val exportException: Throwable? =
+                                withContext(Dispatchers.IO) {
+                                    try {
+                                        application.exportRawDatabase(uri)
+                                        null
+                                    } catch (e: Exception) {
+                                        log(
+                                            TAG,
+                                            "Could not checkpoint and export database, only export of raw files from internal and external db paths is available",
+                                            throwable = e,
+                                        )
+                                        e
+                                    }
+                                }
+                            if (exportException != null) {
+                                showErrorDialog(
+                                    exportException,
+                                    R.string.auto_backup_failed,
+                                    getString(
+                                        R.string.crash_export_raw_backup_failed,
+                                        backupPath,
+                                        getString(report_bug),
+                                    ),
+                                )
+                                return@launch
+                            }
                             application.showToast(
                                 "${getString(R.string.exported)} ${getString(R.string.database)}"
                             )
