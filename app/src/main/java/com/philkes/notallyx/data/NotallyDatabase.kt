@@ -3,8 +3,9 @@ package com.philkes.notallyx.data
 import android.content.Context
 import android.content.ContextWrapper
 import android.os.Build
+import android.util.Log
+import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
-import androidx.lifecycle.Observer
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -25,10 +26,10 @@ import com.philkes.notallyx.data.model.toColorString
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
 import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
-import com.philkes.notallyx.presentation.viewmodel.preference.observeForeverSkipFirst
 import com.philkes.notallyx.utils.getExternalMediaDirectory
-import com.philkes.notallyx.utils.security.SQLCipherUtils
+import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.security.getInitializedCipherForDecryption
+import com.philkes.notallyx.utils.security.isEncryptedDatabase
 import java.io.File
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
@@ -47,9 +48,6 @@ abstract class NotallyDatabase : RoomDatabase() {
     }
 
     fun ping() = getBaseNoteDao().query(SimpleSQLiteQuery("SELECT 1")) == 1
-
-    private var biometricLockObserver: Observer<BiometricLock>? = null
-    private var dataInPublicFolderObserver: Observer<Boolean>? = null
 
     companion object {
 
@@ -71,10 +69,11 @@ abstract class NotallyDatabase : RoomDatabase() {
 
         fun getExternalDatabaseFiles(context: ContextWrapper): List<File> {
             return listOf(
-                File(context.getExternalMediaDirectory(), DATABASE_NAME),
-                File(context.getExternalMediaDirectory(), "$DATABASE_NAME-shm"),
-                File(context.getExternalMediaDirectory(), "$DATABASE_NAME-wal"),
-            )
+                    File(context.getExternalMediaDirectory(), DATABASE_NAME),
+                    File(context.getExternalMediaDirectory(), "$DATABASE_NAME-shm"),
+                    File(context.getExternalMediaDirectory(), "$DATABASE_NAME-wal"),
+                )
+                .filter { it.exists() }
         }
 
         fun getInternalDatabaseFile(context: Context): File {
@@ -84,10 +83,11 @@ abstract class NotallyDatabase : RoomDatabase() {
         fun getInternalDatabaseFiles(context: ContextWrapper): List<File> {
             val directory = context.getDatabasePath(DATABASE_NAME).parentFile
             return listOf(
-                File(directory, DATABASE_NAME),
-                File(directory, "$DATABASE_NAME-shm"),
-                File(directory, "$DATABASE_NAME-wal"),
-            )
+                    File(directory, DATABASE_NAME),
+                    File(directory, "$DATABASE_NAME-shm"),
+                    File(directory, "$DATABASE_NAME-wal"),
+                )
+                .filter { it.exists() }
         }
 
         private fun getCurrentDatabaseName(
@@ -101,29 +101,18 @@ abstract class NotallyDatabase : RoomDatabase() {
             }
         }
 
-        fun getDatabase(
-            context: ContextWrapper,
-            observePreferences: Boolean = true,
-        ): NotNullLiveData<NotallyDatabase> {
+        @MainThread
+        fun getDatabase(context: ContextWrapper): NotNullLiveData<NotallyDatabase> {
             return instance
                 ?: synchronized(this) {
                     val preferences = NotallyXPreferences.getInstance(context)
-                    this.instance =
-                        NotNullLiveData(createInstance(context, preferences, observePreferences))
+                    this.instance = NotNullLiveData(createInstance(context, preferences))
                     return this.instance!!
                 }
         }
 
-        fun clearInstance(context: Context) {
-            val preferences = NotallyXPreferences.getInstance(context)
-            instance?.value?.biometricLockObserver?.let {
-                preferences.biometricLock.removeObserver(it)
-            }
-            instance?.value?.dataInPublicFolderObserver?.let {
-                preferences.dataInPublicFolder.removeObserver(it)
-            }
-            instance?.value?.close()
-            instance = null
+        fun clearInstance() {
+            this.instance?.value?.close()
         }
 
         private var testInstance: NotallyDatabase? = null
@@ -139,6 +128,7 @@ abstract class NotallyDatabase : RoomDatabase() {
                 }
         }
 
+        @MainThread
         fun getFreshDatabase(context: ContextWrapper, dataInPublic: Boolean): NotallyDatabase {
             return if (isTestRunner()) {
                 getTestDatabase(context)
@@ -146,18 +136,23 @@ abstract class NotallyDatabase : RoomDatabase() {
                 createInstance(
                     context,
                     NotallyXPreferences.getInstance(context),
-                    false,
                     dataInPublic = dataInPublic,
                 )
             }
         }
 
+        @MainThread
         private fun createInstance(
             context: ContextWrapper,
             preferences: NotallyXPreferences,
-            observePreferences: Boolean,
             dataInPublic: Boolean = preferences.dataInPublicFolder.value,
+            biometricLock: BiometricLock = preferences.biometricLock.value,
         ): NotallyDatabase {
+            Log.d(
+                DATABASE_NAME,
+                "Creating database instance with dataInPublic: '$dataInPublic' and biometric lock: '$biometricLock'",
+            )
+            clearInstance()
             val instanceBuilder =
                 Room.databaseBuilder(
                         context,
@@ -176,72 +171,50 @@ abstract class NotallyDatabase : RoomDatabase() {
                         Migration10,
                         Migration11,
                     )
+                    .openHelperFactory(NonDestructiveOpenHelperFactory(context))
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                System.loadLibrary("sqlcipher")
-                if (preferences.isLockEnabled) {
-                    if (
-                        SQLCipherUtils.getDatabaseState(getCurrentDatabaseFile(context)) ==
-                            SQLCipherUtils.State.ENCRYPTED
-                    ) {
-                        initializeDecryption(preferences, instanceBuilder)
+                if (biometricLock == BiometricLock.ENABLED) {
+                    if (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
+                        initializeDecryption(context, preferences, instanceBuilder)
                     } else {
+                        context.log(
+                            DATABASE_NAME,
+                            "Database is not encrypted even though biometric lock is enabled, disabling biometric lock",
+                        )
                         preferences.biometricLock.save(BiometricLock.DISABLED)
                     }
                 } else {
-                    if (
-                        SQLCipherUtils.getDatabaseState(getCurrentDatabaseFile(context)) ==
-                            SQLCipherUtils.State.ENCRYPTED
-                    ) {
+                    if (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
+                        context.log(
+                            DATABASE_NAME,
+                            "Database is encrypted even though biometric lock is disabled, enabling biometric lock",
+                        )
                         preferences.biometricLock.save(BiometricLock.ENABLED)
-                        initializeDecryption(preferences, instanceBuilder)
+                        initializeDecryption(context, preferences, instanceBuilder)
                     }
                 }
-                val instance = instanceBuilder.build()
-                if (observePreferences) {
-                    instance.biometricLockObserver = Observer {
-                        NotallyDatabase.instance?.value?.biometricLockObserver?.let {
-                            preferences.biometricLock.removeObserver(it)
-                        }
-                        val newInstance = createInstance(context, preferences, true)
-                        NotallyDatabase.instance?.postValue(newInstance)
-                        preferences.biometricLock.observeForeverSkipFirst(
-                            newInstance.biometricLockObserver!!
-                        )
-                    }
-                    preferences.biometricLock.observeForeverSkipFirst(
-                        instance.biometricLockObserver!!
-                    )
-
-                    instance.dataInPublicFolderObserver = Observer {
-                        NotallyDatabase.instance?.value?.dataInPublicFolderObserver?.let {
-                            preferences.dataInPublicFolder.removeObserver(it)
-                        }
-                        val newInstance = createInstance(context, preferences, true)
-                        NotallyDatabase.instance?.postValue(newInstance)
-                        preferences.dataInPublicFolder.observeForeverSkipFirst(
-                            newInstance.dataInPublicFolderObserver!!
-                        )
-                    }
-                    preferences.dataInPublicFolder.observeForeverSkipFirst(
-                        instance.dataInPublicFolderObserver!!
-                    )
-                }
-                return instance
             }
             return instanceBuilder.build()
         }
 
         @RequiresApi(Build.VERSION_CODES.M)
         private fun initializeDecryption(
+            context: ContextWrapper,
             preferences: NotallyXPreferences,
             instanceBuilder: Builder<NotallyDatabase>,
         ) {
+            System.loadLibrary("sqlcipher")
             val initializationVector = preferences.iv.value!!
             val cipher = getInitializedCipherForDecryption(iv = initializationVector)
             val encryptedPassphrase = preferences.databaseEncryptionKey.value
             val passphrase = cipher.doFinal(encryptedPassphrase)
-            val factory = SupportOpenHelperFactory(passphrase)
+            val factory =
+                NonDestructiveOpenHelperFactory(context, SupportOpenHelperFactory(passphrase))
             instanceBuilder.openHelperFactory(factory)
+        }
+
+        fun postInstance(notallyDatabase: NotallyDatabase) {
+            instance?.postValue(notallyDatabase)
         }
 
         object Migration2 : Migration(1, 2) {

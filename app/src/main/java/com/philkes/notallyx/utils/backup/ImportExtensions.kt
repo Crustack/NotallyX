@@ -188,7 +188,7 @@ suspend fun ContextWrapper.importZip(
                 )
 
                 var dbFile = File(databaseFolder, NotallyDatabase.DATABASE_NAME)
-                val state = SQLCipherUtils.getDatabaseState(dbFile)
+                val state = SQLCipherUtils.getDatabaseState(this@importZip, dbFile)
                 if (state == SQLCipherUtils.State.ENCRYPTED) {
                     val fallbackEncryptionKey =
                         NotallyXPreferences.getInstance(this@importZip)
@@ -288,7 +288,7 @@ private suspend fun ContextWrapper.import(
     readCorrupted: Int,
     checkDuplicates: Boolean,
 ): ImportResult {
-    val notallyDatabase = NotallyDatabase.getDatabase(this, observePreferences = false).value
+    val notallyDatabase = NotallyDatabase.getDatabase(this).value
     val importResult =
         notallyDatabase
             .getCommonDao()

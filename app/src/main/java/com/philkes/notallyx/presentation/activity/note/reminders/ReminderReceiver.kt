@@ -31,6 +31,7 @@ import java.util.Date
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * [BroadcastReceiver] for sending notifications via [NotificationManager] for [Reminder]s.
@@ -162,7 +163,7 @@ class ReminderReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun reNotifyStatusNotification(context: Context, noteId: Long) {
+    private suspend fun reNotifyStatusNotification(context: Context, noteId: Long) {
         val database = getDatabase(context)
         database.getBaseNoteDao().get(noteId)?.let { note ->
             if (note.isPinnedToStatus) {
@@ -171,7 +172,7 @@ class ReminderReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun unpinNote(context: Context, noteId: Long) {
+    private suspend fun unpinNote(context: Context, noteId: Long) {
         val database = getDatabase(context)
         database.getBaseNoteDao().updatePinnedToStatus(noteId, false)
         PinnedNotificationManager.cancel(context, noteId)
@@ -318,8 +319,11 @@ class ReminderReceiver : BroadcastReceiver() {
             }
     }
 
-    private fun getDatabase(context: Context): NotallyDatabase {
-        return NotallyDatabase.getDatabase(context.applicationContext as Application, false).value
+    private suspend fun getDatabase(context: Context): NotallyDatabase {
+        return withContext(Dispatchers.Main) {
+                NotallyDatabase.getDatabase(context.applicationContext as Application)
+            }
+            .value
     }
 
     private fun goAsyncScope(codeBlock: suspend CoroutineScope.() -> Unit) {

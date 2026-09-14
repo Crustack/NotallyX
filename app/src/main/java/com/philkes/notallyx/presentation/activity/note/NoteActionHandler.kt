@@ -294,13 +294,10 @@ class NoteActionHandler(
 
     private fun changeColor() {
         activity.lifecycleScope.launch {
+            val database = NotallyDatabase.getDatabase(activity)
             val colors: MutableSet<ColorString> =
                 withContext(Dispatchers.IO) {
-                        NotallyDatabase.getDatabase(activity, observePreferences = false)
-                            .value
-                            .getBaseNoteDao()
-                            .getAllColors()
-                            .toMutableSet()
+                        database.value.getBaseNoteDao().getAllColors().toMutableSet()
                     }
                     .toMutableSet()
             if (colors.none { it == notallyModel.color }) {

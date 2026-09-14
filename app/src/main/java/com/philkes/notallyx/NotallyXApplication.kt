@@ -120,6 +120,7 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
                 }
             } else {
                 unlockReceiver?.let { unregisterReceiver(it) }
+                unlockReceiver = null
                 if (locked.value) {
                     locked.postValue(false)
                 }
@@ -163,16 +164,13 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
     }
 
     private fun restorePinnedNotifications() {
+        val database = NotallyDatabase.getDatabase(this@NotallyXApplication)
         runOnIODispatcher {
-            NotallyDatabase.getDatabase(this@NotallyXApplication, false)
-                .value
-                .getBaseNoteDao()
-                .getAllPinnedToStatusNotes()
-                .forEach { note ->
-                    if (note.isPinnedToStatus) {
-                        PinnedNotificationManager.notify(this@NotallyXApplication, note)
-                    }
+            database.value.getBaseNoteDao().getAllPinnedToStatusNotes().forEach { note ->
+                if (note.isPinnedToStatus) {
+                    PinnedNotificationManager.notify(this@NotallyXApplication, note)
                 }
+            }
         }
     }
 

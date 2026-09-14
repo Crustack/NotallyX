@@ -261,15 +261,17 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     fun enableDataInPublic(callback: (() -> Unit)? = null) {
         viewModelScope.launch {
+            val database = NotallyDatabase.getDatabase(app)
             withContext(Dispatchers.IO) {
-                val database = NotallyDatabase.getDatabase(app, observePreferences = false).value
-                database.checkpoint()
+                database.value.checkpoint()
+                NotallyDatabase.clearInstance()
                 val targetDirectory = NotallyDatabase.getExternalDatabaseFile(app).parentFile
                 val internalDatabaseFiles = NotallyDatabase.getInternalDatabaseFiles(app)
                 internalDatabaseFiles.forEach {
                     it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
                 }
-                val notallyDatabase = NotallyDatabase.getFreshDatabase(app, true)
+                val notallyDatabase =
+                    withContext(Dispatchers.Main) { NotallyDatabase.getFreshDatabase(app, true) }
                 val ping =
                     try {
                         notallyDatabase.ping()
@@ -285,6 +287,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                     )
                 }
                 app.migrateAllAttachments(toPrivate = false)
+                NotallyDatabase.postInstance(notallyDatabase)
             }
             savePreference(preferences.dataInPublicFolder, true)
             callback?.invoke()
@@ -293,32 +296,39 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     fun disableDataInPublic(callback: (() -> Unit)? = null) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                val database = NotallyDatabase.getDatabase(app, observePreferences = false).value
-                database.checkpoint()
-                val targetDirectory = NotallyDatabase.getInternalDatabaseFile(app).parentFile
-                val externalDatabaseFiles = NotallyDatabase.getExternalDatabaseFiles(app)
-                externalDatabaseFiles.forEach {
-                    it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
-                }
-                val notallyDatabase = NotallyDatabase.getFreshDatabase(app, false)
-                val ping =
-                    try {
-                        notallyDatabase.ping()
-                    } catch (e: Exception) {
+            val database = NotallyDatabase.getDatabase(app)
+            val newDatabase =
+                withContext(Dispatchers.IO) {
+                    database.value.checkpoint()
+                    NotallyDatabase.clearInstance()
+                    val targetDirectory = NotallyDatabase.getInternalDatabaseFile(app).parentFile
+                    val externalDatabaseFiles = NotallyDatabase.getExternalDatabaseFiles(app)
+                    externalDatabaseFiles.forEach {
+                        it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
+                    }
+                    val notallyDatabase =
+                        withContext(Dispatchers.Main) {
+                            NotallyDatabase.getFreshDatabase(app, false)
+                        }
+                    val ping =
+                        try {
+                            notallyDatabase.ping()
+                        } catch (e: Exception) {
+                            throw RuntimeException(
+                                "Moving public '${externalDatabaseFiles.map { it.name }}' to internal '$targetDirectory' folder failed",
+                                e,
+                            )
+                        }
+                    if (!ping) {
                         throw RuntimeException(
-                            "Moving public '${externalDatabaseFiles.map { it.name }}' to internal '$targetDirectory' folder failed",
-                            e,
+                            "Moving public '${externalDatabaseFiles.map { it.name }}' to internal '$targetDirectory' folder failed"
                         )
                     }
-                if (!ping) {
-                    throw RuntimeException(
-                        "Moving public '${externalDatabaseFiles.map { it.name }}' to internal '$targetDirectory' folder failed"
-                    )
+                    app.migrateAllAttachments(toPrivate = true)
+                    notallyDatabase
                 }
-                app.migrateAllAttachments(toPrivate = true)
-            }
             savePreference(preferences.dataInPublicFolder, false)
+            NotallyDatabase.postInstance(newDatabase)
             callback?.invoke()
         }
     }
@@ -327,13 +337,13 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         savePreference(preferences.iv, cipher.iv)
         val passphrase = preferences.databaseEncryptionKey.init(cipher)
         withContext(Dispatchers.IO) {
-            database.close()
+            NotallyDatabase.clearInstance()
             val (_, dbFileCopy) = app.copyDatabase(suffix = "-encrypt")
             val (_, dbFileBackup) = app.copyDatabase(suffix = "-encrypt-backup")
             encryptDatabase(app, dbFileCopy, passphrase)
             val originalDbFile = NotallyDatabase.getCurrentDatabaseFile(app)
             dbFileCopy.copyToLarge(originalDbFile, overwrite = true)
-            if (originalDbFile.isUnencryptedDatabase) {
+            if (originalDbFile.isUnencryptedDatabase(app)) {
                 dbFileBackup.copyToLarge(originalDbFile, overwrite = true)
                 val externalBackupFile =
                     File(app.getExternalMediaDirectory(), "${DATABASE_NAME}_Backup-encrypt")
@@ -345,6 +355,11 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             savePreference(preferences.fallbackDatabaseEncryptionKey, passphrase)
             savePreference(preferences.biometricLock, BiometricLock.ENABLED)
         }
+        val notallyDatabase =
+            withContext(Dispatchers.Main) {
+                NotallyDatabase.getFreshDatabase(app, preferences.dataInPublicFolder.value)
+            }
+        NotallyDatabase.postInstance(notallyDatabase)
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
@@ -354,13 +369,13 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             cipher?.doFinal(encryptedPassphrase)
                 ?: preferences.fallbackDatabaseEncryptionKey.value!!
         withContext(Dispatchers.IO) {
-            database.close()
+            NotallyDatabase.clearInstance()
             val (_, dbFileCopy) = app.copyDatabase(decrypt = false, suffix = "-decrypt")
             val (_, dbFileBackup) = app.copyDatabase(decrypt = false, suffix = "-decrypt-backup")
             decryptDatabase(app, dbFileCopy, passphrase)
             val originalDbFile = NotallyDatabase.getCurrentDatabaseFile(app)
             dbFileCopy.copyToLarge(originalDbFile, overwrite = true)
-            if (originalDbFile.isEncryptedDatabase) {
+            if (originalDbFile.isEncryptedDatabase(app)) {
                 dbFileBackup.copyToLarge(originalDbFile, overwrite = true)
                 val externalBackupFile =
                     File(app.getExternalMediaDirectory(), "${DATABASE_NAME}_Backup-decrypt")
@@ -370,6 +385,11 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 )
             }
             savePreference(preferences.biometricLock, BiometricLock.DISABLED)
+            val notallyDatabase =
+                withContext(Dispatchers.Main) {
+                    NotallyDatabase.getFreshDatabase(app, preferences.dataInPublicFolder.value)
+                }
+            NotallyDatabase.postInstance(notallyDatabase)
             callback?.invoke()
         }
     }
@@ -460,7 +480,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     fun importFromOtherApp(uri: Uri, importSource: ImportSource) {
-        val database = NotallyDatabase.getDatabase(app, observePreferences = false).value
+        val database = NotallyDatabase.getDatabase(app).value
         val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
             app.log(TAG, throwable = throwable)
             if (throwable is ImportException) {

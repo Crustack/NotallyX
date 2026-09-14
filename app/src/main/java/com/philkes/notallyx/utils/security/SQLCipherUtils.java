@@ -17,17 +17,22 @@
 package com.philkes.notallyx.utils.security;
 
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.text.Editable;
+
+import com.philkes.notallyx.utils.AndroidExtensionsKt;
 
 import net.zetetic.database.sqlcipher.SQLiteDatabase;
 import net.zetetic.database.sqlcipher.SQLiteStatement;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 public class SQLCipherUtils {
     /**
@@ -40,50 +45,48 @@ public class SQLCipherUtils {
 
     /**
      * Determine whether or not this database appears to be encrypted, based
-     * on whether we can open it without a passphrase.
+     * on its magic header prefix.
      *
      * @param ctxt   a Context
      * @param dbName the name of the database, as used with Room, SQLiteOpenHelper,
      *               etc.
      * @return the detected state of the database
      */
-    public static State getDatabaseState(Context ctxt, String dbName) {
-        System.loadLibrary("sqlcipher");
-        return (getDatabaseState(ctxt.getDatabasePath(dbName)));
+    public static State getDatabaseState(ContextWrapper ctxt, String dbName) {
+        return getDatabaseState(ctxt, ctxt.getDatabasePath(dbName));
     }
 
     /**
      * Determine whether or not this database appears to be encrypted, based
-     * on whether we can open it without a passphrase.
-     * <p>
-     * NOTE: You are responsible for ensuring that net.sqlcipher.database.SQLiteDatabase.loadLibs()
-     * is called before calling this method. This is handled automatically with the
-     * getDatabaseState() method that takes a Context as a parameter.
+     * on its magic header prefix.
      *
      * @param dbPath a File pointing to the database
      * @return the detected state of the database
      */
-    public static State getDatabaseState(File dbPath) {
-        if (dbPath.exists()) {
-            SQLiteDatabase db = null;
-
-            try {
-                db = SQLiteDatabase.openDatabase(dbPath.getAbsolutePath(), "", null,
-                        SQLiteDatabase.OPEN_READONLY, null, null);
-                db.getVersion();
-
-                return (State.UNENCRYPTED);
-            } catch (Exception e) {
-                return (State.ENCRYPTED);
-            } finally {
-                if (db != null) {
-                    db.close();
+    public static State getDatabaseState(ContextWrapper context, File dbPath) {
+            if (dbPath == null || !dbPath.exists()) {
+                return State.DOES_NOT_EXIST;
+            }
+            try (FileInputStream fis = new FileInputStream(dbPath)) {
+                byte[] header = new byte[16];
+                int bytesRead = fis.read(header);
+                if (bytesRead == 16) {
+                    String magicString = new String(header, StandardCharsets.US_ASCII);
+                    if (magicString.startsWith("SQLite format 3")) {
+                        return State.UNENCRYPTED;
+                    } else {
+                        return State.ENCRYPTED;
+                    }
+                } else  {
+                    return State.DOES_NOT_EXIST;
                 }
+            } catch (Exception e) {
+                if (context != null) {
+                    AndroidExtensionsKt.log(context, "SQLCipherUtils", String.format("Getting database state of '%s' failed, assuming its encrypted", dbPath.getAbsolutePath()), e, null);
+                }
+                return State.DOES_NOT_EXIST;
             }
         }
-
-        return (State.DOES_NOT_EXIST);
-    }
 
     /**
      * Replaces this database with a version encrypted with the supplied

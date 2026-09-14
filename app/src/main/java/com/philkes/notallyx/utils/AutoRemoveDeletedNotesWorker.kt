@@ -42,7 +42,7 @@ suspend fun ContextWrapper.removeOldDeletedNotes(): ListenableWorker.Result {
         "Removing notes that have been deleted for $days days or more (since: ${Date(before).format()})",
     )
 
-    val database = NotallyDatabase.getDatabase(this, false).value
+    val database = NotallyDatabase.getDatabase(this).value
     val baseNoteDao = database.getBaseNoteDao()
 
     return try {

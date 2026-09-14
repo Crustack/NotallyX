@@ -76,13 +76,11 @@ open class PickNoteActivity : LockedActivity<ActivityPickNoteBinding>(), ItemLis
                 } else LinearLayoutManager(this@PickNoteActivity)
         }
 
-        val database = NotallyDatabase.getDatabase(application)
-
         val pinned = Header(getString(R.string.pinned))
         val others = Header(getString(R.string.others))
         val archived = Header(getString(R.string.archived))
 
-        database.observe(this) {
+        NotallyDatabase.getDatabase(this.application).observe(this) {
             lifecycleScope.launch {
                 val notes =
                     withContext(Dispatchers.IO) {

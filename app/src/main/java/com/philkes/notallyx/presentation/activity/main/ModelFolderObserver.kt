@@ -117,13 +117,10 @@ class ModelFolderObserver(
     private fun Menu.addChangeColor(showAsAction: Int = MenuItem.SHOW_AS_ACTION_IF_ROOM): MenuItem {
         return add(R.string.change_color, R.drawable.change_color, showAsAction) {
             activity.lifecycleScope.launch {
+                val database = NotallyDatabase.getDatabase(activity)
                 val colors =
                     withContext(Dispatchers.IO) {
-                        NotallyDatabase.getDatabase(activity, observePreferences = false)
-                            .value
-                            .getBaseNoteDao()
-                            .getAllColors()
-                            .toSet()
+                        database.value.getBaseNoteDao().getAllColors().toSet()
                     }
                 // Show color as selected only if all selected notes have the same color
                 val currentColor =

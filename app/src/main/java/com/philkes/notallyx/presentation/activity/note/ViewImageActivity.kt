@@ -82,12 +82,11 @@ class ViewImageActivity : LockedActivity<ActivityViewImageBinding>() {
         val initial = intent.getIntExtra(EXTRA_POSITION, 0)
         binding.MainListView.scrollToPosition(initial)
 
-        val database = NotallyDatabase.getDatabase(application)
         val id = intent.getLongExtra(EXTRA_SELECTED_BASE_NOTE, 0)
 
-        database.observe(this@ViewImageActivity) {
+        NotallyDatabase.getDatabase(this.application).observe(this@ViewImageActivity) { database ->
             lifecycleScope.launch {
-                val json = withContext(Dispatchers.IO) { it.getBaseNoteDao().getImages(id) }
+                val json = withContext(Dispatchers.IO) { database.getBaseNoteDao().getImages(id) }
                 val original = Converters.jsonToFiles(json)
                 val images = ArrayList<FileAttachment>(original.size)
                 original.filterNotTo(images) { image -> deletedImages.contains(image) }
