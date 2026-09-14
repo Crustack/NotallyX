@@ -164,7 +164,17 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
     }
 
     private fun restorePinnedNotifications() {
-        val database = NotallyDatabase.getDatabase(this@NotallyXApplication)
+        val database =
+            try {
+                NotallyDatabase.getDatabase(this@NotallyXApplication)
+            } catch (e: Exception) {
+                log(
+                    TAG,
+                    "Could not restore pinned notifications since failed to get database",
+                    throwable = e,
+                )
+                return
+            }
         runOnIODispatcher {
             database.value.getBaseNoteDao().getAllPinnedToStatusNotes().forEach { note ->
                 if (note.isPinnedToStatus) {
