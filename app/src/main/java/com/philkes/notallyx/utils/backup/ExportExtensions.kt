@@ -63,6 +63,7 @@ import com.philkes.notallyx.utils.getCurrentFilesDirectory
 import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import com.philkes.notallyx.utils.getCurrentMediaRoot
 import com.philkes.notallyx.utils.getExportedPath
+import com.philkes.notallyx.utils.getExternalBackupsDirectory
 import com.philkes.notallyx.utils.getLogFileUri
 import com.philkes.notallyx.utils.listZipFiles
 import com.philkes.notallyx.utils.log
@@ -1060,4 +1061,59 @@ fun LockedActivity<*>.exportNote(
             }
             .wrapWithChooser(this)
     exportToFileResultLauncher.launch(intent)
+}
+
+fun ContextWrapper.backupDatabaseFiles(): File {
+    val timestamp = BACKUP_TIMESTAMP_FORMATTER.format(Date())
+    val targetDir =
+        try {
+            File(getExternalBackupsDirectory().apply { mkdirs() }, timestamp)
+        } catch (_: Exception) {
+            File(filesDir, "corrupted_backups").apply { mkdirs() }
+        }
+    log(TAG, "Backing up raw database files to '$targetDir'")
+    copyFiles(
+        NotallyDatabase.getExternalDatabaseFiles(this),
+        File(targetDir, "external").apply { mkdirs() },
+    )
+    copyFiles(
+        NotallyDatabase.getInternalDatabaseFiles(this),
+        File(targetDir, "internal").apply { mkdirs() },
+    )
+    keepOnylNewestFolders(targetDir.parentFile!!, 4)
+    return targetDir
+}
+
+private fun ContextWrapper.keepOnylNewestFolders(parentDir: File, keepCount: Int) {
+    if (!parentDir.exists() || !parentDir.isDirectory) return
+    val folders =
+        parentDir.listFiles()?.filter { it.isDirectory }?.sortedByDescending { it.name } ?: return
+
+    folders
+        .drop(keepCount)
+        .takeIf { it.isNotEmpty() }
+        ?.let { foldersToDelete ->
+            log(
+                TAG,
+                msg =
+                    "Keeping only $keepCount latest database backups, therefore deleting ${foldersToDelete.size} oldest backup folders: ${
+            foldersToDelete.joinToString("', '")
+        }",
+            )
+            foldersToDelete.forEach { it.deleteRecursively() }
+        }
+}
+
+private fun ContextWrapper.copyFiles(sourceFiles: List<File>, targetDir: File) {
+    sourceFiles.forEach { sourceFile ->
+        if (sourceFile.exists()) {
+            try {
+                val destination = File(targetDir, sourceFile.name)
+                log(TAG, msg = "Copying file '${sourceFile.path}' to '${destination.path}'...")
+                sourceFile.copyTo(destination, overwrite = true)
+            } catch (e: Exception) {
+                log(TAG, msg = "Failed to copy file '${sourceFile.path}'", throwable = e)
+            }
+        }
+    }
 }

@@ -25,6 +25,14 @@
         android:textStyle="bold" />
 
     <TextView
+        android:id="@+id/CrashMessagehint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/customactivityoncrash_activity_vertical_margin"
+        android:gravity="center"
+        android:textSize="14sp" />
+
+    <TextView
         android:id="@+id/ExceptionTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
