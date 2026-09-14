@@ -212,9 +212,7 @@ class ErrorActivity : AppCompatActivity() {
                                                         overwrite = true,
                                                     )
                                                     deleteDatabase(NotallyDatabase.DATABASE_NAME)
-                                                    NotallyDatabase.clearInstance(
-                                                        this@ErrorActivity
-                                                    )
+                                                    NotallyDatabase.clearInstance()
                                                     application.importRawDatabase(
                                                         uri,
                                                         false,

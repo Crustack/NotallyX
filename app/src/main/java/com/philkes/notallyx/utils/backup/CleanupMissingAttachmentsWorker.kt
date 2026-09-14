@@ -25,7 +25,7 @@ class CleanupMissingAttachmentsWorker(appContext: Context, params: WorkerParamet
 
     override suspend fun doWork(): Result {
         val ctx = ContextWrapper(applicationContext)
-        val database = NotallyDatabase.getDatabase(ctx, observePreferences = false).value
+        val database = NotallyDatabase.getDatabase(ctx).value
         val dao = database.getBaseNoteDao()
 
         var removedImages = 0

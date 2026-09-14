@@ -566,7 +566,7 @@ fun ContextWrapper.copyDatabase(
     decrypt: Boolean = true,
     suffix: String = "",
 ): Pair<NotallyDatabase, File> {
-    val database = NotallyDatabase.getDatabase(this, observePreferences = false).value
+    val database = NotallyDatabase.getDatabase(this).value
     database.checkpoint()
     val preferences = NotallyXPreferences.getInstance(this)
     val databaseFile = NotallyDatabase.getCurrentDatabaseFile(this)

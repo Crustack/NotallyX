@@ -56,7 +56,6 @@ NotallyX/
 │   │   │   │   ├── NotallyXApplication.kt                 # Application entry point, crash handling
 │   │   │   │   ├── data/                                  # Data Layer: Room DB, DAOs, Entities, Importers
 │   │   │   │   │   ├── NotallyDatabase.kt                 # Room database definition & migrations
-│   │   │   │   │   ├── DatabaseManager.kt                 # Database instance lifecycle & encryption manager
 │   │   │   │   │   ├── dao/                               # Room DAOs (BaseNoteDao, LabelDao, CommonDao)
 │   │   │   │   │   ├── model/                             # Data entities (BaseNote, Label, Attachment, etc.)
 │   │   │   │   │   └── imports/                           # Importers (Google Keep, Evernote, Quillpad, JSON, TXT)
