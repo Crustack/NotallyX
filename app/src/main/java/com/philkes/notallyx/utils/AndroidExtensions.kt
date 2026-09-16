@@ -48,16 +48,18 @@ import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
+import com.philkes.notallyx.utils.backup.FILE_TIMESTAMP_FORMAT
+import com.philkes.notallyx.utils.backup.LOG_DATE_FORMATTER
 import java.io.BufferedReader
 import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.io.PrintWriter
 import java.net.URLEncoder
 import java.text.DateFormat
-import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 fun <T> createObserverSkipFirst(observer: Observer<T>): Observer<T> {
     return object : Observer<T> {
@@ -146,8 +148,6 @@ fun Context.canAuthenticateWithBiometrics(): Int {
 fun Context.getUriForFile(file: File): Uri =
     FileProvider.getUriForFile(this, "${packageName}.provider", file)
 
-private val LOG_DATE_FORMATTER = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH)
-
 fun Context.getMimeType(uri: Uri) = contentResolver.getType(uri)
 
 fun ContextWrapper.log(
@@ -187,6 +187,47 @@ fun ContextWrapper.viewLogs() {
 
 fun ContextWrapper.getLogFileUri() =
     getLogFile().let { if (it.exists()) getUriForFile(it) else null }
+
+fun ContextWrapper.exportCrashLogs(pid: Int, now: Date = Date()): File? {
+    val (timestamp, timeString) =
+        now.let { Pair(FILE_TIMESTAMP_FORMAT.format(it), LOG_DATE_FORMATTER.format(it)) }
+    val crashesDir =
+        try {
+            getExternalCrashesDirectory()
+        } catch (_: Exception) {
+            File(filesDir, "crashes").apply { mkdirs() }
+        }
+    val targetDir = File(crashesDir, timestamp).apply { mkdirs() }
+    val logFile = File(targetDir, "crash_logs_$timestamp.txt")
+    log("AndroidExtensions", msg = "Exporting crash logs to '$logFile'")
+    try {
+        FileOutputStream(logFile).use { fos ->
+            PrintWriter(fos).apply {
+                printBuildInfos(timeString)
+                this.println("----------------------------------------")
+                flush()
+            }
+            val process = Runtime.getRuntime().exec("logcat -d --pid=$pid")
+            process.inputStream.use { input -> input.copyTo(fos) }
+        }
+        keepOnlyNewest(crashesDir, 20)
+        return logFile
+    } catch (e: IOException) {
+        log("AndroidExtensions", msg = "Exporting crash logs failed", throwable = e)
+        return null
+    }
+}
+
+private fun PrintWriter.printBuildInfos(timeString: String) {
+    this.println("Time : $timeString")
+    this.println("Version code : " + BuildConfig.VERSION_CODE)
+    this.println("Version name : " + BuildConfig.VERSION_NAME)
+    this.println("Model : " + Build.MODEL)
+    this.println("Device : " + Build.DEVICE)
+    this.println("Brand : " + Build.BRAND)
+    this.println("Manufacturer : " + Build.MANUFACTURER)
+    this.println("Android : " + Build.VERSION.SDK_INT)
+}
 
 fun Fragment.showErrorDialog(
     throwable: Throwable,
@@ -316,14 +357,7 @@ private fun Context.logToFile(
             throwable?.printStackTrace(writer)
             stackTrace?.let { writer.println(it) }
             if (throwable != null || stackTrace != null) {
-                writer.println("Version code : " + BuildConfig.VERSION_CODE)
-                writer.println("Version name : " + BuildConfig.VERSION_NAME)
-                writer.println("Model : " + Build.MODEL)
-                writer.println("Device : " + Build.DEVICE)
-                writer.println("Brand : " + Build.BRAND)
-                writer.println("Manufacturer : " + Build.MANUFACTURER)
-                writer.println("Android : " + Build.VERSION.SDK_INT)
-                writer.println("Time : $time")
+                writer.printBuildInfos(time)
                 writer.println("[End]")
             }
 

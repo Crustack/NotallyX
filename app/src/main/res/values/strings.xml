@@ -103,10 +103,9 @@
     <string name="count" translatable="false">%1$d / %2$d</string>
     <string name="crash_export_backup">Unfortunately, exporting the backup failed.\nYou can use \'%1$s\' button to report the crash or try to export the raw database file (SQLite) via \'%2$s\'. It will only include notes contents, no attachments. But if it succeeds you can import it back via the Import from other apps option.</string>
     <string name="crash_export_backup_failed">Unfortunately, exporting the backup failed.\nPlease use the \'%1$s\' button to report the crash</string>
-    <string name="crash_export_raw_backup_failed">Unfortunately, exporting the checkpointed database failed.\nOnly a copy of the raw database files could be created at \'%1$s\'. Please use the \'%2$s\' button to report the crash</string>
     <string name="crash_export_backup_message">You can try to create a backup of your notes by clicking \'%1$s\'.\nThis might fail if the crash lead to broken/corrupted data. In that case, please use the \'%2$s\' button to report the crash</string>
+    <string name="crash_export_raw_backup_failed">Unfortunately, exporting the checkpointed database failed.\nOnly a copy of the raw database files could be created at \'%1$s\'. Please use the \'%2$s\' button to report the crash</string>
     <string name="crash_message">An unexpected error occurred.\nSorry for the inconvenience.</string>
-    <string name="crash_message_hint">A copy of all raw database files can be found in \'%1$s\'</string>
     <string name="create_github_issue">Create Github Issue</string>
     <string name="creation_date">Created</string>
     <string name="custom">Custom</string>
@@ -115,6 +114,7 @@
     <string name="data_in_public">Store data in public folder</string>
     <string name="data_in_public_message">By enabling this, the app’s internal database and attached files will be moved into the app’s public folder (Android/media/com.philkes.notallyx). In combination with file synchronization apps this can be used to synchronize NotallyX data between multiple devices.</string>
     <string name="database">Database</string>
+    <string name="database_dump_created">Raw database dump created in \'%1$s\'</string>
     <string name="date">Date</string>
     <string name="date_format">Date format</string>
     <string name="date_format_hint">Applies selected datetime format in Notes Overview</string>
@@ -414,6 +414,7 @@
     <string name="upcoming">Upcoming</string>
     <string name="updated_link">Updated Link</string>
     <string name="view">View</string>
+    <string name="view_crash_logs">View Crash Logs</string>
     <string name="view_file">View file</string>
     <string name="view_logs">View Log File</string>
     <string name="view_note">View note</string>

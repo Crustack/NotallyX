@@ -284,6 +284,13 @@
           android:text="@string/view_logs" />
 
         <TextView
+            android:id="@+id/ViewCrashes"
+            style="@style/Preference"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/view_crash_logs" />
+
+        <TextView
             android:id="@+id/Documentation"
             style="@style/Preference"
             android:layout_width="match_parent"
@@ -296,13 +303,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/source_code" />
-
-        <TextView
-          android:id="@+id/Libraries"
-          style="@style/Preference"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:text="@string/libraries" />
 
         <TextView
           android:id="@+id/VersionText"

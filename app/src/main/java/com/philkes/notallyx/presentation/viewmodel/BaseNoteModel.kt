@@ -271,7 +271,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                     it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
                 }
                 val notallyDatabase =
-                    withContext(Dispatchers.Main) { NotallyDatabase.getFreshDatabase(app, true) }
+                    withContext(Dispatchers.Main) {
+                        NotallyDatabase.getFreshDatabase(app, true, preferences.biometricLock.value)
+                    }
                 val ping =
                     try {
                         notallyDatabase.ping()
@@ -308,7 +310,11 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                     }
                     val notallyDatabase =
                         withContext(Dispatchers.Main) {
-                            NotallyDatabase.getFreshDatabase(app, false)
+                            NotallyDatabase.getFreshDatabase(
+                                app,
+                                false,
+                                preferences.biometricLock.value,
+                            )
                         }
                     val ping =
                         try {
@@ -357,7 +363,11 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
         val notallyDatabase =
             withContext(Dispatchers.Main) {
-                NotallyDatabase.getFreshDatabase(app, preferences.dataInPublicFolder.value)
+                NotallyDatabase.getFreshDatabase(
+                    app,
+                    preferences.dataInPublicFolder.value,
+                    BiometricLock.ENABLED,
+                )
             }
         NotallyDatabase.postInstance(notallyDatabase)
     }
@@ -387,7 +397,11 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             savePreference(preferences.biometricLock, BiometricLock.DISABLED)
             val notallyDatabase =
                 withContext(Dispatchers.Main) {
-                    NotallyDatabase.getFreshDatabase(app, preferences.dataInPublicFolder.value)
+                    NotallyDatabase.getFreshDatabase(
+                        app,
+                        preferences.dataInPublicFolder.value,
+                        BiometricLock.DISABLED,
+                    )
                 }
             NotallyDatabase.postInstance(notallyDatabase)
             callback?.invoke()

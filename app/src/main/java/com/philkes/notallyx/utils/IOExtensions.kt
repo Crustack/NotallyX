@@ -43,7 +43,7 @@ private const val TAG = "IO"
 const val SUBFOLDER_IMAGES = "Images"
 const val SUBFOLDER_FILES = "Files"
 const val SUBFOLDER_AUDIOS = "Audios"
-const val SUBFOLDER_BACKUPS = "Backups"
+const val SUBFOLDER_CRASHES = "Crashes"
 
 private fun ContextWrapper.getExternalImagesDirectory() =
     getExternalMediaDirectory(SUBFOLDER_IMAGES)
@@ -52,7 +52,7 @@ private fun ContextWrapper.getExternalAudioDirectory() = getExternalMediaDirecto
 
 private fun ContextWrapper.getExternalFilesDirectory() = getExternalMediaDirectory(SUBFOLDER_FILES)
 
-fun ContextWrapper.getExternalBackupsDirectory() = getExternalMediaDirectory(SUBFOLDER_BACKUPS)
+fun ContextWrapper.getExternalCrashesDirectory() = getExternalMediaDirectory(SUBFOLDER_CRASHES)
 
 // Private (internal) storage roots for attachments when biometric lock is enabled and
 // dataInPublicFolder is disabled.
@@ -402,6 +402,24 @@ fun ContextWrapper.getExternalMediaDirectory(name: String = ""): File {
         },
         name,
     )
+}
+
+fun ContextWrapper.keepOnlyNewest(parentDir: File, keepCount: Int) {
+    if (!parentDir.exists() || !parentDir.isDirectory) return
+    val folders = parentDir.listFiles()?.sortedByDescending { it.name } ?: return
+    folders
+        .drop(keepCount)
+        .takeIf { it.isNotEmpty() }
+        ?.let { foldersToDelete ->
+            log(
+                "IOExtensions",
+                msg =
+                    "Keeping only $keepCount latest in '${parentDir.name}', therefore deleting ${foldersToDelete.size} oldest: ${
+                        foldersToDelete.joinToString("', '")
+                    }",
+            )
+            foldersToDelete.forEach { it.deleteRecursively() }
+        }
 }
 
 private fun getDirectory(dir: File, name: String): File {

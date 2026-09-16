@@ -113,7 +113,11 @@ abstract class NotallyDatabase : RoomDatabase() {
         }
 
         fun clearInstance() {
-            this.instance?.value?.close()
+            this.instance?.value?.let { database ->
+                if (database.isOpen) {
+                    database.close()
+                }
+            }
         }
 
         private var testInstance: NotallyDatabase? = null
@@ -130,7 +134,11 @@ abstract class NotallyDatabase : RoomDatabase() {
         }
 
         @MainThread
-        fun getFreshDatabase(context: ContextWrapper, dataInPublic: Boolean): NotallyDatabase {
+        fun getFreshDatabase(
+            context: ContextWrapper,
+            dataInPublic: Boolean,
+            biometricLock: BiometricLock,
+        ): NotallyDatabase {
             return if (isTestRunner()) {
                 getTestDatabase(context)
             } else {
@@ -138,6 +146,7 @@ abstract class NotallyDatabase : RoomDatabase() {
                     context,
                     NotallyXPreferences.getInstance(context),
                     dataInPublic = dataInPublic,
+                    biometricLock = biometricLock,
                 )
             }
         }
@@ -156,7 +165,7 @@ abstract class NotallyDatabase : RoomDatabase() {
             clearInstance()
             val instanceBuilder =
                 createBuilder(context, getCurrentDatabaseName(context, dataInPublic))
-                    .openHelperFactory(NonDestructiveOpenHelperFactory(context))
+                    .openHelperFactory(BackupOpenHelperFactory(context))
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (biometricLock == BiometricLock.ENABLED) {
                     if (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
@@ -213,8 +222,7 @@ abstract class NotallyDatabase : RoomDatabase() {
             val cipher = getInitializedCipherForDecryption(iv = initializationVector)
             val encryptedPassphrase = preferences.databaseEncryptionKey.value
             val passphrase = cipher.doFinal(encryptedPassphrase)
-            val factory =
-                NonDestructiveOpenHelperFactory(context, SupportOpenHelperFactory(passphrase))
+            val factory = BackupOpenHelperFactory(context, SupportOpenHelperFactory(passphrase))
             instanceBuilder.openHelperFactory(factory)
         }
 

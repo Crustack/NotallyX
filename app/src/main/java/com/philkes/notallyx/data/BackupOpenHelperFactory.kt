@@ -10,7 +10,7 @@ import com.philkes.notallyx.utils.log
 private const val TAG = "NonDestructiveOpenHelperFactory"
 
 /** Default [SupportSQLiteOpenHelper.Factory] deletes database on corruption. */
-class NonDestructiveOpenHelperFactory(
+class BackupOpenHelperFactory(
     private val app: ContextWrapper,
     private val delegate: SupportSQLiteOpenHelper.Factory = FrameworkSQLiteOpenHelperFactory(),
 ) : SupportSQLiteOpenHelper.Factory {
@@ -46,11 +46,15 @@ class NonDestructiveOpenHelperFactory(
         override fun onOpen(db: SupportSQLiteDatabase) = delegate.onOpen(db)
 
         override fun onCorruption(db: SupportSQLiteDatabase) {
-            app.log(TAG, stackTrace = "Database was corrupted")
-            app.backupDatabaseFiles()
-            throw RuntimeException(
-                "Database was corrupted, please report this via an issue on Github"
-            )
+            try {
+                app.log(TAG, stackTrace = "Database was corrupted")
+                app.backupDatabaseFiles()
+                delegate.onCorruption(db)
+            } finally {
+                throw IllegalStateException(
+                    "Database was corrupted, please report this via an issue on Github"
+                )
+            }
         }
     }
 }

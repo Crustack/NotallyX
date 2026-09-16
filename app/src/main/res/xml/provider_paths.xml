@@ -25,6 +25,6 @@
         name="logs"
         path="/logs" />
     <external-media-path
-        name="backups"
-        path="/Backups" />
+        name="crashes"
+        path="/Crashes" />
 </paths>
