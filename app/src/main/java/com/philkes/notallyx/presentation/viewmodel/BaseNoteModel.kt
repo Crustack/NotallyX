@@ -343,9 +343,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         savePreference(preferences.iv, cipher.iv)
         val passphrase = preferences.databaseEncryptionKey.init(cipher)
         withContext(Dispatchers.IO) {
-            NotallyDatabase.clearInstance()
             val (_, dbFileCopy) = app.copyDatabase(suffix = "-encrypt")
             val (_, dbFileBackup) = app.copyDatabase(suffix = "-encrypt-backup")
+            NotallyDatabase.clearInstance()
             encryptDatabase(app, dbFileCopy, passphrase)
             val originalDbFile = NotallyDatabase.getCurrentDatabaseFile(app)
             dbFileCopy.copyToLarge(originalDbFile, overwrite = true)
@@ -379,9 +379,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             cipher?.doFinal(encryptedPassphrase)
                 ?: preferences.fallbackDatabaseEncryptionKey.value!!
         withContext(Dispatchers.IO) {
-            NotallyDatabase.clearInstance()
             val (_, dbFileCopy) = app.copyDatabase(decrypt = false, suffix = "-decrypt")
             val (_, dbFileBackup) = app.copyDatabase(decrypt = false, suffix = "-decrypt-backup")
+            NotallyDatabase.clearInstance()
             decryptDatabase(app, dbFileCopy, passphrase)
             val originalDbFile = NotallyDatabase.getCurrentDatabaseFile(app)
             dbFileCopy.copyToLarge(originalDbFile, overwrite = true)

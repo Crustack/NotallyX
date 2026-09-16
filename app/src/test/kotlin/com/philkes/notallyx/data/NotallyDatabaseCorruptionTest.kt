@@ -1,14 +1,16 @@
 package com.philkes.notallyx.data
 
 import android.app.Application
+import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
+import android.os.Environment
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.test.core.app.ApplicationProvider
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.test.NonDestructiveOpenHelperFactory
+import com.philkes.notallyx.test.TestBackupOpenHelperFactory
 import com.philkes.notallyx.test.corruptPage
 import com.philkes.notallyx.test.databaseFiles
 import com.philkes.notallyx.test.destroySqliteHeaderMagic
@@ -22,13 +24,17 @@ import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.SQLiteMode
+import org.robolectric.shadows.ShadowEnvironment
 import org.robolectric.shadows.ShadowLog
 
 /**
@@ -48,7 +54,7 @@ import org.robolectric.shadows.ShadowLog
  * early when a codec is in use.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(manifest = Config.NONE, sdk = [35])
+@Config(manifest = Config.NONE, sdk = [35], shadows = [ShadowContextImplMedia::class])
 @SQLiteMode(SQLiteMode.Mode.NATIVE)
 class NotallyDatabaseCorruptionTest {
 
@@ -65,6 +71,7 @@ class NotallyDatabaseCorruptionTest {
         ShadowLog.stream = System.out
         databaseFile.parentFile?.mkdirs()
         databaseFile.databaseFiles().forEach { it.delete() }
+        ShadowEnvironment.setExternalStorageState(Environment.MEDIA_MOUNTED)
     }
 
     @After
@@ -124,15 +131,27 @@ class NotallyDatabaseCorruptionTest {
 
         databaseFile.corruptPage(rootPage)
 
-        val factory = NonDestructiveOpenHelperFactory()
+        val factory = TestBackupOpenHelperFactory(application)
         val database = openDatabase(factory)
-        assertThrows(SQLiteException::class.java) {
+        assertThrows(IllegalStateException::class.java) {
             runBlocking { database.getBaseNoteDao().getAllPinnedToStatusNotes() }
         }
 
         assertThat(factory.corruptionReported).isTrue()
-        assertThat(databaseFile).exists()
-        assertThat(databaseFile.length()).isEqualTo(lengthBeforeCorruption)
+        val crashesFolder = File(application.externalMediaDirs.first(), "Crashes")
+        val crashesSubfolders = crashesFolder.listFiles { file -> file.isDirectory }
+        assertEquals("Crashes should contain exactly 1 subfolder", 1, crashesSubfolders!!.size)
+        val dbFile = File(crashesSubfolders[0], "internal/NotallyDatabase")
+        assertTrue(
+            "Expected valid database file at ${dbFile.absolutePath}",
+            dbFile.isFile && dbFile.exists(),
+        )
+        val sqliteDb =
+            SQLiteDatabase.openDatabase(dbFile.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
+        assertTrue("SQLiteDatabase should be open", sqliteDb.isOpen)
+        assertNotNull("SQLiteDatabase is usable", sqliteDb.version)
+        sqliteDb.close()
+        assertThat(databaseFile).doesNotExist()
     }
 
     /** TC4: the notes are gone, every attachment is untouched - as the users described it. */

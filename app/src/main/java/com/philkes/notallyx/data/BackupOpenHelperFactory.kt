@@ -7,10 +7,13 @@ import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import com.philkes.notallyx.utils.backup.backupDatabaseFiles
 import com.philkes.notallyx.utils.log
 
-private const val TAG = "NonDestructiveOpenHelperFactory"
+private const val TAG = "BackupOpenHelperFactory"
 
-/** Default [SupportSQLiteOpenHelper.Factory] deletes database on corruption. */
-class BackupOpenHelperFactory(
+/**
+ * Default [SupportSQLiteOpenHelper.Factory] that creates database dump before default factory
+ * deletes the db.
+ */
+open class BackupOpenHelperFactory(
     private val app: ContextWrapper,
     private val delegate: SupportSQLiteOpenHelper.Factory = FrameworkSQLiteOpenHelperFactory(),
 ) : SupportSQLiteOpenHelper.Factory {
@@ -28,7 +31,7 @@ class BackupOpenHelperFactory(
             )
         )
 
-    internal class RecordingCallback(
+    open class RecordingCallback(
         private val delegate: SupportSQLiteOpenHelper.Callback,
         private val app: ContextWrapper,
     ) : SupportSQLiteOpenHelper.Callback(delegate.version) {
@@ -48,8 +51,12 @@ class BackupOpenHelperFactory(
         override fun onCorruption(db: SupportSQLiteDatabase) {
             try {
                 app.log(TAG, stackTrace = "Database was corrupted")
-                app.backupDatabaseFiles()
-                delegate.onCorruption(db)
+                app.backupDatabaseFiles()?.let { delegate.onCorruption(db) }
+            } catch (e: Exception) {
+                throw RuntimeException(
+                    "Database was corrupted, please report this via an issue on Github",
+                    e,
+                )
             } finally {
                 throw IllegalStateException(
                     "Database was corrupted, please report this via an issue on Github"

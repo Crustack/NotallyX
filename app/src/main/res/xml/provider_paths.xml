@@ -9,6 +9,9 @@
     <files-path
         name="attachments"
         path="/attachments" />
+    <files-path
+        name="crashes_internal"
+        path="/crashes" />
     <external-media-path
       name="."
       path="." />

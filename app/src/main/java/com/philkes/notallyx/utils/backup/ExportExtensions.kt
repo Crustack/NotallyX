@@ -1066,7 +1066,7 @@ fun LockedActivity<*>.exportNote(
     exportToFileResultLauncher.launch(intent)
 }
 
-fun ContextWrapper.backupDatabaseFiles(date: Date = Date()): File {
+fun ContextWrapper.backupDatabaseFiles(date: Date = Date()): File? {
     val timestamp = FILE_TIMESTAMP_FORMAT.format(date)
     val crashesDir =
         try {
@@ -1076,19 +1076,22 @@ fun ContextWrapper.backupDatabaseFiles(date: Date = Date()): File {
         }
     val targetDir = File(crashesDir, timestamp).apply { mkdirs() }
     log(TAG, "Backing up raw database files to '$targetDir'")
-    copyFiles(
-        NotallyDatabase.getExternalDatabaseFiles(this),
-        File(targetDir, "external").apply { mkdirs() },
-    )
-    copyFiles(
-        NotallyDatabase.getInternalDatabaseFiles(this),
-        File(targetDir, "internal").apply { mkdirs() },
-    )
+    val externalCopySuccess =
+        copyFiles(
+            NotallyDatabase.getExternalDatabaseFiles(this),
+            File(targetDir, "external").apply { mkdirs() },
+        )
+    val internalCopySuccess =
+        copyFiles(
+            NotallyDatabase.getInternalDatabaseFiles(this),
+            File(targetDir, "internal").apply { mkdirs() },
+        )
     keepOnlyNewest(crashesDir, 20)
-    return targetDir
+    return if (externalCopySuccess && internalCopySuccess) targetDir else null
 }
 
-private fun ContextWrapper.copyFiles(sourceFiles: List<File>, targetDir: File) {
+private fun ContextWrapper.copyFiles(sourceFiles: List<File>, targetDir: File): Boolean {
+    var success = true
     sourceFiles.forEach { sourceFile ->
         if (sourceFile.exists()) {
             try {
@@ -1097,7 +1100,9 @@ private fun ContextWrapper.copyFiles(sourceFiles: List<File>, targetDir: File) {
                 sourceFile.copyTo(destination, overwrite = true)
             } catch (e: Exception) {
                 log(TAG, msg = "Failed to copy file '${sourceFile.path}'", throwable = e)
+                success = false
             }
         }
     }
+    return success
 }
