@@ -63,8 +63,9 @@ import com.philkes.notallyx.utils.getCurrentFilesDirectory
 import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import com.philkes.notallyx.utils.getCurrentMediaRoot
 import com.philkes.notallyx.utils.getExportedPath
-import com.philkes.notallyx.utils.getExternalBackupsDirectory
+import com.philkes.notallyx.utils.getExternalCrashesDirectory
 import com.philkes.notallyx.utils.getLogFileUri
+import com.philkes.notallyx.utils.keepOnlyNewest
 import com.philkes.notallyx.utils.listZipFiles
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.md5Hash
@@ -105,7 +106,9 @@ private const val OUTPUT_DATA_BACKUP_URI = "backupUri"
 const val AUTO_BACKUP_WORK_NAME = "com.philkes.notallyx.AutoBackupWork"
 const val OUTPUT_DATA_EXCEPTION = "exception"
 
-val BACKUP_TIMESTAMP_FORMATTER = SimpleDateFormat("yyyyMMdd-HHmmssSSS", Locale.ENGLISH)
+val FILE_TIMESTAMP_FORMAT = SimpleDateFormat("yyyy-MM-dd_HH_mm_ss_SSS", Locale.ENGLISH)
+val LOG_DATE_FORMATTER = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH)
+
 private const val ON_SAVE_BACKUP_FILE = "NotallyX_AutoBackup"
 private const val PERIODIC_BACKUP_FILE_PREFIX = "NotallyX_Backup_"
 
@@ -128,7 +131,7 @@ suspend fun ContextWrapper.createBackup(): Result {
             try {
                 val backupFilePrefix = PERIODIC_BACKUP_FILE_PREFIX
                 val name =
-                    "$backupFilePrefix${BACKUP_TIMESTAMP_FORMATTER.format(System.currentTimeMillis())}"
+                    "$backupFilePrefix${FILE_TIMESTAMP_FORMAT.format(System.currentTimeMillis())}"
                 log(TAG, msg = "Creating '$uri/$name.zip'...")
                 val zipUri = folder.createFileSafe(MIME_TYPE_ZIP, name, ".zip").uri
                 val exportedNotes =
@@ -1063,15 +1066,15 @@ fun LockedActivity<*>.exportNote(
     exportToFileResultLauncher.launch(intent)
 }
 
-fun ContextWrapper.backupDatabaseFiles(): File {
-    val timestamp = BACKUP_TIMESTAMP_FORMATTER.format(Date())
-    val backupRoot =
+fun ContextWrapper.backupDatabaseFiles(date: Date = Date()): File {
+    val timestamp = FILE_TIMESTAMP_FORMAT.format(date)
+    val crashesDir =
         try {
-            getExternalBackupsDirectory()
+            getExternalCrashesDirectory()
         } catch (_: Exception) {
-            File(filesDir, "backups").apply { mkdirs() }
+            File(filesDir, "crashes").apply { mkdirs() }
         }
-    val targetDir = File(backupRoot, timestamp).apply { mkdirs() }
+    val targetDir = File(crashesDir, timestamp).apply { mkdirs() }
     log(TAG, "Backing up raw database files to '$targetDir'")
     copyFiles(
         NotallyDatabase.getExternalDatabaseFiles(this),
@@ -1081,28 +1084,8 @@ fun ContextWrapper.backupDatabaseFiles(): File {
         NotallyDatabase.getInternalDatabaseFiles(this),
         File(targetDir, "internal").apply { mkdirs() },
     )
-    keepOnylNewestFolders(targetDir.parentFile!!, 4)
+    keepOnlyNewest(crashesDir, 20)
     return targetDir
-}
-
-private fun ContextWrapper.keepOnylNewestFolders(parentDir: File, keepCount: Int) {
-    if (!parentDir.exists() || !parentDir.isDirectory) return
-    val folders =
-        parentDir.listFiles()?.filter { it.isDirectory }?.sortedByDescending { it.name } ?: return
-
-    folders
-        .drop(keepCount)
-        .takeIf { it.isNotEmpty() }
-        ?.let { foldersToDelete ->
-            log(
-                TAG,
-                msg =
-                    "Keeping only $keepCount latest database backups, therefore deleting ${foldersToDelete.size} oldest backup folders: ${
-            foldersToDelete.joinToString("', '")
-        }",
-            )
-            foldersToDelete.forEach { it.deleteRecursively() }
-        }
 }
 
 private fun ContextWrapper.copyFiles(sourceFiles: List<File>, targetDir: File) {

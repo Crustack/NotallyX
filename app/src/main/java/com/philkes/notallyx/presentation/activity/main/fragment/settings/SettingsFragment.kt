@@ -63,11 +63,13 @@ import com.philkes.notallyx.utils.MIME_TYPE_JSON
 import com.philkes.notallyx.utils.MIME_TYPE_ZIP
 import com.philkes.notallyx.utils.backup.exportPreferences
 import com.philkes.notallyx.utils.catchNoBrowserInstalled
+import com.philkes.notallyx.utils.getExternalCrashesDirectory
 import com.philkes.notallyx.utils.getExtraBooleanFromBundleOrIntent
 import com.philkes.notallyx.utils.getLastExceptionLog
 import com.philkes.notallyx.utils.getLogFile
 import com.philkes.notallyx.utils.getUriForFile
 import com.philkes.notallyx.utils.log
+import com.philkes.notallyx.utils.openExternalMediaFolder
 import com.philkes.notallyx.utils.reportBug
 import com.philkes.notallyx.utils.security.DecryptionException
 import com.philkes.notallyx.utils.security.EncryptionException
@@ -926,50 +928,13 @@ class SettingsFragment : Fragment() {
             }
             Documentation.setOnClickListener { openLink("https://crustack.github.io/NotallyX") }
             SourceCode.setOnClickListener { openLink("https://github.com/Crustack/NotallyX") }
-            Libraries.setOnClickListener {
-                val libraries =
-                    arrayOf(
-                        "Glide",
-                        "Pretty Time",
-                        "SwipeDrawer",
-                        "Work Manager",
-                        "Subsampling Scale ImageView",
-                        "Material Components for Android",
-                        "SQLCipher",
-                        "Zip4J",
-                        "AndroidFastScroll",
-                        "ColorPickerView",
-                    )
-                MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(R.string.libraries)
-                    .setItems(libraries) { _, which ->
-                        when (which) {
-                            0 -> openLink("https://github.com/bumptech/glide")
-                            1 -> openLink("https://github.com/ocpsoft/prettytime")
-                            2 -> openLink("https://leaqi.github.io/SwipeDrawer_en")
-                            3 ->
-                                openLink(
-                                    "https://developer.android.com/jetpack/androidx/releases/work"
-                                )
-                            4 ->
-                                openLink(
-                                    "https://github.com/davemorrissey/subsampling-scale-image-view"
-                                )
-                            5 ->
-                                openLink(
-                                    "https://github.com/material-components/material-components-android"
-                                )
-                            6 -> openLink("https://github.com/sqlcipher/sqlcipher")
-                            7 -> openLink("https://github.com/srikanth-lingala/zip4j")
-                            8 -> openLink("https://github.com/zhanghai/AndroidFastScroll")
-                            9 -> openLink("https://github.com/skydoves/ColorPickerView")
-                        }
-                    }
-                    .setCancelButton()
-                    .show()
-            }
             Donate.setOnClickListener { openLink("https://ko-fi.com/crustack") }
             ViewLogs.setOnClickListener { (requireContext() as ContextWrapper).viewLogs() }
+            ViewCrashes.setOnClickListener {
+                (requireContext() as ContextWrapper).let { context ->
+                    context.openExternalMediaFolder(context.getExternalCrashesDirectory())
+                }
+            }
 
             try {
                 val pInfo =

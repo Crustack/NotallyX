@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tool="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
@@ -25,12 +26,18 @@
         android:textStyle="bold" />
 
     <TextView
-        android:id="@+id/CrashMessagehint"
-        android:layout_width="wrap_content"
+        android:id="@+id/CrashLogsLink"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:scrollHorizontally="false"
+        android:singleLine="true"
         android:gravity="center"
-        android:textSize="12sp" />
+        android:maxLines="1"
+        android:text="@string/view_crash_logs"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_marginTop="@dimen/customactivityoncrash_activity_vertical_margin"
+        />
 
     <TextView
         android:id="@+id/ExceptionTitle"
@@ -45,6 +52,7 @@
         android:textSize="14sp"
         android:textStyle="bold"
         android:layout_marginTop="@dimen/customactivityoncrash_activity_vertical_margin"
+        tool:text="Exception Class"
         />
 
     <!-- Exception text + copy button -->
@@ -71,7 +79,9 @@
                 android:scrollHorizontally="false"
                 android:singleLine="false"
                 android:textIsSelectable="true"
-                android:textSize="14sp" />
+                android:textSize="14sp"
+                tool:text="Exception Stacktrace"
+                />
         </HorizontalScrollView>
 
         <ImageButton
@@ -120,5 +130,15 @@
         android:layout_marginTop="@dimen/customactivityoncrash_activity_vertical_margin"
         android:text="@string/export_backup"
         android:textColor="?colorPrimary" />
+
+    <TextView
+        android:id="@+id/CrashMessageHint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="center"
+        android:textSize="12sp"
+        tool:text="@string/database_dump_created"
+        />
 
 </LinearLayout>

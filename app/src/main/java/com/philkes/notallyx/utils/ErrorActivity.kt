@@ -29,8 +29,9 @@ import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.setupProgressDialog
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.Progress
+import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
-import com.philkes.notallyx.utils.backup.BACKUP_TIMESTAMP_FORMATTER
+import com.philkes.notallyx.utils.backup.FILE_TIMESTAMP_FORMAT
 import com.philkes.notallyx.utils.backup.backupDatabaseFiles
 import com.philkes.notallyx.utils.backup.copyDatabase
 import com.philkes.notallyx.utils.backup.exportAsZip
@@ -52,6 +53,7 @@ class ErrorActivity : AppCompatActivity() {
     private lateinit var exportBackupActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var exportDatabaseActivityResultLauncher: ActivityResultLauncher<Intent>
     private var backupPath: File? = null
+    private var appLogs: File? = null
     private val backupProgress = MutableLiveData<Progress>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,21 +79,44 @@ class ErrorActivity : AppCompatActivity() {
             setupExportBackup(binding, stacktrace)
         }
         lifecycleScope.launch {
-            backupPath = withContext(Dispatchers.IO) { application.backupDatabaseFiles() }
-            setupFolderLink(
-                binding.CrashMessagehint,
-                backupPath!!,
-                this@ErrorActivity.getString(R.string.crash_message_hint, backupPath),
-            )
+            val now = Date()
+            backupPath =
+                withContext(Dispatchers.IO) { application.backupDatabaseFiles(now) }
+                    .also {
+                        setupLink(
+                            binding.CrashMessageHint,
+                            getString(R.string.database_dump_created, it),
+                        ) { widget ->
+                            widget.context.openExternalMediaFolder(it)
+                        }
+                    }
+            appLogs =
+                withContext(Dispatchers.IO) {
+                        CustomActivityOnCrash.getCustomCrashDataFromIntent(intent)?.toInt()?.let {
+                            application.exportCrashLogs(it, now)
+                        }
+                    }
+                    ?.also {
+                        setupLink(
+                            binding.CrashLogsLink,
+                            this@ErrorActivity.getString(R.string.view_crash_logs),
+                            { widget ->
+                                widget.context.viewFile(
+                                    getUriForFile(it),
+                                    ExportMimeType.TXT.mimeType,
+                                )
+                            },
+                        )
+                    }
         }
     }
 
-    fun setupFolderLink(textView: TextView, folderPath: File, linkText: String) {
+    fun setupLink(textView: TextView, linkText: String, onClick: (View) -> Unit) {
         val spannable = SpannableString(linkText)
         val clickableSpan =
             object : ClickableSpan() {
                 override fun onClick(widget: View) {
-                    widget.context.openExternalMediaFolder(folderPath)
+                    onClick.invoke(widget)
                 }
             }
         spannable.setSpan(clickableSpan, 0, linkText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -118,7 +143,7 @@ class ErrorActivity : AppCompatActivity() {
                                 addCategory(Intent.CATEGORY_OPENABLE)
                                 putExtra(
                                     Intent.EXTRA_TITLE,
-                                    "NotallyX_Crash_Backup-${BACKUP_TIMESTAMP_FORMATTER.format(Date())}",
+                                    "NotallyX_Crash_Backup-${FILE_TIMESTAMP_FORMAT.format(Date())}",
                                 )
                             }
                             .wrapWithChooser(this@ErrorActivity)
@@ -158,7 +183,7 @@ class ErrorActivity : AppCompatActivity() {
                                                 putExtra(
                                                     Intent.EXTRA_TITLE,
                                                     "NotallyX_Raw_Database-${
-                                                        BACKUP_TIMESTAMP_FORMATTER.format(
+                                                        FILE_TIMESTAMP_FORMAT.format(
                                                             Date()
                                                         )
                                                     }.sqlite",

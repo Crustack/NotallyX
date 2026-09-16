@@ -15,6 +15,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import cat.ereza.customactivityoncrash.config.CaocConfig
 import com.google.android.material.color.DynamicColors
 import com.philkes.notallyx.NotallyXApplication.Companion.AUTO_REMOVE_DELETED_NOTES
 import com.philkes.notallyx.NotallyXApplication.Companion.TAG
@@ -27,6 +28,7 @@ import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.Theme
 import com.philkes.notallyx.presentation.widget.WidgetProvider
 import com.philkes.notallyx.utils.AutoRemoveDeletedNotesWorker
+import com.philkes.notallyx.utils.PidCrashDataCollector
 import com.philkes.notallyx.utils.PinnedNotificationManager
 import com.philkes.notallyx.utils.backup.AUTO_BACKUP_WORK_NAME
 import com.philkes.notallyx.utils.backup.autoBackupOnSave
@@ -59,6 +61,7 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
 
     override fun onCreate() {
         super.onCreate()
+        CaocConfig.Builder.create().customCrashDataCollector(PidCrashDataCollector()).apply()
         registerActivityLifecycleCallbacks(this)
         if (isTestRunner()) return
         preferences = NotallyXPreferences.getInstance(this)
