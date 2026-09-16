@@ -84,7 +84,7 @@ NotallyX/
 
 ### Do's
 - **Preserve Data Integrity**: Always safeguard user notes. Never drop tables destructively without valid migration paths.
-- **Run Checkpoints Before DB Copy**: When exporting, backing up, or copying SQLite files, call `database.checkpointOrThrow()` to ensure the WAL is flushed.
+- **Run Checkpoints Before DB Copy**: When exporting, backing up, or copying SQLite files, call `database.checkpoint()` to ensure the WAL is flushed.
 - **Use ViewBinding**: Inflate views using generated ViewBinding bindings (e.g., `ActivityEditBinding.inflate(layoutInflater)`).
 - **Offload Heavy Work**: Perform file I/O, parsing (JSON/Markdown/HTML), and database queries on `Dispatchers.IO`.
 - **Format with ktfmt**: Ensure Kotlin files comply with `ktfmt` by running `./gradlew ktfmtFormat`.
@@ -95,7 +95,6 @@ NotallyX/
 - **NO Blocking Main Thread**: Never invoke synchronous database queries, heavy regex, or file operations on the main thread.
 - **NO Raw SQL Injections**: Use Room DAO annotations (`@Query`, `@Insert`, `@Update`, `@Delete`) or properly parameterised `SupportSQLiteQuery`.
 - **NO Hardcoded Strings**: Use string resources (`R.string.*`) for all UI-visible text to preserve localization support across 30+ languages.
-- **NO Direct Database File Edits Without Manager**: Do not manipulate SQLite files without going through `DatabaseManager` and `NotallyDatabase`.
 - **NO Unapproved Third-Party Libraries**: Avoid adding heavy external dependencies unless explicitly requested.
 
 ---
@@ -180,9 +179,8 @@ When modifying Room entities (`BaseNote`, `Label`, etc.):
    }
    ```
 4. Add the migration object to `MIGRATIONS` array in `NotallyDatabase.kt`.
-5. Update `DatabaseManager.kt` migration lists if relevant.
-6. Run `./gradlew kspDebugKotlin` to regenerate the Room schema JSON in `app/schemas/`.
-7. Write migration verification tests in `app/src/test/kotlin/com/philkes/notallyx/data/`.
+5. Run `./gradlew kspDebugKotlin` to regenerate the Room schema JSON in `app/schemas/`.
+6. Write migration verification tests in `app/src/test/kotlin/com/philkes/notallyx/data/`.
 
 ---
 

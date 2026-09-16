@@ -78,11 +78,15 @@ class ErrorActivity : AppCompatActivity() {
             ViewLogsButton.setOnClickListener { viewLogs() }
             setupExportBackup(binding, stacktrace)
         }
-        lifecycleScope.launch {
-            val now = Date()
+        val now = Date()
+        lifecycleScope.launch(
+            CoroutineExceptionHandler { _, throwable ->
+                log(TAG, msg = "Creating crash database dump failed", throwable = throwable)
+            }
+        ) {
             backupPath =
                 withContext(Dispatchers.IO) { application.backupDatabaseFiles(now) }
-                    .also {
+                    ?.also {
                         setupLink(
                             binding.CrashMessageHint,
                             getString(R.string.database_dump_created, it),
@@ -90,6 +94,12 @@ class ErrorActivity : AppCompatActivity() {
                             widget.context.openExternalMediaFolder(it)
                         }
                     }
+        }
+        lifecycleScope.launch(
+            CoroutineExceptionHandler { _, throwable ->
+                log(TAG, msg = "Creating crash logs dump failed", throwable = throwable)
+            }
+        ) {
             appLogs =
                 withContext(Dispatchers.IO) {
                         CustomActivityOnCrash.getCustomCrashDataFromIntent(intent)?.toInt()?.let {

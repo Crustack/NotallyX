@@ -387,7 +387,12 @@ fun Context.getBackupDir() = getEmptyFolder("backup")
 
 fun Context.getExportedPath() = getEmptyFolder("exported")
 
-fun ContextWrapper.getLogsDir() = getExternalMediaDirectory("logs").also { it.mkdir() }
+fun ContextWrapper.getLogsDir() =
+    try {
+        getExternalMediaDirectory("logs")
+    } catch (_: Exception) {
+        File(filesDir, "logs").also { it.mkdir() }
+    }
 
 const val APP_LOG_FILE_NAME = "notallyx-logs"
 

@@ -2,6 +2,7 @@ package com.philkes.notallyx.utils
 
 import android.app.Application
 import android.content.ContextWrapper
+import android.database.sqlite.SQLiteBlobTooBigException
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
 import com.philkes.notallyx.data.model.Type
@@ -84,7 +85,7 @@ suspend fun Application.splitOversizedNotes() {
         val original =
             try {
                 dao.get(id)
-            } catch (e: Exception) {
+            } catch (e: SQLiteBlobTooBigException) {
                 // Repair the single offending row, then retry
                 log(
                     TAG,

@@ -28,7 +28,7 @@ body:
    id: logs
    attributes:
     label: (Optional) Relevant log output
-    description: Please copy and paste any relevant log output, preferably from the Crash Screen. You can also find crash logs/database-dumps in "Android/media/com.philkes.notallyx/Crashes".
+    description: Please copy and paste any relevant log output, preferably from the Crash Screen. You can also find crash dumps/logs in "Android/media/com.philkes.notallyx/Crashes".
     render: shell
  - type: markdown
    attributes:
