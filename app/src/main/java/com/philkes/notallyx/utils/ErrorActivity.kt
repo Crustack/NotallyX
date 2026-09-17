@@ -86,12 +86,24 @@ class ErrorActivity : AppCompatActivity() {
         ) {
             backupPath =
                 withContext(Dispatchers.IO) { application.backupDatabaseFiles(now) }
-                    ?.also {
-                        setupLink(
-                            binding.CrashMessageHint,
-                            getString(R.string.database_dump_created, it),
-                        ) { widget ->
-                            widget.context.openExternalMediaFolder(it)
+                    ?.also { dumpFolder ->
+                        binding.CrashLogsInfo.apply {
+                            visibility = View.VISIBLE
+                            setOnClickListener { view ->
+                                // Show popup dialog with backup location details
+                                MaterialAlertDialogBuilder(this@ErrorActivity)
+                                    .setMessage(
+                                        getString(
+                                            R.string.database_dump_created,
+                                            dumpFolder.absolutePath,
+                                        )
+                                    )
+                                    .setPositiveButton(android.R.string.ok, null)
+                                    .setNeutralButton(R.string.copy) { _, _ ->
+                                        copyToClipBoard(dumpFolder.absolutePath)
+                                    }
+                                    .show()
+                            }
                         }
                     }
         }
@@ -110,13 +122,9 @@ class ErrorActivity : AppCompatActivity() {
                         setupLink(
                             binding.CrashLogsLink,
                             this@ErrorActivity.getString(R.string.view_crash_logs),
-                            { widget ->
-                                widget.context.viewFile(
-                                    getUriForFile(it),
-                                    ExportMimeType.TXT.mimeType,
-                                )
-                            },
-                        )
+                        ) { widget ->
+                            widget.context.viewFile(getUriForFile(it), ExportMimeType.TXT.mimeType)
+                        }
                     }
         }
     }
@@ -225,7 +233,6 @@ class ErrorActivity : AppCompatActivity() {
                     result.data?.data?.let { uri ->
                         val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
                             try {
-                                // This is the specific method for SAF Uris
                                 DocumentsContract.deleteDocument(contentResolver, uri)
                                 Log.d(TAG, "Successfully deleted empty database file '$uri'")
                             } catch (e: Exception) {

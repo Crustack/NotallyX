@@ -1,144 +1,182 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tool="http://schemas.android.com/tools"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:weightSum="10">
+    android:fillViewport="true">
 
-    <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:contentDescription="@null"
-        android:minWidth="100dp"
-        android:minHeight="100dp"
-        android:src="@drawable/error" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/customactivityoncrash_activity_vertical_margin"
-        android:gravity="center"
-        android:text="@string/crash_message"
-        android:textSize="18sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/CrashLogsLink"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scrollHorizontally="false"
-        android:singleLine="true"
-        android:gravity="center"
-        android:maxLines="1"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:layout_marginTop="@dimen/customactivityoncrash_activity_vertical_margin"
-        tool:text="@string/view_crash_logs"
-        />
-
-    <TextView
-        android:id="@+id/ExceptionTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ellipsize="none"
-        android:scrollHorizontally="false"
-        android:singleLine="false"
-        android:gravity="center"
-        android:maxLines="2"
-        android:textIsSelectable="true"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:layout_marginTop="@dimen/customactivityoncrash_activity_vertical_margin"
-        tool:text="Exception Class"
-        />
-
-    <!-- Exception text + copy button -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="4"
-        android:gravity="center"
-        android:orientation="horizontal"
-        android:weightSum="10">
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="24dp">
 
-        <HorizontalScrollView
-            android:layout_width="0dp"
-            android:layout_weight="9"
-            android:layout_height="match_parent"
-            android:scrollbars="horizontal">
+        <!-- Error Header -->
+        <ImageView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:contentDescription="@null"
+            android:src="@drawable/error"
+            app:tint="?attr/colorError" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:text="@string/crash_message"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textStyle="bold" />
+
+
+        <!-- Exception Class Name -->
+        <TextView
+            android:id="@+id/ExceptionTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:maxLines="2"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textIsSelectable="true"
+            android:textStyle="bold"
+            tools:text="java.lang.IllegalStateException:\nFAB not implemented" />
+
+        <!-- Stack Trace Code Box Container -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingEnd="48dp"
+                    android:scrollbars="horizontal|vertical">
+
+                    <TextView
+                        android:id="@+id/ExceptionDetails"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:fontFamily="monospace"
+                        android:padding="12dp"
+                        android:textIsSelectable="true"
+                        android:textSize="12sp"
+                        tools:text="at com.philkes.notallyx.presentation.activity...\nat com.philkes.notallyx.presentation.activity..." />
+                </HorizontalScrollView>
+
+                <!-- Copy Icon Pinned Top Right -->
+                <ImageButton
+                    android:id="@+id/CopyButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="top|end"
+                    android:layout_margin="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/copy"
+                    android:src="@drawable/content_copy"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+            </FrameLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Collapsible Link / Header with Info Button -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
             <TextView
-                android:id="@+id/ExceptionDetails"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:ellipsize="none"
-                android:padding="8dp"
-                android:scrollbars="vertical|horizontal"
-                android:scrollHorizontally="false"
-                android:singleLine="false"
-                android:textIsSelectable="true"
-                android:textSize="14sp"
-                tool:text="Exception Stacktrace"
+                android:id="@+id/CrashLogsLink"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="?attr/colorPrimary"
+                android:textStyle="bold"
+                tools:text="@string/view_crash_logs" />
+
+            <ImageButton
+                android:id="@+id/CrashLogsInfo"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="4dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/database_dump_created"
+                android:padding="4dp"
+                android:textStyle="bold"
+                android:src="@drawable/baseline_info_outline_24"
+                app:tint="?attr/colorPrimary"
+                android:visibility="gone"
+                tools:visibility="visible"
                 />
-        </HorizontalScrollView>
+        </LinearLayout>
 
-        <ImageButton
-            android:id="@+id/CopyButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/copy"
-            android:src="@drawable/content_copy" />
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Flexible Action Button Container -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/RestartButton"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/restart_app"
+                app:icon="@drawable/redo"
+                app:iconGravity="textStart" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/ReportButton"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/report_bug"
+                app:icon="@drawable/link"
+                app:iconGravity="textStart"
+                app:strokeColor="?attr/colorPrimary"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/ExportBackupButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/export_backup"
+                android:textColor="?attr/colorSecondary"/>
+
+
+            <!-- Auxiliary Action Link -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/ViewLogsButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/view_logs"
+                android:textColor="?attr/colorSecondary"/>
+
+        </LinearLayout>
+
     </LinearLayout>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/ViewLogsButton"
-        style="@style/Widget.Material3.Button.TextButton"
-        app:strokeColor="?attr/colorPrimary"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:insetTop="2dp"
-        android:insetBottom="2dp"
-        android:text="@string/view_logs"
-        android:textColor="?colorPrimary" />
-
-    <Button
-        android:id="@+id/RestartButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/customactivityoncrash_activity_vertical_margin"
-        android:text="@string/restart_app" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/ReportButton"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        app:strokeColor="?attr/colorPrimary"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/customactivityoncrash_activity_vertical_margin"
-        android:text="@string/report_bug"
-        android:textColor="?colorPrimary" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/ExportBackupButton"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        app:strokeColor="?attr/colorPrimary"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/customactivityoncrash_activity_vertical_margin"
-        android:text="@string/export_backup"
-        android:textColor="?colorPrimary" />
-
-    <TextView
-        android:id="@+id/CrashMessageHint"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:gravity="center"
-        android:textSize="12sp"
-        tool:text="@string/database_dump_created"
-        />
-
-</LinearLayout>
+</androidx.core.widget.NestedScrollView>
