@@ -164,39 +164,21 @@ abstract class NotallyDatabase : RoomDatabase() {
             )
             clearInstance()
             val instanceBuilder =
-                createBuilder(context, getCurrentDatabaseName(context, dataInPublic))
+                builder(context, dataInPublic)
                     .openHelperFactory(BackupOpenHelperFactory(context))
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (biometricLock == BiometricLock.ENABLED) {
-                    if (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
-                        initializeDecryption(context, preferences, instanceBuilder)
-                    } else {
-                        context.log(
-                            DATABASE_NAME,
-                            "Database is not encrypted even though biometric lock is enabled, disabling biometric lock",
-                        )
-                        preferences.biometricLock.save(BiometricLock.DISABLED)
-                    }
-                } else {
-                    if (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
-                        context.log(
-                            DATABASE_NAME,
-                            "Database is encrypted even though biometric lock is disabled, enabling biometric lock",
-                        )
-                        preferences.biometricLock.save(BiometricLock.ENABLED)
-                        initializeDecryption(context, preferences, instanceBuilder)
-                    }
-                }
-            }
+                    .setupEncryption(context, preferences, biometricLock)
             return instanceBuilder.build()
         }
 
-        @VisibleForTesting
-        internal fun createBuilder(
-            context: Context,
-            databaseName: String,
-        ): Builder<NotallyDatabase> {
-            return Room.databaseBuilder(context, NotallyDatabase::class.java, databaseName)
+        internal fun builder(
+            context: ContextWrapper,
+            dataInPublic: Boolean,
+        ): Builder<NotallyDatabase> =
+            Room.databaseBuilder(
+                    context,
+                    NotallyDatabase::class.java,
+                    getCurrentDatabaseName(context, dataInPublic),
+                )
                 .addMigrations(
                     Migration2,
                     Migration3,
@@ -209,6 +191,37 @@ abstract class NotallyDatabase : RoomDatabase() {
                     Migration10,
                     Migration11,
                 )
+
+        @VisibleForTesting
+        internal fun Builder<NotallyDatabase>.setupEncryption(
+            context: ContextWrapper,
+            preferences: NotallyXPreferences,
+            biometricLock: BiometricLock = preferences.biometricLock.value,
+        ): Builder<NotallyDatabase> {
+            return this.apply {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (biometricLock == BiometricLock.ENABLED) {
+                        if (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
+                            initializeDecryption(context, preferences, this)
+                        } else {
+                            context.log(
+                                DATABASE_NAME,
+                                "Database is not encrypted even though biometric lock is enabled, disabling biometric lock",
+                            )
+                            preferences.biometricLock.save(BiometricLock.DISABLED)
+                        }
+                    } else {
+                        if (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
+                            context.log(
+                                DATABASE_NAME,
+                                "Database is encrypted even though biometric lock is disabled, enabling biometric lock",
+                            )
+                            preferences.biometricLock.save(BiometricLock.ENABLED)
+                            initializeDecryption(context, preferences, this)
+                        }
+                    }
+                }
+            }
         }
 
         @RequiresApi(Build.VERSION_CODES.M)
