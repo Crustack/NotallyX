@@ -79,6 +79,7 @@
     <string name="change_color_message">挑个颜色或创建一个新颜色。你也可以长按颜色来进行编辑</string>
     <string name="change_note">更改笔记</string>
     <string name="check_all_items">选中所有项目</string>
+    <string name="check_duplicates">检查重复项</string>
     <string name="choose_another_folder">选择另一个文件夹</string>
     <string name="choose_folder">选择文件夹</string>
     <string name="choose_other_app">选择你要导入的APP笔记</string>
@@ -98,8 +99,10 @@
     <string name="convert_to_text_note">转换到文本笔记</string>
     <string name="copied_link">链接已复制到剪贴板</string>
     <string name="copy">复制</string>
+    <string name="crash_export_backup">导出备份不幸失败。可用  \'%1$s\' 按钮报告崩溃或尝试通过“%2$s”导出原始数据库文件（SQLite）。它只包含笔记内容，没有附件。但如果成功，你可以通过从其他应用导选项把笔记导入回来。</string>
     <string name="crash_export_backup_failed">导出备份不幸失败。请用  \'%1$s\' 按钮报告崩溃</string>
     <string name="crash_export_backup_message">你可以单击  \'%1$s\' 试着创建笔记备份。如果崩溃造成数据损坏/破坏，创建备份可能失败。如果出现这种情况，用  \'%2$s\' 按钮报告崩溃</string>
+    <string name="crash_export_raw_backup_failed">导出checkpointed数据库不幸失败。只能在“%1$s”创建原始数据库文件的副本。请使用“%2$s”按钮报告崩溃</string>
     <string name="crash_message">发生了意外错误。抱歉造成不便。</string>
     <string name="create_github_issue">在Github创建问题</string>
     <string name="creation_date">创建时间</string>
@@ -108,6 +111,8 @@
     <string name="dark">深</string>
     <string name="data_in_public">在公共文件夹中存储数据</string>
     <string name="data_in_public_message">启用此项，应用程序的内部数据库和附件将被移动到应用程序的外部存储（Android/media/com.philkes.notallyx）中。与文件同步应用组合，这可用于同步多个设备之间的数据。</string>
+    <string name="database">数据库</string>
+    <string name="database_dump_created">在“%1$s”创建了原始数据库转储</string>
     <string name="date">日期</string>
     <string name="date_format">日期格式</string>
     <string name="date_format_hint">将所选日期格式应用于笔记概览</string>
@@ -168,6 +173,8 @@
     <string name="enable_lock_description">这也会加密数据库</string>
     <string name="enable_lock_title">启用生物特征/PIN锁</string>
     <string name="enabled">启用</string>
+    <string name="error">出错</string>
+    <string name="error_loading_data">从数据库加载一些数据时出错。无法显示损坏的笔记。可用“%1$s”清理（删除损坏的笔记）数据库</string>
     <string name="error_while_renaming_file">重命名文件时出错</string>
     <string name="error_while_renaming_image">重命名图片时出错</string>
     <string name="evernote">Evernote</string>
@@ -175,6 +182,7 @@
     <string name="every">每</string>
     <string name="export">导出</string>
     <string name="export_backup">导出备份</string>
+    <string name="export_database">导出数据库</string>
     <string name="export_settings">导出设置</string>
     <string name="export_settings_failure">未能导出设置，你选择的路径有效吗？</string>
     <string name="export_settings_message">所有设置都导出为 JSON 文件，该文件可用于重新导所存储的设置。请注意，这个文件中并不包含已加密的设置，如自动备份密码或生物特征加密密钥</string>
@@ -310,6 +318,9 @@
     <string name="record_audio">录音</string>
     <string name="recording">录音中…</string>
     <string name="redo">重做</string>
+    <string name="reimport_database">重新导入数据库</string>
+    <string name="reimport_database_failed">重新导入数据库失败</string>
+    <string name="reimport_database_message">现在可以试着重新导入原始数据库。这将删除当前损坏的数据库（会在 Android/media/com.philkes.notallyx/logs 中存储一个备份），之后跳过损坏的笔记（如有可能）试着导入原始数据库</string>
     <string name="reminder_no_repetition">不重复</string>
     <string name="reminders">提醒</string>
     <string name="remove_link">删除链接</string>
@@ -347,6 +358,10 @@
     <string name="single_file">单个文件</string>
     <string name="single_note_or_list">单条笔记</string>
     <string name="skip">跳过</string>
+    <plurals name="skipped_corrupted_notes">
+        <item quantity="one">跳过了 %1$s 则损坏的笔记</item>
+        <item quantity="other">跳过了 %1$s 则损坏的笔记</item>
+    </plurals>
     <string name="small">小</string>
     <string name="something_went_wrong">出错了。请重试。</string>
     <string name="something_went_wrong_audio">出错了。录音文件可能已被移走或删除。错误：(%1$d, %2$d)</string>
@@ -393,6 +408,7 @@
     <string name="upcoming">即将到来</string>
     <string name="updated_link">更新了链接</string>
     <string name="view">视图</string>
+    <string name="view_crash_logs">查看崩溃日志</string>
     <string name="view_file">查看文件</string>
     <string name="view_logs">查看日志文件</string>
     <string name="view_note">查看笔记</string>
