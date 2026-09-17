@@ -2,14 +2,11 @@ package com.philkes.notallyx.utils
 
 import android.content.Context
 import android.content.ContextWrapper
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
-import android.provider.DocumentsContract
 import android.util.Log
 import androidx.core.net.toUri
 import androidx.lifecycle.MutableLiveData
@@ -220,22 +217,8 @@ fun Context.openExternalMediaFolder(folderFile: File) {
     if (!folderFile.exists()) {
         folderFile.mkdirs()
     }
-    // 1. Calculate relative path from External Storage root
-    val primaryStoragePath = Environment.getExternalStorageDirectory().absolutePath
-    val relativePath = folderFile.absolutePath.removePrefix(primaryStoragePath).trimStart('/')
-    // 2. Build SAF Document URI (e.g., "primary:Android/media/com.package/Backups")
-    val documentId = "primary:$relativePath"
-    val uri =
-        DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", documentId)
-    // 3. Launch the System Files app
-    val intent =
-        Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "vnd.android.document/directory")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
     try {
-        startActivity(intent)
+        viewFile(getUriForFile(folderFile), "vnd.android.document/directory")
     } catch (e: Exception) {
         Log.e(TAG, "Failed to open external media folder", e)
         showToast(com.philkes.notallyx.R.string.cant_open_link)
