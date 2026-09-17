@@ -63,6 +63,7 @@ import com.philkes.notallyx.utils.MIME_TYPE_JSON
 import com.philkes.notallyx.utils.MIME_TYPE_ZIP
 import com.philkes.notallyx.utils.backup.exportPreferences
 import com.philkes.notallyx.utils.catchNoBrowserInstalled
+import com.philkes.notallyx.utils.copyToClipBoard
 import com.philkes.notallyx.utils.getExternalCrashesDirectory
 import com.philkes.notallyx.utils.getExtraBooleanFromBundleOrIntent
 import com.philkes.notallyx.utils.getLastExceptionLog
@@ -932,7 +933,17 @@ class SettingsFragment : Fragment() {
             ViewLogs.setOnClickListener { (requireContext() as ContextWrapper).viewLogs() }
             ViewCrashes.setOnClickListener {
                 (requireContext() as ContextWrapper).let { context ->
-                    context.openExternalMediaFolder(context.getExternalCrashesDirectory())
+                    val externalCrashesDirectory = context.getExternalCrashesDirectory()
+                    MaterialAlertDialogBuilder(context)
+                        .setMessage(
+                            "${getString(R.string.view_crash_logs)}: ${externalCrashesDirectory.absolutePath}"
+                        )
+                        .setPositiveButton(android.R.string.ok, null)
+                        .setNeutralButton(R.string.copy) { _, _ ->
+                            context.copyToClipBoard(externalCrashesDirectory.absolutePath)
+                        }
+                        .show()
+                    context.openExternalMediaFolder(externalCrashesDirectory)
                 }
             }
 
