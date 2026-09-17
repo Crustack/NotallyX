@@ -6,14 +6,15 @@ import android.database.sqlite.SQLiteException
 import android.os.Environment
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.test.core.app.ApplicationProvider
+import com.philkes.notallyx.data.NotallyDatabase.Companion.setupEncryption
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.test.TestBackupOpenHelperFactory
 import com.philkes.notallyx.test.corruptPage
 import com.philkes.notallyx.test.databaseFiles
-import com.philkes.notallyx.test.destroySqliteHeaderMagic
 import com.philkes.notallyx.test.rootPageOf
 import com.philkes.notallyx.utils.SUBFOLDER_AUDIOS
 import com.philkes.notallyx.utils.SUBFOLDER_FILES
@@ -62,7 +63,7 @@ class NotallyDatabaseCorruptionTest {
     private var database: NotallyDatabase? = null
 
     private val databaseFile: File
-        get() = NotallyDatabase.getInternalDatabaseFile(application)
+        get() = NotallyDatabase.getCurrentDatabaseFile(application)
 
     @Before
     fun setUp() {
@@ -98,41 +99,18 @@ class NotallyDatabaseCorruptionTest {
     }
 
     /**
-     * TC2: corruption detected *before* the database is open - the `db.isOpen == false` branch of
-     * [SupportSQLiteOpenHelper.Callback.onCorruption]. This is the worst variant: AndroidX
-     * (`FrameworkSQLiteOpenHelper.innerGetDatabase`) deletes the file and then **retries the
-     * open**, so the app silently continues on a brand new empty database and no exception ever
-     * reaches it - matching the reports where no exception precedes the data loss.
-     */
-    @Test
-    fun openOnCorruptHeader_deletesDatabaseAndSilentlyRecreatesItEmpty() {
-        seedAndClose()
-
-        databaseFile.destroySqliteHeaderMagic()
-
-        val database = openDatabase()
-        assertThat(database.ping()).isTrue()
-
-        assertCorruptionWasReportedByAndroidX()
-        assertThat(database.getBaseNoteDao().count()).isZero()
-        assertThat(runBlocking { database.getBaseNoteDao().getAllPinnedToStatusNotes() }).isEmpty()
-    }
-
-    /**
      * TC3: the counter-proof. The exact same corruption as TC1, but Room is built with an open
      * helper whose `onCorruption` does not delete - the query still fails, yet the database file
      * (and therefore every note in it) survives. So the deletion comes from the default callback,
      * and overriding it is by itself enough to prevent the data loss.
      */
     @Test
-    fun corruptPageWithNonDestructiveHandler_keepsDatabaseFile() {
+    fun corruptPageWithNonDestructiveHandler_backupsDatabase() {
         val rootPage = seedAndClose()
-        val lengthBeforeCorruption = databaseFile.length()
-
         databaseFile.corruptPage(rootPage)
-
         val factory = TestBackupOpenHelperFactory(application)
         val database = openDatabase(factory)
+
         assertThrows(IllegalStateException::class.java) {
             runBlocking { database.getBaseNoteDao().getAllPinnedToStatusNotes() }
         }
@@ -141,7 +119,37 @@ class NotallyDatabaseCorruptionTest {
         val crashesFolder = File(application.externalMediaDirs.first(), "Crashes")
         val crashesSubfolders = crashesFolder.listFiles { file -> file.isDirectory }
         assertEquals("Crashes should contain exactly 1 subfolder", 1, crashesSubfolders!!.size)
-        val dbFile = File(crashesSubfolders[0], "internal/NotallyDatabase")
+        assertValidDb(File(crashesSubfolders[0], "internal/NotallyDatabase"))
+        assertThat(databaseFile).doesNotExist()
+    }
+
+    @Test
+    fun corruptPageWithNonDestructiveHandler_backupsDatabase_publicDataEnabled() {
+        NotallyXPreferences.getInstance(application).dataInPublicFolder.save(true)
+        org.robolectric.shadows.ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        Thread.sleep(1000)
+        val rootPage = seedAndClose()
+        databaseFile.corruptPage(rootPage)
+        val factory = TestBackupOpenHelperFactory(application)
+        val database = openDatabase(factory)
+
+        assertThrows(IllegalStateException::class.java) {
+            runBlocking { database.getBaseNoteDao().getAllPinnedToStatusNotes() }
+        }
+
+        assertThat(factory.corruptionReported).isTrue()
+        val crashesFolder = File(application.externalMediaDirs.first(), "Crashes")
+        val crashesSubfolders = crashesFolder.listFiles { file -> file.isDirectory }
+        assertEquals("Crashes should contain exactly 1 subfolder", 1, crashesSubfolders!!.size)
+        assertThat(File(crashesSubfolders[0], "internal/NotallyDatabase")).doesNotExist()
+        assertValidDb(File(crashesSubfolders[0], "external/NotallyDatabase"))
+        assertThat(databaseFile).doesNotExist()
+        NotallyXPreferences.getInstance(application).dataInPublicFolder.save(false)
+        org.robolectric.shadows.ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        Thread.sleep(1000)
+    }
+
+    private fun assertValidDb(dbFile: File) {
         assertTrue(
             "Expected valid database file at ${dbFile.absolutePath}",
             dbFile.isFile && dbFile.exists(),
@@ -151,7 +159,6 @@ class NotallyDatabaseCorruptionTest {
         assertTrue("SQLiteDatabase should be open", sqliteDb.isOpen)
         assertNotNull("SQLiteDatabase is usable", sqliteDb.version)
         sqliteDb.close()
-        assertThat(databaseFile).doesNotExist()
     }
 
     /** TC4: the notes are gone, every attachment is untouched - as the users described it. */
@@ -181,8 +188,10 @@ class NotallyDatabaseCorruptionTest {
 
     /** Builds exactly the production Room configuration, optionally with a custom open helper. */
     private fun openDatabase(factory: SupportSQLiteOpenHelper.Factory? = null): NotallyDatabase {
+        val preferences = NotallyXPreferences.getInstance(application)
         val builder =
-            NotallyDatabase.createBuilder(application, NotallyDatabase.DATABASE_NAME)
+            NotallyDatabase.builder(application, preferences.dataInPublicFolder.value)
+                .setupEncryption(application, preferences)
                 .allowMainThreadQueries()
         factory?.let { builder.openHelperFactory(it) }
         return builder.build().also { database = it }
