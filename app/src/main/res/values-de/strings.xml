@@ -19,6 +19,10 @@
     </plurals>
     <string name="ascending">Aufsteigend</string>
     <string name="attach_file">Datei hinzufügen</string>
+    <plurals name="attachments">
+        <item quantity="one">Anhang</item>
+        <item quantity="other">Anhänge</item>
+    </plurals>
     <string name="audio_recordings">Sprachnotizen</string>
     <string name="auto_backup">Automatisches Backup</string>
     <string name="auto_backup_error_message">Beim autom. Backup ist ein Fehler aufgetreten:\n\'%1$s\'\nÜberprüfe deine Einstellungen oder melde einen Bug</string>
@@ -35,6 +39,7 @@
     <string name="auto_remove_deleted_notes_hint">Ist dies aktiviert, werden gelöschte Notizen automatisch nach X Tagen permanent entfernt</string>
     <string name="auto_save_after_idle_time">Autom. Speichern nach X Sekunden</string>
     <string name="auto_sort_by_checked">Abgehakte Elemente ans Ende sortieren</string>
+    <string name="auto_sort_by_checked_timestamp">Abgehakte Elemente nach Erledigungszeit sortieren</string>
     <string name="back">Zurück</string>
     <string name="backup">Backup</string>
     <string name="backup_password">Backup Passwort</string>
@@ -70,9 +75,11 @@
     <string name="cant_load_image">Bild kann nicht geladen werden. Es kann verschoben oder gelöscht worden sein</string>
     <string name="cant_open_link">Link konnte nicht geöffnet werden</string>
     <string name="change_color">Farbe ändern</string>
+    <string name="change_color_default_message">Der ★ markiert die Standardfarbe für neue Notizen.</string>
     <string name="change_color_message">Wähle eine Farbe oder erstelle eine Neue.\nUm eine Farbe zu editieren halte sie gedrückt</string>
     <string name="change_note">Notiz ändern</string>
     <string name="check_all_items">Alle Elemente abhaken</string>
+    <string name="check_duplicates">Duplikate erkennen</string>
     <string name="choose_another_folder">Anderen Ordner wählen</string>
     <string name="choose_folder">Ordner wählen</string>
     <string name="choose_other_app">Wähle von welcher App importiert werden soll</string>
@@ -92,8 +99,10 @@
     <string name="convert_to_text_note">Zu Text-Notiz konvertieren</string>
     <string name="copied_link">Link kopiert</string>
     <string name="copy">Kopieren</string>
+    <string name="crash_export_backup">Leider hat der Backup-Export nicht geklappt. Du kannst über \'%1$s\' den Crash melden oder versuchen die rohen Datenbank-Dateien über \'%2$s\' zu exportieren. Es werden nur Notizen-Inhalte exportiert, keine Anhänge. Sollte das funktionieren kannst du die Notzien über die Import-Funktion wieder importieren.</string>
     <string name="crash_export_backup_failed">Exportieren des Backups fehlgeschlagen.\nBitte nutze den \'%1$s\' Button um den Fehler zu melden</string>
     <string name="crash_export_backup_message">Du kannst versuchen ein Backup deiner Notizen über \'%1$s\' zu erstellen.\nDies könnte fehlschlagen wenn der Fehler zu korrupten Daten geführt hat. In diesem Fall, benutze bitte den ‘%2$s’ Button um den Fehler zu melden</string>
+    <string name="crash_export_raw_backup_failed">Leider hat der Datenbank-Checkpoint Export nicht geklappt. Nur eine Kopie der rohen Datenbank-Dateien konnte in \'%1$s\' erstellt werden. Bitte nutze \'%2$s\' um den Crash zu melden</string>
     <string name="crash_message">Ein unerwarteter Fehler ist aufgetreten.\nEntschuldigung für die Unannehmlichkeiten.\n</string>
     <string name="create_github_issue">Github Issue erstellen</string>
     <string name="creation_date">Erstellt</string>
@@ -102,13 +111,19 @@
     <string name="dark">Dunkel</string>
     <string name="data_in_public">Daten in öffentlichen Ordner auslagern</string>
     <string name="data_in_public_message">Wird dies aktiviert, werden die app-interne Datenbank und angehängte Dateien in einen öffentlichen Ordner ausgelagert (Android/media/com.philkes.notallyx). In Kombination mit Datei-Synchronisations Apps kann dies genutzt werden um NotallyX Daten zwischen mehrere Geräte zu synchronisieren.</string>
+    <string name="database">Datenbank</string>
+    <string name="database_dump_created">Roher Datenbank Dump in \'%1$s\' erstellt</string>
     <string name="date">Datum</string>
     <string name="date_format">Datumsformat</string>
     <string name="date_format_hint">Wendet ausgewähltes Datumsformat in Notizen-Übersicht an</string>
+    <string name="date_format_note_view">Datumsformat Notizansicht</string>
+    <string name="date_format_overview">Datumsformat Übersicht</string>
     <plurals name="days">
         <item quantity="one">Tag</item>
         <item quantity="other">Tage</item>
     </plurals>
+    <string name="default_color_hint">Das ist die Standardfarbe für neue Notizen. Um sie zu ändern, wähle eine andere Farbe als Standard</string>
+    <string name="default_list_note_view_mode">Standard Listen Ansichtsmodus</string>
     <string name="delete">Löschen</string>
     <string name="delete_all">Alles löschen</string>
     <string name="delete_all_notes">Alle Notizen löschen\?</string>
@@ -159,6 +174,8 @@
     <string name="enable_lock_description">Dies verschlüsselt außerdem die Datenbank</string>
     <string name="enable_lock_title">Aktiviere Biometrie/PIN Sperre</string>
     <string name="enabled">Aktiviert</string>
+    <string name="error">Fehler</string>
+    <string name="error_loading_data">Fehler während dem Auslesen der Datenbank. Beschädigte Notizen werden nicht angezeigt. Du kannst über \'%1$s\' die Datenbank aufräumen (beschädigte Notizen löschen)</string>
     <string name="error_while_renaming_file">Datei umbennen fehlgeschlagen</string>
     <string name="error_while_renaming_image">Fehler beim Umbenennen des Bildes</string>
     <string name="evernote">Evernote</string>
@@ -166,10 +183,12 @@
     <string name="every">Alle</string>
     <string name="export">Exportieren</string>
     <string name="export_backup">Backup erstellen</string>
+    <string name="export_database">Datenbank exportieren</string>
     <string name="export_settings">Einstellungen exportieren</string>
     <string name="export_settings_failure">Import der Einstellungen fehlgeschlagen, wurde die richtige Datei ausgewählt\?</string>
     <string name="export_settings_message">Alle Einstellungen werden als JSON Datei exportiert, die dann zum Re-Import genutzt werden kann.\n\nBeachte das hier bei verschlüsselte Einstellungen wie das Auto-Backup Passwort oder die biometrische Verschlüssung nicht exportiert wird</string>
     <string name="export_settings_success">Einstellungen erfolgreich exportiert</string>
+    <string name="exported">Exportiert</string>
     <plurals name="exported_notes">
         <item quantity="one">%1$s Notiz exportiert</item>
         <item quantity="other">%1$s Notizen exportiert</item>
@@ -190,6 +209,7 @@
     <string name="import_action">Import</string>
     <string name="import_backup">Backup importieren</string>
     <string name="import_backup_password_hint">Falls das Backup nicht passwortgeschützt ist, drücken Sie einfach auf Importieren, andernfalls geben Sie das richtige Passwort ein.</string>
+    <string name="import_from_notally">Um von Notally zu importieren, nutze  \"%1$s\"</string>
     <string name="import_other">Notizen von anderer App importieren</string>
     <string name="import_settings">Einstellungen Importieren</string>
     <string name="import_settings_failure">Import der Einstellungen fehlgeschlagen, wurde die richtige Datei ausgewählt\?</string>
@@ -209,9 +229,10 @@
     <string name="install_an_email">Installiere eine E-Mail-App zum Senden von Feedback</string>
     <string name="invalid_backup">Ungültige Backup</string>
     <string name="invalid_evernote">Ungültige Evernote ENEX Datei ausgewählt</string>
-    <string name="invalid_google_keep">\"Invalide Google Takeout ZIP Datei bereitgestellt \"</string>
+    <string name="invalid_google_keep">Ungültige Google Takeout ZIP Datei ausgewählt</string>
     <string name="invalid_image">Ungültiges Bild</string>
     <string name="invalid_link">Kopiere einen validen Link</string>
+    <string name="invalid_quillpad">Ungültige Quillpad ZIP Datei ausgewählt</string>
     <string name="italic">Kursiv</string>
     <string name="item">Eintrag</string>
     <string name="json_files">JSON Dateien</string>
@@ -224,6 +245,7 @@
     <string name="labels_hidden_in_overview">Ist dies aktiviert, werden die Labels der Notizen in der Übersicht ausgeblendet</string>
     <string name="labels_hidden_in_overview_title">Verberge Labels in Übersicht</string>
     <string name="large">Groß</string>
+    <string name="last_used">Zuletzt benutzt</string>
     <string name="libraries">Bibliotheken</string>
     <string name="light">Hell</string>
     <string name="link">Link</string>
@@ -231,6 +253,7 @@
     <string name="list">Listenansicht</string>
     <string name="list_item_auto_sort">Listenelemente sortieren</string>
     <string name="locked">Gesperrt</string>
+    <string name="make_default">Standard</string>
     <string name="make_feature_request">Feature/Verbesserung vorschlagen</string>
     <string name="make_list">Liste erstellen</string>
     <string name="max_backups">Anzahl zu behaltende Backups</string>
@@ -261,6 +284,10 @@
     <string name="note_text_too_long_truncated">Text zu lang, wird auf %1$d Zeichen gekürzt</string>
     <string name="note_too_big_truncating">Notiz überschreitet Maximallänge, es wird auf %1$s Zeichen gekürzt (vorher: %2$s)</string>
     <string name="notes">Notizen</string>
+    <plurals name="notes">
+        <item quantity="one">Notiz</item>
+        <item quantity="other">Notizen</item>
+    </plurals>
     <string name="notes_sorted_by">Notizen sortieren nach</string>
     <plurals name="notes_too_big_truncating">
         <item quantity="one">%1$s Notiz überschreitet Maximallänge, es wird auf %2$s Zeichen gekürzt</item>
@@ -268,12 +295,14 @@
     </plurals>
     <string name="of_the_month">%1$s des Monats</string>
     <string name="of_the_month_last">Letzter %1$s des Monats</string>
+    <string name="off">Aus</string>
     <string name="open_link">Link öffnen</string>
     <string name="open_note">Notiz öffnen</string>
     <string name="others">Andere</string>
     <string name="pause">Pause</string>
     <string name="paused">Pausiert</string>
     <string name="pin">Anpinnen</string>
+    <string name="pin_to_status_bar">An Statusleiste pinnen</string>
     <string name="pinned">Angepinnt</string>
     <string name="plain_text_files">Markdown/Text Dateien</string>
     <string name="plain_text_files_help">Um deine Text-Notizen (einzele Datei oder Ordner) zu importieren, klicke Import.\n\nJede Datei wird als einzelne Notiz importiert, der Dateiname wird zum Notiz-Titel. Sollte der Textinhalt mit einer List-Syntax beginnen (z.B. Markdown ’- [x]’, NotallyX syntax ’[✓]’, or ’*’, ’-’), wird die Datei als List-Notiz importiert.</string>
@@ -283,12 +312,16 @@
     <string name="please_grant_notally_notification">Bitte erlaube NotallyX Benachrichtigungen zu schicken</string>
     <string name="please_grant_notally_notification_auto_backup">Wenn ein autom. Backup fehlschlägt kann eine Benachrichtigung geschickt werden, wenn du NotallyX erlaubst Benachrichtigungen zu schicken</string>
     <string name="previous">Vorherige</string>
+    <string name="quillpad_help">Um deine Notizen aus Quillpad n zu importieren musst du deine Quillpad Notizen als .ZIP Datei herunterladen. Dafür gehe in Quillpad zu Einstellungen &gt; Backup &gt; Backup erstellen, und speichere die .ZIP auf deinem Gerät.\n\nFalls du das Quillpad ZIP schon hast, klicke auf Import und wähle es aus.</string>
     <string name="rate">App bewerten</string>
     <string name="read_only">Lesemodus</string>
     <string name="ready_to_record">Bereit zum Aufnehmen</string>
     <string name="record_audio">Sprachnotiz aufnehmen</string>
     <string name="recording">Nimmt auf...</string>
     <string name="redo">Rückgängig</string>
+    <string name="reimport_database">Datenbank Reimport</string>
+    <string name="reimport_database_failed">Datenbank Reimport fehlgeschlagen</string>
+    <string name="reimport_database_message">Du kannst jetzt versuchen, die Rohdatenbank erneut zu importieren. Dabei wird die aktuelle beschädigte Datenbank gelöscht (eine Sicherung wird unter „Android/media/com.philkes.notallyx/logs“ gespeichert). Anschließend wird versucht, die Rohdatenbank zu importieren, wobei beschädigte Notizen nach Möglichkeit übersprungen werden.</string>
     <string name="reminder_no_repetition">Keine Wiederholung</string>
     <string name="reminders">Erinnerungen</string>
     <string name="remove_link">Link entfernen</string>
@@ -319,11 +352,17 @@
     <string name="select_labels">Label auswählen</string>
     <string name="select_note">Notiz auswählen</string>
     <string name="send_feedback">Feedback senden</string>
+    <string name="set_as_default_color">Als Standardfarbe setzen\?</string>
+    <string name="set_as_default_color_message">Diese Farbe als Standard für neue Notizen setzen</string>
     <string name="settings">Einstellungen</string>
     <string name="share">Teilen</string>
     <string name="single_file">Einzelne Datei</string>
     <string name="single_note_or_list">Einzelne Notiz oder Liste</string>
     <string name="skip">Überspringen</string>
+    <plurals name="skipped_corrupted_notes">
+        <item quantity="one">%1$s beschädigte Notiz übersprungen</item>
+        <item quantity="other">%1$s beschädigte Notizen übersprungen</item>
+    </plurals>
     <string name="small">Klein</string>
     <string name="something_went_wrong">Etwas ist schief gelaufen. Bitte erneut versuchen.</string>
     <string name="something_went_wrong_audio">Etwas lief schief. Die Sprachnotiz wurde eventuell verschoben oder gelöscht.\n\nFehler : (%1$d, %2$d)</string>
@@ -344,7 +383,11 @@
     <string name="text_size_overview">Textgröße (Übersicht)</string>
     <string name="theme">Design</string>
     <string name="theme_use_dynamic_colors">Systemhintergrundfarben verwenden</string>
+    <string name="time">Zeit</string>
+    <string name="time_format_note_view">Zeitformat Notizansicht</string>
+    <string name="time_format_overview">Zeitformat Übersicht</string>
     <string name="title">Titel</string>
+    <string name="to_pin_note_status_bar">Um eine Notiz and die Statusleiste zu pinnen, erlaube NotallyX Benachrichtigungen zu senden. App Einstellungen &gt; Berechtigungen und erlaube Benachrichtigungen</string>
     <string name="to_record_audio">Um Sprachnotizen zu erstellen, braucht NotallyX Zugriff auf dein Mikrofon. Klicke Einstellunge &gt; Berechtigungen und aktiviere Mikrofon</string>
     <string name="unarchive">Archivierung aufheben</string>
     <plurals name="unarchived_selected_notes">
@@ -359,9 +402,11 @@
     <string name="unlock">Entsperre mittels Biometrie/PIN</string>
     <string name="unlock_with_biometrics_not_setup">Die biometrische Sperre ist aktiviert, allerdings ist für dein Gerät keine Biometrie/PIN mehr eingerichtet.\n\nUm die biometrische zu deaktivieren klicke Deaktivieren, ansonsten richte für dein Geräte Biometrie/PIN ein</string>
     <string name="unpin">Loslösen</string>
+    <string name="unpin_from_status_bar">Von Statusleiste loslösen</string>
     <string name="upcoming">Kommende</string>
     <string name="updated_link">Link aktualisiert</string>
     <string name="view">Ansicht</string>
+    <string name="view_crash_logs">Öffne Crash Logs</string>
     <string name="view_file">Datei öffnen</string>
     <string name="view_logs">Öffne Log Datei</string>
     <string name="view_note">Notiz ansehen</string>
