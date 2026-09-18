@@ -298,14 +298,17 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         )
                     }
                     app.migrateAllAttachments(toPrivate = false)
+                    savePreference(preferences.dataInPublicFolder, true)
+                } catch (e: Exception) {
                     withContext(Dispatchers.Main.immediate) {
-                        NotallyDatabase.postInstance(notallyDatabase)
+                        NotallyDatabase.postNewInstance(app, dataInPublic = false)
                     }
-                } finally {
-                    NotallyDatabase.endReplacement()
+                    throw e
                 }
             }
-            savePreference(preferences.dataInPublicFolder, true)
+            withContext(Dispatchers.Main.immediate) {
+                NotallyDatabase.postNewInstance(app, dataInPublic = true)
+            }
             callback?.invoke()
         }
     }
@@ -314,48 +317,50 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val database =
                 withContext(Dispatchers.Main.immediate) { NotallyDatabase.getDatabase(app) }
-            val newDatabase =
-                withContext(Dispatchers.IO) {
-                    NotallyDatabase.startReplacement()
-                    try {
-                        database.value.checkpoint()
-                        NotallyDatabase.clearInstance()
-                        val targetDirectory =
-                            NotallyDatabase.getInternalDatabaseFile(app).parentFile
-                        val externalDatabaseFiles = NotallyDatabase.getExternalDatabaseFiles(app)
-                        externalDatabaseFiles.forEach {
-                            it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
-                        }
-                        val notallyDatabase =
-                            withContext(Dispatchers.Main.immediate) {
-                                NotallyDatabase.getFreshDatabase(
-                                    app,
-                                    false,
-                                    preferences.biometricLock.value,
-                                )
-                            }
-                        val ping =
-                            try {
-                                notallyDatabase.ping()
-                            } catch (e: Exception) {
-                                throw RuntimeException(
-                                    "Moving public '${externalDatabaseFiles.map { it.name }}' to internal '$targetDirectory' folder failed",
-                                    e,
-                                )
-                            }
-                        if (!ping) {
-                            throw RuntimeException(
-                                "Moving public '${externalDatabaseFiles.map { it.name }}' to internal '$targetDirectory' folder failed"
+            withContext(Dispatchers.IO) {
+                NotallyDatabase.startReplacement()
+                try {
+                    database.value.checkpoint()
+                    NotallyDatabase.clearInstance()
+                    val targetDirectory = NotallyDatabase.getInternalDatabaseFile(app).parentFile
+                    val externalDatabaseFiles = NotallyDatabase.getExternalDatabaseFiles(app)
+                    externalDatabaseFiles.forEach {
+                        it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
+                    }
+                    val notallyDatabase =
+                        withContext(Dispatchers.Main.immediate) {
+                            NotallyDatabase.getFreshDatabase(
+                                app,
+                                false,
+                                preferences.biometricLock.value,
                             )
                         }
-                        app.migrateAllAttachments(toPrivate = true)
-                        notallyDatabase
-                    } finally {
-                        NotallyDatabase.endReplacement()
+                    val ping =
+                        try {
+                            notallyDatabase.ping()
+                        } catch (e: Exception) {
+                            throw RuntimeException(
+                                "Moving public '${externalDatabaseFiles.map { it.name }}' to internal '$targetDirectory' folder failed",
+                                e,
+                            )
+                        }
+                    if (!ping) {
+                        throw RuntimeException(
+                            "Moving public '${externalDatabaseFiles.map { it.name }}' to internal '$targetDirectory' folder failed"
+                        )
                     }
+                    app.migrateAllAttachments(toPrivate = true)
+                    savePreference(preferences.dataInPublicFolder, false)
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main.immediate) {
+                        NotallyDatabase.postNewInstance(app, dataInPublic = true)
+                    }
+                    throw e
                 }
-            savePreference(preferences.dataInPublicFolder, false)
-            withContext(Dispatchers.Main.immediate) { NotallyDatabase.postInstance(newDatabase) }
+            }
+            withContext(Dispatchers.Main.immediate) {
+                NotallyDatabase.postNewInstance(app, dataInPublic = false)
+            }
             callback?.invoke()
         }
     }
@@ -388,18 +393,15 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 }
                 savePreference(preferences.fallbackDatabaseEncryptionKey, passphrase)
                 savePreference(preferences.biometricLock, BiometricLock.ENABLED)
+            } catch (e: Exception) {
                 withContext(Dispatchers.Main.immediate) {
-                    val notallyDatabase =
-                        NotallyDatabase.getFreshDatabase(
-                            app,
-                            preferences.dataInPublicFolder.value,
-                            BiometricLock.ENABLED,
-                        )
-                    NotallyDatabase.postInstance(notallyDatabase)
+                    NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.DISABLED)
                 }
-            } finally {
-                NotallyDatabase.endReplacement()
+                throw e
             }
+        }
+        withContext(Dispatchers.Main.immediate) {
+            NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.ENABLED)
         }
     }
 
@@ -434,18 +436,15 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                     )
                 }
                 savePreference(preferences.biometricLock, BiometricLock.DISABLED)
+            } catch (e: Exception) {
                 withContext(Dispatchers.Main.immediate) {
-                    val notallyDatabase =
-                        NotallyDatabase.getFreshDatabase(
-                            app,
-                            preferences.dataInPublicFolder.value,
-                            BiometricLock.DISABLED,
-                        )
-                    NotallyDatabase.postInstance(notallyDatabase)
+                    NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.ENABLED)
                 }
-            } finally {
-                NotallyDatabase.endReplacement()
+                throw e
             }
+        }
+        withContext(Dispatchers.Main.immediate) {
+            NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.DISABLED)
         }
         callback?.invoke()
     }
