@@ -19,6 +19,10 @@
     </plurals>
     <string name="ascending">تصاعدي</string>
     <string name="attach_file">إرفاق ملف</string>
+    <plurals name="attachments">
+        <item quantity="one">المرفق</item>
+        <item quantity="other">المرفقات</item>
+    </plurals>
     <string name="audio_recordings">التسجيلات الصوتية</string>
     <string name="auto_backup">النسخ الاحتياطية التلقائية</string>
     <string name="auto_backup_error_message">حدث خطأ أثناء النسخ الاحتياطي التلقائي:\n\'%1$s\'\nيرجى التحقق من الإعدادات أو الإبلاغ عن خلل</string>
@@ -75,6 +79,7 @@
     <string name="change_color_message">اختر لونًا أو أنشئ لونًا جديدًا.\nيمكنك أيضًا تعديل اللون بالضغط المطول عليه.</string>
     <string name="change_note">تغيير الملاحظة</string>
     <string name="check_all_items">تحديد كل العناصر</string>
+    <string name="check_duplicates">التحقق من وجود التكرارات</string>
     <string name="choose_another_folder">اختيار مجلد آخر</string>
     <string name="choose_folder">اختيار مجلد</string>
     <string name="choose_other_app">اختر التطبيق الذي تريد الاستيراد منه</string>
@@ -94,8 +99,10 @@
     <string name="convert_to_text_note">تحويل إلى ملاحظة نصية</string>
     <string name="copied_link">تم نسخ الرابط إلى الحافظة</string>
     <string name="copy">نسخ</string>
+    <string name="crash_export_backup">للأسف، فشل تصدير النسخة الاحتياطية.\nيمكنك استخدام الزر \'%1$s\' للإبلاغ عن الأعطال أو محاولة تصدير ملف قاعدة البيانات الخام (SQLite) عبر \'%2$s\'. وسيتضمن هذا الملف محتويات الملاحظات فقط، دون المرفقات. ولكن في حال نجاح العملية، يمكنك استيراده مرة أخرى عبر خيار «الاستيراد من تطبيقات أخرى».</string>
     <string name="crash_export_backup_failed">للأسف، فشل تصدير النسخة الاحتياطية.\nيرجى استخدام زر \'%1$s\' للإبلاغ عن العطل.</string>
     <string name="crash_export_backup_message">يمكنك محاولة إنشاء نسخة احتياطية من ملاحظاتك بالنقر على \'%1$s\'.\nقد يفشل ذلك إذا أدى العطل إلى تلف البيانات. في هذه الحالة، يرجى استخدام زر \'%2$s\' للإبلاغ عن العطل</string>
+    <string name="crash_export_raw_backup_failed">للأسف، فشل تصدير قاعدة البيانات التي تم حفظها في نقاط التحقق.\nلم يتمكن النظام سوى من إنشاء نسخة من ملفات قاعدة البيانات الأولية في «%1$s». يرجى استخدام زر «»%2$s للإبلاغ عن هذا العطل</string>
     <string name="crash_message">حدث خطأ غير متوقع.\nنعتذر عن الإزعاج.</string>
     <string name="create_github_issue">إنشاء مشكلة على GitHub</string>
     <string name="creation_date">تم الإنشاء</string>
@@ -104,6 +111,8 @@
     <string name="dark">داكن</string>
     <string name="data_in_public">تخزين البيانات في المجلد العام</string>
     <string name="data_in_public_message">بتفعيل هذا الخيار، سيتم نقل قاعدة بيانات التطبيق الداخلية والملفات المرفقة إلى المجلد العام للتطبيق (Android/media/com.philkes.notallyx). وبالاقتران مع تطبيقات مزامنة الملفات، يمكن استخدام ذلك لمزامنة بيانات التطبيق بين عدة أجهزة.</string>
+    <string name="database">قاعدة البيانات</string>
+    <string name="database_dump_created">نسخة احتياطية أولية لقاعدة البيانات تم إنشاؤها في \'%1$s\'</string>
     <string name="date">التاريخ</string>
     <string name="date_format">تنسيق التاريخ</string>
     <string name="date_format_hint">يطبق تنسيق التاريخ والوقت المحدد في عرض الملاحظات</string>
@@ -165,6 +174,8 @@
     <string name="enable_lock_description">سيؤدي ذلك أيضًا إلى تشفير قاعدة البيانات</string>
     <string name="enable_lock_title">تفعيل القفل باستخدام البصمة/رمز PIN</string>
     <string name="enabled">مفعّل</string>
+    <string name="error">خطأ</string>
+    <string name="error_loading_data">حدث خطأ أثناء تحميل بعض البيانات من قاعدة البيانات. لن يتم عرض الملاحظات التالفة.\nيمكنك تنظيف قاعدة البيانات (حذف الملاحظات التالفة) باستخدام \'%1$s\'</string>
     <string name="error_while_renaming_file">حدث خطأ أثناء إعادة تسمية الملف</string>
     <string name="error_while_renaming_image">حدث خطأ أثناء إعادة تسمية الصورة</string>
     <string name="evernote">تطبيق \"Evernote\"</string>
@@ -172,10 +183,12 @@
     <string name="every">كل</string>
     <string name="export">تصدير</string>
     <string name="export_backup">تصدير النسخة الاحتياطية</string>
+    <string name="export_database">تصدير قاعدة البيانات</string>
     <string name="export_settings">تصدير الإعدادات</string>
     <string name="export_settings_failure">فشل تصدير الإعدادات، هل اخترت مسارًا غير صالح؟</string>
     <string name="export_settings_message">سيتم تصدير جميع الإعدادات إلى ملف JSON، والذي يمكن استخدامه لإعادة استيراد الإعدادات المحفوظة.\n\nيرجى ملاحظة أن هذا لا يشمل الإعدادات المشفرة مثل كلمة المرور للنسخ الاحتياطي التلقائي أو مفتاح التشفير البيومتري</string>
     <string name="export_settings_success">تم تصدير الإعدادات بنجاح</string>
+    <string name="exported">تم التصدير</string>
     <plurals name="exported_notes">
         <item quantity="one">تم تصدير %1$s ملاحظة</item>
         <item quantity="other">تم تصدير %1$s ملاحظات</item>
@@ -196,6 +209,7 @@
     <string name="import_action">استيراد</string>
     <string name="import_backup">استيراد نسخة احتياطية</string>
     <string name="import_backup_password_hint">إذا لم تكن النسخة الاحتياطية محمية بكلمة مرور، فقط اضغط على \"استيراد\"، وإلا أدخل كلمة المرور الصحيحة.</string>
+    <string name="import_from_notally">للاستيراد من Notally، ما عليك سوى استخدام \"%1$s\" بدلاً من ذلك</string>
     <string name="import_other">استيراد الملاحظات من تطبيق آخر</string>
     <string name="import_settings">استيراد الإعدادات</string>
     <string name="import_settings_failure">فشل استيراد الإعدادات، هل اخترت الملف الصحيح؟</string>
@@ -218,6 +232,7 @@
     <string name="invalid_google_keep">تم تقديم ملف ZIP غير صالح من \"Google Takeout\"</string>
     <string name="invalid_image">صورة غير صالحة</string>
     <string name="invalid_link">انسخ رابطًا صالحًا إلى الحافظة</string>
+    <string name="invalid_quillpad">تم تقديم ملف ZIP غير صالح لـ Quillpad</string>
     <string name="italic">مائل</string>
     <string name="item">عنصر</string>
     <string name="json_files">ملفات (JSON)</string>
@@ -269,6 +284,10 @@
     <string name="note_text_too_long_truncated">النص طويل جدًا، تم اقتطاعه إلى  %1$d حرفًا</string>
     <string name="note_too_big_truncating">الملاحظة كبيرة جدًا للحفظ، تم اقتطاعها إلى  %1$s حرفًا (كانت: %2$s)</string>
     <string name="notes">ملاحظات</string>
+    <plurals name="notes">
+        <item quantity="one">ملاحظة</item>
+        <item quantity="other">ملاحظات</item>
+    </plurals>
     <string name="notes_sorted_by">تم فرز الملاحظات حسب</string>
     <plurals name="notes_too_big_truncating">
         <item quantity="one">ملاحظة %1$s كبيرة جدًا للحفظ، تم اقتطاعها إلى %2$s  حرفًا</item>
@@ -293,12 +312,16 @@
     <string name="please_grant_notally_notification">يرجى منح NotallyX الإذن لإرسال الإشعارات</string>
     <string name="please_grant_notally_notification_auto_backup">في حال فشل النسخ الاحتياطي التلقائي، يمكنك تلقي إشعار عند منح التطبيق إذن الإشعارات</string>
     <string name="previous">السابق</string>
+    <string name="quillpad_help">لاستيراد ملاحظاتك من Quillpad، يجب عليك تصدير ملاحظات Quillpad كملف نسخ احتياطي بتنسيق .ZIP. للقيام بذلك، افتح تطبيق Quillpad، وانتقل إلى «الإعدادات» &gt; «النسخ الاحتياطي» &gt; «إنشاء نسخة احتياطية»، ثم احفظ ملف .ZIP على هاتفك. \n\nإذا كان لديك بالفعل ملف نسخ احتياطي بتنسيق .ZIP من Quillpad، فانقر على «استيراد» واختر الملف.</string>
     <string name="rate">تقييم هذا التطبيق</string>
     <string name="read_only">للقراءة فقط</string>
     <string name="ready_to_record">جاهز للتسجيل</string>
     <string name="record_audio">تسجيل الصوت</string>
     <string name="recording">جارٍ التسجيل…</string>
     <string name="redo">إعادة</string>
+    <string name="reimport_database">إعادة استيراد قاعدة البيانات</string>
+    <string name="reimport_database_failed">فشل إعادة استيراد قاعدة البيانات</string>
+    <string name="reimport_database_message">يمكنك الآن محاولة إعادة استيراد قاعدة البيانات الأولية. سيؤدي ذلك إلى حذف قاعدة البيانات التالفة الحالية (سيتم تخزين نسخة احتياطية في المجلد \'Android/media/com.philkes.notallyx/logs\') ثم محاولة استيراد قاعدة البيانات الأولية مع تخطي الملاحظات التالفة إن أمكن</string>
     <string name="reminder_no_repetition">بدون تكرار</string>
     <string name="reminders">التذكيرات</string>
     <string name="remove_link">إزالة الرابط</string>
@@ -336,6 +359,10 @@
     <string name="single_file">ملف واحد</string>
     <string name="single_note_or_list">ملاحظة واحدة أو قائمة واحدة</string>
     <string name="skip">تخطي</string>
+    <plurals name="skipped_corrupted_notes">
+        <item quantity="one">تم تخطي الملاحظة %1$sالتالفة</item>
+        <item quantity="other">تم تخطي الملاحظات %1$sالتالفة</item>
+    </plurals>
     <string name="small">صغير</string>
     <string name="something_went_wrong">حدث خطأ ما. يرجى المحاولة مرة أخرى.</string>
     <string name="something_went_wrong_audio">حدث خطأ ما. قد يكون تسجيل الصوت قد تم نقله أو حذفه.\n\nالخطأ: (%1$d، %2$d)</string>
@@ -382,6 +409,7 @@
     <string name="upcoming">القادمة</string>
     <string name="updated_link">رابط محدث</string>
     <string name="view">عرض</string>
+    <string name="view_crash_logs">عرض سجلات الأعطال</string>
     <string name="view_file">عرض الملف</string>
     <string name="view_logs">عرض ملف السجل</string>
     <string name="view_note">عرض الملاحظة</string>

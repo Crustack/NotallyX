@@ -129,6 +129,7 @@
     <string name="delete_all_notes">删除全部笔记？</string>
     <string name="delete_audio_recording_forever">永久删除录音？</string>
     <string name="delete_checked_items">删除选中的项目</string>
+    <string name="delete_color_message">目前使用这种颜色的笔记应该是什么颜色？</string>
     <string name="delete_file">删除 \"%1$s\" 文件？</string>
     <string name="delete_forever">永久删除</string>
     <string name="delete_image_forever">永久删除图片？</string>

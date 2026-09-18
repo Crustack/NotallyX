@@ -87,6 +87,7 @@
     <string name="change_color_message">Wybierz kolor lub stwórz nowy.\nMożesz też edytować kolor, przytrzymując go.</string>
     <string name="change_note">Zmień notatkę</string>
     <string name="check_all_items">Zaznacz wszystkie elementy</string>
+    <string name="check_duplicates">Sprawdź, czy nie ma duplikatów</string>
     <string name="choose_another_folder">Wybierz inny katalog</string>
     <string name="choose_folder">Wybierz katalog</string>
     <string name="choose_other_app">Wybierz aplikację, z której chcesz importować</string>
@@ -106,8 +107,10 @@
     <string name="convert_to_text_note">Zamień na notatkę</string>
     <string name="copied_link">Skopiowano link do schowka</string>
     <string name="copy">Skopiuj</string>
+    <string name="crash_export_backup">Niestety eksport kopii zapasowej nie powiódł się.\nMożesz użyć przycisku „”%1$s w celu zgłoszenia awarii lub spróbować wyeksportować plik bazy danych w formacie surowym (SQLite) za pomocą przycisku „%2$s”. Plik ten będzie zawierał wyłącznie treść notatek, bez załączników. Jeśli jednak operacja się powiedzie, możesz zaimportować go z powrotem, korzystając z opcji „Importuj z innych aplikacji”.</string>
     <string name="crash_export_backup_failed">Niestety, eksportowanie kopii zapasowej nie powiodło się.\nUżyj przycisku „%1$s”, aby zgłosić awarię\n</string>
     <string name="crash_export_backup_message">Możesz spróbować utworzyć kopię zapasową swoich notatek, klikając „%1$s”.\nTo może się nie udać, jeśli awaria spowodowała uszkodzenie danych. W takim przypadku użyj przycisku „%2$s”, aby zgłosić awarię.\n</string>
+    <string name="crash_export_raw_backup_failed">Niestety nie udało się wyeksportować bazy danych z punktem kontrolnym.\nW katalogu „\'%1$s\'” udało się utworzyć jedynie kopię surowych plików bazy danych. Proszę użyć przycisku „\'%2$s\'”, aby zgłosić awarię</string>
     <string name="crash_message">Wystąpił nieoczekiwany błąd.\nPrzepraszam za niedogodności.</string>
     <string name="create_github_issue">Otwórz problem na GitHubie</string>
     <string name="creation_date">Utworzono</string>
@@ -116,6 +119,8 @@
     <string name="dark">Ciemny</string>
     <string name="data_in_public">Przechowuj dane w folderze publicznym</string>
     <string name="data_in_public_message">Po włączeniu tej opcji wewnętrzna baza danych aplikacji i załączone pliki zostaną przeniesione do folderu publicznego aplikacji (Android/media/com.philkes.notallyx). W połączeniu z aplikacjami do synchronizacji plików można to wykorzystać do synchronizacji danych NotallyX między wieloma urządzeniami.</string>
+    <string name="database">Baza danych</string>
+    <string name="database_dump_created">Surowy zrzut bazy danych utworzony w „”%1$s</string>
     <string name="date">Data</string>
     <string name="date_format">Format daty</string>
     <string name="date_format_hint">Stosuje wybrany format daty w przeglądzie notatek</string>
@@ -181,6 +186,8 @@
     <string name="enable_lock_description">Spowoduje to również zaszyfrowanie bazy danych</string>
     <string name="enable_lock_title">Włącz blokadę za pomocą biometrii/PIN-u</string>
     <string name="enabled">Włączono</string>
+    <string name="error">Błąd</string>
+    <string name="error_loading_data">Wystąpił błąd podczas wczytywania niektórych danych z bazy danych. Uszkodzone notatki nie będą wyświetlane.\nMożesz oczyścić bazę danych (usuwając uszkodzone notatki) za pomocą \'%1$s\'</string>
     <string name="error_while_renaming_file">Błąd podczas zmiany nazwy pliku</string>
     <string name="error_while_renaming_image">Błąd podczas zmiany nazwy obrazu</string>
     <string name="evernote">Evernote</string>
@@ -188,6 +195,7 @@
     <string name="every">Każde</string>
     <string name="export">Eksportuj</string>
     <string name="export_backup">Wykonaj kopię zapasową</string>
+    <string name="export_database">Eksportuj bazę danych</string>
     <string name="export_settings">Wykonaj kopię zapasową ustawień</string>
     <string name="export_settings_failure">Nie udało się wyeksportować ustawień. Wybrano właściwą ścieżkę\?</string>
     <string name="export_settings_message">Wszystkie ustawienia zostaną wyeksportowane do pliku JSON, którego będzie można użyć do przywrócenia zapisanych ustawień.\nPamiętaj, że nie obejmuje to zaszyfrowanych ustawień, takich jak hasło automatycznej kopii zapasowej lub klucz szyfrowania biometrycznego</string>
@@ -289,7 +297,7 @@
     <string name="next">Dalej</string>
     <string name="no_auto_sort">Brak automatycznego sortowania</string>
     <string name="none">Brak</string>
-    <string name="not_exists">„%1$s’’ nie istnieje</string>
+    <string name="not_exists">„%1$s” nie istnieje</string>
     <string name="note">Notatka</string>
     <string name="note_text_too_long_truncated">Za długi tekst, zmniejszono do %1$d znaków</string>
     <string name="note_too_big_truncating">Notatka jest za długa do zapisania, została zmniejszona do %1$s znaków (było: %2$s)</string>
@@ -331,6 +339,9 @@
     <string name="record_audio">Nagrywaj</string>
     <string name="recording">Nagrywanie…</string>
     <string name="redo">Ponów</string>
+    <string name="reimport_database">Ponowne zaimportowanie bazy danych</string>
+    <string name="reimport_database_failed">Nie udało się ponownie zaimportować bazy danych</string>
+    <string name="reimport_database_message">Możesz teraz spróbować ponownie zaimportować surową bazę danych. Spowoduje to usunięcie obecnej uszkodzonej bazy danych (kopia zapasowa zostanie zapisana w katalogu „Android/media/com.philkes.notallyx/logs”), a następnie podjętą zostanie próba zaimportowania surowej bazy danych z pominięciem uszkodzonych notatek, o ile to możliwe.</string>
     <string name="reminder_no_repetition">Brak powtarzania</string>
     <string name="reminders">Przypomnienia</string>
     <string name="remove_link">Usuń link</string>
@@ -370,6 +381,10 @@
     <string name="single_file">Pojedynczy plik</string>
     <string name="single_note_or_list">Pojedyncza notatka lub lista</string>
     <string name="skip">Pomiń</string>
+    <plurals name="skipped_corrupted_notes">
+        <item quantity="one">Pominięto  %1$suszkodzoną notatkę</item>
+        <item quantity="other">Pominięto %1$suszkodzone notatki</item>
+    </plurals>
     <string name="small">Mały</string>
     <string name="something_went_wrong">Coś poszło nie tak. Spróbuj ponownie.</string>
     <string name="something_went_wrong_audio">Coś poszło nie tak. Nagranie audio mogło zostać przeniesione lub usunięte.\nBłąd: (%1$d, %2$d)</string>
@@ -418,6 +433,7 @@
     <string name="upcoming">Nadchodzące</string>
     <string name="updated_link">Link zaktualizowany</string>
     <string name="view">Widok</string>
+    <string name="view_crash_logs">Wyświetl dzienniki awarii</string>
     <string name="view_file">Zobacz plik</string>
     <string name="view_logs">Zobacz plik dziennika zdarzeń</string>
     <string name="view_note">Zobacz notatkę…</string>
