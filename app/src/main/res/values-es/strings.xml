@@ -19,6 +19,10 @@
     </plurals>
     <string name="ascending">Ascendente</string>
     <string name="attach_file">Adjuntar fichero</string>
+    <plurals name="attachments">
+        <item quantity="one">Adjunto</item>
+        <item quantity="other">Adjuntos</item>
+    </plurals>
     <string name="audio_recordings">Grabaciones de audio</string>
     <string name="auto_backup">Copia de seguridad automática</string>
     <string name="auto_backup_error_message">Ha ocurrido un error durante una copia automática:\n\'%1$s’\nComprueba tus ajustes o informa de un error</string>
@@ -75,6 +79,7 @@
     <string name="change_color_message">Elige un color o crea uno nuevo.\nPuedes también editar un color con una pulsación larga sobre él.</string>
     <string name="change_note">Cambiar nota</string>
     <string name="check_all_items">Marcar todos los elementos</string>
+    <string name="check_duplicates">Comprobar si hay duplicados</string>
     <string name="choose_another_folder">Elegir otra carpeta</string>
     <string name="choose_folder">Elegir carpeta</string>
     <string name="choose_other_app">Elegir aplicación de la que importar</string>
@@ -94,6 +99,7 @@
     <string name="convert_to_text_note">Convertir en nota de texto</string>
     <string name="copied_link">Enlace copiado al portapapeles</string>
     <string name="copy">Copiar</string>
+    <string name="crash_export_backup">Lamentablemente, la exportación de la copia de seguridad falló.\nPuede usar el botón \'%1$s\' para informar del error o intentar exportar el archivo de base de datos (SQLite) mediante \'%2$s\'. Solo incluirá el contenido de las notas, sin adjuntos. Si la exportación se realiza correctamente, puede importarla de nuevo mediante la opción «Importar desde otras aplicaciones».</string>
     <string name="crash_export_backup_failed">Lamentablemente, falló la exportación del backup.\nPor favor, use el botón ‘%1$s’ para informar del fallo.</string>
     <string name="crash_export_backup_message">Puede intentar crear un backup de sus notas pinchando en ‘%1$s’.\nEsto podría fallar si el fallo provocó la pérdida o corrupción de datos. En ese caso, utiliza el botón «%2$s» para informar del fallo.</string>
     <string name="crash_message">Se produjo un error inesperado.\nDisculpe las molestias.</string>
@@ -104,9 +110,12 @@
     <string name="dark">Oscuro</string>
     <string name="data_in_public">Guardar datos en carpeta pública</string>
     <string name="data_in_public_message">Al habilitar esta opción, la base de datos interna de la aplicación se moverá al directorio público de la aplicación (Android/media/com.philkes.notallyx).\nEn combinación con aplicaciones de sincronización de archivos, esta opción se puede utilizar para sincronizar datos de NotallyX entre varios dispositivos.</string>
+    <string name="database">Base de datos</string>
     <string name="date">Fecha</string>
     <string name="date_format">Formato de fecha</string>
     <string name="date_format_hint">Aplica el formato de fecha seleccionado en la vista general de notas</string>
+    <string name="date_format_note_view">Formato fecha y hora en vista de nota</string>
+    <string name="date_format_overview">Formato fecha y hora en vista de descripción</string>
     <plurals name="days">
         <item quantity="one">Día</item>
         <item quantity="other">Días</item>
@@ -163,6 +172,8 @@
     <string name="enable_lock_description">Esto también cifrará la base de datos</string>
     <string name="enable_lock_title">Habilitar bloqueo biométrico/PIN</string>
     <string name="enabled">Habilitado</string>
+    <string name="error">Error</string>
+    <string name="error_loading_data">Error al cargar algunos datos de la base de datos. Las notas dañadas no se mostrarán.\nPuede limpiar la base de datos (eliminar las notas dañadas) usando \'%1$s\'.</string>
     <string name="error_while_renaming_file">Error al renombrar fichero</string>
     <string name="error_while_renaming_image">Error al renombrar imagen</string>
     <string name="evernote">Evernote</string>
@@ -170,10 +181,12 @@
     <string name="every">Cada</string>
     <string name="export">Exportar</string>
     <string name="export_backup">Exportar copia de seguridad</string>
+    <string name="export_database">Exportar DB</string>
     <string name="export_settings">Exportar ajustes</string>
     <string name="export_settings_failure">Fallo al exportar ajustes, ¿has escogido una ruta no válida\?</string>
     <string name="export_settings_message">Todas las configuraciones se exportarán a un archivo JSON, que se puede utilizar para volver a importar las configuraciones almacenadas.\n\nTenga en cuenta que esto no incluye las configuraciones cifradas, como la contraseña de copia de seguridad automática o la clave de cifrado biométrico.</string>
     <string name="export_settings_success">Configuración exportada exitosamente</string>
+    <string name="exported">Exportada</string>
     <plurals name="exported_notes">
         <item quantity="one">Exportada %1$s nota</item>
         <item quantity="other">Exportadas %1$s notas</item>
@@ -194,6 +207,7 @@
     <string name="import_action">Importar</string>
     <string name="import_backup">Importar copia de seguridad</string>
     <string name="import_backup_password_hint">Si su copia de seguridad no está protegida con contraseña, simplemente presione Importar, de lo contrario ingrese la contraseña correcta.</string>
+    <string name="import_from_notally">Para importar desde Notally, usar “%1$s” en su lugar</string>
     <string name="import_other">Importar notas de otra aplicación</string>
     <string name="import_settings">Importar ajustes</string>
     <string name="import_settings_failure">Fallo al importar ajustes, ¿has escogido el fichero correcto\?</string>
@@ -216,6 +230,7 @@
     <string name="invalid_google_keep">Fichero ZIP de Google Takeout no válido</string>
     <string name="invalid_image">Imagen no válida</string>
     <string name="invalid_link">Copiar un enlace válido en tu portapapeles</string>
+    <string name="invalid_quillpad">Fichero Quillpad ZIP no válido</string>
     <string name="italic">Cursiva</string>
     <string name="item">Elemento</string>
     <string name="json_files">Ficheros JSON</string>
@@ -267,6 +282,10 @@
     <string name="note_text_too_long_truncated">Texto demasiado largo, truncando a %1$d caracteres</string>
     <string name="note_too_big_truncating">La nota es demasiado grande para guardarla, ha sido truncada a %1$s caracteres (tenía %2$s)</string>
     <string name="notes">Notas</string>
+    <plurals name="notes">
+        <item quantity="one">Nota</item>
+        <item quantity="other">Notas</item>
+    </plurals>
     <string name="notes_sorted_by">Notas ordenadas por</string>
     <plurals name="notes_too_big_truncating">
         <item quantity="one">%1$s nota es demasiado grande para guardarla, ha sido truncada a %2$s caracteres</item>
@@ -274,12 +293,14 @@
     </plurals>
     <string name="of_the_month">%1$s de mes</string>
     <string name="of_the_month_last">Último %1$s de mes</string>
+    <string name="off">Desconectado</string>
     <string name="open_link">Abrir enlace</string>
     <string name="open_note">Abrir nota</string>
     <string name="others">Otros</string>
     <string name="pause">Pausar</string>
     <string name="paused">Pausado</string>
     <string name="pin">Fijar</string>
+    <string name="pin_to_status_bar">Fijar a la barra de estado</string>
     <string name="pinned">Fijados</string>
     <string name="plain_text_files">Ficheros en Markdown/texto plano</string>
     <string name="plain_text_files_help">Para importar notas desde archivos de texto sin formato (un solo archivo o carpeta), haga clic en Importar. Cada archivo se importa como una nota independiente y el nombre del archivo se convierte en el título de la nota. Si el contenido del texto comienza con una sintaxis de lista (p. ej., Markdown ’- [x]’, sintaxis NotallyX ’[✓]’ o ’*’, ’-’), se convertirá en una nota de lista.</string>
@@ -289,12 +310,16 @@
     <string name="please_grant_notally_notification">Otorgar permisos para enviar notificaciones a Notallyx</string>
     <string name="please_grant_notally_notification_auto_backup">Si falla una copia de seguridad automática, puede recibir una notificación, si otorga permiso a NotallyX para enviar notificaciones</string>
     <string name="previous">Anterior</string>
+    <string name="quillpad_help">Para importar tus notas de Quillpad, debes exportarlas como un archivo de copia de seguridad .ZIP. Para ello, abre Quillpad, ve a Ajustes &gt; Copia de seguridad &gt; Crear una copia de seguridad y guarda el archivo .ZIP en tu teléfono.\n\nSi ya tienes un archivo de copia de seguridad .ZIP de Quillpad, pulsa Importar y selecciónalo.</string>
     <string name="rate">Calificar esta app</string>
     <string name="read_only">Solo lectura</string>
     <string name="ready_to_record">Preparado para grabar</string>
     <string name="record_audio">Grabar audio</string>
     <string name="recording">Grabando…</string>
     <string name="redo">Rehacer</string>
+    <string name="reimport_database">Reimportar DB</string>
+    <string name="reimport_database_failed">Falló la reimportación de la base de datos</string>
+    <string name="reimport_database_message">Ahora puedes intentar reimportar la base de datos original. Esto elimina la base de datos dañada actual (se guardará una copia de respaldo en \'Android/media/com.philkes.notallyx/logs\') y luego intenta importar la base de datos original omitiendo las notas dañadas si es posible.</string>
     <string name="reminder_no_repetition">Sin repetición</string>
     <string name="reminders">Recordatorios</string>
     <string name="remove_link">Eliminar enlace</string>
@@ -332,6 +357,10 @@
     <string name="single_file">Un fichero</string>
     <string name="single_note_or_list">Una nota o una lista</string>
     <string name="skip">Saltar</string>
+    <plurals name="skipped_corrupted_notes">
+        <item quantity="one">Omitida %1$s nota corrupta</item>
+        <item quantity="other">Omitidas %1$s notas corruptas</item>
+    </plurals>
     <string name="small">Pequeño</string>
     <string name="something_went_wrong">Algo salió mal. Inténtalo de nuevo.</string>
     <string name="something_went_wrong_audio">Algo salió mal. Es posible que la grabación de audio se haya movido o eliminado.\n\nError: (%1$d, %2$d)</string>
@@ -353,7 +382,13 @@
     <string name="text_size_preview">Lorem ipsum dolor sit</string>
     <string name="theme">Tema</string>
     <string name="theme_use_dynamic_colors">Usar color de fondo del sistema</string>
+    <string name="time">Hora</string>
+    <string name="time_24h">24h</string>
+    <string name="time_am_pm">am/pm</string>
+    <string name="time_format_note_view">Formato de hora en vista de nota</string>
+    <string name="time_format_overview">Formato de hora en vista de descripción</string>
     <string name="title">Título</string>
+    <string name="to_pin_note_status_bar">Para fijar una nota a la barra de estado, tienes que permitir que NotallyX envíe notificaciones. Toca Ajustes &gt; Permisos y permite las notificaciones.</string>
     <string name="to_record_audio">Para grabar audio, permita que NotallyX acceda a su micrófono. Pulsa Configuración &gt; Permisos y active el micrófono.</string>
     <string name="unarchive">Desarchivar</string>
     <plurals name="unarchived_selected_notes">
@@ -368,6 +403,7 @@
     <string name="unlock">Desbloquear con biometría/PIN</string>
     <string name="unlock_with_biometrics_not_setup">Anteriormente habilitó el bloqueo biométrico, pero la biometría y el PIN ya no están configurados para su dispositivo.\n\nSi desea deshabilitar el bloqueo biométrico, presione Deshabilitar; de lo contrario, configure la biometría y el PIN para su dispositivo.</string>
     <string name="unpin">Desfijar</string>
+    <string name="unpin_from_status_bar">Desprender de la barra de estado</string>
     <string name="upcoming">Próximo</string>
     <string name="updated_link">Actualizar enlace</string>
     <string name="view">Vista</string>
