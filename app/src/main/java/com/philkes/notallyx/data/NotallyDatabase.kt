@@ -55,6 +55,7 @@ abstract class NotallyDatabase : RoomDatabase() {
         const val DATABASE_NAME = "NotallyDatabase"
 
         @Volatile private var instance: NotNullLiveData<NotallyDatabase>? = null
+        @Volatile private var replacementInProgress = false
 
         fun getCurrentDatabaseFile(context: ContextWrapper): File {
             return if (NotallyXPreferences.getInstance(context).dataInPublicFolder.value) {
@@ -105,7 +106,7 @@ abstract class NotallyDatabase : RoomDatabase() {
         @MainThread
         fun getDatabase(context: ContextWrapper): NotNullLiveData<NotallyDatabase> {
             return instance?.also {
-                if (!it.value.isOpen) {
+                if (!replacementInProgress && !it.value.isOpen) {
                     it.value = createInstance(context, NotallyXPreferences.getInstance(context))
                 }
             }
@@ -122,6 +123,14 @@ abstract class NotallyDatabase : RoomDatabase() {
                     database.close()
                 }
             }
+        }
+
+        fun startReplacement() {
+            replacementInProgress = true
+        }
+
+        fun endReplacement() {
+            replacementInProgress = false
         }
 
         private var testInstance: NotallyDatabase? = null
@@ -243,8 +252,17 @@ abstract class NotallyDatabase : RoomDatabase() {
             instanceBuilder.openHelperFactory(factory)
         }
 
+        @MainThread
         fun postInstance(notallyDatabase: NotallyDatabase) {
-            instance?.postValue(notallyDatabase)
+            synchronized(this) {
+                val current = instance
+                if (current == null) {
+                    instance = NotNullLiveData(notallyDatabase)
+                } else {
+                    current.value = notallyDatabase
+                }
+                replacementInProgress = false
+            }
         }
 
         object Migration2 : Migration(1, 2) {
