@@ -79,6 +79,7 @@
     <string name="change_color_message">Оберіть колір або додайте власний.\nЩоб змінити колір, натисніть і утримуйте його</string>
     <string name="change_note">Змінити нотатку</string>
     <string name="check_all_items">Позначити всі пункти</string>
+    <string name="check_duplicates">Перевірити на дублікати</string>
     <string name="choose_another_folder">Вибрати іншу папку</string>
     <string name="choose_folder">Вибрати папку</string>
     <string name="choose_other_app">Оберіть додаток, з якого потрібно імпортувати</string>
@@ -98,6 +99,7 @@
     <string name="convert_to_text_note">Перетворити на текстову нотатку</string>
     <string name="copied_link">Посилання скопійовано</string>
     <string name="copy">Копія </string>
+    <string name="crash_export_backup">На жаль, не вдалося експортувати резервну копію. \nВи можете скористатися кнопкою \'%1$s\', щоб повідомити про збій, або спробувати експортувати необроблений файл бази даних (SQLite) за допомогою \'%2$s\'. Він міститиме лише вміст нотаток, без вкладень. Але якщо експорт завершиться успішно, ви зможете імпортувати його назад через опцію «Імпорт з інших додатків».</string>
     <string name="crash_export_backup_failed">На жаль, не вдалося експортувати резервну копію.\nБудь ласка, скористайтеся кнопкою \'%1$s\', щоб повідомити про помилку</string>
     <string name="crash_export_backup_message">Ви можете спробувати створити резервну копію своїх нотаток, натиснувши \'%1$s\'.\nЦе може не спрацювати, якщо збій призвів до пошкодження даних. У такому разі, будь ласка, скористайтеся кнопкою \'%2$s\', щоб повідомити про помилку</string>
     <string name="crash_message">Сталася неочікувана помилка.\nПерепрошуємо за незручності.</string>
@@ -108,6 +110,7 @@
     <string name="dark">Темна</string>
     <string name="data_in_public">Зберігання даних у публічній папці</string>
     <string name="data_in_public_message">Увімкнувши цю опцію, внутрішню базу даних застосунку та прикріплені файли буде переміщено до публічної папки застосунку (Android/media/com.philkes.notallyx). У поєднанні з застосунками для синхронізації файлів це можна використовувати для синхронізації даних NotallyX між кількома пристроями.</string>
+    <string name="database">База даних</string>
     <string name="date">Дата</string>
     <string name="date_format">Формат дати</string>
     <string name="date_format_hint">Застосовує вибраний формат дати у списку нотаток</string>
@@ -173,6 +176,8 @@
     <string name="enable_lock_description">Це також зашифрує базу даних</string>
     <string name="enable_lock_title">Увімкнути блокування за допомогою біометрії або PIN-коду</string>
     <string name="enabled">Увімкнено</string>
+    <string name="error">Помилка</string>
+    <string name="error_loading_data">Помилка під час завантаження деяких даних із бази даних. Пошкоджені нотатки не відображатимуться. Ви можете очистити базу даних (видаливши пошкоджені нотатки) за допомогою \'%1$s\'</string>
     <string name="error_while_renaming_file">Помилка під час перейменування файлу</string>
     <string name="error_while_renaming_image">Помилка під час перейменування зображення</string>
     <string name="evernote">Імпортувати з Evernote</string>
@@ -180,6 +185,7 @@
     <string name="every">Кожні</string>
     <string name="export">Експорт</string>
     <string name="export_backup">Експорт резервної копії</string>
+    <string name="export_database">Експорт БД</string>
     <string name="export_settings">Експорт налаштувань</string>
     <string name="export_settings_failure">Не вдалося експортувати налаштування. Можливо, ви обрали неправильний шлях.</string>
     <string name="export_settings_message">Усі налаштування будуть експортовані у файл JSON, який можна використовувати для повторного імпорту збережених параметрів.\n\nЗверніть увагу: сюди не входять зашифровані дані, як-от пароль автокопіювання або ключ біометричного шифрування.</string>
@@ -323,6 +329,9 @@
     <string name="record_audio">Записати аудіо</string>
     <string name="recording">Запис…</string>
     <string name="redo">Повторити</string>
+    <string name="reimport_database">Реімпорт БД</string>
+    <string name="reimport_database_failed">Помилка реімпорту бази даних</string>
+    <string name="reimport_database_message">Тепер ви можете спробувати виконати реімпорт необробленої бази даних. Це видалить поточну пошкоджену базу даних (резервну копію буде збережено в «Android/media/com.philkes.notallyx/logs»), а потім спробує імпортувати необроблену базу даних, пропускаючи пошкоджені нотатки, якщо це можливо.</string>
     <string name="reminder_no_repetition">Без повторення</string>
     <string name="reminders">Нагадування</string>
     <string name="remove_link">Видалити посилання</string>
@@ -360,6 +369,10 @@
     <string name="single_file">Одним файлом</string>
     <string name="single_note_or_list">Окрема нотатка або список</string>
     <string name="skip">Пропустити</string>
+    <plurals name="skipped_corrupted_notes">
+        <item quantity="one">Пропущено пошкоджених нотаток: %1$s</item>
+        <item quantity="other">Пропущено пошкоджених нотаток: %1$s</item>
+    </plurals>
     <string name="small">Малий</string>
     <string name="something_went_wrong">Щось пішло не так. Спробуйте ще раз.</string>
     <string name="something_went_wrong_audio">Щось пішло не так. Можливо, аудіозапис переміщено або видалено.\n\nПомилка: (%1$d, %2$d)</string>
