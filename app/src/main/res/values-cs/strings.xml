@@ -20,6 +20,11 @@
     </plurals>
     <string name="ascending">Vzestupně</string>
     <string name="attach_file">Přiložit soubor</string>
+    <plurals name="attachments">
+        <item quantity="few">Přílohy</item>
+        <item quantity="many">Příloh</item>
+        <item quantity="one">Příloha</item>
+    </plurals>
     <string name="audio_recordings">Zvukové záznamy</string>
     <string name="auto_backup">Automatické zálohování</string>
     <string name="auto_backup_error_message">Během automatického zálohování došlo k chybě:\n\'%1$s\'\nProsím, zkontrolujte nastavení nebo nahlaste chybu</string>
@@ -35,7 +40,8 @@
     <string name="auto_remove_deleted_notes">Trvale odstranit smazané poznámky po</string>
     <string name="auto_remove_deleted_notes_hint">Při zapnutí této volby se smazané poznámky po X dnech trvale odstraní. </string>
     <string name="auto_save_after_idle_time">Automatické uložení poznámky při nečinnosti </string>
-    <string name="auto_sort_by_checked">Seřadit zaškrtnuté položky na konec</string>
+    <string name="auto_sort_by_checked">Zařadit splněné položky na konec</string>
+    <string name="auto_sort_by_checked_timestamp">Řadit splněné položky podle času splnění </string>
     <string name="back">Zpět</string>
     <string name="backup">Zálohování</string>
     <string name="backup_password">Heslo záloh</string>
@@ -73,6 +79,7 @@
     <string name="cant_load_image">Nelze načíst obrázek. Možná byl přesunut nebo odstraněn</string>
     <string name="cant_open_link">Odkaz nelze otevřít</string>
     <string name="change_color">Změnit barvu</string>
+    <string name="change_color_default_message">Symbol ★ označuje výchozí barvu pro nové poznámky. </string>
     <string name="change_color_message">Vyberte barvu nebo vytvořte novou. Barvu také můžete upravit dlouhým stisknutím. </string>
     <string name="change_note">Změnit poznámku</string>
     <string name="check_all_items">Vybrat  všechny položky</string>
@@ -108,10 +115,16 @@
     <string name="date">Datum</string>
     <string name="date_format">Formát data</string>
     <string name="date_format_hint">Nastaví vybraný formát data v přehledu poznámek</string>
+    <string name="date_format_note_view">Formát data a času v detailu poznámky </string>
+    <string name="date_format_overview">Formát data a času v přehledu poznámek</string>
     <plurals name="days">
+        <item quantity="few">Dny</item>
+        <item quantity="many">Dní</item>
         <item quantity="one">Den</item>
         <item quantity="other">Dny</item>
     </plurals>
+    <string name="default_color_hint">Toto je výchozí barva pro nové poznámky. Chcete-li ji změnit, nastavte jako výchozí jinou barvu. </string>
+    <string name="default_list_note_view_mode">Výchozí režim zobrazení seznamů</string>
     <string name="delete">Smazat</string>
     <string name="delete_all">Smazat vše</string>
     <string name="delete_all_notes">Smazat všechny poznámky\?</string>
@@ -175,6 +188,7 @@
     <string name="export_settings_failure">Nepodařilo se exportovat nastavení, nezvolili jste neplatnou cestu\?</string>
     <string name="export_settings_message">Všechna nastavení se vyexportují do souboru JSON, který lze použít k opětovnému importu uložených nastavení.\n\Všimněte si, že toto nastavení nezahrnuje šifrovaná nastavení, jako je heslo pro automatické zálohování nebo biometrický šifrovací klíč.</string>
     <string name="export_settings_success">Nastavení úspěšně exportováno</string>
+    <string name="exported">Exportováno</string>
     <plurals name="exported_notes">
         <item quantity="few">Exportovány %1$s poznámky</item>
         <item quantity="many">Exportováno %1$s poznámek</item>
@@ -196,6 +210,7 @@
     <string name="import_action">Importovat</string>
     <string name="import_backup">Importovat zálohu</string>
     <string name="import_backup_password_hint">Pokud vaše záloha není chráněna heslem, jednoduše stiskněte tlačítko Importovat, jinak zadejte správné heslo.</string>
+    <string name="import_from_notally">Pro import z aplikace Notally jednoduše použijte „%1$s“</string>
     <string name="import_other">Importovat poznámky z jiné aplikace</string>
     <string name="import_settings">Importovat nastavení</string>
     <string name="import_settings_failure">Nepodařilo se importovat nastavení, vybrali jste správný soubor\?</string>
@@ -219,6 +234,7 @@
     <string name="invalid_google_keep">Poskytnut neplatný soubor ZIP služby Google Takeout</string>
     <string name="invalid_image">Neplatný obrázek</string>
     <string name="invalid_link">Zkopírovat platný odkaz do schránky</string>
+    <string name="invalid_quillpad">Poskytnutý ZIP soubor aplikace Quillpad není platný. </string>
     <string name="italic">Kurzíva</string>
     <string name="item">Položka</string>
     <string name="json_files">JSON soubory</string>
@@ -231,6 +247,7 @@
     <string name="labels_hidden_in_overview">Pokud tuto funkci povolíte, budou popisky poznámek v přehledu skryté.</string>
     <string name="labels_hidden_in_overview_title">Skrýt štítky v přehledu</string>
     <string name="large">Velké</string>
+    <string name="last_used">Naposledy použitý</string>
     <string name="libraries">Knihovny</string>
     <string name="light">Světlé</string>
     <string name="link">Odkaz</string>
@@ -238,6 +255,7 @@
     <string name="list">Seznam</string>
     <string name="list_item_auto_sort">Seřadit položky seznamu</string>
     <string name="locked">Uzamčeno</string>
+    <string name="make_default">Nastavit jako výchozí</string>
     <string name="make_feature_request">Navrhnout novou funkci</string>
     <string name="make_list">Vytvořit seznam</string>
     <string name="max_backups">Počet uchovávaných záloh</string>
@@ -269,6 +287,11 @@
     <string name="note_text_too_long_truncated">Text překročil délku, zkráceno na %1$d znaků\n</string>
     <string name="note_too_big_truncating">Poznámka je příliš velká na uložení, byla zkrácena na %1$s znaků (původně: %2$s)\n</string>
     <string name="notes">Poznámky</string>
+    <plurals name="notes">
+        <item quantity="few">Poznámky</item>
+        <item quantity="many">Poznámek</item>
+        <item quantity="one">Poznámka</item>
+    </plurals>
     <string name="notes_sorted_by">Poznámky řazeny dle</string>
     <plurals name="notes_too_big_truncating">
         <item quantity="few">%1$s Poznámky jsou příliš velké na uložení, byly zkráceny na %2$s znaků\n</item>
@@ -277,12 +300,14 @@
     </plurals>
     <string name="of_the_month">%1$s v měsíci</string>
     <string name="of_the_month_last">Poslední %1$s v měsíci</string>
+    <string name="off">Vypnuto</string>
     <string name="open_link">Otevřít odkaz</string>
     <string name="open_note">Otevřít poznámku</string>
     <string name="others">Jiné</string>
     <string name="pause">Pozastavit</string>
     <string name="paused">Pozastaveno</string>
     <string name="pin">Připnout</string>
+    <string name="pin_to_status_bar">Připnout na stavovou lištu</string>
     <string name="pinned">Připnuté</string>
     <string name="plain_text_files">Markdown/Textové soubory</string>
     <string name="plain_text_files_help">Chcete-li importovat poznámky z textových souborů (jednotlivých souborů nebo složek), klikněte na tlačítko Importovat. Každý soubor se importuje jako samostatná poznámka, název souboru se stane názvem poznámky. Pokud textový obsah začíná syntaxí seznamu (např. syntaxí Markdown \'- [x]\', NotallyX \'[✓]\' nebo \'*\', \'-\'), bude převeden na poznámku Seznam.</string>
@@ -292,6 +317,7 @@
     <string name="please_grant_notally_notification">Povolte prosím  NotallyX zasílat oznámení</string>
     <string name="please_grant_notally_notification_auto_backup">Pokud automatické zálohování selže, můžete obdržet oznámení, pokud NotallyX udělíte oprávnění k zasílání oznámení</string>
     <string name="previous">Předchozí</string>
+    <string name="quillpad_help">Pro import poznámek z aplikace Quillpad je nutné nejprve exportovat zálohu poznámek jako soubor .ZIP. Otevřete Quillpad, přejděte do Nastavení &gt; Záloha &gt; Vytvořit zálohu a uložte soubor .ZIP do telefonu.\nPokud již soubor zálohy Quillpad ve formátu .ZIP máte, klepněte na Importovat a vyberte jej.\n</string>
     <string name="rate">Ohodnotit aplikaci</string>
     <string name="read_only">Pouze pro čtení</string>
     <string name="ready_to_record">Připraveno k záznamu</string>
@@ -329,6 +355,8 @@
     <string name="select_labels">Vybrat štítky</string>
     <string name="select_note">Vybrat poznámku</string>
     <string name="send_feedback">Odeslat zpětnou vazbu</string>
+    <string name="set_as_default_color">Nastavit jako výchozí barvu\?</string>
+    <string name="set_as_default_color_message">Nastavit tuto barvu jako výchozí pro nové poznámky</string>
     <string name="settings">Nastavení</string>
     <string name="share">Sdílet</string>
     <string name="single_file">Soubor</string>
@@ -352,9 +380,16 @@
     <string name="text_default">Výchozí</string>
     <string name="text_size_note_editor">Velikost písma (editor poznámek)</string>
     <string name="text_size_overview">Velikost písma (přehled)</string>
+    <string name="text_size_preview">Lorem ipsum dolor sit</string>
     <string name="theme">Téma</string>
     <string name="theme_use_dynamic_colors">Použít barvy z tapety</string>
+    <string name="time">Čas</string>
+    <string name="time_24h">24h</string>
+    <string name="time_am_pm">dop./odp.</string>
+    <string name="time_format_note_view">Formát času v detailu poznámky</string>
+    <string name="time_format_overview">Formát času v přehledu poznámek</string>
     <string name="title">Název</string>
+    <string name="to_pin_note_status_bar">Chcete-li připnout poznámku na stavovou lištu, povolte aplikaci NotallyX zasílání oznámení. Klepněte na Nastavení &gt; Oprávnění a povolte Oznámení. </string>
     <string name="to_record_audio">Chcete-li nahrávat zvuk, povolte  NotallyX přístup k mikrofonu. Klepněte na Nastavení &gt; Oprávnění a zapněte Mikrofon.</string>
     <string name="unarchive">Zrušit archivaci</string>
     <plurals name="unarchived_selected_notes">
@@ -370,6 +405,7 @@
     <string name="unlock">Odemknout</string>
     <string name="unlock_with_biometrics_not_setup">Dříve jste biometrický zámek zapnuli, ale biometrické údaje/PIN již nejsou pro vaše zařízení nastaveny.\n\nPokud chcete biometrický zámek vypnout, stiskněte tlačítko Zakázat, jinak nastavte biometrické údaje/PIN pro vaše zařízení.</string>
     <string name="unpin">Odepnout</string>
+    <string name="unpin_from_status_bar">Odepnout ze stavové lišty</string>
     <string name="upcoming">Nadcházející</string>
     <string name="updated_link">Upravit odkaz</string>
     <string name="view">Rozložení</string>
