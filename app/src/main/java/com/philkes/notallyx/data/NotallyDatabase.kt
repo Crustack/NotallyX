@@ -253,6 +253,22 @@ abstract class NotallyDatabase : RoomDatabase() {
         }
 
         @MainThread
+        fun postNewInstance(
+            context: ContextWrapper,
+            dataInPublic: Boolean? = null,
+            biometricLock: BiometricLock? = null,
+        ) {
+            val preferences = NotallyXPreferences.getInstance(context)
+            val notallyDatabase =
+                getFreshDatabase(
+                    context,
+                    dataInPublic ?: preferences.dataInPublicFolder.value,
+                    biometricLock ?: preferences.biometricLock.value,
+                )
+            postInstance(notallyDatabase)
+        }
+
+        @MainThread
         fun postInstance(notallyDatabase: NotallyDatabase) {
             synchronized(this) {
                 val current = instance
