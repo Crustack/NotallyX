@@ -102,6 +102,7 @@
     <string name="crash_export_backup">Lamentablemente, la exportación de la copia de seguridad falló.\nPuede usar el botón \'%1$s\' para informar del error o intentar exportar el archivo de base de datos (SQLite) mediante \'%2$s\'. Solo incluirá el contenido de las notas, sin adjuntos. Si la exportación se realiza correctamente, puede importarla de nuevo mediante la opción «Importar desde otras aplicaciones».</string>
     <string name="crash_export_backup_failed">Lamentablemente, falló la exportación del backup.\nPor favor, use el botón ‘%1$s’ para informar del fallo.</string>
     <string name="crash_export_backup_message">Puede intentar crear un backup de sus notas pinchando en ‘%1$s’.\nEsto podría fallar si el fallo provocó la pérdida o corrupción de datos. En ese caso, utiliza el botón «%2$s» para informar del fallo.</string>
+    <string name="crash_export_raw_backup_failed">Lamentablemente, no se ha podido exportar la base de datos guardada en un punto de control.\nSolo se ha podido crear una copia de los archivos sin procesar de la base de datos en «%1$s». Utiliza el botón «»%2$s para informar del fallo.</string>
     <string name="crash_message">Se produjo un error inesperado.\nDisculpe las molestias.</string>
     <string name="create_github_issue">Crear incidente en Github</string>
     <string name="creation_date">Creado</string>
@@ -111,6 +112,7 @@
     <string name="data_in_public">Guardar datos en carpeta pública</string>
     <string name="data_in_public_message">Al habilitar esta opción, la base de datos interna de la aplicación se moverá al directorio público de la aplicación (Android/media/com.philkes.notallyx).\nEn combinación con aplicaciones de sincronización de archivos, esta opción se puede utilizar para sincronizar datos de NotallyX entre varios dispositivos.</string>
     <string name="database">Base de datos</string>
+    <string name="database_dump_created">Volcado de la base de datos sin procesar creado en \'%1$s\'</string>
     <string name="date">Fecha</string>
     <string name="date_format">Formato de fecha</string>
     <string name="date_format_hint">Aplica el formato de fecha seleccionado en la vista general de notas</string>
@@ -407,6 +409,7 @@
     <string name="upcoming">Próximo</string>
     <string name="updated_link">Actualizar enlace</string>
     <string name="view">Vista</string>
+    <string name="view_crash_logs">Ver registros de errores</string>
     <string name="view_file">Ver fichero</string>
     <string name="view_logs">Ver fichero de registro</string>
     <string name="view_note">Ver nota</string>

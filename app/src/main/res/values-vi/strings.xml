@@ -79,6 +79,7 @@
     <string name="change_color_message">Chọn một màu hoặc tạo mới.\nBạn có thể thay đổi một màu bằng việc ấn lâu lên nó.</string>
     <string name="change_note">Thay đổi ghi chú</string>
     <string name="check_all_items">Chọn tất cả nội dụng</string>
+    <string name="check_duplicates">Kiểm tra xem có bản trùng lặp nào không</string>
     <string name="choose_another_folder">Chọn thư mục khác</string>
     <string name="choose_folder">Chọn thư mục</string>
     <string name="choose_other_app">Chọn ứng dụng để chuyển dữ liệu vào</string>
@@ -98,8 +99,10 @@
     <string name="convert_to_text_note">Chuyển đổi thành ghi chú văn bản</string>
     <string name="copied_link">Liên kết đã lưu vào bộ nhớ đệm</string>
     <string name="copy">Sao chép</string>
+    <string name="crash_export_backup">Rất tiếc, quá trình xuất bản sao lưu đã thất bại.\nBạn có thể nhấn nút \'%1$s\' để báo cáo sự cố hoặc thử xuất tệp cơ sở dữ liệu thô (SQLite) qua \'%2$s\'. Tệp này sẽ chỉ chứa nội dung ghi chú, không bao gồm tệp đính kèm. Tuy nhiên, nếu quá trình này thành công, bạn có thể nhập lại tệp đó qua tùy chọn “Nhập từ các ứng dụng khác”.</string>
     <string name="crash_export_backup_failed">Thật đáng tiếc, xuất bản sao lưu đã thất bại..\nHãy dùng nút \'%1$s\' để báo cáo lỗi</string>
     <string name="crash_export_backup_message">Bạn có thể thử tạo một bản sao lưu ghi chú bằng cách ấn \'%1$s\'.\nNó có thể thất bại nếu dẫn tới dữ liệu bị hỏng. Trong trường đó, hãy dùng nút \'%2$s\' để báo cáo lỗi</string>
+    <string name="crash_export_raw_backup_failed">Rất tiếc, quá trình xuất cơ sở dữ liệu đã được lưu lại điểm kiểm tra đã thất bại.\nChỉ có thể tạo bản sao của các tệp cơ sở dữ liệu thô tại \'%1$s\'. Vui lòng nhấp vào nút \'%2$s\' để báo cáo sự cố</string>
     <string name="crash_message">Đã có lỗi xảy ra.\nThành thật xin lỗi.</string>
     <string name="create_github_issue">Tạo một báo lỗi Github</string>
     <string name="creation_date">Đã tạo</string>
@@ -108,6 +111,8 @@
     <string name="dark">Tối</string>
     <string name="data_in_public">Lưu dữ liệu trên thư mục công cộng</string>
     <string name="data_in_public_message">Bật chế độ này, cơ sở dữ liệu và các tệp đính kèm trong ứng dụng sẽ được di chuyển đến thư mục công cộng (Android/media/com.philkes.notallyx). Kết hợp với các ứng dụng đồng bộ tệp, có thể được sử dụng để đồng bộ dữ liệu của NotallyX giữa nhiều thiết bị.</string>
+    <string name="database">Cơ sở dữ liệu</string>
+    <string name="database_dump_created">Bản sao lưu cơ sở dữ liệu thô được tạo trong \'%1$s\'</string>
     <string name="date">Ngày</string>
     <string name="date_format">Định dạng ngày tháng</string>
     <string name="date_format_hint">Áp dụng định dạng ngày tháng đã chọn trong chế độ xem tổng quan ghi chú</string>
@@ -124,6 +129,7 @@
     <string name="delete_all_notes">Xóa toàn bộ ghi chú\?</string>
     <string name="delete_audio_recording_forever">Xóa bản ghi âm thanh vĩnh viễn\?</string>
     <string name="delete_checked_items">Xóa các mục được chọn</string>
+    <string name="delete_color_message">Các ghi chú hiện đang sử dụng màu này nên có màu gì\?</string>
     <string name="delete_file">Xóa tệp \'%1$s\'\?</string>
     <string name="delete_forever">Xóa vĩnh viễn</string>
     <string name="delete_image_forever">Xóa vĩnh viễn ảnh\?</string>
@@ -147,6 +153,7 @@
     <string name="disallow_screenshots">Không cho phép chụp màn hình</string>
     <string name="discard">Bỏ</string>
     <string name="display_text">Nội dung hiển thị</string>
+    <string name="documentation">Tài liệu hướng dẫn</string>
     <string name="donate">Ủng hộ dự án</string>
     <string name="drag_handle">Kéo thả</string>
     <string name="duplicate">Tạo bản sao</string>
@@ -167,6 +174,8 @@
     <string name="enable_lock_description">Điều này sẽ mã hóa cơ sở dữ liệu</string>
     <string name="enable_lock_title">Bật khóa sinh trắc học/mã số</string>
     <string name="enabled">Đã bật</string>
+    <string name="error">Lỗi</string>
+    <string name="error_loading_data">Xảy ra lỗi trong khi tải một số dữ liệu từ cơ sở dữ liệu. Các ghi chú bị hỏng sẽ không được hiển thị.\nBạn có thể dọn dẹp (xóa các ghi chú bị hỏng) cơ sở dữ liệu bằng cách sử dụng \'%1$s\'</string>
     <string name="error_while_renaming_file">Xảy ra lỗi khi đổi tên tệp</string>
     <string name="error_while_renaming_image">Xảy ra lỗi khi đổi tên ảnh</string>
     <string name="evernote">Evernote</string>
@@ -174,6 +183,7 @@
     <string name="every">Tất cả</string>
     <string name="export">Xuất</string>
     <string name="export_backup">Xuất dữ liệu</string>
+    <string name="export_database">Xuất cơ sở dữ liệu</string>
     <string name="export_settings">Xuất cài đặt thiết lập</string>
     <string name="export_settings_failure">Xuất cài đặt thiết lập thất bại, bạn có chọn đường dẫn hợp lệ\?</string>
     <string name="export_settings_message">Các cài đặt sẽ được xuất ở dạng JSON, có thể nhập lại được.\n\nChú ý, những thiết lập đã được mã hóa như mật khẩu tự động sao lưu hoặc khóa sinh trắc học sẽ không được tính.</string>
@@ -248,6 +258,7 @@
     <string name="make_list">Liệt kê</string>
     <string name="max_backups">Số lượng sao lưu cần giữ</string>
     <string name="max_items_to_display">Số lượng mục liệt kê tối đa</string>
+    <string name="max_labels_to_display">Số lượng nhãn tối đa được hiển thị trong Thanh điều hướng</string>
     <string name="max_lines_to_display">Số lượng dòng ghi chú tối đa</string>
     <string name="max_lines_to_display_title">Số lượng dòng tựa đề tối đa</string>
     <string name="medium">Vừa</string>
@@ -308,6 +319,9 @@
     <string name="record_audio">Ghi âm</string>
     <string name="recording">Đang ghi âm</string>
     <string name="redo">Thực hiện lại thao tác</string>
+    <string name="reimport_database">Nhập lại cơ sở dữ liệu</string>
+    <string name="reimport_database_failed">Không thể nhập lại cơ sở dữ liệu</string>
+    <string name="reimport_database_message">Bây giờ bạn có thể thử nhập lại cơ sở dữ liệu thô. Thao tác này sẽ xóa cơ sở dữ liệu bị hỏng hiện tại (bản sao lưu sẽ được lưu trữ trong thư mục ‘Android/media/com.philkes.notallyx/logs’) và sau đó cố gắng nhập cơ sở dữ liệu thô, đồng thời bỏ qua các ghi chú bị hỏng nếu có thể.</string>
     <string name="reminder_no_repetition">Không lặp lại</string>
     <string name="reminders">Nhắc nhở</string>
     <string name="remove_link">Bỏ liên kết</string>
@@ -345,6 +359,10 @@
     <string name="single_file">Tệp lẻ</string>
     <string name="single_note_or_list">Ghi chú hoặc liệt kê</string>
     <string name="skip">Bỏ qua</string>
+    <plurals name="skipped_corrupted_notes">
+        <item quantity="one">Bỏ qua ghi chú %1$sbị hỏng</item>
+        <item quantity="other">Bỏ qua các ghi chú bị hỏng%1$s</item>
+    </plurals>
     <string name="small">Nhỏ</string>
     <string name="something_went_wrong">Có lỗi xảy ra. Vui lòng thử lại.</string>
     <string name="something_went_wrong_audio">Có lỗi. Bản ghi âm có thể đã bị di chuyển hoặc xóa.\n\nLỗi: (%1$d, %2$d)</string>
@@ -391,6 +409,7 @@
     <string name="upcoming">Sắp tới</string>
     <string name="updated_link">Liên kết đã cập nhật</string>
     <string name="view">Kiểu xem</string>
+    <string name="view_crash_logs">Xem nhật ký sự cố</string>
     <string name="view_file">Xem tập tin</string>
     <string name="view_logs">Xem ghi chú ứng dụng</string>
     <string name="view_note">Xem ghi chú…</string>

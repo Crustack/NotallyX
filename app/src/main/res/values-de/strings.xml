@@ -381,9 +381,12 @@
     <string name="text_default">Standard</string>
     <string name="text_size_note_editor">Textgröße (Notizeditor)</string>
     <string name="text_size_overview">Textgröße (Übersicht)</string>
+    <string name="text_size_preview">Lorem ipsum dolor sit</string>
     <string name="theme">Design</string>
     <string name="theme_use_dynamic_colors">Systemhintergrundfarben verwenden</string>
     <string name="time">Zeit</string>
+    <string name="time_24h">24 Std.</string>
+    <string name="time_am_pm">am/pm</string>
     <string name="time_format_note_view">Zeitformat Notizansicht</string>
     <string name="time_format_overview">Zeitformat Übersicht</string>
     <string name="title">Titel</string>

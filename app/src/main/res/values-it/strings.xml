@@ -102,6 +102,7 @@
     <string name="crash_export_backup">Purtroppo l’esportazione del backup non è riuscita.\nPuoi usare il pulsante \'%1$s\' per segnalare l’errore oppure provare a esportare il file grezzo del database (SQLite) tramite \'%2$s\'. Includerà solo il contenuto delle note, senza allegati. Se l’operazione riesce, potrai reimportarlo tramite l’opzione Importa da altre app.</string>
     <string name="crash_export_backup_failed">Purtroppo l’esportazione del backup non è riuscita.\nUsa il pulsante \'%1$s\' per segnalare l’errore</string>
     <string name="crash_export_backup_message">Puoi provare a creare un backup delle tue note toccando \'%1$s\'.\nQuesto potrebbe non riuscire se l’errore ha causato dati danneggiati o corrotti. In tal caso, usa il pulsante \'%2$s\' per segnalare l’errore</string>
+    <string name="crash_export_raw_backup_failed">Purtroppo, l\'esportazione del database salvato come checkpoint non è andata a buon fine.\nÈ stato possibile creare solo una copia dei file di database grezzi in \'%1$s\'. Si prega di utilizzare il pulsante \'%2$s\' per segnalare l\'errore</string>
     <string name="crash_message">E’ avvenuto un errore inaspettato.\nCi dispiace per l’inconveniente.</string>
     <string name="create_github_issue">Crea una Issue su Github</string>
     <string name="creation_date">Creata</string>
@@ -111,6 +112,7 @@
     <string name="data_in_public">Salvare i dati nella cartella pubblica</string>
     <string name="data_in_public_message">Attivandolo, il database interno dell’app e i file allegati verranno spostati nella cartella pubblica dell’app (Android/media/com.philkes.notallyx). Abbinandolo con un’app di sincronizzazione file potrai così sincronizzare i dati di NotallyX tra dispositivi diversi.</string>
     <string name="database">Database</string>
+    <string name="database_dump_created">Dump grezzo del database creato in \'%1$s\'</string>
     <string name="date">Data</string>
     <string name="date_format">Formato data</string>
     <string name="date_format_hint">Applica il formato data selezionato nella panoramica delle note</string>
@@ -407,6 +409,7 @@
     <string name="upcoming">Prossimo</string>
     <string name="updated_link">Aggiorna link</string>
     <string name="view">Vista</string>
+    <string name="view_crash_logs">Visualizza i registri degli arresti anomali</string>
     <string name="view_file">Visualizza file</string>
     <string name="view_logs">Visualizza file di log</string>
     <string name="view_note">Vedi nota</string>

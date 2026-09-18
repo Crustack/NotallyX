@@ -17,6 +17,7 @@
         <item quantity="few">Archivovány %1$d poznámky</item>
         <item quantity="many">Archivováno %1$d poznámek</item>
         <item quantity="one">Archivována %1$d poznámka</item>
+        <item quantity="other">Archivované %1$dpoznámky</item>
     </plurals>
     <string name="ascending">Vzestupně</string>
     <string name="attach_file">Přiložit soubor</string>
@@ -24,6 +25,7 @@
         <item quantity="few">Přílohy</item>
         <item quantity="many">Příloh</item>
         <item quantity="one">Příloha</item>
+        <item quantity="other">Přílohy</item>
     </plurals>
     <string name="audio_recordings">Zvukové záznamy</string>
     <string name="auto_backup">Automatické zálohování</string>
@@ -67,11 +69,13 @@
         <item quantity="few">Nelze přidat %1$d soubory</item>
         <item quantity="many">Nelze přidat %1$d souborů</item>
         <item quantity="one">Nelze přidat %1$d soubor</item>
+        <item quantity="other">Nelze přidat %1$dsoubory</item>
     </plurals>
     <plurals name="cant_add_images">
         <item quantity="few">Nepodařilo se přidat %1$d obrázky</item>
         <item quantity="many">Nepodařilo se přidat %1$d obrázků</item>
         <item quantity="one">Nepodařilo se přidat %1$d obrázek</item>
+        <item quantity="other">Nelze přidat %1$dobrázky</item>
     </plurals>
     <string name="cant_find_folder">Složka nebyla nalezena. Možná byla přesunuta nebo smazána</string>
     <string name="cant_find_note">Poznámka nenalezena. Pravděpodobně byla smazána</string>
@@ -83,6 +87,7 @@
     <string name="change_color_message">Vyberte barvu nebo vytvořte novou. Barvu také můžete upravit dlouhým stisknutím. </string>
     <string name="change_note">Změnit poznámku</string>
     <string name="check_all_items">Vybrat  všechny položky</string>
+    <string name="check_duplicates">Zkontrolujte, zda se nevyskytují duplicity</string>
     <string name="choose_another_folder">Vybrat jinou složku</string>
     <string name="choose_folder">Vybrat složku</string>
     <string name="choose_other_app">Vybrat aplikaci pro import</string>
@@ -102,8 +107,10 @@
     <string name="convert_to_text_note">Převést na textovou poznámku</string>
     <string name="copied_link">Odkaz zkopírován do schránky</string>
     <string name="copy">Kopie</string>
+    <string name="crash_export_backup">Export zálohy bohužel selhal.\nPomocí tlačítka „\'%1$s\'“ můžete nahlásit chybu nebo zkusit exportovat surový databázový soubor (SQLite) přes „\'%2$s\'“. Bude obsahovat pouze text poznámek, bez příloh. Pokud se však export podaří, můžete soubor importovat zpět pomocí možnosti „Importovat z jiných aplikací“.</string>
     <string name="crash_export_backup_failed">Bohužel se nepodařilo exportovat zálohu.     \nK nahlášení pádu aplikace použijte tlačítko \'%1$s\'.</string>
     <string name="crash_export_backup_message">Zálohu poznámek lze zkusit vytvořit kliknutím na \'%1$s\'.\nPokud pád aplikace způsobil poškození dat, záloha se nemusí podařit. V takovém případě použijte \'%2$s\' k nahlášení pádu. </string>
+    <string name="crash_export_raw_backup_failed">Bohužel se export databáze s kontrolními body nezdařil.\nV adresáři \'%1$s\' se podařilo vytvořit pouze kopii nezpracovaných databázových souborů. K nahlášení chyby použijte tlačítko \'%2$s\'.</string>
     <string name="crash_message">Došlo k neočekávané chybě. \nOmluvte prosím vzniklé nepříjemnosti. </string>
     <string name="create_github_issue">Vytvořit GitHub issue </string>
     <string name="creation_date">Datum vytvoření</string>
@@ -112,6 +119,8 @@
     <string name="dark">Tmavé</string>
     <string name="data_in_public">Uložit data do veřejné složky</string>
     <string name="data_in_public_message">Pokud tuto možnost povolíte, interní databáze aplikace a připojené soubory budou přesunuty do veřejné složky aplikace (Android/media/com.philkes.notallyx). V kombinaci s aplikacemi pro synchronizaci souborů to může být použito k synchronizaci dat NotallyX mezi více zařízeními.</string>
+    <string name="database">Databáze</string>
+    <string name="database_dump_created">Surový výpis databáze vytvořený v \'%1$s\'</string>
     <string name="date">Datum</string>
     <string name="date_format">Formát data</string>
     <string name="date_format_hint">Nastaví vybraný formát data v přehledu poznámek</string>
@@ -143,6 +152,7 @@
         <item quantity="few">Smazány %1$d poznámky</item>
         <item quantity="many">Smazáno %1$d poznámek</item>
         <item quantity="one">Smazána %1$d poznámka</item>
+        <item quantity="other">Smazané %1$dpoznámky</item>
     </plurals>
     <string name="deleting_files">Odstraňování souborů</string>
     <string name="deleting_images">Odstraňování obrázků</string>
@@ -163,6 +173,7 @@
         <item quantity="few">%1$d kopie</item>
         <item quantity="many">%1$d kopií</item>
         <item quantity="one">%1$d kopie</item>
+        <item quantity="other">%1$d duplikáty</item>
     </plurals>
     <string name="edit">Upravit</string>
     <string name="edit_color">Upravit barvu</string>
@@ -177,6 +188,8 @@
     <string name="enable_lock_description">Toto rovněž zašifruje databázi</string>
     <string name="enable_lock_title">Vypnout zámek pomocí biometrických údajů/PIN</string>
     <string name="enabled">Povolit</string>
+    <string name="error">Chyba</string>
+    <string name="error_loading_data">Při načítání některých dat z databáze došlo k chybě. Poškozené poznámky se nezobrazí.\nDatabázi můžete vyčistit (odstranit poškozené poznámky) pomocí \'%1$s\'</string>
     <string name="error_while_renaming_file">Chyba při přejmenování souboru</string>
     <string name="error_while_renaming_image">Chyba při přejmenování obrázku</string>
     <string name="evernote">Evernote</string>
@@ -184,15 +197,17 @@
     <string name="every">Každou</string>
     <string name="export">Exportovat</string>
     <string name="export_backup">Exportovat zálohu</string>
+    <string name="export_database">Exportovat databázi</string>
     <string name="export_settings">Exportovat nastavení</string>
     <string name="export_settings_failure">Nepodařilo se exportovat nastavení, nezvolili jste neplatnou cestu\?</string>
-    <string name="export_settings_message">Všechna nastavení se vyexportují do souboru JSON, který lze použít k opětovnému importu uložených nastavení.\n\Všimněte si, že toto nastavení nezahrnuje šifrovaná nastavení, jako je heslo pro automatické zálohování nebo biometrický šifrovací klíč.</string>
+    <string name="export_settings_message">Všechna nastavení se vyexportují do souboru JSON, který lze použít k opětovnému importu uložených nastavení.\nVšimněte si, že toto nastavení nezahrnuje šifrovaná nastavení, jako je heslo pro automatické zálohování nebo biometrický šifrovací klíč.</string>
     <string name="export_settings_success">Nastavení úspěšně exportováno</string>
     <string name="exported">Exportováno</string>
     <plurals name="exported_notes">
         <item quantity="few">Exportovány %1$s poznámky</item>
         <item quantity="many">Exportováno %1$s poznámek</item>
         <item quantity="one">Exportována %1$s poznámka</item>
+        <item quantity="other">Exportované %1$spoznámky</item>
     </plurals>
     <string name="exporting_backup">Vytváří se záloha</string>
     <string name="extracted_files">Soubory byly extrahovány</string>
@@ -200,7 +215,7 @@
     <string name="folder">Adresář</string>
     <string name="follow_system">Podle systému</string>
     <string name="google_keep">Google Keep</string>
-    <string name="google_keep_help">Abyste mohli importovat poznámky ze služby Google Keep, musíte si stáhnout soubor ZIP služby Google Takeout. Vyberte pouze data \„Keep\“. Další informace získáte kliknutím na Nápovědu.\n\nPokud již máte soubor Takeout ZIP, klikněte na Importovat a vyberte soubor ZIP.</string>
+    <string name="google_keep_help">Abyste mohli importovat poznámky ze služby Google Keep, musíte si stáhnout soubor ZIP služby Google Takeout. Vyberte pouze data „Keep“. Další informace získáte kliknutím na Nápovědu.\n\nPokud již máte soubor Takeout ZIP, klikněte na Importovat a vyberte soubor ZIP.</string>
     <string name="grid">Mřížka</string>
     <string name="help">Nápověda</string>
     <string name="hours">Hodiny</string>
@@ -222,6 +237,7 @@
         <item quantity="few">Importovány %1$s poznámky</item>
         <item quantity="many">Importováno %1$s poznámek</item>
         <item quantity="one">Importována %1$s poznámka</item>
+        <item quantity="other">%1$sPoznámky k importu</item>
     </plurals>
     <string name="importing_backup">Importuje se záloha</string>
     <string name="insert_an_sd_card_audio">Vložte kartu SD a nahrajte zvukový záznam</string>
@@ -277,6 +293,7 @@
         <item quantity="few">…%1$d další soubory</item>
         <item quantity="many">…%1$d dalších souborů</item>
         <item quantity="one">…%1$d další soubor</item>
+        <item quantity="other">…%1$d další soubory</item>
     </plurals>
     <string name="new_color">Nová barva</string>
     <string name="next">Další</string>
@@ -291,12 +308,14 @@
         <item quantity="few">Poznámky</item>
         <item quantity="many">Poznámek</item>
         <item quantity="one">Poznámka</item>
+        <item quantity="other">Poznámky</item>
     </plurals>
     <string name="notes_sorted_by">Poznámky řazeny dle</string>
     <plurals name="notes_too_big_truncating">
         <item quantity="few">%1$s Poznámky jsou příliš velké na uložení, byly zkráceny na %2$s znaků\n</item>
         <item quantity="many">%1$s Poznámek je příliš velkých na uložení, byly zkráceny na %2$s znaků\n</item>
         <item quantity="one">%1$s Poznámka je příliš velká na uložení, byla zkrácena na %2$s znaků\n</item>
+        <item quantity="other">%1$s Poznámky jsou příliš velké na to, aby se daly uložit, byly zkráceny na  znaků%2$s</item>
     </plurals>
     <string name="of_the_month">%1$s v měsíci</string>
     <string name="of_the_month_last">Poslední %1$s v měsíci</string>
@@ -324,6 +343,9 @@
     <string name="record_audio">Spustit zvukový záznam</string>
     <string name="recording">Nahrávání…</string>
     <string name="redo">Znovu</string>
+    <string name="reimport_database">Znovu naimportovat databázi</string>
+    <string name="reimport_database_failed">Reimport databáze se nezdařil</string>
+    <string name="reimport_database_message">Nyní můžete zkusit znovu naimportovat surovou databázi. Tím se smaže aktuální poškozená databáze (záloha bude uložena ve složce „Android/media/com.philkes.notallyx/logs“) a následně se pokusí naimportovat surovou databázi, přičemž se pokud možno přeskočí poškozené poznámky.</string>
     <string name="reminder_no_repetition">Bez opakování</string>
     <string name="reminders">Upomínky</string>
     <string name="remove_link">Odstranit odkaz</string>
@@ -342,6 +364,7 @@
         <item quantity="few">Obnoveny %1$d poznámky</item>
         <item quantity="many">Obnoveno %1$d poznámek</item>
         <item quantity="one">Obnovena %1$d poznámka</item>
+        <item quantity="other">Obnovené %1$dpoznámky</item>
     </plurals>
     <string name="resume">Pokračovat</string>
     <string name="save">Uložit</string>
@@ -362,6 +385,10 @@
     <string name="single_file">Soubor</string>
     <string name="single_note_or_list">Poznámka nebo seznam</string>
     <string name="skip">Přeskočit</string>
+    <plurals name="skipped_corrupted_notes">
+        <item quantity="one">Přeskočeno  %1$spoškozená poznámka</item>
+        <item quantity="other">Přeskočené  %1$spoškozené poznámky</item>
+    </plurals>
     <string name="small">Malé</string>
     <string name="something_went_wrong">Něco se pokazilo. Zkuste to znovu.</string>
     <string name="something_went_wrong_audio">Něco se pokazilo. Zvukový záznam mohl být přesunut nebo smazán.\n\nError : (%1$d, %2$d)</string>
@@ -396,6 +423,7 @@
         <item quantity="few">Obnoveny %1$d poznámky</item>
         <item quantity="many">Obnoveno %1$d poznámek</item>
         <item quantity="one">Obnoveny %1$d poznámky</item>
+        <item quantity="other">Nearchivované %1$dpoznámky</item>
     </plurals>
     <string name="uncheck_all_items">Zrušit výběr všech položek</string>
     <string name="undo">Zpět</string>
@@ -409,6 +437,7 @@
     <string name="upcoming">Nadcházející</string>
     <string name="updated_link">Upravit odkaz</string>
     <string name="view">Rozložení</string>
+    <string name="view_crash_logs">Zobrazit protokoly o selháních</string>
     <string name="view_file">Zobrazit soubor</string>
     <string name="view_logs">Zobrazit log soubor </string>
     <string name="view_note">Zobrazit poznámku…</string>
