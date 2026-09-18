@@ -322,7 +322,7 @@ fun ContextWrapper.modifiedNoteBackupExists(backupPath: String): Boolean {
 
 typealias NotesAndAttachments = Pair<Int, Int>
 
-fun ContextWrapper.exportRawDatabase(fileUri: Uri) {
+suspend fun ContextWrapper.exportRawDatabase(fileUri: Uri) {
     val (_, databaseCopy) = copyDatabase()
     val database =
         SQLiteDatabase.openDatabase(databaseCopy.path, null, SQLiteDatabase.OPEN_READONLY)
@@ -355,7 +355,7 @@ fun ContextWrapper.exportRawDatabase(fileUri: Uri) {
     }
 }
 
-fun ContextWrapper.exportAsZip(
+suspend fun ContextWrapper.exportAsZip(
     fileUri: Uri,
     compress: Boolean = false,
     password: String = PASSWORD_EMPTY,
@@ -565,11 +565,14 @@ private fun extractZipToDirectory(zipInputStream: InputStream, outputDir: File, 
     }
 }
 
-fun ContextWrapper.copyDatabase(
+suspend fun ContextWrapper.copyDatabase(
     decrypt: Boolean = true,
     suffix: String = "",
 ): Pair<NotallyDatabase, File> {
-    val database = NotallyDatabase.getDatabase(this).value
+    val database =
+        withContext(Dispatchers.Main.immediate) {
+            NotallyDatabase.getDatabase(this@copyDatabase).value
+        }
     database.checkpoint()
     val preferences = NotallyXPreferences.getInstance(this)
     val databaseFile = NotallyDatabase.getCurrentDatabaseFile(this)

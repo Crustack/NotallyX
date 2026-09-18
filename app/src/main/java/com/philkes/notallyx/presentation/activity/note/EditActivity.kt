@@ -126,7 +126,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     }
 
     override fun finish() {
-        lifecycleScope.launch(Dispatchers.Main) {
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
             checkSave()
             super.finish()
         }

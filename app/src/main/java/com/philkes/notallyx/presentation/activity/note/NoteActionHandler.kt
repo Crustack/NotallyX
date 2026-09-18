@@ -294,7 +294,8 @@ class NoteActionHandler(
 
     private fun changeColor() {
         activity.lifecycleScope.launch {
-            val database = NotallyDatabase.getDatabase(activity)
+            val database =
+                withContext(Dispatchers.Main.immediate) { NotallyDatabase.getDatabase(activity) }
             val colors: MutableSet<ColorString> =
                 withContext(Dispatchers.IO) {
                         database.value.getBaseNoteDao().getAllColors().toMutableSet()
