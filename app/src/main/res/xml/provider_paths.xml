@@ -14,7 +14,7 @@
         path="/crashes" />
     <files-path
         name="backups_internal"
-        path="/Backups" />
+        path="/backups" />
     <external-media-path
       name="."
       path="." />
