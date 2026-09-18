@@ -133,6 +133,8 @@ abstract class NotallyDatabase : RoomDatabase() {
             replacementInProgress = false
         }
 
+        fun isBeingReplaced() = replacementInProgress
+
         private var testInstance: NotallyDatabase? = null
 
         private fun getTestDatabase(context: ContextWrapper): NotallyDatabase {

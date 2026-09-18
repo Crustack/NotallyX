@@ -28,6 +28,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -82,6 +83,7 @@ class BaseNoteModelBiometricLockTest {
         runBlocking { model.enableBiometricLock(encryptCipher) }
         waitUntil { preferences.biometricLock.value == BiometricLock.ENABLED }
         assertTrue(databaseFile().isEncryptedDatabase(context))
+        assertFalse(NotallyDatabase.isBeingReplaced())
         var note = notallyDatabase.getBaseNoteDao().get(1L)!!
         assertEquals("Note", note.title)
 
@@ -96,6 +98,7 @@ class BaseNoteModelBiometricLockTest {
         assertTrue(databaseFile().isUnencryptedDatabase(context))
         note = notallyDatabase.getBaseNoteDao().get(1L)!!
         assertEquals("Note", note.title)
+        assertFalse(NotallyDatabase.isBeingReplaced())
     }
 
     private fun databaseFile(): File = NotallyDatabase.getCurrentDatabaseFile(context)
