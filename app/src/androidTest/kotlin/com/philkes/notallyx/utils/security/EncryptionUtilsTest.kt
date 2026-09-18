@@ -1,17 +1,13 @@
+package com.philkes.notallyx.utils.security
+
 import android.content.ContextWrapper
-import android.database.sqlite.SQLiteDatabase
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.AndroidJUnit4
-import com.philkes.notallyx.utils.security.decryptDatabase
-import com.philkes.notallyx.utils.security.encryptDatabase
-import com.philkes.notallyx.utils.security.isEncryptedDatabase
-import com.philkes.notallyx.utils.security.isUnencryptedDatabase
 import java.io.File
 import java.nio.charset.StandardCharsets
+import net.zetetic.database.sqlcipher.SQLiteDatabase
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -93,18 +89,18 @@ class EncryptionUtilsTest {
     }
 
     private fun assertValidDatabase(dbFile: File, passphrase: String?) {
-        if (passphrase != null) assertTrue(dbFile.isEncryptedDatabase(context))
-        else assertTrue(dbFile.isUnencryptedDatabase(context))
+        if (passphrase != null) Assert.assertTrue(dbFile.isEncryptedDatabase(context))
+        else Assert.assertTrue(dbFile.isUnencryptedDatabase(context))
         val database =
-            net.zetetic.database.sqlcipher.SQLiteDatabase.openDatabase(
+            SQLiteDatabase.openDatabase(
                 dbFile.path,
                 (passphrase ?: "").toByteArray(StandardCharsets.UTF_8),
                 null,
-                SQLiteDatabase.OPEN_READONLY,
+                android.database.sqlite.SQLiteDatabase.OPEN_READONLY,
                 null,
             )
-        assertTrue(database.isOpen)
-        assertNotNull(database.version)
+        Assert.assertTrue(database.isOpen)
+        Assert.assertNotNull(database.version)
         val integrityCheck =
             database.rawQuery("PRAGMA integrity_check", null).use { cursor ->
                 if (!cursor.moveToFirst()) return@use null
@@ -115,13 +111,13 @@ class EncryptionUtilsTest {
                     }
                     .joinToString("; ")
             }
-        assertNotNull(integrityCheck)
+        Assert.assertNotNull(integrityCheck)
         val title =
             database.rawQuery("SELECT title FROM BaseNote", null).use { cursor ->
                 if (!cursor.moveToFirst()) return@use null
                 cursor.getString(cursor.getColumnIndex("title"))
             }
-        assertEquals("Test", title)
+        Assert.assertEquals("Test", title)
         database.close()
     }
 }
