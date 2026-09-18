@@ -301,9 +301,8 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                     withContext(Dispatchers.Main.immediate) {
                         NotallyDatabase.postInstance(notallyDatabase)
                     }
-                } catch (e: Exception) {
+                } finally {
                     NotallyDatabase.endReplacement()
-                    throw e
                 }
             }
             savePreference(preferences.dataInPublicFolder, true)
@@ -351,15 +350,12 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         }
                         app.migrateAllAttachments(toPrivate = true)
                         notallyDatabase
-                    } catch (e: Exception) {
+                    } finally {
                         NotallyDatabase.endReplacement()
-                        throw e
                     }
                 }
             savePreference(preferences.dataInPublicFolder, false)
-            withContext(Dispatchers.Main.immediate) {
-                NotallyDatabase.postInstance(newDatabase)
-            }
+            withContext(Dispatchers.Main.immediate) { NotallyDatabase.postInstance(newDatabase) }
             callback?.invoke()
         }
     }
@@ -392,21 +388,18 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 }
                 savePreference(preferences.fallbackDatabaseEncryptionKey, passphrase)
                 savePreference(preferences.biometricLock, BiometricLock.ENABLED)
-            } catch (e: Exception) {
+                withContext(Dispatchers.Main.immediate) {
+                    val notallyDatabase =
+                        NotallyDatabase.getFreshDatabase(
+                            app,
+                            preferences.dataInPublicFolder.value,
+                            BiometricLock.ENABLED,
+                        )
+                    NotallyDatabase.postInstance(notallyDatabase)
+                }
+            } finally {
                 NotallyDatabase.endReplacement()
-                throw e
             }
-        }
-        val notallyDatabase =
-            withContext(Dispatchers.Main.immediate) {
-                NotallyDatabase.getFreshDatabase(
-                    app,
-                    preferences.dataInPublicFolder.value,
-                    BiometricLock.ENABLED,
-                )
-            }
-        withContext(Dispatchers.Main.immediate) {
-            NotallyDatabase.postInstance(notallyDatabase)
         }
     }
 
@@ -441,23 +434,20 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                     )
                 }
                 savePreference(preferences.biometricLock, BiometricLock.DISABLED)
-                val notallyDatabase =
-                    withContext(Dispatchers.Main.immediate) {
+                withContext(Dispatchers.Main.immediate) {
+                    val notallyDatabase =
                         NotallyDatabase.getFreshDatabase(
                             app,
                             preferences.dataInPublicFolder.value,
                             BiometricLock.DISABLED,
                         )
-                    }
-                withContext(Dispatchers.Main.immediate) {
                     NotallyDatabase.postInstance(notallyDatabase)
                 }
-                callback?.invoke()
-            } catch (e: Exception) {
+            } finally {
                 NotallyDatabase.endReplacement()
-                throw e
             }
         }
+        callback?.invoke()
     }
 
     fun <T> savePreference(preference: BasePreference<T>, value: T) {

@@ -5,7 +5,6 @@ import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import androidx.annotation.RequiresApi
-import com.philkes.notallyx.NotallyXApplication.Companion.isTestRunner
 import java.io.File
 import java.security.KeyStore
 import javax.crypto.Cipher
@@ -70,16 +69,8 @@ fun decryptDatabase(
 @RequiresApi(Build.VERSION_CODES.M)
 private fun getOrCreateSecretKey(keyName: String = ENCRYPTION_KEY_NAME): SecretKey {
     // If Secretkey was previously created for that keyName, then grab and return it.
-    val keyStore =
-        try {
-            KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
-        } catch (e: Exception) {
-            // Fallback for Robolectric / Unit Test JVM environments
-            if (isTestRunner()) {
-                KeyStore.getInstance(KeyStore.getDefaultType()).apply { load(null) }
-            }
-            throw e
-        }
+    val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
+    keyStore.load(null) // Keystore must be loaded before it can be accessed
     keyStore.getKey(keyName, null)?.let {
         return it as SecretKey
     }
