@@ -93,6 +93,7 @@ class BaseNoteModelDataInPublicTest {
         assertEquals(externalDatabaseFile(), NotallyDatabase.getCurrentDatabaseFile(context))
         var note = notallyDatabase.getBaseNoteDao().get(1L)!!
         assertEquals("Note", note.title)
+        assertFalse(NotallyDatabase.isBeingReplaced())
 
         // Disable: the database is moved back from the public to the internal folder.
         runCallback { callback -> onMain { model.disableDataInPublic(callback) } }
@@ -102,6 +103,7 @@ class BaseNoteModelDataInPublicTest {
         assertEquals(internalDatabaseFile(), NotallyDatabase.getCurrentDatabaseFile(context))
         note = notallyDatabase.getBaseNoteDao().get(1L)!!
         assertEquals("Note", note.title)
+        assertFalse(NotallyDatabase.isBeingReplaced())
     }
 
     private fun internalDatabaseFile(): File = NotallyDatabase.getInternalDatabaseFile(context)

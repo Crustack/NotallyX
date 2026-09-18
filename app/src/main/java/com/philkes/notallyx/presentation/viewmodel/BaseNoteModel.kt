@@ -298,7 +298,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         )
                     }
                     app.migrateAllAttachments(toPrivate = false)
-                    savePreference(preferences.dataInPublicFolder, true)
+                    preferences.dataInPublicFolder.save(true)
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main.immediate) {
                         NotallyDatabase.postNewInstance(app, dataInPublic = false)
@@ -350,7 +350,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         )
                     }
                     app.migrateAllAttachments(toPrivate = true)
-                    savePreference(preferences.dataInPublicFolder, false)
+                    preferences.dataInPublicFolder.save(false)
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main.immediate) {
                         NotallyDatabase.postNewInstance(app, dataInPublic = true)
@@ -366,9 +366,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     suspend fun enableBiometricLock(cipher: Cipher) {
-        savePreference(preferences.iv, cipher.iv)
         val passphrase = preferences.databaseEncryptionKey.init(cipher)
         withContext(Dispatchers.IO) {
+            preferences.iv.save(cipher.iv)
             NotallyDatabase.startReplacement()
             try {
                 val (_, dbFileCopy) = app.copyDatabase(suffix = "-encrypt")
@@ -391,8 +391,8 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         "Encrypt succeeded but overwritten database is not encrypted, restored unencrypted database and created additional backup at ${externalBackupFile.absolutePath}"
                     )
                 }
-                savePreference(preferences.fallbackDatabaseEncryptionKey, passphrase)
-                savePreference(preferences.biometricLock, BiometricLock.ENABLED)
+                preferences.fallbackDatabaseEncryptionKey.save(passphrase)
+                preferences.biometricLock.save(BiometricLock.ENABLED)
             } catch (e: Exception) {
                 withContext(Dispatchers.Main.immediate) {
                     NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.DISABLED)
@@ -435,7 +435,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         "Decrypt succeeded but overwritten database is still encrypted, restored encrypted database and created additional backup at ${externalBackupFile.absolutePath}"
                     )
                 }
-                savePreference(preferences.biometricLock, BiometricLock.DISABLED)
+                preferences.biometricLock.save(BiometricLock.DISABLED)
             } catch (e: Exception) {
                 withContext(Dispatchers.Main.immediate) {
                     NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.ENABLED)

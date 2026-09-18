@@ -111,7 +111,7 @@ class EncryptionUtilsTest {
                     }
                     .joinToString("; ")
             }
-        Assert.assertNotNull(integrityCheck)
+        Assert.assertEquals("ok", integrityCheck)
         val title =
             database.rawQuery("SELECT title FROM BaseNote", null).use { cursor ->
                 if (!cursor.moveToFirst()) return@use null
