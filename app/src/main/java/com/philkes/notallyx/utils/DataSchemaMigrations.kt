@@ -71,7 +71,7 @@ suspend fun Application.splitOversizedNotes() {
 
     // Obtain a direct DB instance matching current storage location
     val db =
-        withContext(Dispatchers.Main) {
+        withContext(Dispatchers.Main.immediate) {
                 NotallyDatabase.getDatabase(this@splitOversizedNotes as ContextWrapper)
             }
             .value

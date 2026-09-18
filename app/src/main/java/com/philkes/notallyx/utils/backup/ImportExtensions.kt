@@ -288,7 +288,8 @@ private suspend fun ContextWrapper.import(
     readCorrupted: Int,
     checkDuplicates: Boolean,
 ): ImportResult {
-    val notallyDatabase = NotallyDatabase.getDatabase(this).value
+    val notallyDatabase =
+        withContext(Dispatchers.Main.immediate) { NotallyDatabase.getDatabase(this@import).value }
     val importResult =
         notallyDatabase
             .getCommonDao()

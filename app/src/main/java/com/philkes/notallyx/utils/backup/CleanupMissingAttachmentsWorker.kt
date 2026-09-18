@@ -18,6 +18,8 @@ import com.philkes.notallyx.utils.SUBFOLDER_IMAGES
 import com.philkes.notallyx.utils.createChannelIfNotExists
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.resolveAttachmentFile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** Scans all notes and removes references to attachments whose underlying files are missing. */
 class CleanupMissingAttachmentsWorker(appContext: Context, params: WorkerParameters) :
@@ -25,7 +27,8 @@ class CleanupMissingAttachmentsWorker(appContext: Context, params: WorkerParamet
 
     override suspend fun doWork(): Result {
         val ctx = ContextWrapper(applicationContext)
-        val database = NotallyDatabase.getDatabase(ctx).value
+        val database =
+            withContext(Dispatchers.Main.immediate) { NotallyDatabase.getDatabase(ctx).value }
         val dao = database.getBaseNoteDao()
 
         var removedImages = 0

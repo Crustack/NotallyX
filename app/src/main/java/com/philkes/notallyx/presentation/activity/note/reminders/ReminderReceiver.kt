@@ -320,7 +320,7 @@ class ReminderReceiver : BroadcastReceiver() {
     }
 
     private suspend fun getDatabase(context: Context): NotallyDatabase {
-        return withContext(Dispatchers.Main) {
+        return withContext(Dispatchers.Main.immediate) {
                 NotallyDatabase.getDatabase(context.applicationContext as Application)
             }
             .value

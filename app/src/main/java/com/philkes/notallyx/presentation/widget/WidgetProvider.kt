@@ -198,7 +198,10 @@ class WidgetProvider : AppWidgetProvider() {
             intent.embedIntentExtras()
 
             MainScope().launch {
-                val database = NotallyDatabase.getDatabase(context).value
+                val database =
+                    withContext(Dispatchers.Main.immediate) {
+                        NotallyDatabase.getDatabase(context).value
+                    }
                 val color =
                     withContext(Dispatchers.IO) { database.getBaseNoteDao().getColorOfNote(noteId) }
                 if (color == null) {

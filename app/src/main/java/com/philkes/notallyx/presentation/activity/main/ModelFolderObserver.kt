@@ -117,7 +117,10 @@ class ModelFolderObserver(
     private fun Menu.addChangeColor(showAsAction: Int = MenuItem.SHOW_AS_ACTION_IF_ROOM): MenuItem {
         return add(R.string.change_color, R.drawable.change_color, showAsAction) {
             activity.lifecycleScope.launch {
-                val database = NotallyDatabase.getDatabase(activity)
+                val database =
+                    withContext(Dispatchers.Main.immediate) {
+                        NotallyDatabase.getDatabase(activity)
+                    }
                 val colors =
                     withContext(Dispatchers.IO) {
                         database.value.getBaseNoteDao().getAllColors().toSet()
