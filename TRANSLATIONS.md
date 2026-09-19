@@ -20,34 +20,34 @@ See [Android Translations Converter](https://github.com/Crustack/android-transla
 | Language | Coverage |
 |----------|----------|
 | 🇺🇸 English | 100% (377/377) |
-| 🏳️ ar | 93% (354/377) |
-| 🇪🇸 Catalan | 17% (65/377) |
-| 🇨🇿 Czech | 88% (334/377) |
-| 🇩🇰 Danish | 18% (69/377) |
-| 🇩🇪 German | 97% (369/377) |
-| 🇬🇷 Greek | 19% (72/377) |
-| 🇪🇸 Spanish | 90% (343/377) |
-| 🇫🇷 French | 86% (327/377) |
-| 🇭🇺 Hungarian | 17% (65/377) |
-| 🇮🇩 Indonesian | 19% (75/377) |
-| 🇮🇹 Italian | 77% (291/377) |
-| 🇯🇵 Japanese | 19% (73/377) |
-| 🇲🇲 Burmese | 24% (91/377) |
-| 🇳🇴 Norwegian Bokmål | 28% (107/377) |
-| 🇳🇱 Dutch | 56% (213/377) |
+| 🏳️ ar | 98% (372/377) |
+| 🇪🇸 Catalan | 98% (372/377) |
+| 🇨🇿 Czech | 98% (372/377) |
+| 🇩🇰 Danish | 98% (372/377) |
+| 🇩🇪 German | 98% (372/377) |
+| 🇬🇷 Greek | 98% (372/377) |
+| 🇪🇸 Spanish | 98% (372/377) |
+| 🇫🇷 French | 98% (372/377) |
+| 🇭🇺 Hungarian | 98% (372/377) |
+| 🇮🇩 Indonesian | 98% (372/377) |
+| 🇮🇹 Italian | 98% (372/377) |
+| 🇯🇵 Japanese | 98% (372/377) |
+| 🇲🇲 Burmese | 98% (372/377) |
+| 🇳🇴 Norwegian Bokmål | 98% (372/377) |
+| 🇳🇱 Dutch | 98% (372/377) |
 | 🇳🇴 Norwegian Nynorsk | 28% (107/377) |
-| 🇵🇱 Polish | 79% (300/377) |
-| 🇧🇷 Portuguese (Brazil) | 82% (312/377) |
-| 🇵🇹 Portuguese (Portugal) | 18% (71/377) |
-| 🇷🇴 Romanian | 79% (301/377) |
-| 🇷🇺 Russian | 80% (305/377) |
-| 🇸🇰 Slovak | 17% (65/377) |
-| 🇸🇮 Slovenian | 29% (110/377) |
-| 🇸🇪 Swedish | 16% (63/377) |
+| 🇵🇱 Polish | 98% (372/377) |
+| 🇧🇷 Portuguese (Brazil) | 98% (372/377) |
+| 🇵🇹 Portuguese (Portugal) | 98% (372/377) |
+| 🇷🇴 Romanian | 98% (372/377) |
+| 🇷🇺 Russian | 98% (372/377) |
+| 🇸🇰 Slovak | 98% (372/377) |
+| 🇸🇮 Slovenian | 98% (372/377) |
+| 🇸🇪 Swedish | 98% (372/377) |
 | 🇵🇭 Tagalog | 17% (65/377) |
-| 🇹🇷 Turkish | 19% (73/377) |
-| 🇺🇦 Ukrainian | 95% (359/377) |
-| 🇻🇳 Vietnamese | 94% (356/377) |
-| 🇨🇳 Chinese (Simplified) | 98% (371/377) |
-| 🇹🇼 Chinese (Traditional) | 77% (294/377) |
+| 🇹🇷 Turkish | 98% (372/377) |
+| 🇺🇦 Ukrainian | 98% (372/377) |
+| 🇻🇳 Vietnamese | 98% (372/377) |
+| 🇨🇳 Chinese (Simplified) | 98% (372/377) |
+| 🇹🇼 Chinese (Traditional) | 98% (372/377) |
 <!-- translations:end -->
