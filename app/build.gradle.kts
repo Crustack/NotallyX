@@ -1,4 +1,5 @@
 import com.android.build.gradle.internal.tasks.factory.dependsOn
+import com.android.build.gradle.tasks.PackageAndroidArtifact
 import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
 import org.apache.commons.configuration2.PropertiesConfiguration
 import org.apache.commons.configuration2.io.FileHandler
@@ -10,6 +11,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.parcelize")
     id("com.google.devtools.ksp")
+    id("com.google.firebase.testlab")
     id("com.ncorti.ktfmt.gradle") version "0.20.1"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.0"
     id("io.github.philkes.android-translations-converter") version "1.0.5"
@@ -69,7 +71,7 @@ android {
             )
             signingConfig = signingConfigs.getByName("release")
         }
-        create("beta"){
+        create("beta") {
             initWith(getByName("release"))
             applicationIdSuffix = ".beta"
             versionNameSuffix = "-BETA"
@@ -174,6 +176,44 @@ android {
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
+
+    firebaseTestLab {
+        val serviceAccountPath = System.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        if (!serviceAccountPath.isNullOrEmpty()) {
+            serviceAccountCredentials.set(file(serviceAccountPath))
+        }
+        managedDevices {
+            create("galaxyA06") {
+                device = "a06"
+                apiLevel = 35
+            }
+
+            create("pixel5") {
+                device = "redfin"
+                apiLevel = 30
+            }
+
+            create("xiaomi14") {
+                device = "houji"
+                apiLevel = 35
+            }
+
+            create("mediumPhone") {
+                device = "MediumPhone.arm"
+                apiLevel = 28
+            }
+        }
+        testOptions {
+            fixture {
+                grantedPermissions = "all"
+            }
+
+            execution {
+                maxTestReruns = 2
+
+            }
+        }
+    }
 }
 
 ktfmt {
@@ -192,6 +232,22 @@ autoTranslate {
         targetLanguages = setOf("de-DE", "ru-RU")
     }
 }
+
+//
+//tasks.named<Task>("assembleDebugAndroidTest") {
+//    doLast {
+//        logger.lifecycle("Task ${name} finished assembling!")
+//    }
+//}
+
+// Access internal AGP tasks with their explicit type
+//tasks.named<PackageAndroidArtifact>("packageDebugAndroidTest") {
+//    doLast {
+//        // Strongly typed access to task properties
+//        val apkFolder = outputDirectory.get().asFile
+//        logger.lifecycle("Packaging APKs into: ${apkFolder.absolutePath}")
+//    }
+//}
 
 tasks.register<KtfmtFormatTask>("ktfmtPrecommit") {
     source = project.fileTree(rootDir)
@@ -292,6 +348,10 @@ dependencies {
     implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.27.0")
     implementation("com.github.luben:zstd-jni:1.5.7-6@aar")
 
+    implementation("androidx.test.uiautomator:uiautomator:2.2.0")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.0-alpha01")
+    androidTestImplementation("androidx.test.ext:junit:1.2.0-alpha01")
+    androidTestImplementation("androidx.test.espresso:espresso-contrib:3.6.0-alpha01")
     androidTestImplementation("androidx.room:room-testing:$roomVersion")
     androidTestImplementation("androidx.work:work-testing:2.9.1")
     androidTestImplementation("androidx.test:runner:1.7.0")

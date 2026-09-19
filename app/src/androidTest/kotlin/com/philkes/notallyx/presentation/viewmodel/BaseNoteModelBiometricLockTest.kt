@@ -44,10 +44,7 @@ class BaseNoteModelBiometricLockTest {
     private lateinit var model: BaseNoteModel
 
     private val notallyDatabase: NotallyDatabase
-        get() {
-            val database = onMain { NotallyDatabase.getDatabase(context).value }
-            return database
-        }
+        get() = onMain { NotallyDatabase.getDatabase(context).value!! }
 
     @Before
     fun setUp() {

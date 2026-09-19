@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.LinearLayout
 import androidx.annotation.ColorInt
 import androidx.core.content.ContextCompat
@@ -99,9 +100,14 @@ open class ActionBottomSheet(
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog =
             BottomSheetDialog(
-                requireContext(),
-                com.philkes.notallyx.R.style.ThemeOverlay_App_BottomSheetDialog,
-            )
+                    requireContext(),
+                    com.philkes.notallyx.R.style.ThemeOverlay_App_BottomSheetDialog,
+                )
+                .apply {
+                    window?.setSoftInputMode(
+                        WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN
+                    )
+                }
         color?.let {
             dialog.window?.apply {
                 navigationBarColor = it

@@ -42,10 +42,7 @@ class BaseNoteModelDataInPublicTest {
     private lateinit var model: BaseNoteModel
 
     private val notallyDatabase: NotallyDatabase
-        get() {
-            val database = onMain { NotallyDatabase.getDatabase(context).value }
-            return database
-        }
+        get() = onMain { NotallyDatabase.getDatabase(context).value!! }
 
     @Before
     fun setUp() {
@@ -91,7 +88,6 @@ class BaseNoteModelDataInPublicTest {
         assertTrue(preferences.dataInPublicFolder.value)
         assertTrue(externalDatabaseFile().exists())
         assertEquals(externalDatabaseFile(), NotallyDatabase.getCurrentDatabaseFile(context))
-        waitUntil { notallyDatabase.isOpen }
         var note = notallyDatabase.getBaseNoteDao().get(1L)!!
         assertEquals("Note", note.title)
         assertFalse(NotallyDatabase.isBeingReplaced())
@@ -102,7 +98,6 @@ class BaseNoteModelDataInPublicTest {
         assertFalse(preferences.dataInPublicFolder.value)
         assertTrue(internalDatabaseFile().exists())
         assertEquals(internalDatabaseFile(), NotallyDatabase.getCurrentDatabaseFile(context))
-        waitUntil { notallyDatabase.isOpen }
         note = notallyDatabase.getBaseNoteDao().get(1L)!!
         assertEquals("Note", note.title)
         assertFalse(NotallyDatabase.isBeingReplaced())
