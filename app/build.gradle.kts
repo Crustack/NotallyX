@@ -292,6 +292,10 @@ dependencies {
     implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.27.0")
     implementation("com.github.luben:zstd-jni:1.5.7-6@aar")
 
+    implementation("androidx.test.uiautomator:uiautomator:2.2.0")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.0-alpha01")
+    androidTestImplementation("androidx.test.ext:junit:1.2.0-alpha01")
+    androidTestImplementation("androidx.test.espresso:espresso-contrib:3.6.0-alpha01")
     androidTestImplementation("androidx.room:room-testing:$roomVersion")
     androidTestImplementation("androidx.work:work-testing:2.9.1")
     androidTestImplementation("androidx.test:runner:1.7.0")

@@ -55,6 +55,12 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
         }
     }
 
+    override fun updateModel() {
+        notallyModel.body = binding.EnterBody.getTextClone()
+        notallyModel.title = binding.EnterTitle.text.toString()
+        notallyModel.modifiedTimestamp = System.currentTimeMillis()
+    }
+
     override fun toggleCanEdit(mode: NoteViewMode) {
         super.toggleCanEdit(mode)
         textFormatMenu.isVisible = mode == NoteViewMode.EDIT
