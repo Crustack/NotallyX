@@ -91,6 +91,7 @@ class BaseNoteModelDataInPublicTest {
         assertTrue(preferences.dataInPublicFolder.value)
         assertTrue(externalDatabaseFile().exists())
         assertEquals(externalDatabaseFile(), NotallyDatabase.getCurrentDatabaseFile(context))
+        waitUntil { notallyDatabase.isOpen }
         var note = notallyDatabase.getBaseNoteDao().get(1L)!!
         assertEquals("Note", note.title)
         assertFalse(NotallyDatabase.isBeingReplaced())
@@ -101,6 +102,7 @@ class BaseNoteModelDataInPublicTest {
         assertFalse(preferences.dataInPublicFolder.value)
         assertTrue(internalDatabaseFile().exists())
         assertEquals(internalDatabaseFile(), NotallyDatabase.getCurrentDatabaseFile(context))
+        waitUntil { notallyDatabase.isOpen }
         note = notallyDatabase.getBaseNoteDao().get(1L)!!
         assertEquals("Note", note.title)
         assertFalse(NotallyDatabase.isBeingReplaced())
