@@ -309,7 +309,9 @@ class ErrorActivity : AppCompatActivity() {
                                                         overwrite = true,
                                                     )
                                                     deleteDatabase(NotallyDatabase.DATABASE_NAME)
-                                                    NotallyDatabase.clearInstance()
+                                                    withContext(Dispatchers.Main.immediate) {
+                                                        NotallyDatabase.clearInstance()
+                                                    }
                                                     application.importRawDatabase(
                                                         uri,
                                                         false,

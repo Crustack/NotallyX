@@ -181,7 +181,7 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
         runOnIODispatcher {
             val allPinnedToStatusNotes =
                 try {
-                    database.value.getBaseNoteDao().getAllPinnedToStatusNotes()
+                    database.value!!.getBaseNoteDao().getAllPinnedToStatusNotes()
                 } catch (e: Exception) {
                     log(TAG, "Could not restore pinned notifications", throwable = e)
                     return@runOnIODispatcher

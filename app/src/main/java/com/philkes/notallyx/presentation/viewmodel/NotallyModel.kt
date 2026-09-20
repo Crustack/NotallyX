@@ -109,7 +109,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
     var originalNote: BaseNote? = null
 
     init {
-        database.observeForever { baseNoteDao = it.getBaseNoteDao() }
+        database.observeForever { it?.let { baseNoteDao = it.getBaseNoteDao() } }
     }
 
     fun addAudio() {

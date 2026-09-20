@@ -75,7 +75,7 @@ class WidgetProvider : AppWidgetProvider() {
         GlobalScope.launch {
             withContext(Dispatchers.IO) {
                 try {
-                    val baseNoteDao = database.getBaseNoteDao()
+                    val baseNoteDao = database?.getBaseNoteDao() ?: return@withContext
                     val note = baseNoteDao.get(noteId)!!
                     val item = note.items[position]
                     if (checked == null) {
@@ -201,7 +201,7 @@ class WidgetProvider : AppWidgetProvider() {
                 val database =
                     withContext(Dispatchers.Main.immediate) {
                         NotallyDatabase.getDatabase(context).value
-                    }
+                    } ?: return@launch
                 val color =
                     withContext(Dispatchers.IO) { database.getBaseNoteDao().getColorOfNote(noteId) }
                 if (color == null) {

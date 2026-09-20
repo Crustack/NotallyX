@@ -7,6 +7,8 @@ import android.util.Log
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -54,7 +56,7 @@ abstract class NotallyDatabase : RoomDatabase() {
 
         const val DATABASE_NAME = "NotallyDatabase"
 
-        @Volatile private var instance: NotNullLiveData<NotallyDatabase>? = null
+        @Volatile private var instance: MutableLiveData<NotallyDatabase?> = MutableLiveData(null)
         @Volatile private var replacementInProgress = false
 
         fun getCurrentDatabaseFile(context: ContextWrapper): File {
@@ -104,23 +106,25 @@ abstract class NotallyDatabase : RoomDatabase() {
         }
 
         @MainThread
-        fun getDatabase(context: ContextWrapper): NotNullLiveData<NotallyDatabase> {
-            return instance?.also {
-                if (!replacementInProgress && !it.value.isOpen) {
-                    it.value = createInstance(context, NotallyXPreferences.getInstance(context))
+        fun getDatabase(context: ContextWrapper): LiveData<NotallyDatabase?> {
+            if (instance.value == null && !replacementInProgress) {
+                synchronized(this) {
+                    val preferences = NotallyXPreferences.getInstance(context)
+                    this.instance.value = createInstance(context, preferences)
+                    return instance
                 }
             }
-                ?: synchronized(this) {
-                    val preferences = NotallyXPreferences.getInstance(context)
-                    this.instance = NotNullLiveData(createInstance(context, preferences))
-                    return this.instance!!
-                }
+            return instance
         }
 
+        @MainThread
         fun clearInstance() {
-            this.instance?.value?.let { database ->
-                if (database.isOpen) {
-                    database.close()
+            synchronized(this) {
+                this.instance.value?.let { database ->
+                    if (database.isOpen) {
+                        database.close()
+                    }
+                    this.instance.value = null
                 }
             }
         }

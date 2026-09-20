@@ -80,14 +80,16 @@ open class PickNoteActivity : LockedActivity<ActivityPickNoteBinding>(), ItemLis
         val others = Header(getString(R.string.others))
         val archived = Header(getString(R.string.archived))
 
-        NotallyDatabase.getDatabase(this.application).observe(this) {
+        NotallyDatabase.getDatabase(this.application).observe(this) { database ->
             lifecycleScope.launch {
                 val notes =
-                    withContext(Dispatchers.IO) {
-                        val raw =
-                            it.getBaseNoteDao().getAllNotes().filter { it.id != excludedNoteId }
-                        BaseNoteModel.transform(raw, pinned, others, archived)
-                    }
+                    database?.let { db ->
+                        withContext(Dispatchers.IO) {
+                            val raw =
+                                db.getBaseNoteDao().getAllNotes().filter { it.id != excludedNoteId }
+                            BaseNoteModel.transform(raw, pinned, others, archived)
+                        }
+                    } ?: return@launch
                 adapter.submitList(notes)
                 binding.EmptyView.visibility =
                     if (notes.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE

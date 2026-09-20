@@ -74,7 +74,7 @@ suspend fun Application.splitOversizedNotes() {
         withContext(Dispatchers.Main.immediate) {
                 NotallyDatabase.getDatabase(this@splitOversizedNotes as ContextWrapper)
             }
-            .value
+            .value!!
     val dao = db.getBaseNoteDao()
 
     // ID-first to avoid loading huge rows into a single cursor; repair per-row if needed
