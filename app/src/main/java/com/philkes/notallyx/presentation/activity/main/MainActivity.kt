@@ -305,6 +305,10 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             addStaticLabelsMenuItems()
             NotallyDatabase.getDatabase(application).observe(this@MainActivity) { database ->
                 labelsLiveData?.removeObservers(this@MainActivity)
+                if (database == null) {
+                    labelsLiveData = null
+                    return@observe
+                }
                 labelsLiveData =
                     database.getLabelDao().getAll().also {
                         it.observe(this@MainActivity) { labels ->

@@ -32,7 +32,7 @@ class WidgetFactory(
     private val preferences = NotallyXPreferences.getInstance(app)
 
     init {
-        NotallyDatabase.getDatabase(app).observeForever { database = it }
+        NotallyDatabase.getDatabase(app).observeForever { it?.let { database = it } }
     }
 
     override fun onCreate() {}

@@ -86,7 +86,10 @@ class ViewImageActivity : LockedActivity<ActivityViewImageBinding>() {
 
         NotallyDatabase.getDatabase(this.application).observe(this@ViewImageActivity) { database ->
             lifecycleScope.launch {
-                val json = withContext(Dispatchers.IO) { database.getBaseNoteDao().getImages(id) }
+                val json =
+                    database?.let {
+                        withContext(Dispatchers.IO) { database.getBaseNoteDao().getImages(id) }
+                    } ?: return@launch
                 val original = Converters.jsonToFiles(json)
                 val images = ArrayList<FileAttachment>(original.size)
                 original.filterNotTo(images) { image -> deletedImages.contains(image) }

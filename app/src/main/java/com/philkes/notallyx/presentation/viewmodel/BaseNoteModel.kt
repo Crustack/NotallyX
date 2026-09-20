@@ -157,7 +157,16 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun init(database: NotallyDatabase) {
+    private fun init(database: NotallyDatabase?) {
+        if (database == null) {
+            allNotesObserver?.let { allNotes?.removeObserver(it) }
+            labelsHiddenObserver?.let { preferences.labelsHidden.removeObserver(it) }
+            deletedNotes?.clearObserver()
+            archivedNotes?.clearObserver()
+            reminderNotes?.clearObserver()
+            baseNotes?.clearObserver()
+            return
+        }
         this.database = database
         baseNoteDao = database.getBaseNoteDao()
         labelDao = database.getLabelDao()
@@ -268,8 +277,8 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             withContext(Dispatchers.IO) {
                 NotallyDatabase.startReplacement()
                 try {
-                    database.value.checkpoint()
-                    NotallyDatabase.clearInstance()
+                    database.value!!.checkpoint()
+                    withContext(Dispatchers.Main.immediate) { NotallyDatabase.clearInstance() }
                     val targetDirectory = NotallyDatabase.getExternalDatabaseFile(app).parentFile
                     val internalDatabaseFiles = NotallyDatabase.getInternalDatabaseFiles(app)
                     internalDatabaseFiles.forEach {
@@ -298,7 +307,6 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         )
                     }
                     app.migrateAllAttachments(toPrivate = false)
-                    preferences.dataInPublicFolder.save(true)
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main.immediate) {
                         NotallyDatabase.postNewInstance(app, dataInPublic = false)
@@ -308,6 +316,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             }
             withContext(Dispatchers.Main.immediate) {
                 NotallyDatabase.postNewInstance(app, dataInPublic = true)
+                preferences.dataInPublicFolder.save(true)
             }
             callback?.invoke()
         }
@@ -320,8 +329,8 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             withContext(Dispatchers.IO) {
                 NotallyDatabase.startReplacement()
                 try {
-                    database.value.checkpoint()
-                    NotallyDatabase.clearInstance()
+                    database.value!!.checkpoint()
+                    withContext(Dispatchers.Main.immediate) { NotallyDatabase.clearInstance() }
                     val targetDirectory = NotallyDatabase.getInternalDatabaseFile(app).parentFile
                     val externalDatabaseFiles = NotallyDatabase.getExternalDatabaseFiles(app)
                     externalDatabaseFiles.forEach {
@@ -350,7 +359,6 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         )
                     }
                     app.migrateAllAttachments(toPrivate = true)
-                    preferences.dataInPublicFolder.save(false)
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main.immediate) {
                         NotallyDatabase.postNewInstance(app, dataInPublic = true)
@@ -360,6 +368,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             }
             withContext(Dispatchers.Main.immediate) {
                 NotallyDatabase.postNewInstance(app, dataInPublic = false)
+                preferences.dataInPublicFolder.save(false)
             }
             callback?.invoke()
         }
@@ -373,7 +382,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             try {
                 val (_, dbFileCopy) = app.copyDatabase(suffix = "-encrypt")
                 val (_, dbFileBackup) = app.copyDatabase(suffix = "-encrypt-backup")
-                NotallyDatabase.clearInstance()
+                withContext(Dispatchers.Main.immediate) { NotallyDatabase.clearInstance() }
                 encryptDatabase(app, dbFileCopy, passphrase)
                 val originalDbFile = NotallyDatabase.getCurrentDatabaseFile(app)
                 dbFileCopy.copyToLarge(originalDbFile, overwrite = true)
@@ -391,8 +400,6 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         "Encrypt succeeded but overwritten database is not encrypted, restored unencrypted database and created additional backup at ${externalBackupFile.absolutePath}"
                     )
                 }
-                preferences.fallbackDatabaseEncryptionKey.save(passphrase)
-                preferences.biometricLock.save(BiometricLock.ENABLED)
             } catch (e: Exception) {
                 withContext(Dispatchers.Main.immediate) {
                     NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.DISABLED)
@@ -402,6 +409,8 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
         withContext(Dispatchers.Main.immediate) {
             NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.ENABLED)
+            preferences.fallbackDatabaseEncryptionKey.save(passphrase)
+            preferences.biometricLock.save(BiometricLock.ENABLED)
         }
     }
 
@@ -417,7 +426,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 val (_, dbFileCopy) = app.copyDatabase(decrypt = false, suffix = "-decrypt")
                 val (_, dbFileBackup) =
                     app.copyDatabase(decrypt = false, suffix = "-decrypt-backup")
-                NotallyDatabase.clearInstance()
+                withContext(Dispatchers.Main.immediate) { NotallyDatabase.clearInstance() }
                 decryptDatabase(app, dbFileCopy, passphrase)
                 val originalDbFile = NotallyDatabase.getCurrentDatabaseFile(app)
                 dbFileCopy.copyToLarge(originalDbFile, overwrite = true)
@@ -435,7 +444,6 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         "Decrypt succeeded but overwritten database is still encrypted, restored encrypted database and created additional backup at ${externalBackupFile.absolutePath}"
                     )
                 }
-                preferences.biometricLock.save(BiometricLock.DISABLED)
             } catch (e: Exception) {
                 withContext(Dispatchers.Main.immediate) {
                     NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.ENABLED)
@@ -445,6 +453,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
         withContext(Dispatchers.Main.immediate) {
             NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.DISABLED)
+            preferences.biometricLock.save(BiometricLock.DISABLED)
         }
         callback?.invoke()
     }
@@ -549,7 +558,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 withContext(Dispatchers.Main.immediate) { NotallyDatabase.getDatabase(app).value }
             val result =
                 withContext(Dispatchers.IO) {
-                    NotesImporter(app, database).import(uri, importSource, importProgress)
+                    NotesImporter(app, database!!).import(uri, importSource, importProgress)
                 }
             app.showToast(app.toMessage(result))
         }

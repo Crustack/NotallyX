@@ -47,7 +47,7 @@ suspend fun ContextWrapper.removeOldDeletedNotes(): ListenableWorker.Result {
     val database =
         withContext(Dispatchers.Main.immediate) {
             NotallyDatabase.getDatabase(this@removeOldDeletedNotes).value
-        }
+        } ?: return ListenableWorker.Result.failure()
     val baseNoteDao = database.getBaseNoteDao()
 
     return try {

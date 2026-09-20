@@ -121,9 +121,12 @@ class ModelFolderObserver(
                     withContext(Dispatchers.Main.immediate) {
                         NotallyDatabase.getDatabase(activity)
                     }
+                if (database.value == null) {
+                    return@launch
+                }
                 val colors =
                     withContext(Dispatchers.IO) {
-                        database.value.getBaseNoteDao().getAllColors().toSet()
+                        database.value!!.getBaseNoteDao().getAllColors().toSet()
                     }
                 // Show color as selected only if all selected notes have the same color
                 val currentColor =

@@ -573,7 +573,7 @@ suspend fun ContextWrapper.copyDatabase(
         withContext(Dispatchers.Main.immediate) {
             NotallyDatabase.getDatabase(this@copyDatabase).value
         }
-    database.checkpoint()
+    database!!.checkpoint()
     val preferences = NotallyXPreferences.getInstance(this)
     val databaseFile = NotallyDatabase.getCurrentDatabaseFile(this)
     return if (
