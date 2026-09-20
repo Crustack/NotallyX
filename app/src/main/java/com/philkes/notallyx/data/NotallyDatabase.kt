@@ -121,10 +121,10 @@ abstract class NotallyDatabase : RoomDatabase() {
         fun clearInstance() {
             synchronized(this) {
                 this.instance.value?.let { database ->
+                    this.instance.value = null
                     if (database.isOpen) {
                         database.close()
                     }
-                    this.instance.value = null
                 }
             }
         }

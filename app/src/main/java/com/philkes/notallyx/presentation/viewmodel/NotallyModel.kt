@@ -44,6 +44,7 @@ import com.philkes.notallyx.presentation.viewmodel.preference.TextSizeSp
 import com.philkes.notallyx.presentation.viewmodel.progress.AddFilesProgress
 import com.philkes.notallyx.presentation.widget.WidgetProvider
 import com.philkes.notallyx.utils.Cache
+import com.philkes.notallyx.utils.DatabaseNotConnectedException
 import com.philkes.notallyx.utils.Event
 import com.philkes.notallyx.utils.FileError
 import com.philkes.notallyx.utils.backup.checkBackupOnSave
@@ -67,7 +68,7 @@ typealias BackupFile = Pair<String?, File>
 class NotallyModel(private val app: Application) : AndroidViewModel(app) {
 
     private val database = NotallyDatabase.getDatabase(app)
-    private lateinit var baseNoteDao: BaseNoteDao
+    private var baseNoteDao: BaseNoteDao? = null
 
     val preferences = NotallyXPreferences.getInstance(app)
     val textSize: TextSizeSp = preferences.textSizeNoteEditor.value
@@ -231,7 +232,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
             isNewNote = false
 
             val cachedNote = Cache.list.find { baseNote -> baseNote.id == id }
-            val baseNote = cachedNote ?: withContext(Dispatchers.IO) { baseNoteDao.get(id) }
+            val baseNote = cachedNote ?: withContext(Dispatchers.IO) { baseNoteDao?.get(id) }
 
             if (baseNote != null) {
                 originalNote = baseNote.deepCopy()
@@ -268,14 +269,19 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
     private suspend fun createBaseNote(createInDb: Boolean = true): BaseNote {
         val baseNote = getBaseNote()
         if (createInDb) {
-            id = withContext(Dispatchers.IO) { baseNoteDao.insertSafe(app, baseNote) }
+            id =
+                withContext(Dispatchers.IO) {
+                    baseNoteDao?.insertSafe(app, baseNote) ?: throw DatabaseNotConnectedException()
+                }
         }
         return baseNote.copy(id = id)
     }
 
     suspend fun deleteBaseNote(checkAutoSave: Boolean = true) {
         app.cancelPinAndReminders(id, reminders.value)
-        withContext(Dispatchers.IO) { baseNoteDao.delete(id) }
+        withContext(Dispatchers.IO) {
+            baseNoteDao?.delete(id) ?: throw DatabaseNotConnectedException()
+        }
         WidgetProvider.sendBroadcast(app, longArrayOf(id))
         val attachments = ArrayList(images.value + files.value + audios.value)
         if (attachments.isNotEmpty()) {
@@ -294,7 +300,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
     suspend fun saveNote(checkBackupOnSave: Boolean = true): Long {
         return withContext(Dispatchers.IO) {
             val note = getBaseNote()
-            val id = baseNoteDao.insertSafe(app, note)
+            val id = baseNoteDao?.insertSafe(app, note) ?: throw DatabaseNotConnectedException()
             if (checkBackupOnSave) {
                 checkBackupOnSave(note)
             }
@@ -333,15 +339,21 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun updateImages() {
-        withContext(Dispatchers.IO) { baseNoteDao.updateImages(id, images.value) }
+        withContext(Dispatchers.IO) {
+            baseNoteDao?.updateImages(id, images.value) ?: throw DatabaseNotConnectedException()
+        }
     }
 
     private suspend fun updateFiles() {
-        withContext(Dispatchers.IO) { baseNoteDao.updateFiles(id, files.value) }
+        withContext(Dispatchers.IO) {
+            baseNoteDao?.updateFiles(id, files.value) ?: throw DatabaseNotConnectedException()
+        }
     }
 
     private suspend fun updateAudios() {
-        withContext(Dispatchers.IO) { baseNoteDao.updateAudios(id, audios.value) }
+        withContext(Dispatchers.IO) {
+            baseNoteDao?.updateAudios(id, audios.value) ?: throw DatabaseNotConnectedException()
+        }
     }
 
     fun getBaseNote(): BaseNote {
@@ -462,7 +474,10 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
 
     private suspend fun updateReminders(updatedReminders: List<Reminder>) {
         reminders.value = updatedReminders
-        withContext(Dispatchers.IO) { baseNoteDao.updateReminders(id, updatedReminders) }
+        withContext(Dispatchers.IO) {
+            baseNoteDao?.updateReminders(id, updatedReminders)
+                ?: throw DatabaseNotConnectedException()
+        }
     }
 
     suspend fun convertTo(noteType: Type) {
@@ -495,7 +510,10 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
 
     suspend fun refreshOriginalNote() {
         if (id == 0L) return
-        val baseNote = withContext(Dispatchers.IO) { baseNoteDao.get(id) }
+        val baseNote =
+            withContext(Dispatchers.IO) {
+                baseNoteDao?.get(id) ?: throw DatabaseNotConnectedException()
+            }
         if (baseNote == null) return
         originalNote = baseNote.deepCopy()
         reminders.value = baseNote.reminders

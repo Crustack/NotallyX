@@ -165,6 +165,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             archivedNotes?.clearObserver()
             reminderNotes?.clearObserver()
             baseNotes?.clearObserver()
+            labelCache.clear()
             return
         }
         this.database = database

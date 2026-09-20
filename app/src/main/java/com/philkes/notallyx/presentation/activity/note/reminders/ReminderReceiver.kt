@@ -104,10 +104,11 @@ class ReminderReceiver : BroadcastReceiver() {
                         val noteId = intent.getLongExtra(EXTRA_NOTE_ID, -1L)
                         Log.d(TAG, "Deleting noteId: $noteId")
                         if (noteId != -1L) {
-                            deleteNote(context, noteId)
-                            context.showToast(
-                                context.getQuantityString(R.plurals.deleted_selected_notes, 1)
-                            )
+                            if (deleteNote(context, noteId)) {
+                                context.showToast(
+                                    context.getQuantityString(R.plurals.deleted_selected_notes, 1)
+                                )
+                            }
                         }
                     }
 
@@ -123,10 +124,11 @@ class ReminderReceiver : BroadcastReceiver() {
         }
     }
 
-    private suspend fun deleteNote(context: Context, noteId: Long) {
-        getDatabase(context)?.let {
+    private suspend fun deleteNote(context: Context, noteId: Long): Boolean {
+        return getDatabase(context)?.let {
             context.moveBaseNotes(it.getBaseNoteDao(), longArrayOf(noteId), Folder.DELETED)
-        }
+            true
+        } ?: false
     }
 
     private fun Array<StatusBarNotification>.ofNote(noteId: Long) = filter {
