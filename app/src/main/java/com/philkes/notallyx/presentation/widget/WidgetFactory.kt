@@ -28,11 +28,11 @@ class WidgetFactory(
 ) : RemoteViewsService.RemoteViewsFactory {
 
     private var baseNote: BaseNote? = null
-    private lateinit var database: NotallyDatabase
+    private var database: NotallyDatabase? = null
     private val preferences = NotallyXPreferences.getInstance(app)
 
     init {
-        NotallyDatabase.getDatabase(app).observeForever { it?.let { database = it } }
+        NotallyDatabase.getDatabase(app).observeForever { database = it }
     }
 
     override fun onCreate() {}
@@ -50,7 +50,7 @@ class WidgetFactory(
     }
 
     override fun onDataSetChanged() {
-        baseNote = database.getBaseNoteDao().get(id)
+        baseNote = database?.getBaseNoteDao()?.get(id)
     }
 
     override fun getViewAt(position: Int): RemoteViews {
