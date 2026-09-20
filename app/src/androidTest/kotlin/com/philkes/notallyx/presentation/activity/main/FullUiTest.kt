@@ -1,6 +1,7 @@
 package com.philkes.notallyx.presentation.activity.main
 
 import android.Manifest
+import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -20,7 +21,6 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.philkes.notallyx.R
 import org.hamcrest.Description
@@ -41,21 +41,18 @@ class FullUiTest {
 
     @Rule @JvmField var mActivityScenarioRule = ActivityScenarioRule(MainActivity::class.java)
 
-    @Rule
-    @JvmField
-    var mGrantPermissionRule = GrantPermissionRule.grant("android.permission.POST_NOTIFICATIONS")
-
-    @get:Rule
-    val permissionRule: GrantPermissionRule =
-        GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS)
-
     @Before
-    fun grantExactAlarmPermission() {
-        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+    fun setup() {
         val packageName = InstrumentationRegistry.getInstrumentation().targetContext.packageName
-
-        // Allows your app to set exact alarms without forcing the user to Settings
-        device.executeShellCommand("appops set $packageName SCHEDULE_EXACT_ALARM allow")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
+            uiAutomation.grantRuntimePermission(packageName, Manifest.permission.POST_NOTIFICATIONS)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+            // Allows your app to set exact alarms without forcing the user to Settings
+            device.executeShellCommand("appops set $packageName SCHEDULE_EXACT_ALARM allow")
+        }
     }
 
     private val mainListView = onView(withId(R.id.MainListView))
