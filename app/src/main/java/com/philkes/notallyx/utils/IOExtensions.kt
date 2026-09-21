@@ -303,8 +303,26 @@ fun File.copyToLarge(
     target: File,
     overwrite: Boolean = false,
     bufferSize: Int = BUFFER_SIZE,
+    deleteSourceFile: Boolean = false,
 ): File {
-    return copyTo(target = target, overwrite = overwrite, bufferSize = bufferSize)
+    return copyTo(target = target, overwrite = overwrite, bufferSize = bufferSize).also {
+        if (deleteSourceFile) {
+            try {
+                if (!this.delete()) {
+                    Log.w(
+                        TAG,
+                        "Failed to delete file: '${this.absolutePath}' after copying to '${target.absolutePath}'",
+                    )
+                }
+            } catch (e: Exception) {
+                Log.w(
+                    TAG,
+                    "Failed to delete file: '${this.absolutePath}' after copying to '${target.absolutePath}'",
+                    e,
+                )
+            }
+        }
+    }
 }
 
 fun File.moveAllFiles(to: File) {

@@ -70,7 +70,6 @@ import com.philkes.notallyx.utils.keepOnlyNewest
 import com.philkes.notallyx.utils.listZipFiles
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.md5Hash
-import com.philkes.notallyx.utils.recreateDir
 import com.philkes.notallyx.utils.resolveAttachmentFile
 import com.philkes.notallyx.utils.security.decryptDatabase
 import com.philkes.notallyx.utils.security.getInitializedCipherForDecryption
@@ -85,6 +84,7 @@ import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
@@ -221,23 +221,23 @@ suspend fun ContextWrapper.autoBackupOnSave(
                     with(changedNote) {
                         images.map {
                             BackupFile(
-                                SUBFOLDER_IMAGES,
+                                "$SUBFOLDER_IMAGES/${it.localName}",
                                 File(getCurrentImagesDirectory(), it.localName),
                             )
                         } +
                             files.map {
                                 BackupFile(
-                                    SUBFOLDER_FILES,
+                                    "$SUBFOLDER_FILES/${it.localName}",
                                     File(getCurrentFilesDirectory(), it.localName),
                                 )
                             } +
                             audios.map {
                                 BackupFile(
-                                    SUBFOLDER_AUDIOS,
+                                    "$SUBFOLDER_AUDIOS/${it.name}",
                                     File(getCurrentAudioDirectory(), it.name),
                                 )
                             } +
-                            BackupFile(null, databaseFile)
+                            BackupFile(DATABASE_NAME, databaseFile)
                     }
                 suspend fun handleZipException(e: Throwable, backupFile: DocumentFile) {
                     log(
@@ -255,6 +255,17 @@ suspend fun ContextWrapper.autoBackupOnSave(
                     handleZipException(e, backupFile)
                 } catch (e: ZipVerificationException) {
                     handleZipException(e, backupFile)
+                } finally {
+                    try {
+                        databaseFile.delete()
+                    } catch (e: Exception) {
+                        log(
+                            TAG,
+                            msg =
+                                "Failed to delete temp db copy file: '${databaseFile.absolutePath}'",
+                            throwable = e,
+                        )
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -344,6 +355,15 @@ suspend fun ContextWrapper.exportRawDatabase(fileUri: Uri) {
             inputStream.copyToLarge(outputStream)
             outputStream.flush()
         }
+    }
+    try {
+        databaseCopy.delete()
+    } catch (e: Exception) {
+        log(
+            TAG,
+            msg = "Failed to delete raw db copy file: '${databaseCopy.absolutePath}'",
+            throwable = e,
+        )
     }
     contentResolver.query(fileUri, null, null, null, null)?.use { cursor ->
         val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
@@ -487,7 +507,15 @@ suspend fun ContextWrapper.exportAsZip(
             }
         }
         zipFile.file.delete()
-        databaseCopy.delete()
+        try {
+            databaseCopy.delete()
+        } catch (e: Exception) {
+            log(
+                TAG,
+                msg = "Failed to delete db copy file: '${databaseCopy.absolutePath}'",
+                throwable = e,
+            )
+        }
         backupProgress?.postValue(BackupProgress(inProgress = false))
         // Post skipped attachments notification if any were missing
         if (missingAttachments.isNotEmpty()) {
@@ -504,16 +532,18 @@ fun Context.exportToZip(
     files: List<BackupFile>,
     password: String = PASSWORD_EMPTY,
 ): Boolean {
-    val tempDir = File(cacheDir, "export").recreateDir()
+    val tempDir = File(cacheDir, "export_${UUID.randomUUID()}")
+    if (!tempDir.exists()) {
+        tempDir.mkdirs()
+    }
     try {
         val zipInputStream = contentResolver.openInputStream(zipUri) ?: return false
         extractZipToDirectory(zipInputStream, tempDir, password)
         files
-            .filter { it.second.exists() }
-            .forEach { file ->
-                val targetFile =
-                    File(tempDir, "${file.first?.let { "$it/" } ?: ""}${file.second.name}")
-                file.second.copyToLarge(targetFile, overwrite = true)
+            .filter { it.file.exists() }
+            .forEach { backupFile ->
+                val targetFile = File(tempDir, backupFile.targetPath)
+                backupFile.file.copyToLarge(targetFile, overwrite = true)
             }
         val zipOutputStream = contentResolver.openOutputStream(zipUri, "w") ?: return false
         val tempZipFile = createTempFile("tempZip", ".zip")
@@ -537,8 +567,8 @@ fun Context.exportToZip(
             if (!zipFile.isValidZipFile) {
                 throw IOException("ZipFile '${zipFile.file}' is not a valid ZIP!")
             }
-            val databaseFile = files.find { it.second.name == DATABASE_NAME }
-            databaseFile?.let { zipFile.verify(it.second) }
+            val databaseFile = files.find { it.targetPath == DATABASE_NAME }
+            databaseFile?.let { zipFile.verify(it.file) }
             tempZipFile.inputStream().use { inputStream ->
                 inputStream.copyToLarge(zipOutputStream)
             }
@@ -581,11 +611,12 @@ suspend fun ContextWrapper.copyDatabase(
     ) {
         val cipher = getInitializedCipherForDecryption(iv = preferences.iv.value!!)
         val passphrase = cipher.doFinal(preferences.databaseEncryptionKey.value)
-        val decryptedFile = File(cacheDir, DATABASE_NAME + suffix)
+        val decryptedFile =
+            withContext(Dispatchers.IO) { createTempFile(DATABASE_NAME, suffix, cacheDir) }
         decryptDatabase(this, passphrase, databaseFile, decryptedFile)
         Pair(database, decryptedFile)
     } else {
-        val dbFile = File(cacheDir, DATABASE_NAME + suffix)
+        val dbFile = withContext(Dispatchers.IO) { createTempFile(DATABASE_NAME, suffix, cacheDir) }
         databaseFile.copyToLarge(dbFile, overwrite = true)
         Pair(database, dbFile)
     }

@@ -63,7 +63,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-typealias BackupFile = Pair<String?, File>
+data class BackupFile(val targetPath: String, val file: File)
 
 class NotallyModel(private val app: Application) : AndroidViewModel(app) {
 
