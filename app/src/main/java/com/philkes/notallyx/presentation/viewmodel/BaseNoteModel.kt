@@ -386,7 +386,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 withContext(Dispatchers.Main.immediate) { NotallyDatabase.clearInstance() }
                 encryptDatabase(app, dbFileCopy, passphrase)
                 val originalDbFile = NotallyDatabase.getCurrentDatabaseFile(app)
-                dbFileCopy.copyToLarge(originalDbFile, overwrite = true)
+                dbFileCopy.copyToLarge(originalDbFile, overwrite = true, deleteSourceFile = true)
                 if (originalDbFile.isUnencryptedDatabase(app)) {
                     dbFileBackup.copyToLarge(originalDbFile, overwrite = true)
                     val externalBackupFile =
@@ -396,7 +396,11 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                             Date()
                         )}",
                         )
-                    dbFileBackup.copyToLarge(externalBackupFile, overwrite = true)
+                    dbFileBackup.copyToLarge(
+                        externalBackupFile,
+                        overwrite = true,
+                        deleteSourceFile = true,
+                    )
                     throw EncryptionException(
                         "Encrypt succeeded but overwritten database is not encrypted, restored unencrypted database and created additional backup at ${externalBackupFile.absolutePath}"
                     )
@@ -430,7 +434,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 withContext(Dispatchers.Main.immediate) { NotallyDatabase.clearInstance() }
                 decryptDatabase(app, dbFileCopy, passphrase)
                 val originalDbFile = NotallyDatabase.getCurrentDatabaseFile(app)
-                dbFileCopy.copyToLarge(originalDbFile, overwrite = true)
+                dbFileCopy.copyToLarge(originalDbFile, overwrite = true, deleteSourceFile = true)
                 if (originalDbFile.isEncryptedDatabase(app)) {
                     dbFileBackup.copyToLarge(originalDbFile, overwrite = true)
                     val externalBackupFile =
@@ -440,7 +444,11 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                             Date()
                         )}",
                         )
-                    dbFileBackup.copyToLarge(externalBackupFile, overwrite = true)
+                    dbFileBackup.copyToLarge(
+                        externalBackupFile,
+                        overwrite = true,
+                        deleteSourceFile = true,
+                    )
                     throw DecryptionException(
                         "Decrypt succeeded but overwritten database is still encrypted, restored encrypted database and created additional backup at ${externalBackupFile.absolutePath}"
                     )

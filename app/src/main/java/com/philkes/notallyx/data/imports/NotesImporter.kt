@@ -26,6 +26,7 @@ import com.philkes.notallyx.utils.backup.importAudio
 import com.philkes.notallyx.utils.backup.importFile
 import com.philkes.notallyx.utils.backup.importImage
 import java.io.File
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
 data class ImportResult(val inserted: Int, val duplicates: Int, val corruptedNotes: Int)
@@ -37,7 +38,7 @@ class NotesImporter(private val app: Application, private val database: NotallyD
         importSource: ImportSource,
         progress: MutableLiveData<Progress>? = null,
     ): ImportResult {
-        val tempDir = File(app.cacheDir, IMPORT_CACHE_FOLDER)
+        val tempDir = File(app.cacheDir, "${IMPORT_CACHE_FOLDER}_${UUID.randomUUID()}")
         if (!tempDir.exists()) {
             tempDir.mkdirs()
         }
