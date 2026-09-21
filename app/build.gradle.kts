@@ -39,6 +39,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
         testOptions {
+            animationsDisabled = true
             execution = "ANDROIDX_TEST_ORCHESTRATOR"
         }
     }
@@ -349,19 +350,25 @@ dependencies {
     implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.27.0")
     implementation("com.github.luben:zstd-jni:1.5.7-6@aar")
 
-    implementation("androidx.test.uiautomator:uiautomator:2.2.0")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.0-alpha01")
-    androidTestImplementation("androidx.test.ext:junit:1.2.0-alpha01")
-    androidTestImplementation("androidx.test.espresso:espresso-contrib:3.6.0-alpha01")
-    androidTestImplementation("androidx.test.espresso:espresso-intents:3.6.0-alpha01")
+    val espressoVersion = "3.7.0"
+    val androidxTestVersion = "1.7.0"
+
+    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
+    androidTestImplementation("androidx.test.espresso:espresso-core:$espressoVersion")
+    androidTestImplementation("androidx.test.espresso:espresso-contrib:$espressoVersion")
+    androidTestImplementation("androidx.test.espresso:espresso-intents:$espressoVersion")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+
+    androidTestImplementation("androidx.test:runner:$androidxTestVersion")
+    androidTestImplementation("androidx.test:rules:$androidxTestVersion")
+    androidTestUtil("androidx.test:orchestrator:1.6.1")
+
     androidTestImplementation("androidx.room:room-testing:$roomVersion")
     androidTestImplementation("androidx.work:work-testing:2.9.1")
-    androidTestImplementation("androidx.test:runner:1.7.0")
-    androidTestImplementation("androidx.test:rules:1.7.0")
-    androidTestUtil("androidx.test:orchestrator:1.5.0")
+
     testImplementation("androidx.arch.core:core-testing:2.2.0")
-    testImplementation("androidx.test:core-ktx:1.6.1")
-    testImplementation("androidx.test:core:1.6.1")
+    testImplementation("androidx.test:core-ktx:$androidxTestVersion")
+    testImplementation("androidx.test:core:$androidxTestVersion")
     testImplementation("io.mockk:mockk:1.13.12")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.assertj:assertj-core:3.24.2")

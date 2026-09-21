@@ -1,6 +1,5 @@
 package com.philkes.notallyx.test
 
-import android.R.attr.tag
 import android.graphics.Point
 import android.os.SystemClock
 import android.util.Log
@@ -14,6 +13,7 @@ import androidx.test.espresso.Root
 import androidx.test.espresso.ViewInteraction
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.contrib.DrawerActions
 import androidx.test.espresso.matcher.BoundedMatcher
 import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
 import androidx.test.espresso.matcher.ViewMatchers.isChecked
@@ -493,7 +493,7 @@ fun createListItem(
 fun onDisplayView(viewMatcher: Matcher<View>) = onView(allOf(viewMatcher, isDisplayed()))
 
 fun navigateTo(fragmentId: Int) {
-    onDisplayView(withContentDescription("Open navigation drawer")).perform(click())
+    onView(withId(R.id.DrawerLayout)).perform(DrawerActions.open())
     onDisplayView(allOf(withId(fragmentId), isDescendantOfA(withId(R.id.NavigationView))))
         .perform(click())
 }
