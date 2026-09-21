@@ -110,8 +110,8 @@ const val OUTPUT_DATA_EXCEPTION = "exception"
 val FILE_TIMESTAMP_FORMAT = SimpleDateFormat("yyyy-MM-dd_HH_mm_ss_SSS", Locale.ENGLISH)
 val LOG_DATE_FORMATTER = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH)
 
-private const val ON_SAVE_BACKUP_FILE = "NotallyX_AutoBackup"
-private const val PERIODIC_BACKUP_FILE_PREFIX = "NotallyX_Backup_"
+const val ON_SAVE_BACKUP_FILE = "NotallyX_AutoBackup"
+const val PERIODIC_BACKUP_FILE_PREFIX = "NotallyX_Backup_"
 
 private val periodicBackupMutex = Mutex()
 
