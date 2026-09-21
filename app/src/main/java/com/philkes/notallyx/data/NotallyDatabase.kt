@@ -26,7 +26,6 @@ import com.philkes.notallyx.data.model.Converters
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.toColorString
-import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
 import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.utils.getExternalMediaDirectory
@@ -277,12 +276,7 @@ abstract class NotallyDatabase : RoomDatabase() {
         @MainThread
         fun postInstance(notallyDatabase: NotallyDatabase) {
             synchronized(this) {
-                val current = instance
-                if (current == null) {
-                    instance = NotNullLiveData(notallyDatabase)
-                } else {
-                    current.value = notallyDatabase
-                }
+                instance.value = notallyDatabase
                 replacementInProgress = false
             }
         }
