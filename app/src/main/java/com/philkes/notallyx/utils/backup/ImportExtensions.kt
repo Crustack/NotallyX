@@ -291,7 +291,7 @@ private suspend fun ContextWrapper.import(
     val notallyDatabase =
         withContext(Dispatchers.Main.immediate) { NotallyDatabase.getDatabase(this@import).value }
     val importResult =
-        notallyDatabase
+        notallyDatabase!!
             .getCommonDao()
             .importBackup(baseNotes, originalIds, labels, readCorrupted, checkDuplicates)
     val notesToRemind = notallyDatabase.getBaseNoteDao().getAllWithRemindersOrPinned()

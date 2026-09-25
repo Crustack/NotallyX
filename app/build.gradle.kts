@@ -3,6 +3,7 @@ import com.android.build.gradle.tasks.PackageAndroidArtifact
 import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
 import org.apache.commons.configuration2.PropertiesConfiguration
 import org.apache.commons.configuration2.io.FileHandler
+import org.gradle.kotlin.dsl.androidTestImplementation
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -352,6 +353,7 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.0-alpha01")
     androidTestImplementation("androidx.test.ext:junit:1.2.0-alpha01")
     androidTestImplementation("androidx.test.espresso:espresso-contrib:3.6.0-alpha01")
+    androidTestImplementation("androidx.test.espresso:espresso-intents:3.6.0-alpha01")
     androidTestImplementation("androidx.room:room-testing:$roomVersion")
     androidTestImplementation("androidx.work:work-testing:2.9.1")
     androidTestImplementation("androidx.test:runner:1.7.0")

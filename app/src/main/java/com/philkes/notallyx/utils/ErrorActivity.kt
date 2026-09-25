@@ -307,9 +307,12 @@ class ErrorActivity : AppCompatActivity() {
                                                             "${NotallyDatabase.DATABASE_NAME}_BACKUP_BEFORE_REIMPORT.sqlite",
                                                         ),
                                                         overwrite = true,
+                                                        deleteSourceFile = true,
                                                     )
                                                     deleteDatabase(NotallyDatabase.DATABASE_NAME)
-                                                    NotallyDatabase.clearInstance()
+                                                    withContext(Dispatchers.Main.immediate) {
+                                                        NotallyDatabase.clearInstance()
+                                                    }
                                                     application.importRawDatabase(
                                                         uri,
                                                         false,

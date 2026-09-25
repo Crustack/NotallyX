@@ -1,351 +1,249 @@
 package com.philkes.notallyx.presentation.activity.main
 
 import android.Manifest
-import android.view.View
-import android.view.ViewGroup
-import androidx.recyclerview.widget.RecyclerView
+import android.app.Activity
+import android.app.Instrumentation
+import android.content.ContextWrapper
+import android.content.Intent
+import android.os.Build
+import android.os.SystemClock
+import androidx.core.net.toUri
+import androidx.documentfile.provider.DocumentFile
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onData
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.NoMatchingViewException
-import androidx.test.espresso.PerformException
-import androidx.test.espresso.action.ViewActions.*
-import androidx.test.espresso.assertion.ViewAssertions.*
-import androidx.test.espresso.contrib.RecyclerViewActions
+import androidx.test.espresso.Espresso.openActionBarOverflowOrOptionsMenu
+import androidx.test.espresso.ViewInteraction
+import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
+import androidx.test.espresso.action.ViewActions.longClick
+import androidx.test.espresso.action.ViewActions.replaceText
+import androidx.test.espresso.action.ViewActions.scrollTo
+import androidx.test.espresso.action.ViewActions.typeText
+import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
+import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.contrib.RecyclerViewActions.actionOnItemAtPosition
-import androidx.test.espresso.matcher.ViewMatchers.*
+import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.Intents.intending
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
+import androidx.test.espresso.matcher.RootMatchers.isPlatformPopup
+import androidx.test.espresso.matcher.ViewMatchers
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.withClassName
+import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.ext.junit.rules.ActivityScenarioRule
+import androidx.test.espresso.matcher.ViewMatchers.withParent
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.philkes.notallyx.R
-import org.hamcrest.Description
-import org.hamcrest.Matcher
+import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.model.Label
+import com.philkes.notallyx.data.model.Reminder
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.EMPTY_PATH
+import com.philkes.notallyx.presentation.viewmodel.preference.PeriodicBackup
+import com.philkes.notallyx.test.assertLogAppeared
+import com.philkes.notallyx.test.assertToastDisplayed
+import com.philkes.notallyx.test.assertWorkExecuted
+import com.philkes.notallyx.test.byContentDescription
+import com.philkes.notallyx.test.byId
+import com.philkes.notallyx.test.byText
+import com.philkes.notallyx.test.childAtPosition
+import com.philkes.notallyx.test.createBaseNote
+import com.philkes.notallyx.test.createListItem
+import com.philkes.notallyx.test.navigateTo
+import com.philkes.notallyx.test.onDisplayView
+import com.philkes.notallyx.test.onLabelItem
+import com.philkes.notallyx.test.onPositionView
+import com.philkes.notallyx.utils.backup.AUTO_BACKUP_WORK_NAME
+import com.philkes.notallyx.utils.backup.ON_SAVE_BACKUP_FILE
+import com.philkes.notallyx.utils.backup.PERIODIC_BACKUP_FILE_PREFIX
+import com.philkes.notallyx.utils.getExternalBackupsDirectory
+import com.philkes.notallyx.utils.getUriForFile
+import com.philkes.notallyx.utils.listZipFiles
+import java.io.File
+import java.util.Date
+import kotlinx.coroutines.runBlocking
 import org.hamcrest.Matchers.allOf
 import org.hamcrest.Matchers.anything
 import org.hamcrest.Matchers.`is`
-import org.hamcrest.TypeSafeMatcher
 import org.hamcrest.core.IsInstanceOf
+import org.junit.After
 import org.junit.Before
-import org.junit.Rule
+import org.junit.FixMethodOrder
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/** End-to-end UI test suite. The individual test methods are logically separated. */
 @LargeTest
 @RunWith(AndroidJUnit4::class)
+@FixMethodOrder
 class FullUiTest {
 
-    @Rule @JvmField var mActivityScenarioRule = ActivityScenarioRule(MainActivity::class.java)
+    private var intentsInitialized = false
 
-    @Rule
-    @JvmField
-    var mGrantPermissionRule = GrantPermissionRule.grant("android.permission.POST_NOTIFICATIONS")
+    private val context
+        get() = ContextWrapper(InstrumentationRegistry.getInstrumentation().targetContext)
 
-    @get:Rule
-    val permissionRule: GrantPermissionRule =
-        GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS)
+    private val database: NotallyDatabase
+        get() = NotallyDatabase.getDatabase(context).value!!
+
+    private val preferences: NotallyXPreferences
+        get() = NotallyXPreferences.getInstance(ContextWrapper(context))
+
+    private val toolbarBackButton: ViewInteraction
+        get() =
+            onDisplayView(
+                childAtPosition(
+                    allOf(
+                        withId(R.id.Toolbar),
+                        childAtPosition(withId(R.id.main_content_layout), 0),
+                    ),
+                    0,
+                )
+            )
 
     @Before
-    fun grantExactAlarmPermission() {
-        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        val packageName = InstrumentationRegistry.getInstrumentation().targetContext.packageName
-
-        // Allows your app to set exact alarms without forcing the user to Settings
-        device.executeShellCommand("appops set $packageName SCHEDULE_EXACT_ALARM allow")
+    fun setup() {
+        val packageName = context.packageName
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
+            uiAutomation.grantRuntimePermission(packageName, Manifest.permission.POST_NOTIFICATIONS)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+            // Allows your app to set exact alarms without forcing the user to Settings
+            device.executeShellCommand("appops set $packageName SCHEDULE_EXACT_ALARM allow")
+        }
+        preferences.backupsFolder.save(EMPTY_PATH)
+        preferences.periodicBackups.save(PeriodicBackup(0, 0))
+        preferences.backupOnSave.save(false)
     }
 
-    private val mainListView = onView(withId(R.id.MainListView))
+    @After
+    fun tearDown() {
+        if (intentsInitialized) {
+            try {
+                Intents.release()
+            } finally {
+                intentsInitialized = false
+            }
+        }
+    }
 
+    private fun initIntents() {
+        Intents.init()
+        intentsInitialized = true
+    }
+
+    /** Create a text note, pin it, change its color, attach a label and toggle read-only/edit. */
     @Test
-    fun fullUiTest() {
-        val takeNoteButton = onView(allOf(withId(R.id.TakeNote), isDisplayed()))
-        takeNoteButton.perform(click())
+    fun createAndEditTextNote() {
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        val noteBodyInput = onView(allOf(withId(R.id.EnterBody), isDisplayed()))
-        noteBodyInput.perform(typeText("Body"), closeSoftKeyboard())
+        R.id.TakeNote.byId().perform(click())
 
-        val noteTitleInput = onView(allOf(withId(R.id.EnterTitle), isDisplayed()))
-        noteTitleInput.perform(typeText("Test"), closeSoftKeyboard())
+        R.id.EnterBody.byId().perform(typeText("Body"), closeSoftKeyboard())
+        R.id.EnterTitle.byId().perform(typeText("Test"), closeSoftKeyboard())
 
-        val pinMenuItem = onView(allOf(withContentDescription("Pin"), isDisplayed()))
-        pinMenuItem.perform(click())
+        R.string.pin.byContentDescription().perform(click())
 
-        val moreOptionsButton =
-            onView(allOf(withContentDescription("Tap for more options"), isDisplayed()))
-        moreOptionsButton.perform(click())
+        R.string.tap_for_more_options.byContentDescription().perform(click())
+        R.string.change_color.byText().perform(click())
+        R.id.CardView.byId(withContentDescription("NEW")).perform(click())
+        R.id.CardView.byId(withContentDescription("#FAAFA9")).perform(click())
+        R.string.save.byText(withId(android.R.id.button1)).perform(scrollTo(), click())
 
-        val changeColorMenuItem = onView(allOf(withText("Change Color"), isDisplayed()))
-        changeColorMenuItem.perform(click())
-
-        val newColorCard =
-            onView(allOf(withId(R.id.CardView), withContentDescription("NEW"), isDisplayed()))
-        newColorCard.perform(click())
-
-        val colorCard =
-            onView(allOf(withId(R.id.CardView), withContentDescription("#FAAFA9"), isDisplayed()))
-        colorCard.perform(click())
-
-        val saveColorButton = onView(allOf(withId(android.R.id.button1), withText("Save")))
-        saveColorButton.perform(scrollTo(), click())
-
-        val moreOptionsButton2 =
-            onView(allOf(withContentDescription("Tap for more options"), isDisplayed()))
-        moreOptionsButton2.perform(click())
-
-        val labelsMenuItem = onView(allOf(withText("Labels"), isDisplayed()))
-        labelsMenuItem.perform(click())
-
-        val addLabelMenuItem = onView(allOf(withContentDescription("Add label"), isDisplayed()))
-        addLabelMenuItem.perform(click())
-
-        val labelNameInput = onView(allOf(withId(R.id.EditText), isDisplayed()))
-        labelNameInput.perform(replaceText("label"))
-
-        onView(withId(android.R.id.button1)).check(matches(isDisplayed())).perform(click())
-        waitForRecyclerViewPosition(withId(R.id.MainListView), 0)
-        onView(withId(R.id.MainListView)).perform(actionOnItemAtPosition<ViewHolder>(0, click()))
+        R.string.tap_for_more_options.byContentDescription().perform(click())
+        onDisplayView(withText(R.string.labels)).perform(click())
+        R.string.add_label.byContentDescription().perform(click())
+        R.id.EditText.byId().perform(replaceText("label"))
+        android.R.id.button1.byId().perform(click())
+        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, click()))
 
         val labelToolbarBackButton =
-            onView(
-                allOf(
-                    childAtPosition(
-                        allOf(withId(R.id.Toolbar), childAtPosition(withId(R.id.root_layout), 0)),
-                        1,
-                    ),
-                    isDisplayed(),
+            onDisplayView(
+                childAtPosition(
+                    allOf(withId(R.id.Toolbar), childAtPosition(withId(R.id.root_layout), 0)),
+                    1,
                 )
             )
         labelToolbarBackButton.perform(click())
-
         val labelChip =
-            onView(
+            onDisplayView(
                 allOf(
                     withText("label"),
                     withParent(
                         allOf(withId(R.id.LabelGroup), withParent(withId(R.id.ContentLayout)))
                     ),
-                    isDisplayed(),
                 )
             )
         labelChip.check(matches(withText("label")))
 
-        val readOnlyButton = onView(allOf(withContentDescription("Read Only"), isDisplayed()))
-        readOnlyButton.perform(click())
+        R.string.read_only.byContentDescription().perform(click())
+        R.id.EnterBody.byId(withText("Body")).perform(click())
 
-        val readOnlyNoteBody =
-            onView(allOf(withId(R.id.EnterBody), withText("Body"), isDisplayed()))
-        readOnlyNoteBody.perform(click())
-
-        val editButton = onView(allOf(withContentDescription("Edit"), isDisplayed()))
-        editButton.perform(click())
-        waitFor(withContentDescription("Add Item"))
-        val addItemButton = onView(allOf(withContentDescription("Add Item"), isDisplayed()))
-        addItemButton.perform(click())
-        Thread.sleep(1000)
-        val addImagesLabel = onView(allOf(withText("Add images"), isDisplayed()))
-        addImagesLabel.check(matches(isDisplayed()))
+        R.string.edit.byContentDescription().perform(click())
+        R.string.add_item.byContentDescription().perform(click())
+        R.string.add_images.byText().check(matches(isDisplayed()))
 
         Espresso.pressBack()
-        Thread.sleep(1000)
-        val noteToolbarBackButton =
-            onView(
-                allOf(
-                    childAtPosition(
-                        allOf(
-                            withId(R.id.Toolbar),
-                            childAtPosition(withId(R.id.main_content_layout), 0),
+        toolbarBackButton.perform(click())
+        R.id.MainListView.byId()
+            .onPositionView(1, withId(R.id.Title))
+            .check(matches(withText("Test")))
+
+        scenario.close()
+    }
+
+    /** Multi-select notes to unpin them and apply an existing label to a note. */
+    @Test
+    fun multiSelectAndApplyLabel() {
+        // 1. Insert data
+        runBlocking {
+            database.getLabelDao().insert(listOf(Label("label", 0)))
+            database
+                .getBaseNoteDao()
+                .insert(
+                    listOf(
+                        createBaseNote(
+                            title = "Test",
+                            body = "Body",
+                            pinned = true,
+                            labels = listOf("label"),
                         ),
-                        0,
-                    ),
-                    isDisplayed(),
-                )
-            )
-        noteToolbarBackButton.perform(click())
-        waitFor(
-            allOf(
-                withId(R.id.Title),
-                withText("Test"),
-                withParent(
-                    withParent(
-                        IsInstanceOf.instanceOf(androidx.cardview.widget.CardView::class.java)
+                        createBaseNote(
+                            title = "List",
+                            pinned = true,
+                            items = listOf(createListItem("A"), createListItem("B", isChild = true)),
+                        ),
                     )
-                ),
-            )
-        )
-        val noteTitleCard =
-            onView(
-                allOf(
-                    withId(R.id.Title),
-                    withText("Test"),
-                    withParent(
-                        withParent(
-                            IsInstanceOf.instanceOf(androidx.cardview.widget.CardView::class.java)
-                        )
-                    ),
-                    isDisplayed(),
                 )
-            )
-        noteTitleCard.check(matches(withText("Test")))
+        }
+        // 2. Recreate Activity so it reads the newly inserted data
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        val makeListButton = onView(allOf(withId(R.id.MakeList), isDisplayed()))
-        makeListButton.perform(click())
+        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(1, longClick()))
+        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(2, longClick()))
 
-        val firstListItemInput =
-            onView(allOf(withId(R.id.EditText), withContentDescription("EditText0"), isDisplayed()))
-        firstListItemInput.perform(typeText("A"), closeSoftKeyboard())
-        onView(
-                allOf(
-                    withId(R.id.EditText),
-                    withText("A"),
-                    withContentDescription("EditText0"),
-                    isDisplayed(),
-                )
-            )
-            .perform(pressImeActionButton())
+        "Unpin".byContentDescription().perform(click())
 
-        val secondListItemInput =
-            onView(allOf(withId(R.id.EditText), withContentDescription("EditText1"), isDisplayed()))
-        secondListItemInput.perform(typeText("B"), closeSoftKeyboard())
-        onView(
-                allOf(
-                    withId(R.id.EditText),
-                    withText("B"),
-                    withContentDescription("EditText1"),
-                    isDisplayed(),
-                )
-            )
-            .perform(pressImeActionButton())
+        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, longClick()))
 
-        val thirdListItemInput =
-            onView(allOf(withId(R.id.EditText), withContentDescription("EditText2"), isDisplayed()))
-        thirdListItemInput.perform(typeText("C"), closeSoftKeyboard())
-        onView(
-                allOf(
-                    withId(R.id.EditText),
-                    withText("C"),
-                    withContentDescription("EditText2"),
-                    isDisplayed(),
-                )
-            )
-            .perform(pressImeActionButton())
+        "Labels".byContentDescription().perform(click())
 
-        val fourthListItemInput =
-            onView(allOf(withId(R.id.EditText), withContentDescription("EditText3"), isDisplayed()))
-        fourthListItemInput.perform(typeText("D"), closeSoftKeyboard())
-
-        val thirdListItem =
-            onView(
-                allOf(
-                    withId(R.id.EditText),
-                    withText("C"),
-                    withContentDescription("EditText2"),
-                    isDisplayed(),
-                )
-            )
-        thirdListItem.perform(click())
-        thirdListItem.perform(pressImeActionButton())
-
-        val listTitleInput = onView(allOf(withId(R.id.EnterTitle), isDisplayed()))
-        listTitleInput.perform(typeText("List"), closeSoftKeyboard())
-
-        val thirdItemCheckBox =
-            onView(allOf(withId(R.id.CheckBox), withContentDescription("CheckBox2"), isDisplayed()))
-        thirdItemCheckBox.perform(click())
-
-        val secondItemCheckBox =
-            onView(allOf(withId(R.id.CheckBox), withContentDescription("CheckBox1"), isDisplayed()))
-        secondItemCheckBox.perform(click())
-
-        val firstListItem =
-            onView(
-                allOf(
-                    withId(R.id.EditText),
-                    withText("A"),
-                    withContentDescription("EditText0"),
-                    isDisplayed(),
-                )
-            )
-        firstListItem.check(matches(withText("A")))
-
-        val remindersMenuItem = onView(allOf(withContentDescription("Reminders"), isDisplayed()))
-        remindersMenuItem.perform(click())
-
-        val datePickerOkButton = onView(allOf(withText("OK"), isDisplayed()))
-        datePickerOkButton.perform(click())
-
-        val timePickerOkButton =
-            onView(
-                allOf(
-                    withId(com.google.android.material.R.id.material_timepicker_ok_button),
-                    withText("OK"),
-                    isDisplayed(),
-                )
-            )
-        timePickerOkButton.perform(click())
-
-        val customRepetitionOption = onView(allOf(withId(R.id.Custom), withText("Custom")))
-        customRepetitionOption.perform(scrollTo(), click())
-
-        val repetitionValueInput = onView(withId(R.id.Value))
-        repetitionValueInput.perform(scrollTo(), replaceText("2"), closeSoftKeyboard())
-
-        val daysTimeUnitOption = onView(allOf(withId(R.id.Days), withText("Days")))
-        daysTimeUnitOption.perform(scrollTo(), click())
-
-        val saveRepetitionButton = onView(allOf(withId(android.R.id.button1), withText("Save")))
-        saveRepetitionButton.perform(scrollTo(), click())
-
-        val repetitionText =
-            onView(allOf(withId(R.id.Repetition), withText("Every 2 Days"), isDisplayed()))
-        repetitionText.check(matches(withText("Every 2 Days")))
-
-        val reminderToolbarBackButton =
-            onView(
-                allOf(
-                    childAtPosition(
-                        allOf(withId(R.id.Toolbar), childAtPosition(withId(R.id.root_layout), 0)),
-                        1,
-                    ),
-                    isDisplayed(),
-                )
-            )
-        reminderToolbarBackButton.perform(click())
-
-        val listToolbarBackButton =
-            onView(
-                allOf(
-                    childAtPosition(
-                        allOf(
-                            withId(R.id.Toolbar),
-                            childAtPosition(withId(R.id.main_content_layout), 0),
-                        ),
-                        0,
-                    ),
-                    isDisplayed(),
-                )
-            )
-        listToolbarBackButton.perform(click())
-
-        mainListView.perform(actionOnItemAtPosition<ViewHolder>(1, longClick()))
-        mainListView.perform(actionOnItemAtPosition<ViewHolder>(2, longClick()))
-
-        val unpinActionItem = onView(allOf(withContentDescription("Unpin"), isDisplayed()))
-        unpinActionItem.perform(click())
-
-        mainListView.perform(actionOnItemAtPosition<ViewHolder>(0, longClick()))
-
-        val labelsActionItem = onView(allOf(withContentDescription("Labels"), isDisplayed()))
-        labelsActionItem.perform(click())
-
-        val labelDialogList = onView(childAtPosition(withId(androidx.appcompat.R.id.custom), 0))
+        val labelDialogList =
+            onDisplayView(childAtPosition(withId(androidx.appcompat.R.id.custom), 0))
         labelDialogList.perform(actionOnItemAtPosition<ViewHolder>(0, click()))
 
         val labelDialogCheckBox =
-            onView(
+            onDisplayView(
                 allOf(
                     withId(R.id.CheckBox),
                     childAtPosition(
@@ -358,16 +256,14 @@ class FullUiTest {
                         ),
                         0,
                     ),
-                    isDisplayed(),
                 )
             )
         labelDialogCheckBox.perform(click())
 
-        val saveLabelsButton = onView(allOf(withId(android.R.id.button1), withText("Save")))
-        saveLabelsButton.perform(scrollTo(), click())
+        R.string.save.byText(ViewMatchers.withId(android.R.id.button1)).perform(scrollTo(), click())
 
         val noteLabelChip =
-            onView(
+            onDisplayView(
                 allOf(
                     withText("label"),
                     withParent(
@@ -376,267 +272,404 @@ class FullUiTest {
                             withParent(IsInstanceOf.instanceOf(android.view.ViewGroup::class.java)),
                         )
                     ),
-                    isDisplayed(),
                 )
             )
         noteLabelChip.check(matches(withText("label")))
 
-        val openDrawerButton =
-            onView(allOf(withContentDescription("Open navigation drawer"), isDisplayed()))
-        openDrawerButton.perform(click())
+        scenario.close()
+    }
 
-        val labelsDrawerItem = onView(allOf(withId(R.id.Labels), isDisplayed()))
-        labelsDrawerItem.perform(click())
+    /** Navigate to the Labels screen to rename, add, reorder and delete labels. */
+    @Test
+    fun manageLabels() {
+        // 1. Insert data
+        runBlocking {
+            database.getLabelDao().insert(listOf(Label("label", 0)))
+            database
+                .getBaseNoteDao()
+                .insert(
+                    listOf(
+                        createBaseNote(
+                            title = "Test",
+                            body = "Body",
+                            pinned = true,
+                            labels = listOf("label"),
+                        ),
+                        createBaseNote(
+                            title = "List",
+                            pinned = true,
+                            items = listOf(createListItem("A"), createListItem("B", isChild = true)),
+                        ),
+                    )
+                )
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        navigateTo(R.id.Labels)
 
         val labelListItem =
-            onView(
+            onDisplayView(
                 allOf(
                     withId(R.id.LabelText),
                     withText("label"),
                     withParent(withParent(withId(R.id.MainListView))),
-                    isDisplayed(),
                 )
             )
         labelListItem.check(matches(withText("label")))
 
-        val editLabelButton =
-            onView(allOf(withId(R.id.EditButton), withContentDescription("Edit"), isDisplayed()))
-        editLabelButton.perform(click())
+        R.id.EditButton.byId().perform(click())
+        R.id.EditText.byId(withText("label")).perform(replaceText("label1"))
+        R.string.save.byText(withId(android.R.id.button1)).perform(scrollTo(), click())
+        onLabelItem("label1").check(matches(withText("label1")))
 
-        val editLabelInput = onView(allOf(withId(R.id.EditText), withText("label"), isDisplayed()))
-        editLabelInput.perform(replaceText("label1"))
-        onView(allOf(withId(R.id.EditText), withText("label1"), isDisplayed()))
-            .perform(closeSoftKeyboard())
+        R.string.add_label.byContentDescription().perform(click())
+        R.id.EditText.byId().perform(replaceText("label2"), closeSoftKeyboard())
+        R.string.save.byText(withId(android.R.id.button1)).perform(scrollTo(), click())
 
-        val saveRenamedLabelButton = onView(allOf(withId(android.R.id.button1), withText("Save")))
-        saveRenamedLabelButton.perform(scrollTo(), click())
+        // TODO: drag and drop is flaky
+        //        dragAndDrop(By.text("label2"), By.text("label1"))
+        //        R.id.MainListView.byId().checkPositionHasText(1, "label2")
+        R.id.MainListView.byId().onPositionView(0, withId(R.id.DeleteButton)).perform(click())
 
-        val renamedLabelListItem =
-            onView(
-                allOf(
-                    withId(R.id.LabelText),
-                    withText("label1"),
-                    withParent(withParent(withId(R.id.MainListView))),
-                    isDisplayed(),
+        R.string.delete.byText(withId(android.R.id.button1)).perform(scrollTo(), click())
+
+        scenario.close()
+    }
+
+    /** Delete a note to the trash and permanently delete all notes from the Deleted screen. */
+    @Test
+    fun deleteNotes() {
+        // 1. Insert data
+        runBlocking {
+            val db = database
+            db.getLabelDao().insert(listOf(Label("label", 0)))
+            db.getBaseNoteDao()
+                .insert(
+                    listOf(createBaseNote(title = "Test", body = "Body", labels = listOf("label")))
                 )
-            )
-        renamedLabelListItem.check(matches(withText("label1")))
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, longClick()))
 
-        val addLabelToolbarButton =
-            onView(allOf(withContentDescription("Add label"), isDisplayed()))
-        addLabelToolbarButton.perform(click())
+        R.string.delete.byContentDescription().perform(click())
+        "Test".byText(checkDisplayed = false).check(doesNotExist())
 
-        val newLabelInput = onView(allOf(withId(R.id.EditText), isDisplayed()))
-        newLabelInput.perform(replaceText("label2"), closeSoftKeyboard())
-        onView(allOf(withId(R.id.EditText), withText("label2"), isDisplayed())).perform(click())
+        navigateTo(R.id.Deleted)
 
-        val saveNewLabelButton = onView(allOf(withId(android.R.id.button1), withText("Save")))
-        saveNewLabelButton.perform(scrollTo(), click())
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test")))
 
-        val secondLabelListItem =
-            onView(
-                allOf(
-                    withId(R.id.LabelText),
-                    withText("label2"),
-                    childAtPosition(childAtPosition(withId(R.id.MainListView), 0), 1),
-                    isDisplayed(),
-                )
-            )
-        secondLabelListItem.perform(longClick())
+        R.string.delete_all.byContentDescription().perform(click())
 
-        val secondLabelListItemText =
-            onView(
-                allOf(
-                    withId(R.id.LabelText),
-                    withText("label2"),
-                    withParent(withParent(withId(R.id.MainListView))),
-                    isDisplayed(),
-                )
-            )
-        secondLabelListItemText.check(matches(withText("label2")))
-
-        val deleteLabelButton =
-            onView(
-                allOf(
-                    withId(R.id.DeleteButton),
-                    withContentDescription("Delete"),
-                    childAtPosition(childAtPosition(withId(R.id.MainListView), 0), 4),
-                    isDisplayed(),
-                )
-            )
-        deleteLabelButton.perform(click())
-
-        val confirmDeleteLabelButton =
-            onView(allOf(withId(android.R.id.button1), withText("Delete")))
-        confirmDeleteLabelButton.perform(scrollTo(), click())
-
-        openDrawerButton.perform(click())
-
-        val notesDrawerItem = onView(allOf(withId(R.id.Notes), isDisplayed()))
-        notesDrawerItem.perform(click())
-
-        mainListView.perform(actionOnItemAtPosition<ViewHolder>(0, longClick()))
-
-        val deleteActionItem = onView(allOf(withContentDescription("Delete"), isDisplayed()))
-        deleteActionItem.perform(click())
-
-        openDrawerButton.perform(click())
-
-        val deletedDrawerItem = onView(allOf(withId(R.id.Deleted), isDisplayed()))
-        deletedDrawerItem.perform(click())
-
-        val deletedNote =
-            onView(allOf(withParent(withParent(withId(R.id.MainListView))), isDisplayed()))
-        deletedNote.check(matches(isDisplayed()))
-
-        val deleteAllMenuItem = onView(allOf(withContentDescription("Delete all"), isDisplayed()))
-        deleteAllMenuItem.perform(click())
-
-        val confirmDeleteAllButton = onView(allOf(withId(android.R.id.button1), withText("Delete")))
+        val confirmDeleteAllButton =
+            onDisplayView(allOf(withId(android.R.id.button1), withText(R.string.delete)))
         confirmDeleteAllButton.perform(scrollTo(), click())
+        "Test".byText(checkDisplayed = false).check(doesNotExist())
 
-        openDrawerButton.perform(click())
+        scenario.close()
+    }
 
-        val remindersDrawerItem = onView(allOf(withId(R.id.Reminders), isDisplayed()))
-        remindersDrawerItem.perform(click())
+    /** Archive a note, verify it in Archived, unarchive it and verify it is back in Notes. */
+    @Test
+    fun archiveNotes() {
+        // 1. Insert data
+        runBlocking {
+            database.getBaseNoteDao().insert(listOf(createBaseNote(title = "Test", body = "Body")))
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, longClick()))
 
-        val elapsedFilterChip =
-            onView(allOf(withId(R.id.elapsed), withText("Elapsed"), isDisplayed()))
-        elapsedFilterChip.perform(click())
+        openActionBarOverflowOrOptionsMenu(context)
+        onDisplayView(withText(R.string.archive)).inRoot(isPlatformPopup()).perform(click())
+        "Test".byText(checkDisplayed = false).check(doesNotExist())
 
-        val allFilterChip = onView(allOf(withId(R.id.all), withText("All"), isDisplayed()))
-        allFilterChip.perform(click())
+        navigateTo(R.id.Archived)
 
-        openDrawerButton.perform(click())
+        R.id.MainListView.byId()
+            .onPositionView(1, withId(R.id.Title))
+            .check(matches(withText("Test")))
 
-        val settingsDrawerItem = onView(allOf(withId(R.id.Settings), isDisplayed()))
-        settingsDrawerItem.perform(click())
+        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(1, longClick()))
+        R.string.unarchive.byContentDescription().perform(click())
+        "Test".byText(checkDisplayed = false).check(doesNotExist())
 
-        val viewSettingRow = onView(allOf(withId(R.id.View), isDisplayed()))
-        viewSettingRow.perform(click())
+        navigateTo(R.id.Notes)
 
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test")))
+
+        scenario.close()
+    }
+
+    /** Navigate to the Reminders screen and toggle its filter chips. */
+    @Test
+    fun remindersFilter() {
+        // 1. Insert notes with reminders: one elapsed (past, no repetition), one upcoming (future)
+        runBlocking {
+            val now = System.currentTimeMillis()
+            database
+                .getBaseNoteDao()
+                .insert(
+                    listOf(
+                        createBaseNote(
+                            title = "ElapsedNote",
+                            body = "Body",
+                            reminders =
+                                listOf(
+                                    Reminder(
+                                        id = 1L,
+                                        dateTime = Date(now - 24 * 60 * 60 * 1000),
+                                        repetition = null,
+                                    )
+                                ),
+                        ),
+                        createBaseNote(
+                            title = "FutureNote",
+                            body = "Body",
+                            reminders =
+                                listOf(
+                                    Reminder(
+                                        id = 2L,
+                                        dateTime = Date(now + 24 * 60 * 60 * 1000),
+                                        repetition = null,
+                                    )
+                                ),
+                        ),
+                    )
+                )
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        navigateTo(R.id.Reminders)
+
+        R.id.elapsed.byId().perform(click())
+        // Only the elapsed reminder note is shown
+        onView(withText("ElapsedNote")).check(matches(isDisplayed()))
+        onView(withText("FutureNote")).check(doesNotExist())
+
+        R.id.upcoming.byId().perform(click())
+        // Only the elapsed reminder note is shown
+        onView(withText("ElapsedNote")).check(doesNotExist())
+        onView(withText("FutureNote")).check(matches(isDisplayed()))
+
+        R.id.all.byId().perform(click())
+        // All reminder notes are shown
+        onView(withText("ElapsedNote")).check(matches(isDisplayed()))
+        onView(withText("FutureNote")).check(matches(isDisplayed()))
+
+        scenario.close()
+    }
+
+    /**
+     * Navigate to the Settings screen and change view, search, sort order and security settings.
+     */
+    @Test
+    fun settings() {
+        runBlocking {
+            database
+                .getBaseNoteDao()
+                .insert(createBaseNote(title = "Test", body = "Body", labels = listOf("label")))
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        navigateTo(R.id.Settings)
+
+        onView(withId(R.id.View)).perform(scrollTo(), click())
         val viewSettingOption =
             onData(anything())
                 .inAdapterView(withId(androidx.appcompat.R.id.select_dialog_listview))
                 .atPosition(1)
         viewSettingOption.perform(click())
 
-        val showSearchInTopBarRow = onView(allOf(withId(R.id.ShowSearchInTopBar), isDisplayed()))
-        showSearchInTopBarRow.perform(click())
-
+        onView(withId(R.id.ShowSearchInTopBar)).perform(scrollTo(), click())
         val showSearchEnabledOption =
-            onView(allOf(withId(R.id.EnabledButton), withText("Enabled"), isDisplayed()))
+            onDisplayView(allOf(withId(R.id.EnabledButton), withText(R.string.enabled)))
         showSearchEnabledOption.perform(click())
 
-        val notesSortOrderRow = onView(allOf(withId(R.id.NotesSortOrder), isDisplayed()))
-        notesSortOrderRow.perform(click())
-
-        val sortByModifiedOption = onView(allOf(withText("Modified"), isDisplayed()))
-        sortByModifiedOption.perform(click())
-
-        val sortAscendingOption = onView(allOf(withText("Ascending"), isDisplayed()))
-        sortAscendingOption.perform(click())
-
-        val saveSortOrderButton = onView(allOf(withId(android.R.id.button1), withText("Save")))
+        onView(withId(R.id.NotesSortOrder)).perform(scrollTo(), click())
+        onDisplayView(withText(R.string.ascending)).perform(click())
+        val saveSortOrderButton =
+            onDisplayView(allOf(withId(android.R.id.button1), withText(R.string.save)))
         saveSortOrderButton.perform(scrollTo(), click())
 
-        val backupPasswordRow = onView(withId(R.id.BackupPassword))
-        backupPasswordRow.perform(scrollTo(), click())
-
+        onView(withId(R.id.BackupPassword)).perform(scrollTo(), click())
         val backupPasswordInput =
-            onView(allOf(withId(R.id.InputText), withContentDescription("Input"), isDisplayed()))
+            onDisplayView(allOf(withId(R.id.InputText), withContentDescription("Input")))
         backupPasswordInput.perform(replaceText("1234"), closeSoftKeyboard())
-
-        val saveBackupPasswordButton = onView(allOf(withId(android.R.id.button1), withText("Save")))
+        val saveBackupPasswordButton =
+            onDisplayView(allOf(withId(android.R.id.button1), withText(R.string.save)))
         saveBackupPasswordButton.perform(scrollTo(), click())
 
-        val secureFlagRow = onView(withId(R.id.SecureFlag))
-        secureFlagRow.perform(scrollTo(), click())
+        onView(withId(R.id.SecureFlag)).perform(scrollTo(), click())
+        R.id.EnabledButton.byId().perform(click())
 
-        val secureFlagEnabledOption =
-            onView(allOf(withId(R.id.EnabledButton), withText("Enabled"), isDisplayed()))
-        secureFlagEnabledOption.perform(click())
+        onView(withId(R.id.SecureFlag)).perform(scrollTo(), click())
+        R.id.DisabledButton.byId().perform(click())
 
-        secureFlagRow.perform(scrollTo(), click())
+        onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
+        R.id.EnabledButton.byId().perform(click())
 
-        val secureFlagDisabledOption =
-            onView(allOf(withId(R.id.DisabledButton), withText("Disabled"), isDisplayed()))
-        secureFlagDisabledOption.perform(click())
+        navigateTo(R.id.Notes)
 
-        openDrawerButton.perform(click())
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test")))
+            .perform(click())
+        R.id.EnterBody.byId().check(matches(withText("Body")))
+        R.id.EnterTitle.byId().perform(typeText(" Foo"), closeSoftKeyboard())
 
-        val notesDrawerItemFinal = onView(allOf(withId(R.id.Notes), isDisplayed()))
-        notesDrawerItemFinal.perform(click())
+        toolbarBackButton.perform(click())
 
-        noteTitleCard.check(matches(withText("Test")))
-        noteTitleCard.perform(click())
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test Foo")))
 
-        noteBodyInput.check(matches(allOf(isDisplayed(), withText("Body"))))
+        navigateTo(R.id.Settings)
+
+        onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
+        R.id.DisabledButton.byId().perform(click())
+
+        navigateTo(R.id.Notes)
+
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test Foo")))
+            .perform(click())
+        R.id.EnterBody.byId().check(matches(withText("Body")))
+        R.id.EnterTitle.byId().perform(typeText(" Bar"), closeSoftKeyboard())
+
+        toolbarBackButton.perform(click())
+
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test Foo Bar")))
+
+        scenario.close()
     }
 
-    private fun childAtPosition(parentMatcher: Matcher<View>, position: Int): Matcher<View> {
-
-        return object : TypeSafeMatcher<View>() {
-            override fun describeTo(description: Description) {
-                description.appendText("Child at position $position in parent ")
-                parentMatcher.describeTo(description)
-            }
-
-            public override fun matchesSafely(view: View): Boolean {
-                val parent = view.parent
-                return parent is ViewGroup &&
-                    parentMatcher.matches(parent) &&
-                    view == parent.getChildAt(position)
-            }
+    @Test
+    fun periodicBackupCreatedAndImport() {
+        initIntents()
+        val backupPath = context.getExternalBackupsDirectory().toUri()
+        runBlocking {
+            database
+                .getBaseNoteDao()
+                .insert(createBaseNote(title = "Test", body = "Body", labels = listOf("label")))
+            preferences.backupsFolder.save(backupPath.toString())
+            preferences.periodicBackups.save(PeriodicBackup(1, 1))
+            preferences.backupOnSave.save(false)
         }
+        intending(
+                allOf(
+                    hasAction(Intent.ACTION_CHOOSER),
+                    hasExtra(`is`(Intent.EXTRA_INTENT), hasAction(Intent.ACTION_OPEN_DOCUMENT)),
+                )
+            )
+            .respondWithFunction { intent ->
+                val periodicBackup =
+                    DocumentFile.fromFile(File(backupPath.path!!))
+                        .listZipFiles(PERIODIC_BACKUP_FILE_PREFIX)
+                        .firstOrNull()
+                        ?: throw IllegalStateException(
+                            "No periodic backup zip found in $backupPath"
+                        )
+                Instrumentation.ActivityResult(
+                    Activity.RESULT_OK,
+                    Intent().apply {
+                        data = context.getUriForFile(File(periodicBackup.uri.path!!))
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    },
+                )
+            }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        assertWorkExecuted(AUTO_BACKUP_WORK_NAME)
+
+        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, click()))
+        R.string.tap_for_more_options.byContentDescription().perform(click())
+        R.string.delete_forever.byText().perform(click())
+        R.string.delete.byText(withId(android.R.id.button1)).perform(click())
+        "Test".byText(checkDisplayed = false).check(doesNotExist())
+
+        navigateTo(R.id.Settings)
+        R.id.ImportBackup.byId(checkDisplayed = false).perform(scrollTo())
+        SystemClock.sleep(3000)
+        R.id.ImportBackup.byId(checkDisplayed = false).perform(click())
+        R.string.import_backup.byText(withId(android.R.id.button1)).perform(click())
+        assertToastDisplayed("Imported 1 Note")
+
+        navigateTo(R.id.Notes)
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test")))
+
+        scenario.close()
     }
 
-    fun waitFor(matcher: Matcher<View>, timeoutMs: Long = 5_000) {
-        val start = System.currentTimeMillis()
-
-        while (System.currentTimeMillis() - start < timeoutMs) {
-            try {
-                onView(matcher).check(matches(isDisplayed()))
-                return
-            } catch (_: NoMatchingViewException) {
-                // Keep waiting
-            } catch (_: AssertionError) {
-                // View exists but isn't displayed yet
-            }
-
-            Thread.sleep(50)
+    @Test
+    fun autoSaveBackupCreatedAndImport() {
+        initIntents()
+        val backupPath = context.getExternalBackupsDirectory().toUri()
+        runBlocking {
+            database
+                .getBaseNoteDao()
+                .insert(createBaseNote(title = "Test", body = "Body", labels = listOf("label")))
+            preferences.backupsFolder.save(backupPath.toString())
+            preferences.periodicBackups.save(PeriodicBackup(0, 0))
+            preferences.backupOnSave.save(true)
         }
-
-        // Let Espresso produce the normal, useful failure message
-        onView(matcher).check(matches(isDisplayed()))
-    }
-
-    fun waitForRecyclerViewPosition(
-        recyclerViewMatcher: Matcher<View>,
-        position: Int,
-        timeoutMs: Long = 10_000,
-    ) {
-        val start = System.currentTimeMillis()
-
-        while (System.currentTimeMillis() - start < timeoutMs) {
-            try {
-                onView(recyclerViewMatcher)
-                    .perform(
-                        RecyclerViewActions.scrollToPosition<RecyclerView.ViewHolder>(position)
-                    )
-
-                return
-            } catch (_: NoMatchingViewException) {
-                // RecyclerView not found yet
-            } catch (_: PerformException) {
-                // Position doesn't exist yet
+        intending(
+                allOf(
+                    hasAction(Intent.ACTION_CHOOSER),
+                    hasExtra(`is`(Intent.EXTRA_INTENT), hasAction(Intent.ACTION_OPEN_DOCUMENT)),
+                )
+            )
+            .respondWithFunction { intent ->
+                val periodicBackup =
+                    DocumentFile.fromFile(File(backupPath.path!!))
+                        .listZipFiles(ON_SAVE_BACKUP_FILE)
+                        .firstOrNull()
+                        ?: throw IllegalStateException(
+                            "No auto save backup zip found in $backupPath"
+                        )
+                Instrumentation.ActivityResult(
+                    Activity.RESULT_OK,
+                    Intent().apply {
+                        data = context.getUriForFile(File(periodicBackup.uri.path!!))
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    },
+                )
             }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-            Thread.sleep(50)
-        }
+        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, click()))
+        R.id.EnterTitle.byId().perform(typeText(" Foo"))
+        R.id.EnterBody.byId().perform(typeText(" Foo"), closeSoftKeyboard())
+        Espresso.pressBack()
+        assertLogAppeared("ExportExtensions", "Finished full backup")
 
-        // Produce Espresso's normal failure
-        onView(recyclerViewMatcher)
-            .perform(RecyclerViewActions.scrollToPosition<RecyclerView.ViewHolder>(position))
+        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, longClick()))
+        R.string.delete.byContentDescription().perform(click())
+        onView(withText("Test Foo")).check(doesNotExist())
+        navigateTo(R.id.Deleted)
+        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, longClick()))
+        R.string.delete_forever.byContentDescription().perform(click())
+        R.string.delete.byText(withId(android.R.id.button1)).perform(click())
+        "Test".byText(checkDisplayed = false).check(doesNotExist())
+
+        navigateTo(R.id.Settings)
+        R.id.ImportBackup.byId(checkDisplayed = false).perform(scrollTo())
+        SystemClock.sleep(3000)
+        R.id.ImportBackup.byId(checkDisplayed = false).perform(click())
+        R.string.import_backup.byText(withId(android.R.id.button1)).perform(click())
+        assertToastDisplayed("Imported 1 Note")
+
+        navigateTo(R.id.Notes)
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test Foo")))
+
+        scenario.close()
     }
 }

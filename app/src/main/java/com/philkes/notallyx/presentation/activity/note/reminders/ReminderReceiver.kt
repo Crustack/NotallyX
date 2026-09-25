@@ -104,10 +104,11 @@ class ReminderReceiver : BroadcastReceiver() {
                         val noteId = intent.getLongExtra(EXTRA_NOTE_ID, -1L)
                         Log.d(TAG, "Deleting noteId: $noteId")
                         if (noteId != -1L) {
-                            deleteNote(context, noteId)
-                            context.showToast(
-                                context.getQuantityString(R.plurals.deleted_selected_notes, 1)
-                            )
+                            if (deleteNote(context, noteId)) {
+                                context.showToast(
+                                    context.getQuantityString(R.plurals.deleted_selected_notes, 1)
+                                )
+                            }
                         }
                     }
 
@@ -123,9 +124,11 @@ class ReminderReceiver : BroadcastReceiver() {
         }
     }
 
-    private suspend fun deleteNote(context: Context, noteId: Long) {
-        val database = getDatabase(context)
-        context.moveBaseNotes(database.getBaseNoteDao(), longArrayOf(noteId), Folder.DELETED)
+    private suspend fun deleteNote(context: Context, noteId: Long): Boolean {
+        return getDatabase(context)?.let {
+            context.moveBaseNotes(it.getBaseNoteDao(), longArrayOf(noteId), Folder.DELETED)
+            true
+        } ?: false
     }
 
     private fun Array<StatusBarNotification>.ofNote(noteId: Long) = filter {
@@ -133,8 +136,7 @@ class ReminderReceiver : BroadcastReceiver() {
     }
 
     private suspend fun updateNotifications(context: Context, noteId: Long) {
-        val database = getDatabase(context)
-        database.getBaseNoteDao().get(noteId)?.let { note ->
+        getDatabase(context)?.getBaseNoteDao()?.get(noteId)?.let { note ->
             if (note.isPinnedToStatus) {
                 PinnedNotificationManager.notify(context, note)
             }
@@ -164,8 +166,7 @@ class ReminderReceiver : BroadcastReceiver() {
     }
 
     private suspend fun reNotifyStatusNotification(context: Context, noteId: Long) {
-        val database = getDatabase(context)
-        database.getBaseNoteDao().get(noteId)?.let { note ->
+        getDatabase(context)?.getBaseNoteDao()?.get(noteId)?.let { note ->
             if (note.isPinnedToStatus) {
                 PinnedNotificationManager.notify(context, note)
             }
@@ -173,8 +174,7 @@ class ReminderReceiver : BroadcastReceiver() {
     }
 
     private suspend fun unpinNote(context: Context, noteId: Long) {
-        val database = getDatabase(context)
-        database.getBaseNoteDao().updatePinnedToStatus(noteId, false)
+        getDatabase(context)?.getBaseNoteDao()?.updatePinnedToStatus(noteId, false)
         PinnedNotificationManager.cancel(context, noteId)
     }
 
@@ -186,7 +186,6 @@ class ReminderReceiver : BroadcastReceiver() {
         isOnlyUpdate: Boolean = false,
     ) {
         Log.d(TAG, "notify: noteId: $noteId reminderId: $reminderId")
-        val database = getDatabase(context)
         val manager = context.getSystemService<NotificationManager>()!!
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             manager.createChannelIfNotExists(
@@ -194,7 +193,7 @@ class ReminderReceiver : BroadcastReceiver() {
                 importance = NotificationManager.IMPORTANCE_HIGH,
             )
         }
-        database.getBaseNoteDao().get(noteId)?.let { note ->
+        getDatabase(context)?.getBaseNoteDao()?.get(noteId)?.let { note ->
             if (note.folder != Folder.NOTES) {
                 return@let
             }
@@ -244,9 +243,8 @@ class ReminderReceiver : BroadcastReceiver() {
     }
 
     private suspend fun rescheduleAlarms(context: Context) {
-        val database = getDatabase(context)
         val now = Date()
-        val noteReminders = database.getBaseNoteDao().getAllReminders()
+        val noteReminders = getDatabase(context)?.getBaseNoteDao()?.getAllReminders() ?: return
         val noteRemindersWithFutureNotify =
             noteReminders.flatMap { (noteId, reminders) ->
                 reminders
@@ -262,8 +260,7 @@ class ReminderReceiver : BroadcastReceiver() {
     }
 
     private suspend fun cancelAlarms(context: Context) {
-        val database = getDatabase(context)
-        val noteReminders = database.getBaseNoteDao().getAllReminders()
+        val noteReminders = getDatabase(context)?.getBaseNoteDao()?.getAllReminders() ?: return
         val noteRemindersWithFutureNotify =
             noteReminders.flatMap { (noteId, reminders) ->
                 reminders.map { reminder -> Pair(noteId, reminder.id) }
@@ -280,7 +277,7 @@ class ReminderReceiver : BroadcastReceiver() {
         noteId: Long,
         reminderId: Long,
     ) {
-        val baseNoteDao = getDatabase(context).getBaseNoteDao()
+        val baseNoteDao = getDatabase(context)?.getBaseNoteDao() ?: return
         val note = baseNoteDao.get(noteId) ?: return
         val currentReminders = note.reminders.toMutableList()
         val index = currentReminders.indexOfFirst { it.id == reminderId }
@@ -294,7 +291,7 @@ class ReminderReceiver : BroadcastReceiver() {
     }
 
     private suspend fun restoreRemindersNotifications(context: Context) {
-        val baseNoteDao = getDatabase(context).getBaseNoteDao()
+        val baseNoteDao = getDatabase(context)?.getBaseNoteDao() ?: return
         val allNotes = baseNoteDao.getAllNotes()
         allNotes.forEach { note ->
             val mostRecentReminder = note.reminders.findLastNotified() ?: return@forEach
@@ -309,7 +306,7 @@ class ReminderReceiver : BroadcastReceiver() {
     }
 
     private suspend fun restorePinnedNotifications(context: Context) {
-        val baseNoteDao = getDatabase(context).getBaseNoteDao()
+        val baseNoteDao = getDatabase(context)?.getBaseNoteDao() ?: return
         val allNotes = baseNoteDao.getAllPinnedToStatusNotes()
         allNotes
             .filter { it.isPinnedToStatus }
@@ -319,7 +316,7 @@ class ReminderReceiver : BroadcastReceiver() {
             }
     }
 
-    private suspend fun getDatabase(context: Context): NotallyDatabase {
+    private suspend fun getDatabase(context: Context): NotallyDatabase? {
         return withContext(Dispatchers.Main.immediate) {
                 NotallyDatabase.getDatabase(context.applicationContext as Application)
             }
