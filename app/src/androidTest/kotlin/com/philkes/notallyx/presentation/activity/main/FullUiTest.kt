@@ -74,6 +74,7 @@ import org.hamcrest.Matchers.allOf
 import org.hamcrest.Matchers.anything
 import org.hamcrest.Matchers.`is`
 import org.hamcrest.core.IsInstanceOf
+import org.junit.After
 import org.junit.Before
 import org.junit.FixMethodOrder
 import org.junit.Test
@@ -84,6 +85,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder
 class FullUiTest {
+
+    private var intentsInitialized = false
 
     private val context
         get() = ContextWrapper(InstrumentationRegistry.getInstrumentation().targetContext)
@@ -121,6 +124,22 @@ class FullUiTest {
         preferences.backupsFolder.save(EMPTY_PATH)
         preferences.periodicBackups.save(PeriodicBackup(0, 0))
         preferences.backupOnSave.save(false)
+    }
+
+    @After
+    fun tearDown() {
+        if (intentsInitialized) {
+            try {
+                Intents.release()
+            } finally {
+                intentsInitialized = false
+            }
+        }
+    }
+
+    private fun initIntents() {
+        Intents.init()
+        intentsInitialized = true
     }
 
     /** Create a text note, pin it, change its color, attach a label and toggle read-only/edit. */
@@ -532,7 +551,7 @@ class FullUiTest {
 
     @Test
     fun periodicBackupCreatedAndImport() {
-        Intents.init()
+        initIntents()
         val backupPath = context.getExternalBackupsDirectory().toUri()
         runBlocking {
             database
@@ -585,13 +604,12 @@ class FullUiTest {
             .onPositionView(0, withId(R.id.Title))
             .check(matches(withText("Test")))
 
-        Intents.release()
         scenario.close()
     }
 
     @Test
     fun autoSaveBackupCreatedAndImport() {
-        Intents.init()
+        initIntents()
         val backupPath = context.getExternalBackupsDirectory().toUri()
         runBlocking {
             database
@@ -652,7 +670,6 @@ class FullUiTest {
             .onPositionView(0, withId(R.id.Title))
             .check(matches(withText("Test Foo")))
 
-        Intents.release()
         scenario.close()
     }
 }
