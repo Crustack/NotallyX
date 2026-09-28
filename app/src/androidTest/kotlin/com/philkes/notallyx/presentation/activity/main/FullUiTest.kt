@@ -3,7 +3,6 @@ package com.philkes.notallyx.presentation.activity.main
 import android.Manifest
 import android.app.Activity
 import android.app.Instrumentation
-import android.content.ContextWrapper
 import android.content.Intent
 import android.os.Build
 import android.os.SystemClock
@@ -15,7 +14,6 @@ import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onData
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.Espresso.openActionBarOverflowOrOptionsMenu
-import androidx.test.espresso.ViewInteraction
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.longClick
@@ -31,6 +29,7 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.matcher.RootMatchers.isPlatformPopup
 import androidx.test.espresso.matcher.ViewMatchers
+import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withClassName
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
@@ -45,23 +44,27 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.Reminder
-import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.EMPTY_PATH
 import com.philkes.notallyx.presentation.viewmodel.preference.PeriodicBackup
 import com.philkes.notallyx.test.assertLogAppeared
 import com.philkes.notallyx.test.assertToastDisplayed
-import com.philkes.notallyx.test.assertWorkExecuted
 import com.philkes.notallyx.test.byContentDescription
 import com.philkes.notallyx.test.byId
 import com.philkes.notallyx.test.byText
 import com.philkes.notallyx.test.childAtPosition
+import com.philkes.notallyx.test.context
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.createListItem
+import com.philkes.notallyx.test.database
+import com.philkes.notallyx.test.initFakeBiometric
 import com.philkes.notallyx.test.navigateTo
 import com.philkes.notallyx.test.onDisplayView
 import com.philkes.notallyx.test.onLabelItem
 import com.philkes.notallyx.test.onPositionView
-import com.philkes.notallyx.utils.backup.AUTO_BACKUP_WORK_NAME
+import com.philkes.notallyx.test.preferences
+import com.philkes.notallyx.test.toolbarBackButton
+import com.philkes.notallyx.test.waitUntil
+import com.philkes.notallyx.test.waitUntilSucceeds
 import com.philkes.notallyx.utils.backup.ON_SAVE_BACKUP_FILE
 import com.philkes.notallyx.utils.backup.PERIODIC_BACKUP_FILE_PREFIX
 import com.philkes.notallyx.utils.getExternalBackupsDirectory
@@ -69,12 +72,14 @@ import com.philkes.notallyx.utils.getUriForFile
 import com.philkes.notallyx.utils.listZipFiles
 import java.io.File
 import java.util.Date
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.hamcrest.Matchers.allOf
 import org.hamcrest.Matchers.anything
 import org.hamcrest.Matchers.`is`
 import org.hamcrest.core.IsInstanceOf
-import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.FixMethodOrder
 import org.junit.Test
@@ -85,29 +90,6 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder
 class FullUiTest {
-
-    private var intentsInitialized = false
-
-    private val context
-        get() = ContextWrapper(InstrumentationRegistry.getInstrumentation().targetContext)
-
-    private val database: NotallyDatabase
-        get() = NotallyDatabase.getDatabase(context).value!!
-
-    private val preferences: NotallyXPreferences
-        get() = NotallyXPreferences.getInstance(ContextWrapper(context))
-
-    private val toolbarBackButton: ViewInteraction
-        get() =
-            onDisplayView(
-                childAtPosition(
-                    allOf(
-                        withId(R.id.Toolbar),
-                        childAtPosition(withId(R.id.main_content_layout), 0),
-                    ),
-                    0,
-                )
-            )
 
     @Before
     fun setup() {
@@ -124,22 +106,6 @@ class FullUiTest {
         preferences.backupsFolder.save(EMPTY_PATH)
         preferences.periodicBackups.save(PeriodicBackup(0, 0))
         preferences.backupOnSave.save(false)
-    }
-
-    @After
-    fun tearDown() {
-        if (intentsInitialized) {
-            try {
-                Intents.release()
-            } finally {
-                intentsInitialized = false
-            }
-        }
-    }
-
-    private fun initIntents() {
-        Intents.init()
-        intentsInitialized = true
     }
 
     /** Create a text note, pin it, change its color, attach a label and toggle read-only/edit. */
@@ -551,7 +517,7 @@ class FullUiTest {
 
     @Test
     fun periodicBackupCreatedAndImport() {
-        initIntents()
+        Intents.init()
         val backupPath = context.getExternalBackupsDirectory().toUri()
         runBlocking {
             database
@@ -584,7 +550,11 @@ class FullUiTest {
                 )
             }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
-        assertWorkExecuted(AUTO_BACKUP_WORK_NAME)
+        waitUntil(10_000L) {
+            DocumentFile.fromFile(File(backupPath.path!!))
+                .listZipFiles(PERIODIC_BACKUP_FILE_PREFIX)
+                .isNotEmpty()
+        }
 
         R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, click()))
         R.string.tap_for_more_options.byContentDescription().perform(click())
@@ -593,9 +563,7 @@ class FullUiTest {
         "Test".byText(checkDisplayed = false).check(doesNotExist())
 
         navigateTo(R.id.Settings)
-        R.id.ImportBackup.byId(checkDisplayed = false).perform(scrollTo())
-        SystemClock.sleep(3000)
-        R.id.ImportBackup.byId(checkDisplayed = false).perform(click())
+        R.id.ImportBackup.byId(checkDisplayed = false).perform(scrollTo(), click())
         R.string.import_backup.byText(withId(android.R.id.button1)).perform(click())
         assertToastDisplayed("Imported 1 Note")
 
@@ -604,12 +572,13 @@ class FullUiTest {
             .onPositionView(0, withId(R.id.Title))
             .check(matches(withText("Test")))
 
+        Intents.release()
         scenario.close()
     }
 
     @Test
     fun autoSaveBackupCreatedAndImport() {
-        initIntents()
+        Intents.init()
         val backupPath = context.getExternalBackupsDirectory().toUri()
         runBlocking {
             database
@@ -669,6 +638,196 @@ class FullUiTest {
         R.id.MainListView.byId()
             .onPositionView(0, withId(R.id.Title))
             .check(matches(withText("Test Foo")))
+
+        Intents.release()
+        scenario.close()
+    }
+
+    @Test
+    fun biometricLock() {
+        val fakeBiometricAuthenticator = initFakeBiometric()
+        runBlocking {
+            withContext(Dispatchers.Main) {
+                database
+                    .getBaseNoteDao()
+                    .insert(createBaseNote(title = "Test", body = "Body", labels = listOf("label")))
+            }
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        navigateTo(R.id.Settings)
+
+        onView(withId(R.id.BiometricLock)).perform(scrollTo(), click())
+        R.string.enabled.byText().perform(click())
+        R.string.continue_.byText().perform(scrollTo(), click())
+        waitUntilSucceeds {
+            onView(withId(R.id.BiometricLock))
+                .perform(scrollTo())
+                .check(
+                    matches(hasDescendant(allOf(withId(R.id.Value), withText(R.string.enabled))))
+                )
+        }
+        navigateTo(R.id.Notes)
+
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test")))
+            .perform(click())
+        R.id.EnterBody.byId().check(matches(withText("Body")))
+        R.id.EnterTitle.byId().perform(typeText(" Foo"), closeSoftKeyboard())
+
+        toolbarBackButton.perform(click())
+
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test Foo")))
+
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+
+        device.sleep()
+        SystemClock.sleep(2000)
+        device.wakeUp()
+        device.pressMenu()
+
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test Foo")))
+            .perform(click())
+        R.id.EnterBody.byId().check(matches(withText("Body")))
+        R.id.EnterTitle.byId().perform(typeText(" Bar"), closeSoftKeyboard())
+
+        toolbarBackButton.perform(click())
+
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test Foo Bar")))
+        assertEquals(1, fakeBiometricAuthenticator.getEncryptionCounter())
+        assertEquals(1, fakeBiometricAuthenticator.getDecryptionCounter())
+
+        navigateTo(R.id.Settings)
+        onView(withId(R.id.BiometricLock)).perform(scrollTo(), click())
+        R.string.disabled.byText().perform(click())
+        R.string.continue_.byText().perform(scrollTo(), click())
+        waitUntilSucceeds {
+            onView(withId(R.id.BiometricLock))
+                .perform(scrollTo())
+                .check(
+                    matches(hasDescendant(allOf(withId(R.id.Value), withText(R.string.disabled))))
+                )
+        }
+        assertEquals(1, fakeBiometricAuthenticator.getEncryptionCounter())
+        assertEquals(2, fakeBiometricAuthenticator.getDecryptionCounter())
+
+        navigateTo(R.id.Notes)
+
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test Foo Bar")))
+            .perform(click())
+        R.id.EnterBody.byId().check(matches(withText("Body")))
+        R.id.EnterTitle.byId().perform(typeText(" 123"), closeSoftKeyboard())
+        toolbarBackButton.perform(click())
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test Foo Bar 123")))
+
+        device.sleep()
+        SystemClock.sleep(2000)
+        device.wakeUp()
+        device.pressMenu()
+
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test Foo Bar 123")))
+        assertEquals(1, fakeBiometricAuthenticator.getEncryptionCounter())
+        assertEquals(2, fakeBiometricAuthenticator.getDecryptionCounter())
+
+        scenario.close()
+    }
+
+    @Test
+    fun dataInPublic() {
+        runBlocking {
+            withContext(Dispatchers.Main) {
+                database
+                    .getBaseNoteDao()
+                    .insert(createBaseNote(title = "Test", body = "Body", labels = listOf("label")))
+            }
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        navigateTo(R.id.Settings)
+
+        onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
+        R.string.enabled.byText().perform(click())
+        waitUntil(10_000L) {
+            NotallyDatabase.getCurrentDatabaseFile(context) ==
+                NotallyDatabase.getExternalDatabaseFile(context)
+        }
+        navigateTo(R.id.Notes)
+
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test")))
+            .perform(click())
+        R.id.EnterBody.byId().check(matches(withText("Body")))
+        R.id.EnterTitle.byId().perform(typeText(" Foo"), closeSoftKeyboard())
+
+        toolbarBackButton.perform(click())
+
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test Foo")))
+
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+
+        device.sleep()
+        SystemClock.sleep(2000)
+        device.wakeUp()
+        device.pressMenu()
+
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test Foo")))
+            .perform(click())
+        R.id.EnterBody.byId().check(matches(withText("Body")))
+        R.id.EnterTitle.byId().perform(typeText(" Bar"), closeSoftKeyboard())
+
+        toolbarBackButton.perform(click())
+
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test Foo Bar")))
+
+        navigateTo(R.id.Settings)
+        onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
+        R.string.disabled.byText().perform(click())
+        waitUntil(10_000L) {
+            NotallyDatabase.getCurrentDatabaseFile(context) ==
+                NotallyDatabase.getInternalDatabaseFile(context)
+        }
+
+        navigateTo(R.id.Notes)
+
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test Foo Bar")))
+            .perform(click())
+        R.id.EnterBody.byId().check(matches(withText("Body")))
+        R.id.EnterTitle.byId().perform(typeText(" 123"), closeSoftKeyboard())
+        toolbarBackButton.perform(click())
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test Foo Bar 123")))
+
+        device.sleep()
+        SystemClock.sleep(2000)
+        device.wakeUp()
+        device.pressMenu()
+
+        R.id.MainListView.byId()
+            .onPositionView(0, withId(R.id.Title))
+            .check(matches(withText("Test Foo Bar 123")))
 
         scenario.close()
     }

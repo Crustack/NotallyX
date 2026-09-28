@@ -72,9 +72,9 @@ import com.philkes.notallyx.utils.getUriForFile
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.openExternalMediaFolder
 import com.philkes.notallyx.utils.reportBug
+import com.philkes.notallyx.utils.security.AuthenticatorProvider
 import com.philkes.notallyx.utils.security.DecryptionException
 import com.philkes.notallyx.utils.security.EncryptionException
-import com.philkes.notallyx.utils.security.showBiometricOrPinPrompt
 import com.philkes.notallyx.utils.showErrorDialog
 import com.philkes.notallyx.utils.viewLogs
 import com.philkes.notallyx.utils.wrapWithChooser
@@ -975,11 +975,9 @@ class SettingsFragment : Fragment() {
 
     private fun showEnableBiometricLock() {
         showBiometricBackupAdvice {
-            showBiometricOrPinPrompt(
-                false,
-                setupLockActivityResultLauncher,
-                R.string.enable_lock_title,
-                R.string.enable_lock_description,
+            AuthenticatorProvider.instance.authenticate(
+                requireActivity(),
+                isForDecrypt = false,
                 onSuccess = { cipher ->
                     val app = (requireActivity().application as NotallyXApplication)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -1011,12 +1009,10 @@ class SettingsFragment : Fragment() {
 
     private fun showDisableBiometricLock() {
         showBiometricBackupAdvice {
-            showBiometricOrPinPrompt(
-                true,
-                disableLockActivityResultLauncher,
-                R.string.disable_lock_title,
-                R.string.disable_lock_description,
+            AuthenticatorProvider.instance.authenticate(
+                requireActivity(),
                 model.preferences.iv.value!!,
+                isForDecrypt = true,
                 onSuccess = { cipher ->
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         val app = (requireActivity().application as NotallyXApplication)

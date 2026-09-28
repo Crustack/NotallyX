@@ -57,8 +57,8 @@ import com.philkes.notallyx.presentation.viewmodel.preference.StringPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.TextProvider
 import com.philkes.notallyx.presentation.viewmodel.preference.Theme
 import com.philkes.notallyx.presentation.viewmodel.preference.TimeFormat
-import com.philkes.notallyx.utils.canAuthenticateWithBiometrics
 import com.philkes.notallyx.utils.getDocumentFolder
+import com.philkes.notallyx.utils.security.AuthenticatorProvider
 import com.philkes.notallyx.utils.toReadablePath
 
 inline fun <reified T> PreferenceBinding.setup(
@@ -111,7 +111,7 @@ fun PreferenceBinding.setup(
                     return@setSingleChoiceItems
                 }
                 if (newValue == BiometricLock.ENABLED) {
-                    when (context.canAuthenticateWithBiometrics()) {
+                    when (AuthenticatorProvider.instance.canAuthenticateWithBiometrics(context)) {
                         BiometricManager.BIOMETRIC_SUCCESS -> onEnableSuccess()
                         BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {
                             context.showToast(R.string.biometrics_no_support)
@@ -120,7 +120,7 @@ fun PreferenceBinding.setup(
                         BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> onNotSetup()
                     }
                 } else {
-                    when (context.canAuthenticateWithBiometrics()) {
+                    when (AuthenticatorProvider.instance.canAuthenticateWithBiometrics(context)) {
                         BiometricManager.BIOMETRIC_SUCCESS -> onDisableSuccess()
                         BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {
                             context.showToast(R.string.biometrics_no_support)

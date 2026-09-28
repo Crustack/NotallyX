@@ -1,5 +1,6 @@
 package com.philkes.notallyx.test
 
+import android.content.ContextWrapper
 import android.graphics.Point
 import android.os.SystemClock
 import android.util.Log
@@ -35,6 +36,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import cn.leaqi.drawer.SwipeDrawer
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
@@ -44,11 +46,32 @@ import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
+import com.philkes.notallyx.utils.security.AuthenticatorProvider
+import java.security.SecureRandom
 import junit.framework.TestCase.assertTrue
 import org.hamcrest.Description
 import org.hamcrest.Matcher
 import org.hamcrest.Matchers.allOf
 import org.hamcrest.TypeSafeMatcher
+
+val context
+    get() = ContextWrapper(InstrumentationRegistry.getInstrumentation().targetContext)
+
+val database: NotallyDatabase
+    get() = NotallyDatabase.getDatabase(context).value!!
+
+val preferences: NotallyXPreferences
+    get() = NotallyXPreferences.getInstance(ContextWrapper(context))
+
+val toolbarBackButton: ViewInteraction
+    get() =
+        onDisplayView(
+            childAtPosition(
+                allOf(withId(R.id.Toolbar), childAtPosition(withId(R.id.main_content_layout), 0)),
+                0,
+            )
+        )
 
 fun onLabelItem(labelText: String): ViewInteraction =
     onView(
@@ -558,6 +581,11 @@ class ToastMatcher : TypeSafeMatcher<Root>() {
 
 fun isToast(): TypeSafeMatcher<Root> = ToastMatcher()
 
+fun assertToastDisplayed(textResId: Int, timeoutMs: Long = 10000) {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    assertToastDisplayed(context.getString(textResId), timeoutMs)
+}
+
 /**
  * Source:
  * https://medium.com/@andre.mendes.peixoto/how-to-reliably-assert-toast-messages-in-android-instrumented-tests-f94d830f4de1
@@ -646,4 +674,40 @@ fun assertWorkExecuted(workName: String, timeoutMs: Long = 5000, pollIntervalMs:
     throw AssertionError(
         "Work '$workName' did not complete successfully within ${timeoutMs}ms. Final state: $finalState"
     )
+}
+
+fun waitUntilSucceeds(timeoutMs: Long = 5000, interaction: () -> ViewInteraction) {
+    val endTime = System.currentTimeMillis() + timeoutMs
+    while (System.currentTimeMillis() < endTime) {
+        try {
+            interaction.invoke()
+            return
+        } catch (t: Throwable) {
+            try {
+                SystemClock.sleep(100)
+            } catch (_: InterruptedException) {}
+        }
+    }
+}
+
+fun waitUntil(timeoutMs: Long = 5000, condition: () -> Boolean) {
+    val endTime = System.currentTimeMillis() + timeoutMs
+    while (System.currentTimeMillis() < endTime) {
+        try {
+            if (condition.invoke()) return
+        } catch (t: Throwable) {
+            try {
+                SystemClock.sleep(100)
+            } catch (_: InterruptedException) {}
+        }
+    }
+}
+
+fun initFakeBiometric(): FakeBiometricAuthenticator {
+    val fakeBiometricAuthenticator = FakeBiometricAuthenticator()
+    val randomIv = ByteArray(16)
+    SecureRandom().nextBytes(randomIv)
+    AuthenticatorProvider.instance = fakeBiometricAuthenticator.apply { iv = randomIv }
+    preferences.iv.save(randomIv)
+    return fakeBiometricAuthenticator
 }
