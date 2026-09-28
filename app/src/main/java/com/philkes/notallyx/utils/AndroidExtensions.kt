@@ -133,18 +133,6 @@ fun Context.getFileName(uri: Uri): String? =
         else -> uri.path?.let { File(it) }?.name
     }
 
-fun Context.canAuthenticateWithBiometrics(): Int {
-    val biometricManager = androidx.biometric.BiometricManager.from(this)
-    val authenticators =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
-        } else {
-            androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
-        }
-    return biometricManager.canAuthenticate(authenticators)
-}
-
 fun Context.getUriForFile(file: File): Uri =
     FileProvider.getUriForFile(this, "${packageName}.provider", file)
 

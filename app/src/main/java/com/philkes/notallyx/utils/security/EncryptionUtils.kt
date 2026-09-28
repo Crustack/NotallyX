@@ -67,7 +67,7 @@ fun decryptDatabase(
 }
 
 @RequiresApi(Build.VERSION_CODES.M)
-private fun getOrCreateSecretKey(keyName: String = ENCRYPTION_KEY_NAME): SecretKey {
+fun getOrCreateSecretKey(keyName: String = ENCRYPTION_KEY_NAME): SecretKey {
     // If Secretkey was previously created for that keyName, then grab and return it.
     val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
     keyStore.load(null) // Keystore must be loaded before it can be accessed
