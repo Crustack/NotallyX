@@ -24,7 +24,6 @@ import com.philkes.notallyx.data.NotallyDatabase.Companion.DATABASE_NAME
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.dao.CommonDao
 import com.philkes.notallyx.data.dao.LabelDao
-import com.philkes.notallyx.data.dao.NoteReminder
 import com.philkes.notallyx.data.dao.moveBaseNotes
 import com.philkes.notallyx.data.imports.ImportException
 import com.philkes.notallyx.data.imports.ImportSource
@@ -111,7 +110,6 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     lateinit var selectedExportMimeType: ExportMimeType
 
     var labels: LiveData<List<Label>> = NotNullLiveData(mutableListOf())
-    var reminders: LiveData<List<NoteReminder>> = NotNullLiveData(mutableListOf())
     private var allNotes: LiveData<List<BaseNote>>? = NotNullLiveData(mutableListOf())
     private var allNotesObserver: Observer<List<BaseNote>>? = null
     var baseNotes: Content? = Content(MutableLiveData(), ::transform)
@@ -160,12 +158,14 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     private fun init(database: NotallyDatabase?) {
         if (database == null) {
             allNotesObserver?.let { allNotes?.removeObserver(it) }
+            allNotes = NotNullLiveData(mutableListOf())
             labelsHiddenObserver?.let { preferences.labelsHidden.removeObserver(it) }
-            deletedNotes?.clearObserver()
-            archivedNotes?.clearObserver()
-            reminderNotes?.clearObserver()
-            baseNotes?.clearObserver()
+            deletedNotes?.setObserver(MutableLiveData())
+            archivedNotes?.setObserver(MutableLiveData())
+            reminderNotes?.setObserver(MutableLiveData())
+            baseNotes?.setObserver(MutableLiveData())
             labelCache.clear()
+            labels = NotNullLiveData(mutableListOf())
             return
         }
         this.database = database
@@ -175,7 +175,6 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
         labels = labelDao.getAll()
         //        colors = baseNoteDao.getAllColorsAsync()
-        reminders = baseNoteDao.getAllRemindersAsync()
 
         allNotesObserver?.let { allNotes?.removeObserver(it) }
         allNotesObserver = Observer { list -> Cache.list = list }

@@ -166,7 +166,7 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
         return folderBefore != folderAfter
     }
 
-    private fun restorePinnedNotifications() {
+    internal fun restorePinnedNotifications() {
         val database =
             try {
                 NotallyDatabase.getDatabase(this@NotallyXApplication)
@@ -191,6 +191,7 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
                     PinnedNotificationManager.notify(this@NotallyXApplication, note)
                 }
             }
+            Log.d(TAG, "Restored ${allPinnedToStatusNotes.size} pinned notifications")
         }
     }
 

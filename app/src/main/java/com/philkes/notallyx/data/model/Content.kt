@@ -44,8 +44,4 @@ class Content(
         observer = Observer { list -> value = transform(list) }
         this.liveData.observeForever(observer!!)
     }
-
-    fun clearObserver() {
-        observer?.let { this.liveData.removeObserver(it) }
-    }
 }
