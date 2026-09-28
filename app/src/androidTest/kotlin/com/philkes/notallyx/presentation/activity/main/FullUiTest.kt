@@ -3,13 +3,16 @@ package com.philkes.notallyx.presentation.activity.main
 import android.Manifest
 import android.app.Activity
 import android.app.Instrumentation
+import android.app.Notification
 import android.content.Intent
 import android.os.Build
 import android.os.SystemClock
+import android.util.Log
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onData
 import androidx.test.espresso.Espresso.onView
@@ -38,12 +41,15 @@ import androidx.test.espresso.matcher.ViewMatchers.withParent
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
+import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.Reminder
+import com.philkes.notallyx.presentation.activity.note.refreshStatusBarPin
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.EMPTY_PATH
 import com.philkes.notallyx.presentation.viewmodel.preference.PeriodicBackup
 import com.philkes.notallyx.test.assertLogAppeared
@@ -65,6 +71,7 @@ import com.philkes.notallyx.test.preferences
 import com.philkes.notallyx.test.toolbarBackButton
 import com.philkes.notallyx.test.waitUntil
 import com.philkes.notallyx.test.waitUntilSucceeds
+import com.philkes.notallyx.utils.PinnedNotificationManager
 import com.philkes.notallyx.utils.backup.ON_SAVE_BACKUP_FILE
 import com.philkes.notallyx.utils.backup.PERIODIC_BACKUP_FILE_PREFIX
 import com.philkes.notallyx.utils.getExternalBackupsDirectory
@@ -72,7 +79,11 @@ import com.philkes.notallyx.utils.getUriForFile
 import com.philkes.notallyx.utils.listZipFiles
 import java.io.File
 import java.util.Date
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.hamcrest.Matchers.allOf
@@ -80,6 +91,7 @@ import org.hamcrest.Matchers.anything
 import org.hamcrest.Matchers.`is`
 import org.hamcrest.core.IsInstanceOf
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.FixMethodOrder
 import org.junit.Test
@@ -161,9 +173,11 @@ class FullUiTest {
 
         Espresso.pressBack()
         toolbarBackButton.perform(click())
-        R.id.MainListView.byId()
-            .onPositionView(1, withId(R.id.Title))
-            .check(matches(withText("Test")))
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(1, withId(R.id.Title))
+                .check(matches(withText("Test")))
+        }
 
         scenario.close()
     }
@@ -295,7 +309,9 @@ class FullUiTest {
         // TODO: drag and drop is flaky
         //        dragAndDrop(By.text("label2"), By.text("label1"))
         //        R.id.MainListView.byId().checkPositionHasText(1, "label2")
-        R.id.MainListView.byId().onPositionView(0, withId(R.id.DeleteButton)).perform(click())
+        waitUntilSucceeds {
+            R.id.MainListView.byId().onPositionView(0, withId(R.id.DeleteButton)).perform(click())
+        }
 
         R.string.delete.byText(withId(android.R.id.button1)).perform(scrollTo(), click())
 
@@ -322,9 +338,11 @@ class FullUiTest {
 
         navigateTo(R.id.Deleted)
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test")))
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test")))
+        }
 
         R.string.delete_all.byContentDescription().perform(click())
 
@@ -352,9 +370,11 @@ class FullUiTest {
 
         navigateTo(R.id.Archived)
 
-        R.id.MainListView.byId()
-            .onPositionView(1, withId(R.id.Title))
-            .check(matches(withText("Test")))
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(1, withId(R.id.Title))
+                .check(matches(withText("Test")))
+        }
 
         R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(1, longClick()))
         R.string.unarchive.byContentDescription().perform(click())
@@ -362,9 +382,11 @@ class FullUiTest {
 
         navigateTo(R.id.Notes)
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test")))
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test")))
+        }
 
         scenario.close()
     }
@@ -479,18 +501,22 @@ class FullUiTest {
 
         navigateTo(R.id.Notes)
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test")))
-            .perform(click())
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test")))
+                .perform(click())
+        }
         R.id.EnterBody.byId().check(matches(withText("Body")))
         R.id.EnterTitle.byId().perform(typeText(" Foo"), closeSoftKeyboard())
 
         toolbarBackButton.perform(click())
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test Foo")))
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo")))
+        }
 
         navigateTo(R.id.Settings)
 
@@ -499,18 +525,22 @@ class FullUiTest {
 
         navigateTo(R.id.Notes)
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test Foo")))
-            .perform(click())
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo")))
+                .perform(click())
+        }
         R.id.EnterBody.byId().check(matches(withText("Body")))
         R.id.EnterTitle.byId().perform(typeText(" Bar"), closeSoftKeyboard())
 
         toolbarBackButton.perform(click())
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test Foo Bar")))
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo Bar")))
+        }
 
         scenario.close()
     }
@@ -568,9 +598,11 @@ class FullUiTest {
         assertToastDisplayed("Imported 1 Note")
 
         navigateTo(R.id.Notes)
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test")))
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test")))
+        }
 
         Intents.release()
         scenario.close()
@@ -635,9 +667,11 @@ class FullUiTest {
         assertToastDisplayed("Imported 1 Note")
 
         navigateTo(R.id.Notes)
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test Foo")))
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo")))
+        }
 
         Intents.release()
         scenario.close()
@@ -646,11 +680,13 @@ class FullUiTest {
     @Test
     fun biometricLock() {
         val fakeBiometricAuthenticator = initFakeBiometric()
+        val pinnedToStatusNote = createBaseNote(title = "Pinned", isPinnedToStatus = true)
         runBlocking {
             withContext(Dispatchers.Main) {
-                database
-                    .getBaseNoteDao()
-                    .insert(createBaseNote(title = "Test", body = "Body", labels = listOf("label")))
+                database.getBaseNoteDao().apply {
+                    insert(createBaseNote(title = "Test", body = "Body", labels = listOf("label")))
+                    insert(pinnedToStatusNote)
+                }
             }
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
@@ -669,18 +705,22 @@ class FullUiTest {
         }
         navigateTo(R.id.Notes)
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test")))
-            .perform(click())
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test")))
+                .perform(click())
+        }
         R.id.EnterBody.byId().check(matches(withText("Body")))
         R.id.EnterTitle.byId().perform(typeText(" Foo"), closeSoftKeyboard())
 
         toolbarBackButton.perform(click())
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test Foo")))
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo")))
+        }
 
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
@@ -689,18 +729,22 @@ class FullUiTest {
         device.wakeUp()
         device.pressMenu()
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test Foo")))
-            .perform(click())
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo")))
+                .perform(click())
+        }
         R.id.EnterBody.byId().check(matches(withText("Body")))
         R.id.EnterTitle.byId().perform(typeText(" Bar"), closeSoftKeyboard())
 
         toolbarBackButton.perform(click())
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test Foo Bar")))
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo Bar")))
+        }
         assertEquals(1, fakeBiometricAuthenticator.getEncryptionCounter())
         assertEquals(1, fakeBiometricAuthenticator.getDecryptionCounter())
 
@@ -720,25 +764,31 @@ class FullUiTest {
 
         navigateTo(R.id.Notes)
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test Foo Bar")))
-            .perform(click())
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo Bar")))
+                .perform(click())
+        }
         R.id.EnterBody.byId().check(matches(withText("Body")))
         R.id.EnterTitle.byId().perform(typeText(" 123"), closeSoftKeyboard())
         toolbarBackButton.perform(click())
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test Foo Bar 123")))
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo Bar 123")))
+        }
 
         device.sleep()
         SystemClock.sleep(2000)
         device.wakeUp()
         device.pressMenu()
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test Foo Bar 123")))
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo Bar 123")))
+        }
         assertEquals(1, fakeBiometricAuthenticator.getEncryptionCounter())
         assertEquals(2, fakeBiometricAuthenticator.getDecryptionCounter())
 
@@ -766,18 +816,22 @@ class FullUiTest {
         }
         navigateTo(R.id.Notes)
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test")))
-            .perform(click())
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test")))
+                .perform(click())
+        }
         R.id.EnterBody.byId().check(matches(withText("Body")))
         R.id.EnterTitle.byId().perform(typeText(" Foo"), closeSoftKeyboard())
 
         toolbarBackButton.perform(click())
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test Foo")))
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo")))
+        }
 
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
@@ -786,18 +840,22 @@ class FullUiTest {
         device.wakeUp()
         device.pressMenu()
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test Foo")))
-            .perform(click())
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo")))
+                .perform(click())
+        }
         R.id.EnterBody.byId().check(matches(withText("Body")))
         R.id.EnterTitle.byId().perform(typeText(" Bar"), closeSoftKeyboard())
 
         toolbarBackButton.perform(click())
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test Foo Bar")))
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo Bar")))
+        }
 
         navigateTo(R.id.Settings)
         onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
@@ -809,25 +867,132 @@ class FullUiTest {
 
         navigateTo(R.id.Notes)
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test Foo Bar")))
-            .perform(click())
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo Bar")))
+                .perform(click())
+        }
         R.id.EnterBody.byId().check(matches(withText("Body")))
         R.id.EnterTitle.byId().perform(typeText(" 123"), closeSoftKeyboard())
         toolbarBackButton.perform(click())
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test Foo Bar 123")))
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo Bar 123")))
+        }
 
         device.sleep()
         SystemClock.sleep(2000)
         device.wakeUp()
         device.pressMenu()
 
-        R.id.MainListView.byId()
-            .onPositionView(0, withId(R.id.Title))
-            .check(matches(withText("Test Foo Bar 123")))
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo Bar 123")))
+        }
+
+        scenario.close()
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
+    fun restorePinnedNotifications() {
+        var pinned1 =
+            createBaseNote(
+                title = "Pinned 1",
+                body = "Body",
+                labels = listOf("label"),
+                isPinnedToStatus = true,
+            )
+        var pinned2 =
+            createBaseNote(
+                title = "Pinned 2",
+                body = "Body",
+                labels = listOf("label"),
+                isPinnedToStatus = true,
+            )
+        runBlocking {
+            withContext(Dispatchers.Main) {
+                val baseNoteDao = database.getBaseNoteDao()
+                pinned1 = pinned1.copy(id = baseNoteDao.insert(pinned1))
+                pinned2 = pinned2.copy(id = baseNoteDao.insert(pinned2))
+                baseNoteDao.insert(
+                    createBaseNote(title = "Not Pinned", body = "Body", labels = listOf("label"))
+                )
+            }
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        scenario.onActivity { activity ->
+            activity.refreshStatusBarPin(pinned1)
+            activity.refreshStatusBarPin(pinned2)
+        }
+
+        waitUntil(10_000) { PinnedNotificationManager.getPinnedNotifications(context).size == 2 }
+        val pinnedNotifications = PinnedNotificationManager.getPinnedNotifications(context)
+        assertTrue(
+            "Notification for every pinned Note shown",
+            setOf(pinned1, pinned2).all { pinnedNote ->
+                pinnedNotifications.any {
+                    it!!.id.toLong() == pinnedNote.id &&
+                        pinnedNote.title.contains(
+                            it.notification.extras.getString(Notification.EXTRA_TITLE)!!
+                        ) &&
+                        pinnedNote.body.contains(
+                            it.notification.extras.getString(Notification.EXTRA_TEXT)!!
+                        )
+                }
+            },
+        )
+
+        scenario.close()
+    }
+
+    @Test
+    fun databaseParallel() {
+        runBlocking {
+            withContext(Dispatchers.Main) {
+                database
+                    .getBaseNoteDao()
+                    .insert(
+                        createBaseNote(title = "Note -1", body = "Body", labels = listOf("label"))
+                    )
+            }
+        }
+
+        val application = ApplicationProvider.getApplicationContext<NotallyXApplication>()
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        val numTasks = 25
+        runBlocking(Dispatchers.IO) {
+            val baseNoteDao = database.getBaseNoteDao()
+            val insertTasks =
+                (1..numTasks).map {
+                    async(Dispatchers.IO) {
+                        baseNoteDao.insert(
+                            createBaseNote(title = "Note $it", isPinnedToStatus = it % 2 == 0)
+                        )
+                    }
+                }
+            val restoreTasks =
+                (1..numTasks).map {
+                    async(Dispatchers.Main) { application.restorePinnedNotifications() }
+                }
+            val readTasks =
+                (1..numTasks * 2).map {
+                    async(Dispatchers.IO) {
+                        val allNotes = baseNoteDao.getAll()
+                        Log.d("FullUiTest", "Total notes: ${allNotes.size}")
+                        delay(100.milliseconds)
+                    }
+                }
+            (insertTasks + restoreTasks + readTasks).awaitAll()
+        }
+
+        waitUntil(10_000) {
+            runBlocking { database.getBaseNoteDao().getAll().size == numTasks + 1 }
+        }
 
         scenario.close()
     }

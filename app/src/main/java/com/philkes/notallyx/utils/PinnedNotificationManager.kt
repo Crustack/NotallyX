@@ -5,6 +5,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.service.notification.StatusBarNotification
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import com.philkes.notallyx.R
@@ -13,10 +15,17 @@ import com.philkes.notallyx.presentation.activity.note.reminders.ReminderReceive
 import com.philkes.notallyx.presentation.activity.note.reminders.createNotification
 
 object PinnedNotificationManager {
+    private const val TAG = "PinnedNotifications"
     private const val NOTIFICATION_TAG = "notallyx.notifications.pinned-notes"
     private const val NOTIFICATION_CHANNEL_ID = "Pinned Notes"
     private const val GROUP_PINNED = "notallyx.notifications.group.1.pinned"
     private const val SUMMARY_ID = -1
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    fun getPinnedNotifications(context: Context): List<StatusBarNotification?> {
+        val manager = context.getSystemService<NotificationManager>()!!
+        return manager.activeNotifications.filter { it.tag == NOTIFICATION_TAG }
+    }
 
     fun notify(context: Context, note: BaseNote) {
         val manager = context.getSystemService<NotificationManager>()!!

@@ -469,6 +469,7 @@ fun createBaseNote(
     color: String = BaseNote.COLOR_DEFAULT,
     title: String = "Note",
     pinned: Boolean = false,
+    isPinnedToStatus: Boolean = false,
     timestamp: Long = System.currentTimeMillis(),
     modifiedTimestamp: Long = System.currentTimeMillis(),
     labels: List<String> = listOf(),
@@ -498,7 +499,7 @@ fun createBaseNote(
         audios,
         reminders,
         NoteViewMode.EDIT,
-        isPinnedToStatus = false,
+        isPinnedToStatus = isPinnedToStatus,
     )
 }
 
@@ -678,29 +679,31 @@ fun assertWorkExecuted(workName: String, timeoutMs: Long = 5000, pollIntervalMs:
 
 fun waitUntilSucceeds(timeoutMs: Long = 5000, interaction: () -> ViewInteraction) {
     val endTime = System.currentTimeMillis() + timeoutMs
+    var last: Throwable? = null
     while (System.currentTimeMillis() < endTime) {
         try {
             interaction.invoke()
             return
         } catch (t: Throwable) {
-            try {
-                SystemClock.sleep(100)
-            } catch (_: InterruptedException) {}
+            last = t
         }
+        SystemClock.sleep(100)
     }
+    throw AssertionError("Condition not met within ${timeoutMs}ms", last)
 }
 
 fun waitUntil(timeoutMs: Long = 5000, condition: () -> Boolean) {
     val endTime = System.currentTimeMillis() + timeoutMs
+    var last: Throwable? = null
     while (System.currentTimeMillis() < endTime) {
         try {
             if (condition.invoke()) return
         } catch (t: Throwable) {
-            try {
-                SystemClock.sleep(100)
-            } catch (_: InterruptedException) {}
+            last = t
         }
+        SystemClock.sleep(100)
     }
+    throw AssertionError("Condition not met within ${timeoutMs}ms", last)
 }
 
 fun initFakeBiometric(): FakeBiometricAuthenticator {
