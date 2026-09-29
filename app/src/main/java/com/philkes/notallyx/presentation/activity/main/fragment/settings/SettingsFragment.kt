@@ -29,7 +29,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.work.WorkManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
-import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
 import com.philkes.notallyx.cancelAutoRemoveOldDeletedNotes
 import com.philkes.notallyx.data.imports.Display
@@ -39,6 +38,8 @@ import com.philkes.notallyx.data.imports.ImportSource
 import com.philkes.notallyx.data.imports.txt.APPLICATION_TEXT_MIME_TYPES
 import com.philkes.notallyx.databinding.DialogImportBinding
 import com.philkes.notallyx.databinding.FragmentSettingsBinding
+import com.philkes.notallyx.presentation.activity.DatabaseAction
+import com.philkes.notallyx.presentation.activity.DatabaseTransitionActivity
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.presentation.format
 import com.philkes.notallyx.presentation.getQuantityStringPlain
@@ -73,9 +74,6 @@ import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.openExternalMediaFolder
 import com.philkes.notallyx.utils.reportBug
 import com.philkes.notallyx.utils.security.AuthenticatorProvider
-import com.philkes.notallyx.utils.security.DecryptionException
-import com.philkes.notallyx.utils.security.EncryptionException
-import com.philkes.notallyx.utils.showErrorDialog
 import com.philkes.notallyx.utils.viewLogs
 import com.philkes.notallyx.utils.wrapWithChooser
 import java.text.SimpleDateFormat
@@ -836,9 +834,15 @@ class SettingsFragment : Fragment() {
                     R.string.data_in_public_message,
                 ) { enabled ->
                     if (enabled) {
-                        model.enableDataInPublic()
+                        DatabaseTransitionActivity.start(
+                            requireActivity(),
+                            DatabaseAction.ENABLE_DATA_IN_PUBLIC,
+                        )
                     } else {
-                        model.disableDataInPublic()
+                        DatabaseTransitionActivity.start(
+                            requireActivity(),
+                            DatabaseAction.DISABLE_DATA_IN_PUBLIC,
+                        )
                     }
                 }
             }
@@ -979,26 +983,12 @@ class SettingsFragment : Fragment() {
                 requireActivity(),
                 isForDecrypt = false,
                 onSuccess = { cipher ->
-                    val app = (requireActivity().application as NotallyXApplication)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        lifecycleScope.launch {
-                            try {
-                                model.enableBiometricLock(cipher)
-                            } catch (e: EncryptionException) {
-                                app.log(TAG, throwable = e)
-                                showErrorDialog(
-                                    e,
-                                    R.string.biometrics_setup_failure,
-                                    getString(
-                                        R.string.biometrics_setup_failure_encrypt,
-                                        getString(R.string.report_bug),
-                                    ),
-                                )
-                                return@launch
-                            }
-                            app.locked.value = false
-                            showToast(R.string.biometrics_setup_success)
-                        }
+                        DatabaseTransitionActivity.start(
+                            requireActivity(),
+                            DatabaseAction.ENABLE_BIOMETRIC_LOCK,
+                            cipher,
+                        )
                     }
                 },
             ) {
@@ -1015,24 +1005,11 @@ class SettingsFragment : Fragment() {
                 isForDecrypt = true,
                 onSuccess = { cipher ->
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        val app = (requireActivity().application as NotallyXApplication)
-                        lifecycleScope.launch {
-                            try {
-                                model.disableBiometricLock(cipher)
-                            } catch (e: DecryptionException) {
-                                app.log(TAG, throwable = e)
-                                showErrorDialog(
-                                    e,
-                                    R.string.biometrics_setup_failure,
-                                    getString(
-                                        R.string.biometrics_setup_failure_decrypt,
-                                        getString(R.string.report_bug),
-                                    ),
-                                )
-                                return@launch
-                            }
-                            showToast(R.string.biometrics_disable_success)
-                        }
+                        DatabaseTransitionActivity.start(
+                            requireActivity(),
+                            DatabaseAction.DISABLE_BIOMETRIC_LOCK,
+                            cipher,
+                        )
                     }
                 },
             ) {}

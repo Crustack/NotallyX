@@ -32,7 +32,6 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.matcher.RootMatchers.isPlatformPopup
 import androidx.test.espresso.matcher.ViewMatchers
-import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withClassName
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
@@ -46,7 +45,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
-import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.presentation.activity.note.refreshStatusBarPin
@@ -57,12 +55,18 @@ import com.philkes.notallyx.test.assertToastDisplayed
 import com.philkes.notallyx.test.byContentDescription
 import com.philkes.notallyx.test.byId
 import com.philkes.notallyx.test.byText
+import com.philkes.notallyx.test.checkAndUpdateNoteTitle
 import com.philkes.notallyx.test.childAtPosition
 import com.philkes.notallyx.test.context
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.createListItem
 import com.philkes.notallyx.test.database
+import com.philkes.notallyx.test.disableBiometricLock
+import com.philkes.notallyx.test.disableDataInPublic
+import com.philkes.notallyx.test.enableBiometricLock
+import com.philkes.notallyx.test.enableDataInPublic
 import com.philkes.notallyx.test.initFakeBiometric
+import com.philkes.notallyx.test.lockAndUnlockDevice
 import com.philkes.notallyx.test.navigateTo
 import com.philkes.notallyx.test.onDisplayView
 import com.philkes.notallyx.test.onLabelItem
@@ -70,14 +74,18 @@ import com.philkes.notallyx.test.onPositionView
 import com.philkes.notallyx.test.preferences
 import com.philkes.notallyx.test.toolbarBackButton
 import com.philkes.notallyx.test.waitUntil
+import com.philkes.notallyx.test.waitUntilSettingsValue
 import com.philkes.notallyx.test.waitUntilSucceeds
 import com.philkes.notallyx.utils.PinnedNotificationManager
 import com.philkes.notallyx.utils.backup.ON_SAVE_BACKUP_FILE
 import com.philkes.notallyx.utils.backup.PERIODIC_BACKUP_FILE_PREFIX
 import com.philkes.notallyx.utils.getExternalBackupsDirectory
+import com.philkes.notallyx.utils.getExternalMediaDirectory
 import com.philkes.notallyx.utils.getUriForFile
 import com.philkes.notallyx.utils.listZipFiles
 import java.io.File
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.Date
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
@@ -307,8 +315,9 @@ class FullUiTest {
         R.string.save.byText(withId(android.R.id.button1)).perform(scrollTo(), click())
 
         // TODO: drag and drop is flaky
-        //        dragAndDrop(By.text("label2"), By.text("label1"))
-        //        R.id.MainListView.byId().checkPositionHasText(1, "label2")
+        //                dragAndDrop(By.text("label2"), By.text("label1"))
+        //        waitUntilSucceeds {    R.id.MainListView.byId().checkPositionHasText(1, "label2")
+        // }
         waitUntilSucceeds {
             R.id.MainListView.byId().onPositionView(0, withId(R.id.DeleteButton)).perform(click())
         }
@@ -455,10 +464,47 @@ class FullUiTest {
      */
     @Test
     fun settings() {
+        initFakeBiometric()
+        Intents.init()
+        val settingsExportFile =
+            File(context.getExternalMediaDirectory(), "NotallyX_Settings.json").apply { delete() }
         runBlocking {
             database
                 .getBaseNoteDao()
                 .insert(createBaseNote(title = "Test", body = "Body", labels = listOf("label")))
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(
+                            `is`(Intent.EXTRA_INTENT),
+                            hasAction(Intent.ACTION_CREATE_DOCUMENT),
+                        ),
+                    )
+                )
+                .respondWithFunction { intent ->
+                    Instrumentation.ActivityResult(
+                        Activity.RESULT_OK,
+                        Intent().apply {
+                            data = context.getUriForFile(settingsExportFile)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        },
+                    )
+                }
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(`is`(Intent.EXTRA_INTENT), hasAction(Intent.ACTION_OPEN_DOCUMENT)),
+                    )
+                )
+                .respondWithFunction { intent ->
+                    Instrumentation.ActivityResult(
+                        Activity.RESULT_OK,
+                        Intent().apply {
+                            data = context.getUriForFile(settingsExportFile)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        },
+                    )
+                }
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
@@ -496,52 +542,30 @@ class FullUiTest {
         onView(withId(R.id.SecureFlag)).perform(scrollTo(), click())
         R.id.DisabledButton.byId().perform(click())
 
-        onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
-        R.id.EnabledButton.byId().perform(click())
+        enableDataInPublic()
+
+        enableBiometricLock()
 
         navigateTo(R.id.Notes)
-
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test")))
-                .perform(click())
-        }
-        R.id.EnterBody.byId().check(matches(withText("Body")))
-        R.id.EnterTitle.byId().perform(typeText(" Foo"), closeSoftKeyboard())
-
-        toolbarBackButton.perform(click())
-
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo")))
-        }
+        checkAndUpdateNoteTitle(0, "Test", " Foo")
 
         navigateTo(R.id.Settings)
+        onView(withId(R.id.ExportSettings)).perform(scrollTo(), click())
+        R.string.export.byText(withId(android.R.id.button1)).perform(click())
+        waitUntil(10_000) { settingsExportFile.exists() }
 
-        onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
-        R.id.DisabledButton.byId().perform(click())
+        onView(withId(R.id.ResetSettings)).perform(scrollTo(), click())
+        R.string.reset_settings.byText(withId(android.R.id.button1)).perform(click())
+        waitUntilSettingsValue(R.id.ShowSearchInTopBar, R.string.disabled)
+        waitUntilSettingsValue(R.id.BiometricLock, R.string.disabled)
+        waitUntilSettingsValue(R.id.DataInPublicFolder, R.string.disabled)
 
-        navigateTo(R.id.Notes)
+        onView(withId(R.id.ImportSettings)).perform(scrollTo(), click())
+        R.string.import_action.byText(withId(android.R.id.button1)).perform(click())
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo")))
-                .perform(click())
-        }
-        R.id.EnterBody.byId().check(matches(withText("Body")))
-        R.id.EnterTitle.byId().perform(typeText(" Bar"), closeSoftKeyboard())
+        waitUntilSettingsValue(R.id.ShowSearchInTopBar, R.string.enabled)
 
-        toolbarBackButton.perform(click())
-
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo Bar")))
-        }
-
+        Intents.release()
         scenario.close()
     }
 
@@ -692,35 +716,11 @@ class FullUiTest {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
         navigateTo(R.id.Settings)
+        enableBiometricLock()
 
-        onView(withId(R.id.BiometricLock)).perform(scrollTo(), click())
-        R.string.enabled.byText().perform(click())
-        R.string.continue_.byText().perform(scrollTo(), click())
-        waitUntilSucceeds {
-            onView(withId(R.id.BiometricLock))
-                .perform(scrollTo())
-                .check(
-                    matches(hasDescendant(allOf(withId(R.id.Value), withText(R.string.enabled))))
-                )
-        }
         navigateTo(R.id.Notes)
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test")))
-                .perform(click())
-        }
-        R.id.EnterBody.byId().check(matches(withText("Body")))
-        R.id.EnterTitle.byId().perform(typeText(" Foo"), closeSoftKeyboard())
-
-        toolbarBackButton.perform(click())
-
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo")))
-        }
+        checkAndUpdateNoteTitle(0, "Test", " Foo")
 
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
@@ -729,55 +729,19 @@ class FullUiTest {
         device.wakeUp()
         device.pressMenu()
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo")))
-                .perform(click())
-        }
-        R.id.EnterBody.byId().check(matches(withText("Body")))
-        R.id.EnterTitle.byId().perform(typeText(" Bar"), closeSoftKeyboard())
+        checkAndUpdateNoteTitle(0, "Test Foo", " Bar")
 
-        toolbarBackButton.perform(click())
-
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo Bar")))
-        }
         assertEquals(1, fakeBiometricAuthenticator.getEncryptionCounter())
         assertEquals(1, fakeBiometricAuthenticator.getDecryptionCounter())
 
         navigateTo(R.id.Settings)
-        onView(withId(R.id.BiometricLock)).perform(scrollTo(), click())
-        R.string.disabled.byText().perform(click())
-        R.string.continue_.byText().perform(scrollTo(), click())
-        waitUntilSucceeds {
-            onView(withId(R.id.BiometricLock))
-                .perform(scrollTo())
-                .check(
-                    matches(hasDescendant(allOf(withId(R.id.Value), withText(R.string.disabled))))
-                )
-        }
+        disableBiometricLock()
         assertEquals(1, fakeBiometricAuthenticator.getEncryptionCounter())
         assertEquals(2, fakeBiometricAuthenticator.getDecryptionCounter())
 
         navigateTo(R.id.Notes)
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo Bar")))
-                .perform(click())
-        }
-        R.id.EnterBody.byId().check(matches(withText("Body")))
-        R.id.EnterTitle.byId().perform(typeText(" 123"), closeSoftKeyboard())
-        toolbarBackButton.perform(click())
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo Bar 123")))
-        }
+        checkAndUpdateNoteTitle(0, "Test Foo Bar", " 123")
 
         device.sleep()
         SystemClock.sleep(2000)
@@ -797,6 +761,7 @@ class FullUiTest {
 
     @Test
     fun dataInPublic() {
+        initFakeBiometric()
         runBlocking {
             withContext(Dispatchers.Main) {
                 database
@@ -808,30 +773,9 @@ class FullUiTest {
 
         navigateTo(R.id.Settings)
 
-        onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
-        R.string.enabled.byText().perform(click())
-        waitUntil(10_000L) {
-            NotallyDatabase.getCurrentDatabaseFile(context) ==
-                NotallyDatabase.getExternalDatabaseFile(context)
-        }
+        enableDataInPublic()
         navigateTo(R.id.Notes)
-
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test")))
-                .perform(click())
-        }
-        R.id.EnterBody.byId().check(matches(withText("Body")))
-        R.id.EnterTitle.byId().perform(typeText(" Foo"), closeSoftKeyboard())
-
-        toolbarBackButton.perform(click())
-
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo")))
-        }
+        checkAndUpdateNoteTitle(0, "Test", " Foo")
 
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
@@ -840,47 +784,14 @@ class FullUiTest {
         device.wakeUp()
         device.pressMenu()
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo")))
-                .perform(click())
-        }
-        R.id.EnterBody.byId().check(matches(withText("Body")))
-        R.id.EnterTitle.byId().perform(typeText(" Bar"), closeSoftKeyboard())
-
-        toolbarBackButton.perform(click())
-
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo Bar")))
-        }
+        checkAndUpdateNoteTitle(0, "Test Foo", " Bar")
 
         navigateTo(R.id.Settings)
-        onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
-        R.string.disabled.byText().perform(click())
-        waitUntil(10_000L) {
-            NotallyDatabase.getCurrentDatabaseFile(context) ==
-                NotallyDatabase.getInternalDatabaseFile(context)
-        }
+        disableDataInPublic()
 
         navigateTo(R.id.Notes)
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo Bar")))
-                .perform(click())
-        }
-        R.id.EnterBody.byId().check(matches(withText("Body")))
-        R.id.EnterTitle.byId().perform(typeText(" 123"), closeSoftKeyboard())
-        toolbarBackButton.perform(click())
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo Bar 123")))
-        }
+        checkAndUpdateNoteTitle(0, "Test Foo Bar", " 123")
 
         device.sleep()
         SystemClock.sleep(2000)
@@ -892,6 +803,91 @@ class FullUiTest {
                 .onPositionView(0, withId(R.id.Title))
                 .check(matches(withText("Test Foo Bar 123")))
         }
+
+        scenario.close()
+    }
+
+    @Test
+    fun dataInPublicAndBiometric() {
+        val fakeBiometricAuthenticator = initFakeBiometric()
+        var pinnedToStatusNote =
+            createBaseNote(
+                title = "Text",
+                body = "Body",
+                labels = listOf("label"),
+                isPinnedToStatus = true,
+            )
+        runBlocking {
+            withContext(Dispatchers.Main) {
+                database.getBaseNoteDao().apply {
+                    insert(
+                        createBaseNote(
+                            title = "List",
+                            timestamp = Instant.now().minus(24, ChronoUnit.HOURS).toEpochMilli(),
+                            items = mutableListOf(createListItem(body = "Item1")),
+                            labels = listOf("label"),
+                        )
+                    )
+                    pinnedToStatusNote = pinnedToStatusNote.copy(id = insert(pinnedToStatusNote))
+                }
+            }
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        scenario.onActivity { activity -> activity.refreshStatusBarPin(pinnedToStatusNote) }
+
+        checkAndUpdateNoteTitle(0, "Text", "")
+        checkAndUpdateNoteTitle(1, "List", "")
+
+        navigateTo(R.id.Settings)
+        enableDataInPublic()
+
+        navigateTo(R.id.Notes)
+        checkAndUpdateNoteTitle(0, "Text", " Foo")
+        checkAndUpdateNoteTitle(1, "List", " Foo")
+
+        lockAndUnlockDevice()
+
+        checkAndUpdateNoteTitle(0, "Text Foo", " Bar")
+        checkAndUpdateNoteTitle(1, "List Foo", " Bar")
+
+        navigateTo(R.id.Settings)
+        enableBiometricLock()
+
+        navigateTo(R.id.Notes)
+        checkAndUpdateNoteTitle(0, "Text Foo Bar", " Bio")
+        checkAndUpdateNoteTitle(1, "List Foo Bar", " Bio")
+
+        lockAndUnlockDevice()
+
+        checkAndUpdateNoteTitle(0, "Text Foo Bar Bio", " Lock")
+        checkAndUpdateNoteTitle(1, "List Foo Bar Bio", " Lock")
+
+        navigateTo(R.id.Settings)
+        disableDataInPublic()
+
+        navigateTo(R.id.Notes)
+
+        checkAndUpdateNoteTitle(0, "Text Foo Bar Bio Lock", " Public")
+        checkAndUpdateNoteTitle(1, "List Foo Bar Bio Lock", " Public")
+
+        lockAndUnlockDevice()
+
+        checkAndUpdateNoteTitle(0, "Text Foo Bar Bio Lock Public", " Lock")
+        checkAndUpdateNoteTitle(1, "List Foo Bar Bio Lock Public", " Lock")
+
+        navigateTo(R.id.Settings)
+        disableBiometricLock()
+
+        navigateTo(R.id.Notes)
+
+        checkAndUpdateNoteTitle(0, "Text Foo Bar Bio Lock Public Lock", " BioDis")
+        checkAndUpdateNoteTitle(1, "List Foo Bar Bio Lock Public Lock", " BioDis")
+
+        lockAndUnlockDevice()
+
+        checkAndUpdateNoteTitle(0, "Text Foo Bar Bio Lock Public Lock BioDis", " Lock")
+        checkAndUpdateNoteTitle(1, "List Foo Bar Bio Lock Public Lock BioDis", " Lock")
 
         scenario.close()
     }

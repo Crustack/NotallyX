@@ -8,15 +8,22 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.widget.EditText
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.Root
+import androidx.test.espresso.UiController
+import androidx.test.espresso.ViewAction
 import androidx.test.espresso.ViewInteraction
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
+import androidx.test.espresso.action.ViewActions.scrollTo
+import androidx.test.espresso.action.ViewActions.typeTextIntoFocusedView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.contrib.DrawerActions
 import androidx.test.espresso.matcher.BoundedMatcher
 import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
+import androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom
 import androidx.test.espresso.matcher.ViewMatchers.isChecked
 import androidx.test.espresso.matcher.ViewMatchers.isDescendantOfA
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
@@ -713,4 +720,93 @@ fun initFakeBiometric(): FakeBiometricAuthenticator {
     AuthenticatorProvider.instance = fakeBiometricAuthenticator.apply { iv = randomIv }
     preferences.iv.save(randomIv)
     return fakeBiometricAuthenticator
+}
+
+fun checkAndUpdateNoteTitle(noteIdx: Int, textToMatch: String, textToAdd: String) {
+    waitUntilSucceeds {
+        R.id.MainListView.byId()
+            .onPositionView(noteIdx, withId(R.id.Title))
+            .check(matches(withText(textToMatch)))
+            .perform(click())
+    }
+    R.id.EnterTitle.byId()
+        .perform(
+            click(),
+            moveCursorToEnd(),
+            typeTextIntoFocusedView(textToAdd),
+            closeSoftKeyboard(),
+        )
+    toolbarBackButton.perform(click())
+    waitUntilSucceeds {
+        R.id.MainListView.byId()
+            .onPositionView(noteIdx, withId(R.id.Title))
+            .check(matches(withText(textToMatch + textToAdd)))
+    }
+}
+
+fun waitUntilSettingsValue(settingId: Int, valueResId: Int) {
+    waitUntilSucceeds {
+        onView(withId(settingId))
+            .perform(scrollTo())
+            .check(matches(hasDescendant(allOf(withId(R.id.Value), withText(valueResId)))))
+    }
+}
+
+fun enableBiometricLock() {
+    onView(withId(R.id.BiometricLock)).perform(scrollTo(), click())
+    R.string.enabled.byText().perform(click())
+    R.string.continue_.byText().perform(scrollTo(), click())
+    waitUntilSettingsValue(R.id.BiometricLock, R.string.enabled)
+}
+
+fun disableBiometricLock() {
+    onView(withId(R.id.BiometricLock)).perform(scrollTo(), click())
+    R.string.disabled.byText().perform(click())
+    R.string.continue_.byText().perform(scrollTo(), click())
+    waitUntilSettingsValue(R.id.BiometricLock, R.string.disabled)
+}
+
+fun enableDataInPublic() {
+    onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
+    R.string.enabled.byText().perform(click())
+    waitUntilSettingsValue(R.id.DataInPublicFolder, R.string.enabled)
+    waitUntil(10_000L) {
+        NotallyDatabase.getCurrentDatabaseFile(context) ==
+            NotallyDatabase.getExternalDatabaseFile(context)
+    }
+}
+
+fun disableDataInPublic() {
+    onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
+    R.string.disabled.byText().perform(click())
+    waitUntilSettingsValue(R.id.DataInPublicFolder, R.string.disabled)
+    waitUntil(10_000L) {
+        NotallyDatabase.getCurrentDatabaseFile(context) ==
+            NotallyDatabase.getInternalDatabaseFile(context)
+    }
+}
+
+fun lockAndUnlockDevice() {
+    val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+    device.sleep()
+    SystemClock.sleep(2000)
+    device.wakeUp()
+    device.pressMenu()
+}
+
+fun moveCursorToEnd(): ViewAction {
+    return object : ViewAction {
+        override fun getConstraints(): Matcher<View> {
+            return isAssignableFrom(EditText::class.java)
+        }
+
+        override fun getDescription(): String {
+            return "Move cursor to end of EditText"
+        }
+
+        override fun perform(uiController: UiController?, view: View?) {
+            val editText = view as EditText
+            editText.setSelection(editText.text.length)
+        }
+    }
 }

@@ -39,7 +39,7 @@ import org.ocpsoft.prettytime.PrettyTime
  */
 abstract class BasePreference<T>(
     private val sharedPreferences: SharedPreferences,
-    protected val defaultValue: T,
+    val defaultValue: T,
     val titleResId: Int? = null,
 ) {
     private var data: NotNullLiveData<T>? = null

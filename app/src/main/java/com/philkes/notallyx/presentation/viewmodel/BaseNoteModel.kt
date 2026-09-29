@@ -8,7 +8,6 @@ import android.net.Uri
 import android.os.Build
 import android.print.PdfPrintListener
 import android.view.View
-import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.AndroidViewModel
@@ -20,7 +19,6 @@ import androidx.lifecycle.viewModelScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
-import com.philkes.notallyx.data.NotallyDatabase.Companion.DATABASE_NAME
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.dao.CommonDao
 import com.philkes.notallyx.data.dao.LabelDao
@@ -41,6 +39,7 @@ import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.SearchResult
 import com.philkes.notallyx.data.model.deepCopy
+import com.philkes.notallyx.presentation.activity.DatabaseTransitionActivity
 import com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment.Companion.EXTRA_SHOW_IMPORT_BACKUPS_FOLDER
 import com.philkes.notallyx.presentation.activity.note.refreshStatusBarPin
 import com.philkes.notallyx.presentation.exportedText
@@ -52,7 +51,6 @@ import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
 import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.viewmodel.preference.BasePreference
-import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.EMPTY_PATH
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.START_VIEW_DEFAULT
@@ -62,8 +60,6 @@ import com.philkes.notallyx.presentation.viewmodel.progress.ExportNotesProgress
 import com.philkes.notallyx.utils.ActionMode
 import com.philkes.notallyx.utils.Cache
 import com.philkes.notallyx.utils.MIME_TYPE_JSON
-import com.philkes.notallyx.utils.backup.FILE_TIMESTAMP_FORMAT
-import com.philkes.notallyx.utils.backup.copyDatabase
 import com.philkes.notallyx.utils.backup.exportAsZip
 import com.philkes.notallyx.utils.backup.exportPdfFile
 import com.philkes.notallyx.utils.backup.exportPdfFileFolder
@@ -73,26 +69,14 @@ import com.philkes.notallyx.utils.backup.importRawDatabase
 import com.philkes.notallyx.utils.backup.importZip
 import com.philkes.notallyx.utils.backup.readAsBackup
 import com.philkes.notallyx.utils.cancelPinAndReminders
-import com.philkes.notallyx.utils.copyToLarge
 import com.philkes.notallyx.utils.deleteAttachments
 import com.philkes.notallyx.utils.getBackupDir
 import com.philkes.notallyx.utils.getCurrentImagesDirectory
-import com.philkes.notallyx.utils.getExternalBackupsDirectory
 import com.philkes.notallyx.utils.log
-import com.philkes.notallyx.utils.migrateAllAttachments
-import com.philkes.notallyx.utils.security.DecryptionException
-import com.philkes.notallyx.utils.security.EncryptionException
-import com.philkes.notallyx.utils.security.decryptDatabase
-import com.philkes.notallyx.utils.security.encryptDatabase
-import com.philkes.notallyx.utils.security.isEncryptedDatabase
-import com.philkes.notallyx.utils.security.isUnencryptedDatabase
 import com.philkes.notallyx.utils.toMessage
 import com.philkes.notallyx.utils.toReadablePath
 import com.philkes.notallyx.utils.viewFile
-import java.io.File
-import java.util.Date
 import java.util.concurrent.atomic.AtomicInteger
-import javax.crypto.Cipher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -245,7 +229,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     fun disableBackups() {
         val value = preferences.backupsFolder.value
-        if (value != EMPTY_PATH) {
+        if (!preferences.isDefaultOrEmptyBackupFolder(value)) {
             clearPersistedUriPermissions(value)
         }
         savePreference(preferences.backupsFolder, EMPTY_PATH)
@@ -262,208 +246,12 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             val flags =
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
             app.contentResolver.takePersistableUriPermission(uri, flags)
-            if (oldBackupsFolder != EMPTY_PATH) {
+            if (!preferences.isDefaultOrEmptyBackupFolder(oldBackupsFolder)) {
                 clearPersistedUriPermissions(oldBackupsFolder)
             }
             savePreference(preferences.backupsFolder, newBackupsFolder)
         }
         showRefreshBackupsFolderAfterThemeChange = false
-    }
-
-    fun enableDataInPublic(callback: (() -> Unit)? = null) {
-        viewModelScope.launch {
-            val database =
-                withContext(Dispatchers.Main.immediate) { NotallyDatabase.getDatabase(app) }
-            withContext(Dispatchers.IO) {
-                NotallyDatabase.startReplacement()
-                try {
-                    database.value!!.checkpoint()
-                    withContext(Dispatchers.Main.immediate) { NotallyDatabase.clearInstance() }
-                    val targetDirectory = NotallyDatabase.getExternalDatabaseFile(app).parentFile
-                    val internalDatabaseFiles = NotallyDatabase.getInternalDatabaseFiles(app)
-                    internalDatabaseFiles.forEach {
-                        it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
-                    }
-                    val notallyDatabase =
-                        withContext(Dispatchers.Main.immediate) {
-                            NotallyDatabase.getFreshDatabase(
-                                app,
-                                true,
-                                preferences.biometricLock.value,
-                            )
-                        }
-                    val ping =
-                        try {
-                            notallyDatabase.ping()
-                        } catch (e: Exception) {
-                            throw RuntimeException(
-                                "Moving internal '${internalDatabaseFiles.map { it.name }}' to public '$targetDirectory' folder failed",
-                                e,
-                            )
-                        }
-                    if (!ping) {
-                        throw RuntimeException(
-                            "Moving internal '${internalDatabaseFiles.map { it.name }}' to public '$targetDirectory' folder failed"
-                        )
-                    }
-                    app.migrateAllAttachments(toPrivate = false)
-                } catch (e: Exception) {
-                    withContext(Dispatchers.Main.immediate) {
-                        NotallyDatabase.postNewInstance(app, dataInPublic = false)
-                    }
-                    throw e
-                }
-            }
-            withContext(Dispatchers.Main.immediate) {
-                NotallyDatabase.postNewInstance(app, dataInPublic = true)
-                preferences.dataInPublicFolder.save(true)
-            }
-            callback?.invoke()
-        }
-    }
-
-    fun disableDataInPublic(callback: (() -> Unit)? = null) {
-        viewModelScope.launch {
-            val database =
-                withContext(Dispatchers.Main.immediate) { NotallyDatabase.getDatabase(app) }
-            withContext(Dispatchers.IO) {
-                NotallyDatabase.startReplacement()
-                try {
-                    database.value!!.checkpoint()
-                    withContext(Dispatchers.Main.immediate) { NotallyDatabase.clearInstance() }
-                    val targetDirectory = NotallyDatabase.getInternalDatabaseFile(app).parentFile
-                    val externalDatabaseFiles = NotallyDatabase.getExternalDatabaseFiles(app)
-                    externalDatabaseFiles.forEach {
-                        it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
-                    }
-                    val notallyDatabase =
-                        withContext(Dispatchers.Main.immediate) {
-                            NotallyDatabase.getFreshDatabase(
-                                app,
-                                false,
-                                preferences.biometricLock.value,
-                            )
-                        }
-                    val ping =
-                        try {
-                            notallyDatabase.ping()
-                        } catch (e: Exception) {
-                            throw RuntimeException(
-                                "Moving public '${externalDatabaseFiles.map { it.name }}' to internal '$targetDirectory' folder failed",
-                                e,
-                            )
-                        }
-                    if (!ping) {
-                        throw RuntimeException(
-                            "Moving public '${externalDatabaseFiles.map { it.name }}' to internal '$targetDirectory' folder failed"
-                        )
-                    }
-                    app.migrateAllAttachments(toPrivate = true)
-                } catch (e: Exception) {
-                    withContext(Dispatchers.Main.immediate) {
-                        NotallyDatabase.postNewInstance(app, dataInPublic = true)
-                    }
-                    throw e
-                }
-            }
-            withContext(Dispatchers.Main.immediate) {
-                NotallyDatabase.postNewInstance(app, dataInPublic = false)
-                preferences.dataInPublicFolder.save(false)
-            }
-            callback?.invoke()
-        }
-    }
-
-    suspend fun enableBiometricLock(cipher: Cipher) {
-        val passphrase = preferences.databaseEncryptionKey.init(cipher)
-        withContext(Dispatchers.IO) {
-            preferences.iv.save(cipher.iv)
-            NotallyDatabase.startReplacement()
-            try {
-                val (_, dbFileCopy) = app.copyDatabase(suffix = "-encrypt")
-                val (_, dbFileBackup) = app.copyDatabase(suffix = "-encrypt-backup")
-                withContext(Dispatchers.Main.immediate) { NotallyDatabase.clearInstance() }
-                encryptDatabase(app, dbFileCopy, passphrase)
-                val originalDbFile = NotallyDatabase.getCurrentDatabaseFile(app)
-                dbFileCopy.copyToLarge(originalDbFile, overwrite = true, deleteSourceFile = true)
-                if (originalDbFile.isUnencryptedDatabase(app)) {
-                    dbFileBackup.copyToLarge(originalDbFile, overwrite = true)
-                    val externalBackupFile =
-                        File(
-                            app.getExternalBackupsDirectory(),
-                            "${DATABASE_NAME}_Backup_before_encryption_${FILE_TIMESTAMP_FORMAT.format(
-                            Date()
-                        )}",
-                        )
-                    dbFileBackup.copyToLarge(
-                        externalBackupFile,
-                        overwrite = true,
-                        deleteSourceFile = true,
-                    )
-                    throw EncryptionException(
-                        "Encrypt succeeded but overwritten database is not encrypted, restored unencrypted database and created additional backup at ${externalBackupFile.absolutePath}"
-                    )
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main.immediate) {
-                    NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.DISABLED)
-                }
-                throw e
-            }
-        }
-        withContext(Dispatchers.Main.immediate) {
-            NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.ENABLED)
-            preferences.fallbackDatabaseEncryptionKey.save(passphrase)
-            preferences.biometricLock.save(BiometricLock.ENABLED)
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.M)
-    suspend fun disableBiometricLock(cipher: Cipher? = null, callback: (() -> Unit)? = null) {
-        val encryptedPassphrase = preferences.databaseEncryptionKey.value
-        val passphrase =
-            cipher?.doFinal(encryptedPassphrase)
-                ?: preferences.fallbackDatabaseEncryptionKey.value!!
-        withContext(Dispatchers.IO) {
-            NotallyDatabase.startReplacement()
-            try {
-                val (_, dbFileCopy) = app.copyDatabase(decrypt = false, suffix = "-decrypt")
-                val (_, dbFileBackup) =
-                    app.copyDatabase(decrypt = false, suffix = "-decrypt-backup")
-                withContext(Dispatchers.Main.immediate) { NotallyDatabase.clearInstance() }
-                decryptDatabase(app, dbFileCopy, passphrase)
-                val originalDbFile = NotallyDatabase.getCurrentDatabaseFile(app)
-                dbFileCopy.copyToLarge(originalDbFile, overwrite = true, deleteSourceFile = true)
-                if (originalDbFile.isEncryptedDatabase(app)) {
-                    dbFileBackup.copyToLarge(originalDbFile, overwrite = true)
-                    val externalBackupFile =
-                        File(
-                            app.getExternalBackupsDirectory(),
-                            "${DATABASE_NAME}_Backup_before_decryption_${FILE_TIMESTAMP_FORMAT.format(
-                            Date()
-                        )}",
-                        )
-                    dbFileBackup.copyToLarge(
-                        externalBackupFile,
-                        overwrite = true,
-                        deleteSourceFile = true,
-                    )
-                    throw DecryptionException(
-                        "Decrypt succeeded but overwritten database is still encrypted, restored encrypted database and created additional backup at ${externalBackupFile.absolutePath}"
-                    )
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main.immediate) {
-                    NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.ENABLED)
-                }
-                throw e
-            }
-        }
-        withContext(Dispatchers.Main.immediate) {
-            NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.DISABLED)
-            preferences.biometricLock.save(BiometricLock.DISABLED)
-        }
-        callback?.invoke()
     }
 
     fun <T> savePreference(preference: BasePreference<T>, value: T) {
@@ -877,38 +665,18 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     suspend fun resetPreferences(callback: (restartRequired: Boolean) -> Unit) {
         val backupsFolder = preferences.backupsFolder.value
-        val publicFolder = preferences.dataInPublicFolder.value
         val isThemeDefault = preferences.theme.value == Theme.FOLLOW_SYSTEM
-        val finishCallback = { callback(!isThemeDefault) }
-        if (preferences.isLockEnabled) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                disableBiometricLock {
-                    finishResetPreferencesAfterBiometric(
-                        publicFolder,
-                        backupsFolder,
-                        finishCallback,
-                    )
-                }
-            } else finishResetPreferencesAfterBiometric(publicFolder, backupsFolder, finishCallback)
-        } else finishResetPreferencesAfterBiometric(publicFolder, backupsFolder, finishCallback)
-    }
-
-    private fun finishResetPreferencesAfterBiometric(
-        publicFolder: Boolean,
-        backupsFolder: String,
-        callback: (() -> Unit),
-    ) {
-        if (publicFolder) {
-            refreshDataInPublicFolder(false) { finishResetPreferences(backupsFolder, callback) }
-        } else finishResetPreferences(backupsFolder, callback)
-    }
-
-    private fun finishResetPreferences(backupsFolder: String, callback: () -> Unit) {
+        if (preferences.dataInPublicFolder.value) {
+            DatabaseTransitionActivity.disableDataInPublic(app, preferences)
+        }
+        if (preferences.isLockEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            DatabaseTransitionActivity.disableBiometricLock(app, preferences)
+        }
         preferences.reset()
-        if (backupsFolder != EMPTY_PATH) {
+        if (!preferences.isDefaultOrEmptyBackupFolder(backupsFolder)) {
             clearPersistedUriPermissions(backupsFolder)
         }
-        callback()
+        callback(!isThemeDefault)
         app.restartApplication(R.id.Settings)
     }
 
@@ -920,43 +688,24 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         onFailure: () -> Unit,
     ) {
         val oldBackupsFolder = preferences.backupsFolder.value
-        val dataInPublicFolderBefore = preferences.dataInPublicFolder.value
         val themeBefore = preferences.theme.value
         val useDynamicColorsBefore = preferences.useDynamicColors.value
         val oldStartView = preferences.startView.value
 
         val success = preferences.import(context, uri)
 
-        val dataInPublicFolder = preferences.dataInPublicFolder.getFreshValue()
-        if (dataInPublicFolderBefore != dataInPublicFolder) {
-            refreshDataInPublicFolder(dataInPublicFolder) {
-                preferences.dataInPublicFolder.refresh()
-                finishImportPreferences(
-                    oldBackupsFolder,
-                    themeBefore,
-                    useDynamicColorsBefore,
-                    oldStartView,
-                    context,
-                    askForUriPermissions,
-                ) {
-                    if (success) {
-                        onSuccess()
-                    } else onFailure()
-                }
-            }
-        } else
-            finishImportPreferences(
-                oldBackupsFolder,
-                themeBefore,
-                useDynamicColorsBefore,
-                oldStartView,
-                context,
-                askForUriPermissions,
-            ) {
-                if (success) {
-                    onSuccess()
-                } else onFailure()
-            }
+        finishImportPreferences(
+            oldBackupsFolder,
+            themeBefore,
+            useDynamicColorsBefore,
+            oldStartView,
+            context,
+            askForUriPermissions,
+        ) {
+            if (success) {
+                onSuccess()
+            } else onFailure()
+        }
     }
 
     private fun finishImportPreferences(
@@ -995,6 +744,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         backupFolder: String = preferences.backupsFolder.value,
         askForUriPermissions: (uri: Uri) -> Unit,
     ) {
+        if (preferences.isDefaultOrEmptyBackupFolder(backupFolder)) {
+            return
+        }
         try {
             val backupFolderUri = backupFolder.toUri()
             MaterialAlertDialogBuilder(context)
@@ -1008,14 +760,6 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         } catch (_: Exception) {
             showRefreshBackupsFolderAfterThemeChange = false
             disableBackups()
-        }
-    }
-
-    private fun refreshDataInPublicFolder(dataInPublicFolder: Boolean, callback: () -> Unit) {
-        if (dataInPublicFolder) {
-            enableDataInPublic(callback)
-        } else {
-            disableDataInPublic(callback)
         }
     }
 
