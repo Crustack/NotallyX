@@ -115,6 +115,10 @@
     <string name="data_in_public_message">By enabling this, the app’s internal database and attached files will be moved into the app’s public folder (Android/media/com.philkes.notallyx). In combination with file synchronization apps this can be used to synchronize NotallyX data between multiple devices.</string>
     <string name="database">Database</string>
     <string name="database_dump_created">Raw database dump created in \'%1$s\'</string>
+    <string name="decrypting_database_biometric">Decrypting database via Biometric</string>
+    <string name="encrypting_database_biometric">Encrypting database via Biometric</string>
+    <string name="moving_database_to_external">Moving database to external folder</string>
+    <string name="moving_database_to_internal">Moving database to internal folder</string>
     <string name="date">Date</string>
     <string name="date_format">Date format</string>
     <string name="date_format_hint">Applies selected datetime format in Notes Overview</string>

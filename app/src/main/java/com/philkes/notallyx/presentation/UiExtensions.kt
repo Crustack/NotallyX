@@ -1015,16 +1015,24 @@ fun Context.restartApplication(
     fragmentIdToOpen: Int? = null,
     extra: Pair<String, Boolean>? = null,
 ) {
-    val intent = packageManager.getLaunchIntentForPackage(packageName)
-    val componentName = intent!!.component
-    val mainIntent =
-        Intent.makeRestartActivityTask(componentName).apply {
+    //    val intent = packageManager.getLaunchIntentForPackage(packageName)
+    //    val componentName = intent!!.component
+    //    val mainIntent =
+    //        Intent.makeRestartActivityTask(componentName).apply {
+    //            fragmentIdToOpen?.let { putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, it) }
+    //            extra?.let { (key, value) -> putExtra(key, value) }
+    //        }
+    //    mainIntent.setPackage(packageName)
+    //    startActivity(mainIntent)
+    //    Runtime.getRuntime().exit(0)
+
+    val intent =
+        Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             fragmentIdToOpen?.let { putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, it) }
             extra?.let { (key, value) -> putExtra(key, value) }
         }
-    mainIntent.setPackage(packageName)
-    startActivity(mainIntent)
-    Runtime.getRuntime().exit(0)
+    startActivity(intent)
 }
 
 @ColorInt

@@ -119,6 +119,10 @@
 
         <activity android:name=".presentation.activity.note.ViewImageActivity" />
 
+        <activity
+            android:name=".presentation.activity.DatabaseTransitionActivity"
+            android:exported="false" />
+
         <activity android:name=".presentation.activity.note.SelectLabelsActivity" />
 
         <activity android:name=".presentation.activity.note.reminders.RemindersActivity" />

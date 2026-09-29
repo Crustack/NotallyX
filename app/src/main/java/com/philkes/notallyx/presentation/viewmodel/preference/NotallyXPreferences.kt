@@ -331,6 +331,9 @@ class NotallyXPreferences private constructor(private val context: ContextWrappe
     val isLockEnabled: Boolean
         get() = biometricLock.value == BiometricLock.ENABLED
 
+    fun isDefaultOrEmptyBackupFolder(value: String) =
+        value == EMPTY_PATH || value == backupsFolder.defaultValue
+
     private fun reload() {
         setOf(
                 backupsFolder,
@@ -360,6 +363,8 @@ class NotallyXPreferences private constructor(private val context: ContextWrappe
                 editNoteActivityBottomAction,
                 defaultNoteColor,
                 defaultListNoteViewMode,
+                alwaysShowSearchBar,
+                biometricLock,
             )
             .forEach { it.refresh() }
     }
