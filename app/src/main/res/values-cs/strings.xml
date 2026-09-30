@@ -14,17 +14,17 @@
     <string name="archive">Archivovat</string>
     <string name="archived">Archivované</string>
     <plurals name="archived_selected_notes">
+        <item quantity="one">Archivována %1$d poznámka</item>
         <item quantity="few">Archivovány %1$d poznámky</item>
         <item quantity="many">Archivováno %1$d poznámek</item>
-        <item quantity="one">Archivována %1$d poznámka</item>
         <item quantity="other">Archivované %1$dpoznámky</item>
     </plurals>
     <string name="ascending">Vzestupně</string>
     <string name="attach_file">Přiložit soubor</string>
     <plurals name="attachments">
+        <item quantity="one">Příloha</item>
         <item quantity="few">Přílohy</item>
         <item quantity="many">Příloh</item>
-        <item quantity="one">Příloha</item>
         <item quantity="other">Přílohy</item>
     </plurals>
     <string name="audio_recordings">Zvukové záznamy</string>
@@ -66,15 +66,15 @@
     <string name="calculating">Probíhá výpočet…</string>
     <string name="cancel">Zrušit</string>
     <plurals name="cant_add_files">
+        <item quantity="one">Nelze přidat %1$d soubor</item>
         <item quantity="few">Nelze přidat %1$d soubory</item>
         <item quantity="many">Nelze přidat %1$d souborů</item>
-        <item quantity="one">Nelze přidat %1$d soubor</item>
         <item quantity="other">Nelze přidat %1$dsoubory</item>
     </plurals>
     <plurals name="cant_add_images">
+        <item quantity="one">Nepodařilo se přidat %1$d obrázek</item>
         <item quantity="few">Nepodařilo se přidat %1$d obrázky</item>
         <item quantity="many">Nepodařilo se přidat %1$d obrázků</item>
-        <item quantity="one">Nepodařilo se přidat %1$d obrázek</item>
         <item quantity="other">Nelze přidat %1$dobrázky</item>
     </plurals>
     <string name="cant_find_folder">Složka nebyla nalezena. Možná byla přesunuta nebo smazána</string>
@@ -127,11 +127,12 @@
     <string name="date_format_note_view">Formát data a času v detailu poznámky </string>
     <string name="date_format_overview">Formát data a času v přehledu poznámek</string>
     <plurals name="days">
+        <item quantity="one">Den</item>
         <item quantity="few">Dny</item>
         <item quantity="many">Dní</item>
-        <item quantity="one">Den</item>
         <item quantity="other">Dny</item>
     </plurals>
+    <string name="decrypting_database_biometric">Dešifrování databáze pomocí biometrických údajů</string>
     <string name="default_color_hint">Toto je výchozí barva pro nové poznámky. Chcete-li ji změnit, nastavte jako výchozí jinou barvu. </string>
     <string name="default_list_note_view_mode">Výchozí režim zobrazení seznamů</string>
     <string name="delete">Smazat</string>
@@ -149,9 +150,9 @@
     <string name="delete_selected_notes">Smazat vybrané poznámky\?</string>
     <string name="deleted">Smazané</string>
     <plurals name="deleted_selected_notes">
+        <item quantity="one">Smazána %1$d poznámka</item>
         <item quantity="few">Smazány %1$d poznámky</item>
         <item quantity="many">Smazáno %1$d poznámek</item>
-        <item quantity="one">Smazána %1$d poznámka</item>
         <item quantity="other">Smazané %1$dpoznámky</item>
     </plurals>
     <string name="deleting_files">Odstraňování souborů</string>
@@ -170,9 +171,9 @@
     <string name="drag_handle">Chytni a přetáhni</string>
     <string name="duplicate">Vytvořit kopii</string>
     <plurals name="duplicates">
+        <item quantity="one">%1$d kopie</item>
         <item quantity="few">%1$d kopie</item>
         <item quantity="many">%1$d kopií</item>
-        <item quantity="one">%1$d kopie</item>
         <item quantity="other">%1$d duplikáty</item>
     </plurals>
     <string name="edit">Upravit</string>
@@ -188,6 +189,7 @@
     <string name="enable_lock_description">Toto rovněž zašifruje databázi</string>
     <string name="enable_lock_title">Vypnout zámek pomocí biometrických údajů/PIN</string>
     <string name="enabled">Povolit</string>
+    <string name="encrypting_database_biometric">Šifrování databáze pomocí biometrických údajů</string>
     <string name="error">Chyba</string>
     <string name="error_loading_data">Při načítání některých dat z databáze došlo k chybě. Poškozené poznámky se nezobrazí.\nDatabázi můžete vyčistit (odstranit poškozené poznámky) pomocí \'%1$s\'</string>
     <string name="error_while_renaming_file">Chyba při přejmenování souboru</string>
@@ -204,9 +206,9 @@
     <string name="export_settings_success">Nastavení úspěšně exportováno</string>
     <string name="exported">Exportováno</string>
     <plurals name="exported_notes">
+        <item quantity="one">Exportována %1$s poznámka</item>
         <item quantity="few">Exportovány %1$s poznámky</item>
         <item quantity="many">Exportováno %1$s poznámek</item>
-        <item quantity="one">Exportována %1$s poznámka</item>
         <item quantity="other">Exportované %1$spoznámky</item>
     </plurals>
     <string name="exporting_backup">Vytváří se záloha</string>
@@ -234,9 +236,9 @@
     <string name="imported_files">Soubory byly importovány</string>
     <string name="imported_notes">Poznámky byly importovány</string>
     <plurals name="imported_notes">
+        <item quantity="one">Importována %1$s poznámka</item>
         <item quantity="few">Importovány %1$s poznámky</item>
         <item quantity="many">Importováno %1$s poznámek</item>
-        <item quantity="one">Importována %1$s poznámka</item>
         <item quantity="other">%1$sPoznámky k importu</item>
     </plurals>
     <string name="importing_backup">Importuje se záloha</string>
@@ -290,11 +292,13 @@
     <string name="months">Měsíce</string>
     <string name="more">%1$d další</string>
     <plurals name="more_files">
+        <item quantity="one">…%1$d další soubor</item>
         <item quantity="few">…%1$d další soubory</item>
         <item quantity="many">…%1$d dalších souborů</item>
-        <item quantity="one">…%1$d další soubor</item>
         <item quantity="other">…%1$d další soubory</item>
     </plurals>
+    <string name="moving_database_to_external">Přesunutí databáze do externí složky</string>
+    <string name="moving_database_to_internal">Přesunutí databáze do interní složky</string>
     <string name="new_color">Nová barva</string>
     <string name="next">Další</string>
     <string name="no_auto_sort">Neřadit automaticky</string>
@@ -305,16 +309,16 @@
     <string name="note_too_big_truncating">Poznámka je příliš velká na uložení, byla zkrácena na %1$s znaků (původně: %2$s)\n</string>
     <string name="notes">Poznámky</string>
     <plurals name="notes">
+        <item quantity="one">Poznámka</item>
         <item quantity="few">Poznámky</item>
         <item quantity="many">Poznámek</item>
-        <item quantity="one">Poznámka</item>
         <item quantity="other">Poznámky</item>
     </plurals>
     <string name="notes_sorted_by">Poznámky řazeny dle</string>
     <plurals name="notes_too_big_truncating">
+        <item quantity="one">%1$s Poznámka je příliš velká na uložení, byla zkrácena na %2$s znaků\n</item>
         <item quantity="few">%1$s Poznámky jsou příliš velké na uložení, byly zkráceny na %2$s znaků\n</item>
         <item quantity="many">%1$s Poznámek je příliš velkých na uložení, byly zkráceny na %2$s znaků\n</item>
-        <item quantity="one">%1$s Poznámka je příliš velká na uložení, byla zkrácena na %2$s znaků\n</item>
         <item quantity="other">%1$s Poznámky jsou příliš velké na to, aby se daly uložit, byly zkráceny na  znaků%2$s</item>
     </plurals>
     <string name="of_the_month">%1$s v měsíci</string>
@@ -361,9 +365,9 @@
     <string name="restart_app">Restartovat aplikaci</string>
     <string name="restore">Obnovit</string>
     <plurals name="restored_selected_notes">
+        <item quantity="one">Obnovena %1$d poznámka</item>
         <item quantity="few">Obnoveny %1$d poznámky</item>
         <item quantity="many">Obnoveno %1$d poznámek</item>
-        <item quantity="one">Obnovena %1$d poznámka</item>
         <item quantity="other">Obnovené %1$dpoznámky</item>
     </plurals>
     <string name="resume">Pokračovat</string>
@@ -420,9 +424,9 @@
     <string name="to_record_audio">Chcete-li nahrávat zvuk, povolte  NotallyX přístup k mikrofonu. Klepněte na Nastavení &gt; Oprávnění a zapněte Mikrofon.</string>
     <string name="unarchive">Zrušit archivaci</string>
     <plurals name="unarchived_selected_notes">
+        <item quantity="one">Obnoveny %1$d poznámky</item>
         <item quantity="few">Obnoveny %1$d poznámky</item>
         <item quantity="many">Obnoveno %1$d poznámek</item>
-        <item quantity="one">Obnoveny %1$d poznámky</item>
         <item quantity="other">Nearchivované %1$dpoznámky</item>
     </plurals>
     <string name="uncheck_all_items">Zrušit výběr všech položek</string>

@@ -122,6 +122,7 @@
         <item quantity="one">Ημέρα</item>
         <item quantity="other">Ημέρες</item>
     </plurals>
+    <string name="decrypting_database_biometric">Αποκρυπτογράφηση βάσης δεδομένων μέσω βιομετρικών στοιχείων</string>
     <string name="default_color_hint">Αυτό είναι το προεπιλεγμένο χρώμα για τις νέες σημειώσεις. Για να το αλλάξετε, ορίστε ένα άλλο χρώμα ως προεπιλεγμένο</string>
     <string name="default_list_note_view_mode">Προεπιλεγμένη λειτουργία προβολής «Λίστα-Σημειώσεις»</string>
     <string name="delete">Διαγραφή</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">Αυτό θα κρυπτογραφήσει επίσης τη βάση δεδομένων</string>
     <string name="enable_lock_title">Ενεργοποίηση κλειδώματος μέσω βιομετρικών στοιχείων/PIN</string>
     <string name="enabled">Ενεργοποιημένο</string>
+    <string name="encrypting_database_biometric">Κρυπτογράφηση βάσης δεδομένων μέσω βιομετρικών στοιχείων</string>
     <string name="error">Σφάλμα</string>
     <string name="error_loading_data">Παρουσιάστηκε σφάλμα κατά τη φόρτωση ορισμένων δεδομένων από τη βάση δεδομένων. Οι κατεστραμμένες σημειώσεις δεν θα εμφανιστούν.\nΜπορείτε να καθαρίσετε τη βάση δεδομένων (διαγράφοντας τις κατεστραμμένες σημειώσεις) χρησιμοποιώντας το \'%1$s\'</string>
     <string name="error_while_renaming_file">Σφάλμα κατά τη μετονομασία του αρχείου</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…%1$d περισσότερα αρχεία</item>
         <item quantity="other">…%1$d περισσότερα αρχεία</item>
     </plurals>
+    <string name="moving_database_to_external">Μεταφορά της βάσης δεδομένων σε εξωτερικό φάκελο</string>
+    <string name="moving_database_to_internal">Μετακίνηση της βάσης δεδομένων σε εσωτερικό φάκελο</string>
     <string name="new_color">Νέο χρώμα</string>
     <string name="next">Επόμενο</string>
     <string name="no_auto_sort">Χωρίς αυτόματη ταξινόμηση</string>

@@ -14,9 +14,9 @@
     <string name="archive">Arxivar</string>
     <string name="archived">Arxivat</string>
     <plurals name="archived_selected_notes">
+        <item quantity="zero">No s’ha arxivat cap nota</item>
         <item quantity="one">Arxivat %1$d nota</item>
         <item quantity="other">Arxivat %1$d notes</item>
-        <item quantity="zero">No s’ha arxivat cap nota</item>
     </plurals>
     <string name="ascending">Ascendent</string>
     <string name="attach_file">Adjuntar fitxer</string>
@@ -63,14 +63,14 @@
     <string name="calculating">Calculant...</string>
     <string name="cancel">Cancel·lar</string>
     <plurals name="cant_add_files">
+        <item quantity="zero">No s’ha pogut afegir cap fitxer</item>
         <item quantity="one">%1$d fitxer no es pot afegir</item>
         <item quantity="other">%1$d fitxers no es poden afegir</item>
-        <item quantity="zero">No s’ha pogut afegir cap fitxer</item>
     </plurals>
     <plurals name="cant_add_images">
+        <item quantity="zero">No s’ha pogut afegir cap imatge</item>
         <item quantity="one">%1$d imatge no es pot afegir</item>
         <item quantity="other">%1$d imatges no s’han pogut afegir</item>
-        <item quantity="zero">No s’ha pogut afegir cap imatge</item>
     </plurals>
     <string name="cant_find_folder">No es pot trobar la carpeta. Comprova que no hagi set moguda o eliminada</string>
     <string name="cant_find_note">No es pot trobar la nota. Comprova que no hagi set moguda o eliminada</string>
@@ -125,6 +125,7 @@
         <item quantity="one">Dia</item>
         <item quantity="other">Dies</item>
     </plurals>
+    <string name="decrypting_database_biometric">Desxifratge de la base de dades mitjançant biometria</string>
     <string name="default_color_hint">Aquest és el color predeterminat per a les notes noves. Per canviar-lo, estableix un altre color com a predeterminat.</string>
     <string name="default_list_note_view_mode">Modo de visualització predeterminat de llista-nota</string>
     <string name="delete">Esborrar</string>
@@ -177,6 +178,7 @@
     <string name="enable_lock_description">Això també xifrarà la base de dades.</string>
     <string name="enable_lock_title">Activar el bloqueig mitjançant biometria/PIN</string>
     <string name="enabled">Activat</string>
+    <string name="encrypting_database_biometric">Xifrar una base de dades mitjançant la biometria</string>
     <string name="error">Error</string>
     <string name="error_loading_data">Error en carregar alguns dades de la base de dades. Les notes corruptes no es mostraran. Pots netejar (eliminant les notes corruptes) la base de dades utilitzant \'%1$s\'.</string>
     <string name="error_while_renaming_file">Error en el canvi de nom del fitxer</string>
@@ -278,6 +280,8 @@
         <item quantity="one">…%1$d fitxer mes</item>
         <item quantity="other">…%1$d fitxers mes</item>
     </plurals>
+    <string name="moving_database_to_external">Mouent la base de dades a una carpeta externa</string>
+    <string name="moving_database_to_internal">Mouent la base de dades a la carpeta interna</string>
     <string name="new_color">Nou color</string>
     <string name="next">Següent</string>
     <string name="no_auto_sort">Ordenament automàtic desactivat</string>
@@ -340,9 +344,9 @@
     <string name="restart_app">Reinicia l’aplicació</string>
     <string name="restore">Restaurar</string>
     <plurals name="restored_selected_notes">
+        <item quantity="zero">Cap nota restaurada</item>
         <item quantity="one">%1$d nota restaurada</item>
         <item quantity="other">%1$d notes restaurades</item>
-        <item quantity="zero">Cap nota restaurada</item>
     </plurals>
     <string name="resume">Continua</string>
     <string name="save">Desar</string>

@@ -122,6 +122,7 @@
         <item quantity="one">Hari</item>
         <item quantity="other">Hari</item>
     </plurals>
+    <string name="decrypting_database_biometric">Mendekripsi basis data melalui biometrik</string>
     <string name="default_color_hint">Ini adalah warna default untuk catatan baru. Untuk mengubahnya, tentukan warna lain sebagai warna default</string>
     <string name="default_list_note_view_mode">Mode Tampilan Daftar-Catatan Default</string>
     <string name="delete">Hapus</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">Hal ini juga akan mengenkripsi basis data</string>
     <string name="enable_lock_title">Aktifkan penguncian melalui biometrik/PIN</string>
     <string name="enabled">Diaktifkan</string>
+    <string name="encrypting_database_biometric">Mengenkripsi basis data melalui biometrik</string>
     <string name="error">Kesalahan</string>
     <string name="error_loading_data">Terjadi kesalahan saat memuat beberapa data dari basis data. Catatan yang rusak tidak akan ditampilkan.\nAnda dapat membersihkan (menghapus catatan yang rusak) basis data dengan menggunakan \'%1$s\'</string>
     <string name="error_while_renaming_file">Terjadi kesalahan saat mengganti nama file</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…%1$d file lainnya</item>
         <item quantity="other">…%1$d file lainnya</item>
     </plurals>
+    <string name="moving_database_to_external">Memindahkan basis data ke folder eksternal</string>
+    <string name="moving_database_to_internal">Memindahkan basis data ke folder internal</string>
     <string name="new_color">Warna Baru</string>
     <string name="next">Selanjutnya</string>
     <string name="no_auto_sort">Tanpa Autosort</string>

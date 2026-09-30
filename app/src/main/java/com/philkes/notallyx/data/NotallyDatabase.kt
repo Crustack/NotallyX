@@ -29,7 +29,9 @@ import com.philkes.notallyx.data.model.toColorString
 import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.utils.getExternalMediaDirectory
+import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.security.getInitializedCipherForDecryption
+import com.philkes.notallyx.utils.security.isEncryptedDatabase
 import java.io.File
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
@@ -227,31 +229,26 @@ abstract class NotallyDatabase : RoomDatabase() {
             return this.apply {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     if (biometricLock == BiometricLock.ENABLED) {
-                        //                        if
-                        // (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
-                        initializeDecryption(context, preferences, this)
-                        //                        } else {
-                        //                            context.log(
-                        //                                DATABASE_NAME,
-                        //                                "Database is not encrypted even though
-                        // biometric lock is enabled, disabling biometric lock",
-                        //                            )
-                        //
-                        // preferences.biometricLock.save(BiometricLock.DISABLED)
-                        //                        }
+                        if (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
+                            initializeDecryption(context, preferences, this)
+                        } else {
+                            context.log(
+                                DATABASE_NAME,
+                                "Database is not encrypted even though biometric lock is enabled, disabling biometric lock",
+                            )
+
+                            preferences.biometricLock.save(BiometricLock.DISABLED)
+                        }
                     } else {
-                        //                        if
-                        // (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
-                        //                            context.log(
-                        //                                DATABASE_NAME,
-                        //                                "Database is encrypted even though
-                        // biometric lock is disabled, enabling biometric lock",
-                        //                            )
-                        //
-                        // preferences.biometricLock.save(BiometricLock.ENABLED)
-                        //                            initializeDecryption(context, preferences,
-                        // this)
-                        //                        }
+                        if (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
+                            context.log(
+                                DATABASE_NAME,
+                                "Database is encrypted even though biometric lock is disabled, enabling biometric lock",
+                            )
+
+                            preferences.biometricLock.save(BiometricLock.ENABLED)
+                            initializeDecryption(context, preferences, this)
+                        }
                     }
                 }
             }

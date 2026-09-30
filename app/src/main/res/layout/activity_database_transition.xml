@@ -24,7 +24,7 @@
         android:gravity="center"
         android:textAppearance="?attr/textAppearanceHeadline5"
         android:textColor="?android:attr/textColorPrimary"
-        tools:text="@string/app_name" />
+        android:text="@string/app_name" />
 
     <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/loadingProgress"

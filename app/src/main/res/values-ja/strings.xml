@@ -122,6 +122,7 @@
         <item quantity="one">日</item>
         <item quantity="other">日</item>
     </plurals>
+    <string name="decrypting_database_biometric">生体認証によるデータベースの復号化</string>
     <string name="default_color_hint">これは新しいメモのデフォルトの色です。変更するには、別の色をデフォルトに設定してください。</string>
     <string name="default_list_note_view_mode">デフォルトのリスト・ノート表示モード</string>
     <string name="delete">削除</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">これにより、データベースも暗号化されます</string>
     <string name="enable_lock_title">生体認証／PINによるロックを有効にする</string>
     <string name="enabled">有効</string>
+    <string name="encrypting_database_biometric">生体認証によるデータベースの暗号化</string>
     <string name="error">エラー</string>
     <string name="error_loading_data">データベースから一部のデータを読み込む際にエラーが発生しました。破損したノートは表示されません。\n「%1$s」を使用して、データベースのクリーンアップ（破損したノートの削除）を行うことができます。</string>
     <string name="error_while_renaming_file">ファイル名の変更中にエラーが発生しました</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…%1$d その他のファイル</item>
         <item quantity="other">…%1$d その他のファイル</item>
     </plurals>
+    <string name="moving_database_to_external">データベースを外部フォルダに移動する</string>
+    <string name="moving_database_to_internal">データベースを内部フォルダに移動する</string>
     <string name="new_color">新色</string>
     <string name="next">次へ</string>
     <string name="no_auto_sort">自動並べ替えなし</string>

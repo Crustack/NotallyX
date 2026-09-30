@@ -122,6 +122,7 @@
         <item quantity="one">天</item>
         <item quantity="other">天</item>
     </plurals>
+    <string name="decrypting_database_biometric">通过生物识别技术解密数据库</string>
     <string name="default_color_hint">这是新笔记的默认颜色。要更改它，请让另一个颜色成为默认颜色</string>
     <string name="default_list_note_view_mode">默认清单笔记视图模式</string>
     <string name="delete">删除</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">这也会加密数据库</string>
     <string name="enable_lock_title">启用生物特征/PIN锁</string>
     <string name="enabled">启用</string>
+    <string name="encrypting_database_biometric">通过生物识别技术对数据库进行加密</string>
     <string name="error">出错</string>
     <string name="error_loading_data">从数据库加载一些数据时出错。无法显示损坏的笔记。可用“%1$s”清理（删除损坏的笔记）数据库</string>
     <string name="error_while_renaming_file">重命名文件时出错</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…另 %1$d 个文件</item>
         <item quantity="other">…另 %1$d 个文件</item>
     </plurals>
+    <string name="moving_database_to_external">将数据库移动到外部文件夹</string>
+    <string name="moving_database_to_internal">将数据库移动到内部文件夹</string>
     <string name="new_color">新颜色</string>
     <string name="next">下一个</string>
     <string name="no_auto_sort">无账户</string>

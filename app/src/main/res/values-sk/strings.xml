@@ -122,6 +122,7 @@
         <item quantity="one">Deň</item>
         <item quantity="other">Dni</item>
     </plurals>
+    <string name="decrypting_database_biometric">Dešifrovanie databázy pomocou biometrických údajov</string>
     <string name="default_color_hint">Toto je predvolená farba pre nové poznámky. Ak ju chcete zmeniť, nastavte ako predvolenú inú farbu.</string>
     <string name="default_list_note_view_mode">Predvolený režim zobrazenia zoznamu a poznámok</string>
     <string name="delete">Vymazať</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">Týmto sa zároveň zašifruje databáza</string>
     <string name="enable_lock_title">Aktivovať uzamknutie pomocou biometrických údajov alebo PIN kódu</string>
     <string name="enabled">Zapnuté</string>
+    <string name="encrypting_database_biometric">Šifrovanie databázy pomocou biometrických údajov</string>
     <string name="error">Chyba</string>
     <string name="error_loading_data">Pri načítavaní niektorých údajov z databázy došlo k chybe. Poškodené poznámky sa nezobrazia.\nDatabázu môžete vyčistiť (vymazať poškodené poznámky) pomocou \'%1$s\'</string>
     <string name="error_while_renaming_file">Chyba pri premenovaní súboru</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…%1$d ďalší súbor</item>
         <item quantity="other">…%1$d ďalšie súbory</item>
     </plurals>
+    <string name="moving_database_to_external">Presun databázy do externého priečinka</string>
+    <string name="moving_database_to_internal">Presun databázy do internej zložky</string>
     <string name="new_color">Nová farba</string>
     <string name="next">Ďalej</string>
     <string name="no_auto_sort">Bez automatického triedenia</string>

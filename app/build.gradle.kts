@@ -1,5 +1,4 @@
 import com.android.build.gradle.internal.tasks.factory.dependsOn
-import com.android.build.gradle.tasks.PackageAndroidArtifact
 import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
 import org.apache.commons.configuration2.PropertiesConfiguration
 import org.apache.commons.configuration2.io.FileHandler
@@ -15,8 +14,8 @@ plugins {
     id("com.google.firebase.testlab")
     id("com.ncorti.ktfmt.gradle") version "0.20.1"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.0"
-    id("io.github.philkes.android-translations-converter") version "1.0.5"
-    id("io.github.philkes.auto-translation") version "1.0.4"
+    id("io.github.crustack.android-translations-converter") version "1.0.7"
+    id("io.github.crustack.auto-translation") version "1.0.5"
 }
 
 android {
@@ -227,10 +226,10 @@ autoTranslate {
         authKey = providers.gradleProperty("DEEPL_API_KEY")
     }
     translateStringsXml {
-        enabled = false
+        enabled = true
     }
     translateFastlane {
-        enabled = true
+        enabled = false
         targetLanguages = setOf("de-DE", "ru-RU")
     }
 }

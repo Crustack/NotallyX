@@ -84,8 +84,6 @@ import com.philkes.notallyx.utils.getExternalMediaDirectory
 import com.philkes.notallyx.utils.getUriForFile
 import com.philkes.notallyx.utils.listZipFiles
 import java.io.File
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 import java.util.Date
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
@@ -468,10 +466,16 @@ class FullUiTest {
         Intents.init()
         val settingsExportFile =
             File(context.getExternalMediaDirectory(), "NotallyX_Settings.json").apply { delete() }
+        var pinnedToStatusNote =
+            createBaseNote(
+                title = "Test",
+                body = "Body",
+                labels = listOf("label"),
+                isPinnedToStatus = true,
+            )
         runBlocking {
-            database
-                .getBaseNoteDao()
-                .insert(createBaseNote(title = "Test", body = "Body", labels = listOf("label")))
+            pinnedToStatusNote =
+                pinnedToStatusNote.copy(id = database.getBaseNoteDao().insert(pinnedToStatusNote))
             intending(
                     allOf(
                         hasAction(Intent.ACTION_CHOOSER),
@@ -507,6 +511,8 @@ class FullUiTest {
                 }
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        scenario.onActivity { activity -> activity.refreshStatusBarPin(pinnedToStatusNote) }
 
         navigateTo(R.id.Settings)
 
@@ -564,6 +570,11 @@ class FullUiTest {
         R.string.import_action.byText(withId(android.R.id.button1)).perform(click())
 
         waitUntilSettingsValue(R.id.ShowSearchInTopBar, R.string.enabled)
+        waitUntilSettingsValue(R.id.DataInPublicFolder, R.string.disabled)
+        waitUntilSettingsValue(R.id.BiometricLock, R.string.disabled)
+
+        navigateTo(R.id.Notes)
+        checkAndUpdateNoteTitle(0, "Test Foo", " Bar")
 
         Intents.release()
         scenario.close()
@@ -823,7 +834,7 @@ class FullUiTest {
                     insert(
                         createBaseNote(
                             title = "List",
-                            timestamp = Instant.now().minus(24, ChronoUnit.HOURS).toEpochMilli(),
+                            timestamp = Date().time - 24 * 60 * 60 * 1000,
                             items = mutableListOf(createListItem(body = "Item1")),
                             labels = listOf("label"),
                         )

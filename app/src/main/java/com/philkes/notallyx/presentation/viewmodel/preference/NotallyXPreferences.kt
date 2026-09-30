@@ -298,10 +298,13 @@ class NotallyXPreferences private constructor(private val context: ContextWrappe
             timeFormatNoteView.value != TimeFormat.NONE
     }
 
+    private val importExportIgnored
+        get() = setOf(biometricLock.key, iv.key, databaseEncryptionKey.key, dataInPublicFolder.key)
+
     fun toJsonString(): String {
         val jsonObject = JSONObject()
         for ((key, value) in preferences.all) {
-            if (key in listOf(biometricLock.key, iv.key, databaseEncryptionKey.key)) {
+            if (key in importExportIgnored) {
                 continue
             }
             when (value) {
@@ -314,7 +317,7 @@ class NotallyXPreferences private constructor(private val context: ContextWrappe
     }
 
     fun import(context: Context, uri: Uri) =
-        context.importPreferences(uri, preferences.edit()).also { reload() }
+        context.importPreferences(uri, preferences.edit(), importExportIgnored).also { reload() }
 
     fun reset() {
         preferences.edit().clear().commit()
