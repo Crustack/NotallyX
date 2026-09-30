@@ -115,10 +115,6 @@
     <string name="data_in_public_message">By enabling this, the app’s internal database and attached files will be moved into the app’s public folder (Android/media/com.philkes.notallyx). In combination with file synchronization apps this can be used to synchronize NotallyX data between multiple devices.</string>
     <string name="database">Database</string>
     <string name="database_dump_created">Raw database dump created in \'%1$s\'</string>
-    <string name="decrypting_database_biometric">Decrypting database via Biometric</string>
-    <string name="encrypting_database_biometric">Encrypting database via Biometric</string>
-    <string name="moving_database_to_external">Moving database to external folder</string>
-    <string name="moving_database_to_internal">Moving database to internal folder</string>
     <string name="date">Date</string>
     <string name="date_format">Date format</string>
     <string name="date_format_hint">Applies selected datetime format in Notes Overview</string>
@@ -128,6 +124,7 @@
         <item quantity="one">Day</item>
         <item quantity="other">Days</item>
     </plurals>
+    <string name="decrypting_database_biometric">Decrypting database via Biometric</string>
     <string name="default_color_hint">This is the default color for new notes. To change it, make another color the default</string>
     <string name="default_list_note_view_mode">Default List-Note View Mode</string>
     <string name="delete">Delete</string>
@@ -180,6 +177,7 @@
     <string name="enable_lock_description">This will also encrypt the database</string>
     <string name="enable_lock_title">Enable lock via Biometric/PIN</string>
     <string name="enabled">Enabled</string>
+    <string name="encrypting_database_biometric">Encrypting database via Biometric</string>
     <string name="error">Error</string>
     <string name="error_loading_data">Error while loading some data from the database. Corrupted notes will not be displayed.\nYou can cleanup (deleting corrupted notes) the database by using \'%1$s\'</string>
     <string name="error_while_renaming_file">Error while renaming file</string>
@@ -281,6 +279,8 @@
         <item quantity="one">…%1$d more file</item>
         <item quantity="other">…%1$d more files</item>
     </plurals>
+    <string name="moving_database_to_external">Moving database to external folder</string>
+    <string name="moving_database_to_internal">Moving database to internal folder</string>
     <string name="new_color">New Color</string>
     <string name="next">Next</string>
     <string name="no_auto_sort">No Autosort</string>

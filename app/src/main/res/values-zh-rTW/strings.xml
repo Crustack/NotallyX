@@ -122,6 +122,7 @@
         <item quantity="one">天</item>
         <item quantity="other">天</item>
     </plurals>
+    <string name="decrypting_database_biometric">透過生物辨識解密資料庫</string>
     <string name="default_color_hint">這是新筆記的預設顏色。若要變更此顏色，請將另一種顏色設為預設色</string>
     <string name="default_list_note_view_mode">預設的清單-筆記檢視模式</string>
     <string name="delete">刪除</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">這也會加密資料庫</string>
     <string name="enable_lock_title">啟用生物辨識/PIN</string>
     <string name="enabled">啟用</string>
+    <string name="encrypting_database_biometric">透過生物辨識技術加密資料庫</string>
     <string name="error">錯誤</string>
     <string name="error_loading_data">從資料庫載入部分資料時發生錯誤。損壞的筆記將不會顯示。\n您可以使用 \'%1$s\' 來清理（刪除損壞的筆記）資料庫。</string>
     <string name="error_while_renaming_file">重新命名檔案時發生錯誤</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…%1$d 個檔案</item>
         <item quantity="other">…%1$d 個檔案</item>
     </plurals>
+    <string name="moving_database_to_external">將資料庫移至外部資料夾</string>
+    <string name="moving_database_to_internal">將資料庫移至內部資料夾</string>
     <string name="new_color">新顏色</string>
     <string name="next">下一個</string>
     <string name="no_auto_sort">不自動排列</string>

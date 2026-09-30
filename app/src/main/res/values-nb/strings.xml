@@ -122,6 +122,7 @@
         <item quantity="one">Dag</item>
         <item quantity="other">Dager</item>
     </plurals>
+    <string name="decrypting_database_biometric">Dekryptering av database ved hjelp av biometri</string>
     <string name="default_color_hint">Dette er standardfargen for nye notater. For å endre den, må du velge en annen farge som standardfarge</string>
     <string name="default_list_note_view_mode">Standard visningsmodus for liste-notat</string>
     <string name="delete">Slett</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">Dette vil også kryptere databasen</string>
     <string name="enable_lock_title">Aktiver låsing via biometrisk identifikasjon/PIN-kode</string>
     <string name="enabled">Aktivert</string>
+    <string name="encrypting_database_biometric">Kryptering av database ved hjelp av biometri</string>
     <string name="error">Feil</string>
     <string name="error_loading_data">Det oppstod en feil under innlasting av data fra databasen. Skadede notater vil ikke vises.\nDu kan rydde opp i databasen (slette skadede notater) ved å bruke \'%1$s\'</string>
     <string name="error_while_renaming_file">Feil ved omdøping av fil</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…%1$d flere filer</item>
         <item quantity="other">…%1$d flere filer</item>
     </plurals>
+    <string name="moving_database_to_external">Flytte databasen til en ekstern mappe</string>
+    <string name="moving_database_to_internal">Flytte databasen til en intern mappe</string>
     <string name="new_color">Ny farge</string>
     <string name="next">Neste</string>
     <string name="no_auto_sort">Ingen automatisk sortering</string>

@@ -122,6 +122,7 @@
         <item quantity="one">Tag</item>
         <item quantity="other">Tage</item>
     </plurals>
+    <string name="decrypting_database_biometric">Entschlüsselung der Datenbank mittels biometrischer Daten</string>
     <string name="default_color_hint">Das ist die Standardfarbe für neue Notizen. Um sie zu ändern, wähle eine andere Farbe als Standard</string>
     <string name="default_list_note_view_mode">Standard Listen Ansichtsmodus</string>
     <string name="delete">Löschen</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">Dies verschlüsselt außerdem die Datenbank</string>
     <string name="enable_lock_title">Aktiviere Biometrie/PIN Sperre</string>
     <string name="enabled">Aktiviert</string>
+    <string name="encrypting_database_biometric">Verschlüsselung der Datenbank mittels biometrischer Daten</string>
     <string name="error">Fehler</string>
     <string name="error_loading_data">Fehler während dem Auslesen der Datenbank. Beschädigte Notizen werden nicht angezeigt. Du kannst über \'%1$s\' die Datenbank aufräumen (beschädigte Notizen löschen)</string>
     <string name="error_while_renaming_file">Datei umbennen fehlgeschlagen</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…%1$d weitere Datei</item>
         <item quantity="other">…%1$d weitere Dateien</item>
     </plurals>
+    <string name="moving_database_to_external">Datenbank in einen externen Ordner verschieben</string>
+    <string name="moving_database_to_internal">Datenbank in einen internen Ordner verschieben</string>
     <string name="new_color">Neue Farbe</string>
     <string name="next">Nächste</string>
     <string name="no_auto_sort">Nicht automatisch sortieren</string>

@@ -283,7 +283,7 @@ class StringPreference(
 }
 
 class BooleanPreference(
-    private val key: String,
+    val key: String,
     sharedPreferences: SharedPreferences,
     defaultValue: Boolean,
     titleResId: Int? = null,

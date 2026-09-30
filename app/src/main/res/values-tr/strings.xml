@@ -122,6 +122,7 @@
         <item quantity="one">Gün</item>
         <item quantity="other">Günler</item>
     </plurals>
+    <string name="decrypting_database_biometric">Biyometrik yöntemle veritabanının şifresinin çözülmesi</string>
     <string name="default_color_hint">Bu, yeni notlar için varsayılan renktir. Bunu değiştirmek için başka bir rengi varsayılan olarak ayarlayın.</string>
     <string name="default_list_note_view_mode">Varsayılan Liste-Not Görüntüleme Modu</string>
     <string name="delete">Sil</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">Bu işlem aynı zamanda veritabanını da şifreleyecektir</string>
     <string name="enable_lock_title">Biyometrik/PIN yoluyla kilitlemeyi etkinleştir</string>
     <string name="enabled">Etkinleştirildi</string>
+    <string name="encrypting_database_biometric">Biyometrik Yöntemle Veritabanını Şifreleme</string>
     <string name="error">Hata</string>
     <string name="error_loading_data">Veritabanından bazı veriler yüklenirken hata oluştu. Bozuk notlar görüntülenmeyecektir.\n\'%1$s\' komutunu kullanarak veritabanını temizleyebilirsiniz (bozuk notları silerek).</string>
     <string name="error_while_renaming_file">Dosya yeniden adlandırılırken hata oluştu</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…%1$d daha fazla dosya</item>
         <item quantity="other">…%1$d daha fazla dosya</item>
     </plurals>
+    <string name="moving_database_to_external">Veritabanını harici bir klasöre taşıma</string>
+    <string name="moving_database_to_internal">Veritabanını dahili klasöre taşıma</string>
     <string name="new_color">Yeni Renk</string>
     <string name="next">Sonraki</string>
     <string name="no_auto_sort">Otomatik Sıralama Yok</string>

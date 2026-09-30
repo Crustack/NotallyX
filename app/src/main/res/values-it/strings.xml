@@ -122,6 +122,7 @@
         <item quantity="one">Giorno</item>
         <item quantity="other">Giorni</item>
     </plurals>
+    <string name="decrypting_database_biometric">Decrittografia del database tramite dati biometrici</string>
     <string name="default_color_hint">Questo è il colore predefinito per le nuove note. Per cambiarlo, imposta un altro colore come predefinito</string>
     <string name="default_list_note_view_mode">Modalità di visualizzazione predefinita per le note-lista</string>
     <string name="delete">Elimina</string>
@@ -130,7 +131,7 @@
     <string name="delete_audio_recording_forever">Eliminare la registrazione audio definitivamente\?</string>
     <string name="delete_checked_items">Elimina gli elementi spuntati</string>
     <string name="delete_color_message">Di che colore dovrebbero essere le note che attualmente usano questo colore\?</string>
-    <string name="delete_file">Eliminare il file \’%1$s\’\?</string>
+    <string name="delete_file">Eliminare il file ’%1$s’\?</string>
     <string name="delete_forever">Elimina definitivamente</string>
     <string name="delete_image_forever">Eliminare l’immagine definitivamente\?</string>
     <string name="delete_label">Eliminare etichetta\?</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">Questo inoltre crittograferà il database</string>
     <string name="enable_lock_title">Attiva blocco con Biometria/PIN</string>
     <string name="enabled">Attivato</string>
+    <string name="encrypting_database_biometric">Crittografia del database tramite dati biometrici</string>
     <string name="error">Errore</string>
     <string name="error_loading_data">Errore durante il caricamento di alcuni dati dal database. Le note corrotte non verranno visualizzate.\nPuoi ripulire il database (eliminando le note corrotte) usando \'%1$s\'</string>
     <string name="error_while_renaming_file">Errore durante la rinomina del file</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…%1$d altro file</item>
         <item quantity="other">…altri %1$d file</item>
     </plurals>
+    <string name="moving_database_to_external">Spostamento del database in una cartella esterna</string>
+    <string name="moving_database_to_internal">Spostamento del database in una cartella interna</string>
     <string name="new_color">Nuovo colore</string>
     <string name="next">Prossimo</string>
     <string name="no_auto_sort">Non ordinare</string>

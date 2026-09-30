@@ -122,6 +122,7 @@
         <item quantity="one">Jour</item>
         <item quantity="other">Jours</item>
     </plurals>
+    <string name="decrypting_database_biometric">Décryptage d\'une base de données par des moyens biométriques</string>
     <string name="default_color_hint">Il s\'agit de la couleur par défaut des nouvelles notes. Pour la modifier, définissez une autre couleur comme couleur par défaut.</string>
     <string name="default_list_note_view_mode">Mode d\'affichage par défaut « Liste-Note »</string>
     <string name="delete">Supprimer</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">La base de donnée sera aussi chiffrée</string>
     <string name="enable_lock_title">Activer le verrouillage biométrique/code PIN</string>
     <string name="enabled">Activé</string>
+    <string name="encrypting_database_biometric">Chiffrement d\'une base de données à l\'aide de données biométriques</string>
     <string name="error">Erreur</string>
     <string name="error_loading_data">Une erreur s\'est produite lors du chargement de certaines données depuis la base de données. Les notes endommagées ne s\'afficheront pas.\nVous pouvez nettoyer la base de données (en supprimant les notes endommagées) à l\'aide de «%1$s »</string>
     <string name="error_while_renaming_file">Erreur lors du renommage du fichier</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…et %1$d fichier </item>
         <item quantity="other">…et %1$d fichiers</item>
     </plurals>
+    <string name="moving_database_to_external">Déplacement de la base de données vers un dossier externe</string>
+    <string name="moving_database_to_internal">Déplacement de la base de données vers un dossier interne</string>
     <string name="new_color">Nouvelle couleur</string>
     <string name="next">Suivant</string>
     <string name="no_auto_sort">Aucun tri automatique</string>

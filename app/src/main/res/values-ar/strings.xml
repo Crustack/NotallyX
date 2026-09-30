@@ -122,6 +122,7 @@
         <item quantity="one">يوم</item>
         <item quantity="other">أيام</item>
     </plurals>
+    <string name="decrypting_database_biometric">فك تشفير قاعدة البيانات باستخدام تقنية القياسات الحيوية</string>
     <string name="default_color_hint">هذا هو اللون الافتراضي للملاحظات الجديدة. لتغييره، عيّن لونًا آخر كافتراضي</string>
     <string name="default_list_note_view_mode">وضع عرض الملاحظات (قائمة) الافتراضي</string>
     <string name="delete">حذف</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">سيؤدي ذلك أيضًا إلى تشفير قاعدة البيانات</string>
     <string name="enable_lock_title">تفعيل القفل باستخدام البصمة/رمز PIN</string>
     <string name="enabled">مفعّل</string>
+    <string name="encrypting_database_biometric">تشفير قاعدة البيانات باستخدام تقنية القياسات الحيوية</string>
     <string name="error">خطأ</string>
     <string name="error_loading_data">حدث خطأ أثناء تحميل بعض البيانات من قاعدة البيانات. لن يتم عرض الملاحظات التالفة.\nيمكنك تنظيف قاعدة البيانات (حذف الملاحظات التالفة) باستخدام \'%1$s\'</string>
     <string name="error_while_renaming_file">حدث خطأ أثناء إعادة تسمية الملف</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…%1$d ملف إضافي</item>
         <item quantity="other">…%1$d ملفات إضافية</item>
     </plurals>
+    <string name="moving_database_to_external">نقل قاعدة البيانات إلى مجلد خارجي</string>
+    <string name="moving_database_to_internal">نقل قاعدة البيانات إلى مجلد داخلي</string>
     <string name="new_color">لون جديد</string>
     <string name="next">التالي</string>
     <string name="no_auto_sort">بدون فرز تلقائي</string>

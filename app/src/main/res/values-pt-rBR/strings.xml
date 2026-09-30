@@ -122,6 +122,7 @@
         <item quantity="one">Dia</item>
         <item quantity="other">Dias</item>
     </plurals>
+    <string name="decrypting_database_biometric">Descriptografia do banco de dados por meio de dados biométricos</string>
     <string name="default_color_hint">Essa é a cor padrão para novas anotações. Para alterá-la, defina outra cor como padrão</string>
     <string name="default_list_note_view_mode">Modo padrão de visualização da lista de notas</string>
     <string name="delete">Deletar</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">Isso também vai criptografar o banco de dados</string>
     <string name="enable_lock_title">Ativar bloqueio via Biometria/PIN</string>
     <string name="enabled">Ativado</string>
+    <string name="encrypting_database_biometric">Criptografia do banco de dados por meio de biometria</string>
     <string name="error">Erro</string>
     <string name="error_loading_data">Ocorreu um erro ao carregar alguns dados do banco de dados. As anotações corrompidas não serão exibidas.\nVocê pode limpar (excluir as anotações corrompidas) o banco de dados usando \'%1$s\'</string>
     <string name="error_while_renaming_file">Erro ao renomear arquivo</string>
@@ -275,6 +277,8 @@
         <item quantity="one">...mais %1$d arquivo</item>
         <item quantity="other">...mais %1$d arquivos</item>
     </plurals>
+    <string name="moving_database_to_external">Movendo o banco de dados para uma pasta externa</string>
+    <string name="moving_database_to_internal">Movendo o banco de dados para uma pasta interna</string>
     <string name="new_color">Nova cor</string>
     <string name="next">Próximo</string>
     <string name="no_auto_sort">Não ordenar</string>

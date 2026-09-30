@@ -122,6 +122,7 @@
         <item quantity="one">Ngày</item>
         <item quantity="other">Ngày</item>
     </plurals>
+    <string name="decrypting_database_biometric">Giải mã cơ sở dữ liệu thông qua sinh trắc học</string>
     <string name="default_color_hint">Đây là màu mặc định của ghi chú. Để thay đổi, chọn một màu mặc định khác.</string>
     <string name="default_list_note_view_mode">Chế độ xem các mục liệt kê mặc định</string>
     <string name="delete">Xóa</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">Điều này sẽ mã hóa cơ sở dữ liệu</string>
     <string name="enable_lock_title">Bật khóa sinh trắc học/mã số</string>
     <string name="enabled">Đã bật</string>
+    <string name="encrypting_database_biometric">Mã hóa cơ sở dữ liệu thông qua sinh trắc học</string>
     <string name="error">Lỗi</string>
     <string name="error_loading_data">Xảy ra lỗi trong khi tải một số dữ liệu từ cơ sở dữ liệu. Các ghi chú bị hỏng sẽ không được hiển thị.\nBạn có thể dọn dẹp (xóa các ghi chú bị hỏng) cơ sở dữ liệu bằng cách sử dụng \'%1$s\'</string>
     <string name="error_while_renaming_file">Xảy ra lỗi khi đổi tên tệp</string>
@@ -275,6 +277,8 @@
         <item quantity="one">... hơn %1$d tệp</item>
         <item quantity="other">... hơn %1$d tệp</item>
     </plurals>
+    <string name="moving_database_to_external">Di chuyển cơ sở dữ liệu sang thư mục bên ngoài</string>
+    <string name="moving_database_to_internal">Di chuyển cơ sở dữ liệu vào thư mục nội bộ</string>
     <string name="new_color">Màu mới</string>
     <string name="next">Tiếp tục</string>
     <string name="no_auto_sort">Không tự động sắp xếp</string>

@@ -122,6 +122,7 @@
         <item quantity="one">Dag</item>
         <item quantity="other">Dagar</item>
     </plurals>
+    <string name="decrypting_database_biometric">Dekryptering av databas med hjälp av biometri</string>
     <string name="default_color_hint">Det här är standardfärgen för nya anteckningar. Om du vill ändra den kan du ställa in en annan färg som standard</string>
     <string name="default_list_note_view_mode">Standardvisningsläge för list- och anteckningsvyn</string>
     <string name="delete">Radera</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">Detta kommer också att kryptera databasen</string>
     <string name="enable_lock_title">Aktivera låsning via biometrisk autentisering/PIN-kod</string>
     <string name="enabled">Aktiverad</string>
+    <string name="encrypting_database_biometric">Kryptering av databasen med hjälp av biometri</string>
     <string name="error">Fel</string>
     <string name="error_loading_data">Ett fel uppstod vid inläsning av vissa data från databasen. Skadade anteckningar visas inte.\nDu kan rensa databasen (ta bort skadade anteckningar) genom att använda \'%1$s\'</string>
     <string name="error_while_renaming_file">Fel vid omdöpning av fil</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…%1$d fler filer</item>
         <item quantity="other">…%1$d fler filer</item>
     </plurals>
+    <string name="moving_database_to_external">Flytta databasen till en extern mapp</string>
+    <string name="moving_database_to_internal">Flytta databasen till en intern mapp</string>
     <string name="new_color">Ny färg</string>
     <string name="next">Nästa</string>
     <string name="no_auto_sort">Ingen automatisk sortering</string>

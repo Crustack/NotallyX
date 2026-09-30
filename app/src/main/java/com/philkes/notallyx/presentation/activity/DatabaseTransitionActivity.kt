@@ -43,7 +43,6 @@ class DatabaseTransitionActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (savedInstanceState != null) return
         val notallyXApplication = application as NotallyXApplication
         val preferences = NotallyXPreferences.getInstance(notallyXApplication)
         if (preferences.useDynamicColors.value) {
@@ -59,6 +58,7 @@ class DatabaseTransitionActivity : AppCompatActivity() {
 
         val binding = ActivityDatabaseTransitionBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        if (savedInstanceState != null) return
 
         val actionName = intent.getStringExtra(EXTRA_ACTION)
         val action =
@@ -178,11 +178,7 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                     NotallyDatabase.getExternalDatabaseFiles(app).forEach { it.delete() }
                     val internalDatabaseFiles = NotallyDatabase.getInternalDatabaseFiles(app)
                     internalDatabaseFiles.forEach {
-                        it.copyToLarge(
-                            File(targetDirectory, it.name),
-                            overwrite = true,
-                            deleteSourceFile = true,
-                        )
+                        it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
                     }
                     val notallyDatabase =
                         withContext(Dispatchers.Main.immediate) {
@@ -237,11 +233,7 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                     NotallyDatabase.getInternalDatabaseFiles(app).forEach { it.delete() }
                     val externalDatabaseFiles = NotallyDatabase.getExternalDatabaseFiles(app)
                     externalDatabaseFiles.forEach {
-                        it.copyToLarge(
-                            File(targetDirectory, it.name),
-                            overwrite = true,
-                            deleteSourceFile = true,
-                        )
+                        it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
                     }
                     val notallyDatabase =
                         withContext(Dispatchers.Main.immediate) {

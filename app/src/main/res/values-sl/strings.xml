@@ -66,10 +66,10 @@
         <item quantity="other">%1$dDatotek ni mogoče dodati</item>
     </plurals>
     <plurals name="cant_add_images">
-        <item quantity="few">%1$d slike niso bile dodane.</item>
         <item quantity="one">%1$d slika ni bila dodana.</item>
-        <item quantity="other">%1$d slik ni bilo dodanih.</item>
         <item quantity="two">%1$d sliki nista bili dodani.</item>
+        <item quantity="few">%1$d slike niso bile dodane.</item>
+        <item quantity="other">%1$d slik ni bilo dodanih.</item>
     </plurals>
     <string name="cant_find_folder">Mapa ne obstaja. Morda je bila premaknjena ali izbrisana.</string>
     <string name="cant_find_note">Zapisek ne obstaja. Morda je bil izbrisan.</string>
@@ -124,6 +124,7 @@
         <item quantity="one">Dan</item>
         <item quantity="other">Dnevi</item>
     </plurals>
+    <string name="decrypting_database_biometric">Dešifriranje baze podatkov s pomočjo biometričnih podatkov</string>
     <string name="default_color_hint">To je privzeta barva za nove opombe. Če jo želite spremeniti, kot privzeto nastavite drugo barvo.</string>
     <string name="default_list_note_view_mode">Privzeti način prikaza seznama in opomb</string>
     <string name="delete">Izbriši</string>
@@ -176,6 +177,7 @@
     <string name="enable_lock_description">S tem se bo šifrirala tudi baza podatkov</string>
     <string name="enable_lock_title">Omogoči zaklepanje z biometričnim podatkom/PIN-om</string>
     <string name="enabled">Omogočeno</string>
+    <string name="encrypting_database_biometric">Šifriranje baze podatkov s pomočjo biometričnih podatkov</string>
     <string name="error">Napaka</string>
     <string name="error_loading_data">Pri nalaganju nekaterih podatkov iz baze podatkov je prišlo do napake. Poškodovane opombe se ne bodo prikazale.\nBazo podatkov lahko počistite (izbrišete poškodovane opombe) z uporabo \'%1$s\'</string>
     <string name="error_while_renaming_file">Napaka pri preimenovanju datoteke</string>
@@ -277,6 +279,8 @@
         <item quantity="one">…%1$d še več datotek</item>
         <item quantity="other">…%1$d več datotek</item>
     </plurals>
+    <string name="moving_database_to_external">Premestitev baze podatkov v zunanjo mapo</string>
+    <string name="moving_database_to_internal">Premestitev baze podatkov v notranjo mapo</string>
     <string name="new_color">Nova barva</string>
     <string name="next">Naprej</string>
     <string name="no_auto_sort">Brez samodejnega razvrščanja</string>

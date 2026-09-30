@@ -474,13 +474,19 @@ private fun <T> Cursor.toList(convert: (cursor: Cursor) -> T): Pair<ArrayList<T>
         ConverterErrorReporter.enabled.set(true)
     }
 
-fun Context.importPreferences(jsonFile: Uri, to: SharedPreferences.Editor): Boolean {
+fun Context.importPreferences(
+    jsonFile: Uri,
+    to: SharedPreferences.Editor,
+    ignore: Set<String>,
+): Boolean {
     try {
         val inputStream: InputStream? = contentResolver.openInputStream(jsonFile)
         val jsonString = inputStream?.bufferedReader()?.use { it.readText() } ?: return false
         val jsonObject = JSONObject(jsonString)
-        to.clear()
-        jsonObject.keys().forEach { key ->
+        for (key in jsonObject.keys()) {
+            if (key in ignore) {
+                continue
+            }
             when (val value = jsonObject.get(key)) {
                 is Int -> to.putInt(key, value)
                 is Boolean -> to.putBoolean(key, value)

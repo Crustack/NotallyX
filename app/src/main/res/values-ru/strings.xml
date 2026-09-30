@@ -14,8 +14,8 @@
     <string name="archive">Архивировать</string>
     <string name="archived">Архив</string>
     <plurals name="archived_selected_notes">
-        <item quantity="few">Архивировано %1$d заметки</item>
         <item quantity="one">Архивирована %1$d заметка</item>
+        <item quantity="few">Архивировано %1$d заметки</item>
         <item quantity="other">Архивировано %1$d заметок</item>
     </plurals>
     <string name="ascending">По возрастанию</string>
@@ -63,13 +63,13 @@
     <string name="calculating">Вычисление…</string>
     <string name="cancel">Отменить</string>
     <plurals name="cant_add_files">
-        <item quantity="few">Невозможно добавить %1$d файла</item>
         <item quantity="one">Невозможно добавить %1$d файл</item>
+        <item quantity="few">Невозможно добавить %1$d файла</item>
         <item quantity="other">Невозможно добавить %1$d файлов</item>
     </plurals>
     <plurals name="cant_add_images">
-        <item quantity="few">Невозможно добавить %1$d изображения</item>
         <item quantity="one">Невозможно добавить %1$d изображение</item>
+        <item quantity="few">Невозможно добавить %1$d изображения</item>
         <item quantity="other">Невозможно добавить %1$d изображений</item>
     </plurals>
     <string name="cant_find_folder">Папка не найдена. Возможно, она была перемещена или удалена</string>
@@ -122,10 +122,11 @@
     <string name="date_format_note_view">Просмотр примечаний к формату даты и времени</string>
     <string name="date_format_overview">Обзор форматов даты и времени</string>
     <plurals name="days">
-        <item quantity="few">Дня</item>
         <item quantity="one">День</item>
+        <item quantity="few">Дня</item>
         <item quantity="other">Дней</item>
     </plurals>
+    <string name="decrypting_database_biometric">Расшифровка базы данных с помощью биометрических данных</string>
     <string name="default_color_hint">Это цвет по умолчанию для новых заметок. Чтобы изменить его, установите в качестве цвета по умолчанию другой цвет.</string>
     <string name="default_list_note_view_mode">Режим просмотра «Список-Примечания» по умолчанию</string>
     <string name="delete">Удалить</string>
@@ -143,8 +144,8 @@
     <string name="delete_selected_notes">Удалить выбранные заметки\?</string>
     <string name="deleted">Удалённые</string>
     <plurals name="deleted_selected_notes">
-        <item quantity="few">Удалено %1$d заметки</item>
         <item quantity="one">Удалена %1$d заметка</item>
+        <item quantity="few">Удалено %1$d заметки</item>
         <item quantity="other">Удалено %1$d заметок</item>
     </plurals>
     <string name="deleting_files">Удаление файлов</string>
@@ -179,6 +180,7 @@
     <string name="enable_lock_description">Это также зашифрует базу данных</string>
     <string name="enable_lock_title">Включить защиту по Биометрии/PIN-коду</string>
     <string name="enabled">Включено</string>
+    <string name="encrypting_database_biometric">Шифрование базы данных с помощью биометрических данных</string>
     <string name="error">Ошибка</string>
     <string name="error_loading_data">Произошла ошибка при загрузке некоторых данных из базы данных. Повреждённые заметки не будут отображаться.\nВы можете очистить базу данных (удалив повреждённые заметки) с помощью \'%1$s\'</string>
     <string name="error_while_renaming_file">Ошибка переименования файла</string>
@@ -195,8 +197,8 @@
     <string name="export_settings_success">Настройки успешно экспортированы</string>
     <string name="exported">Экспортировано</string>
     <plurals name="exported_notes">
-        <item quantity="few">Экспортировано %1$d заметки</item>
         <item quantity="one">Экспортирована %1$d заметка</item>
+        <item quantity="few">Экспортировано %1$d заметки</item>
         <item quantity="other">Экспортировано %1$d заметок</item>
     </plurals>
     <string name="exporting_backup">Экспорт резервной копии</string>
@@ -224,8 +226,8 @@
     <string name="imported_files">Файлы импортированы</string>
     <string name="imported_notes">Заметки импортированы</string>
     <plurals name="imported_notes">
-        <item quantity="few">Импортировано %1$s заметки</item>
         <item quantity="one">Импортирована %1$s заметка</item>
+        <item quantity="few">Импортировано %1$s заметки</item>
         <item quantity="other">Импортировано %1$s заметок</item>
     </plurals>
     <string name="importing_backup">Импорт резервной копии</string>
@@ -279,10 +281,12 @@
     <string name="months">Месяцы</string>
     <string name="more">Ещё %1$d</string>
     <plurals name="more_files">
-        <item quantity="few">...ещё %1$d файла</item>
         <item quantity="one">...ещё %1$d файл</item>
+        <item quantity="few">...ещё %1$d файла</item>
         <item quantity="other">...ещё %1$d файлов</item>
     </plurals>
+    <string name="moving_database_to_external">Перемещение базы данных во внешнюю папку</string>
+    <string name="moving_database_to_internal">Перемещение базы данных во внутреннюю папку</string>
     <string name="new_color">Новый цвет</string>
     <string name="next">Следующий</string>
     <string name="no_auto_sort">Без автосортировки</string>
@@ -345,8 +349,8 @@
     <string name="restart_app">Перезапустить приложение</string>
     <string name="restore">Восстановить</string>
     <plurals name="restored_selected_notes">
-        <item quantity="few">Восстановлено %1$d заметки</item>
         <item quantity="one">Восстановлена %1$d заметка</item>
+        <item quantity="few">Восстановлено %1$d заметки</item>
         <item quantity="other">Восстановлено %1$d заметок</item>
     </plurals>
     <string name="resume">Повторить</string>
@@ -403,8 +407,8 @@
     <string name="to_record_audio">Чтобы записывать аудиозаписи, разрешите NotallyX доступ к микрофону</string>
     <string name="unarchive">Разархивировать</string>
     <plurals name="unarchived_selected_notes">
-        <item quantity="few">Извлечено %1$d заметки</item>
         <item quantity="one">Извлечено %1$d заметка</item>
+        <item quantity="few">Извлечено %1$d заметки</item>
         <item quantity="other">Извлечено %1$d заметок</item>
     </plurals>
     <string name="uncheck_all_items">Очистить выбор</string>

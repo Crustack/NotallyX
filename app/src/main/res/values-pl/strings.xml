@@ -14,17 +14,17 @@
     <string name="archive">Zarchwizuj</string>
     <string name="archived">Zarchiwizowane</string>
     <plurals name="archived_selected_notes">
+        <item quantity="one">Zarchiwizowano %1$d notatkę</item>
         <item quantity="few">Zarchiwizowano %1$d notatki</item>
         <item quantity="many">Zarchiwizowano %1$d notatek</item>
-        <item quantity="one">Zarchiwizowano %1$d notatkę</item>
         <item quantity="other">Zarchiwizowano %1$d notatek</item>
     </plurals>
     <string name="ascending">Rosnąco</string>
     <string name="attach_file">Dodaj plik</string>
     <plurals name="attachments">
+        <item quantity="one">Załącznik </item>
         <item quantity="few">Załączniki</item>
         <item quantity="many">Załączników</item>
-        <item quantity="one">Załącznik </item>
         <item quantity="other">Załączniki</item>
     </plurals>
     <string name="audio_recordings">Nagrania dźwiękowe</string>
@@ -66,15 +66,15 @@
     <string name="calculating">Obliczanie…</string>
     <string name="cancel">Anuluj</string>
     <plurals name="cant_add_files">
+        <item quantity="one">Nie można dodać %1$d pliku</item>
         <item quantity="few">Nie można dodać %1$d plików</item>
         <item quantity="many">Nie można dodać %1$d plików</item>
-        <item quantity="one">Nie można dodać %1$d pliku</item>
         <item quantity="other">Nie można dodać %1$d plików</item>
     </plurals>
     <plurals name="cant_add_images">
+        <item quantity="one">Nie można dodać %1$d obrazu</item>
         <item quantity="few">Nie można dodać %1$d obrazów</item>
         <item quantity="many">Nie można dodać %1$d obrazów</item>
-        <item quantity="one">Nie można dodać %1$d obrazu</item>
         <item quantity="other">Nie można dodać %1$d obrazów</item>
     </plurals>
     <string name="cant_find_folder">Nie można znaleźć katalogu. Być może został przeniesiony lub usunięty</string>
@@ -127,11 +127,12 @@
     <string name="date_format_note_view">Format daty i godziny w widoku notatki</string>
     <string name="date_format_overview">Format daty i godziny w przeglądzie</string>
     <plurals name="days">
+        <item quantity="one">Dzień</item>
         <item quantity="few">Dni</item>
         <item quantity="many">Dni</item>
-        <item quantity="one">Dzień</item>
         <item quantity="other">Dni</item>
     </plurals>
+    <string name="decrypting_database_biometric">Odszyfrowywanie bazy danych za pomocą danych biometrycznych</string>
     <string name="default_color_hint">To jest domyślny kolor nowych notatek. Aby go zmienić, ustaw inny kolor jako domyślny</string>
     <string name="default_list_note_view_mode">Domyślny tryb widoku list i notatek</string>
     <string name="delete">Usuń</string>
@@ -149,9 +150,9 @@
     <string name="delete_selected_notes">Usunąć zaznaczone notatki\?</string>
     <string name="deleted">Usunięte</string>
     <plurals name="deleted_selected_notes">
+        <item quantity="one">Usunięto %1$d notatkę</item>
         <item quantity="few">Usunięto %1$d notatki</item>
         <item quantity="many">Usunięto %1$d notatek</item>
-        <item quantity="one">Usunięto %1$d notatkę</item>
         <item quantity="other">Usunięto %1$d notatek</item>
     </plurals>
     <string name="deleting_files">Usuwanie plików</string>
@@ -186,6 +187,7 @@
     <string name="enable_lock_description">Spowoduje to również zaszyfrowanie bazy danych</string>
     <string name="enable_lock_title">Włącz blokadę za pomocą biometrii/PIN-u</string>
     <string name="enabled">Włączono</string>
+    <string name="encrypting_database_biometric">Szyfrowanie bazy danych za pomocą danych biometrycznych</string>
     <string name="error">Błąd</string>
     <string name="error_loading_data">Wystąpił błąd podczas wczytywania niektórych danych z bazy danych. Uszkodzone notatki nie będą wyświetlane.\nMożesz oczyścić bazę danych (usuwając uszkodzone notatki) za pomocą \'%1$s\'</string>
     <string name="error_while_renaming_file">Błąd podczas zmiany nazwy pliku</string>
@@ -202,9 +204,9 @@
     <string name="export_settings_success">Pomyślnie wyeksportowano ustawienia</string>
     <string name="exported">Wyeksportowano</string>
     <plurals name="exported_notes">
+        <item quantity="one">Wyeksportowano %1$s notatkę</item>
         <item quantity="few">Wyeksportowano %1$s notatki</item>
         <item quantity="many">Wyeksportowano %1$s notatek</item>
-        <item quantity="one">Wyeksportowano %1$s notatkę</item>
         <item quantity="other">Wyeksportowano %1$s notatek</item>
     </plurals>
     <string name="exporting_backup">Wykonywanie kopii zapasowej</string>
@@ -232,9 +234,9 @@
     <string name="imported_files">Przywrócono pliki</string>
     <string name="imported_notes">Przywrócono notatki</string>
     <plurals name="imported_notes">
+        <item quantity="one">Przywrócono %1$s notatkę</item>
         <item quantity="few">Przywrócono %1$s notatki</item>
         <item quantity="many">Przywrócono %1$s notatek</item>
-        <item quantity="one">Przywrócono %1$s notatkę</item>
         <item quantity="other">Przywrócono %1$s notatek</item>
     </plurals>
     <string name="importing_backup">Przywracanie kopii zapasowej</string>
@@ -288,11 +290,13 @@
     <string name="months">Miesięcy</string>
     <string name="more">%1$d więcej</string>
     <plurals name="more_files">
+        <item quantity="one">…%1$d plik więcej</item>
         <item quantity="few">…%1$d pliki więcej</item>
         <item quantity="many">…%1$d plików więcej</item>
-        <item quantity="one">…%1$d plik więcej</item>
         <item quantity="other">…%1$d plików więcej</item>
     </plurals>
+    <string name="moving_database_to_external">Przenoszenie bazy danych do folderu zewnętrznego</string>
+    <string name="moving_database_to_internal">Przenoszenie bazy danych do folderu wewnętrznego</string>
     <string name="new_color">Nowy kolor</string>
     <string name="next">Dalej</string>
     <string name="no_auto_sort">Brak automatycznego sortowania</string>
@@ -303,9 +307,9 @@
     <string name="note_too_big_truncating">Notatka jest za długa do zapisania, została zmniejszona do %1$s znaków (było: %2$s)</string>
     <string name="notes">Notatki</string>
     <plurals name="notes">
+        <item quantity="one">Notatka</item>
         <item quantity="few">Notatki</item>
         <item quantity="many">Notatek</item>
-        <item quantity="one">Notatka</item>
         <item quantity="other">Notatki</item>
     </plurals>
     <string name="notes_sorted_by">Sortuj według</string>
@@ -357,9 +361,9 @@
     <string name="restart_app">Uruchom ponownie aplikację</string>
     <string name="restore">Przywróć</string>
     <plurals name="restored_selected_notes">
+        <item quantity="one">Przywrócono %1$d notatkę</item>
         <item quantity="few">Przywrócono %1$d notatki</item>
         <item quantity="many">Przywrócono %1$d notatek</item>
-        <item quantity="one">Przywrócono %1$d notatkę</item>
         <item quantity="other">Przywrócono %1$d notatek</item>
     </plurals>
     <string name="resume">Wznów</string>
@@ -416,9 +420,9 @@
     <string name="to_record_audio">Aby nagrywać dźwięk, zezwól NotallyX na dostęp do swojego mikrofonu. Dotknij Ustawienia &gt; Uprawnienia i włącz Mikrofon</string>
     <string name="unarchive">Cofnij archiwizację</string>
     <plurals name="unarchived_selected_notes">
+        <item quantity="one">Odarchiwizowano %1$d notatkę</item>
         <item quantity="few">Odarchiwizowano %1$d notatki</item>
         <item quantity="many">Odarchiwizowano %1$d notatek</item>
-        <item quantity="one">Odarchiwizowano %1$d notatkę</item>
         <item quantity="other">Odarchiwizowano %1$d notatek</item>
     </plurals>
     <string name="uncheck_all_items">Odznacz wszystkie elementy</string>

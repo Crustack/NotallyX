@@ -48,34 +48,27 @@
 ```
 NotallyX/
 ├── app/
-│   ├── schemas/com.philkes.notallyx.data.NotallyDatabase/  # Room schema exports (v1..vN JSON)
+│   ├── schemas/                                       # Room schema exports
 │   ├── src/
 │   │   ├── main/
-│   │   │   ├── AndroidManifest.xml                        # Manifest, permissions, activities, receivers
+│   │   │   ├── AndroidManifest.xml                    # Manifest, permissions, activities
 │   │   │   ├── java/com/philkes/notallyx/
-│   │   │   │   ├── NotallyXApplication.kt                 # Application entry point, crash handling
-│   │   │   │   ├── data/                                  # Data Layer: Room DB, DAOs, Entities, Importers
-│   │   │   │   │   ├── NotallyDatabase.kt                 # Room database definition & migrations
-│   │   │   │   │   ├── dao/                               # Room DAOs (BaseNoteDao, LabelDao, CommonDao)
-│   │   │   │   │   ├── model/                             # Data entities (BaseNote, Label, Attachment, etc.)
-│   │   │   │   │   └── imports/                           # Importers (Google Keep, Evernote, Quillpad, JSON, TXT)
-│   │   │   │   ├── presentation/                          # Presentation Layer: UI & ViewModels
-│   │   │   │   │   ├── activity/                          # Activities (MainActivity, EditNoteActivity, EditListActivity)
-│   │   │   │   │   ├── fragment/                          # Fragments (NotesFragment, SettingsFragment, etc.)
-│   │   │   │   │   ├── view/                              # ViewHolders, Adapters, custom UI components
-│   │   │   │   │   └── viewmodel/                         # ViewModels (BaseNoteModel, NotallyModel, Preferences)
-│   │   │   │   └── utils/                                 # Utilities: Backup, security, formatting, media, spans
-│   │   │   └── res/                                       # Resources (layouts, drawables, navigation, values)
-│   │   └── test/                                          # Unit & Robolectric test suite
-│   │       ├── java/ / kotlin/com/philkes/notallyx/
-│   │       │   ├── data/                                  # Database, migration & converter tests
-│   │       │   ├── imports/                               # Importer parsing tests
-│   │       │   ├── recyclerview/                          # ListManager & adapter logic tests
-│   │       │   └── utils/                                 # Security, compression, and utility tests
-│   │       └── resources/                                 # Test fixture files (exports, sample backups)
-│   └── build.gradle.kts                                   # App-level build configurations & dependencies
-├── build.gradle.kts                                       # Root build configuration
-└── settings.gradle.kts                                    # Project & repository settings
+│   │   │   │   ├── NotallyXApplication.kt             # Application entry point
+│   │   │   │   ├── data/                              # Data layer: Room DB, DAOs, entities, importers
+│   │   │   │   │   ├── dao/                           # Room DAOs (BaseNoteDao, LabelDao, CommonDao)
+│   │   │   │   │   ├── imports/                       # Importers (Google Keep, Evernote, Quillpad, JSON, TXT)
+│   │   │   │   │   └── model/                         # Entities & data models (BaseNote, Label, Attachment)
+│   │   │   │   ├── presentation/                      # Presentation layer: UI & ViewModels
+│   │   │   │   │   ├── activity/                      # Activities & Fragments (MainActivity, EditNoteActivity)
+│   │   │   │   │   ├── view/                          # ViewHolders, Adapters, custom UI components
+│   │   │   │   │   └── viewmodel/                     # ViewModels (BaseNoteModel, NotallyModel)
+│   │   │   │   └── utils/                             # Utilities: Backup, security, formatting, media
+│   │   │   └── res/                                   # Resources (layouts, drawables, navigation, values)
+│   │   ├── test/                                      # Unit & Robolectric test suite and resources
+│   │   └── androidTest/                               # Instrumented & UI tests
+│   └── build.gradle.kts                               # App-level build configurations & dependencies
+├── build.gradle.kts                                   # Root build configuration
+└── settings.gradle.kts                                # Project & repository settings
 ```
 
 ---

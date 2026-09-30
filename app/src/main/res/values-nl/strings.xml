@@ -122,6 +122,7 @@
         <item quantity="one">Dag</item>
         <item quantity="other">Dagen</item>
     </plurals>
+    <string name="decrypting_database_biometric">Database ontcijferen via biometrische gegevens</string>
     <string name="default_color_hint">Dit is de standaardkleur voor nieuwe notities. Om dit te wijzigen, stel je een andere kleur in als standaard.</string>
     <string name="default_list_note_view_mode">Standaardweergavemodus voor lijsten en notities</string>
     <string name="delete">Verwijderen</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">Dit versleutelt ook de database</string>
     <string name="enable_lock_title">Vergrendeling inschakelen via Biometrisch/PIN</string>
     <string name="enabled">Ingeschakeld</string>
+    <string name="encrypting_database_biometric">Database versleutelen via biometrische gegevens</string>
     <string name="error">Fout</string>
     <string name="error_loading_data">Er is een fout opgetreden bij het laden van bepaalde gegevens uit de database. Beschadigde notities worden niet weergegeven.\nJe kunt de database opschonen (door beschadigde notities te verwijderen) met behulp van \'%1$s\'</string>
     <string name="error_while_renaming_file">Fout bij het hernoemen van bestand</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…%1$d ander bestand</item>
         <item quantity="other">…%1$d andere bestanden</item>
     </plurals>
+    <string name="moving_database_to_external">Database verplaatsen naar een externe map</string>
+    <string name="moving_database_to_internal">Database verplaatsen naar interne map</string>
     <string name="new_color">Nieuwe kleur</string>
     <string name="next">Volgende</string>
     <string name="no_auto_sort">Niet automatisch sorteren</string>

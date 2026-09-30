@@ -122,6 +122,7 @@
         <item quantity="one">Día</item>
         <item quantity="other">Días</item>
     </plurals>
+    <string name="decrypting_database_biometric">Descifrado de una base de datos mediante datos biométricos</string>
     <string name="default_color_hint">Este es color por defecto para nuevas notas. Para cambiarlo, hacer otro color por defecto</string>
     <string name="default_list_note_view_mode">Modo de vista de lista de notas por defecto</string>
     <string name="delete">Eliminar</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">Esto también cifrará la base de datos</string>
     <string name="enable_lock_title">Habilitar bloqueo biométrico/PIN</string>
     <string name="enabled">Habilitado</string>
+    <string name="encrypting_database_biometric">Cifrado de la base de datos mediante datos biométricos</string>
     <string name="error">Error</string>
     <string name="error_loading_data">Error al cargar algunos datos de la base de datos. Las notas dañadas no se mostrarán.\nPuede limpiar la base de datos (eliminar las notas dañadas) usando \'%1$s\'.</string>
     <string name="error_while_renaming_file">Error al renombrar fichero</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…%1$d fichero más</item>
         <item quantity="other">…%1$d ficheros más</item>
     </plurals>
+    <string name="moving_database_to_external">Trasladar la base de datos a una carpeta externa</string>
+    <string name="moving_database_to_internal">Traslado de la base de datos a una carpeta interna</string>
     <string name="new_color">Nuevo color</string>
     <string name="next">Siguiente</string>
     <string name="no_auto_sort">No ordenar</string>

@@ -122,6 +122,7 @@
         <item quantity="one">နေ့</item>
         <item quantity="other">ရက်များ</item>
     </plurals>
+    <string name="decrypting_database_biometric">ဘိုင်ယိုမက်ထရစ်ဖြင့် ဒေတာဘေ့စ်ကို ဖွင့်ခြင်း</string>
     <string name="default_color_hint">ဤသည်မှာ မှတ်စုအသစ်များအတွက် မူလအရောင်ဖြစ်သည်။ ပြောင်းရန်အတွက် အခြားအရောင်တစ်ခုကို မူလအရောင်အဖြစ် သတ်မှတ်ပါ။</string>
     <string name="default_list_note_view_mode">စံစာရင်းမှတ်စု ကြည့်ရှုပုံစံ</string>
     <string name="delete">ဖျက်မည်</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">ဤသည်လည်း ဒေတာဘေ့စ်ကို ကုဒ်ပြောင်းမည်။</string>
     <string name="enable_lock_title">လက်ဗွေ/PIN ဖြင့် ဖွင့်လှစ်ခြင်းကို ဖွင့်ပါ။</string>
     <string name="enabled">ဖွင့်ထားသည်</string>
+    <string name="encrypting_database_biometric">ဘိုင်ယိုမက်ထရစ်ဖြင့် ဒေတာဘေ့စ်ကို ကုဒ်ဝှက်ခြင်း</string>
     <string name="error">အမှား</string>
     <string name="error_loading_data">ဒေတာဘေ့စ်မှ အချို့ဒေတာများကို တင်နေစဉ် အမှားဖြစ်ပေါ်ခဲ့သည်။ ပျက်စီးနေသော မှတ်စုများကို မပြသမည်။\nသင်သည် \'\'\'%1$s ကို အသုံးပြု၍ ဒေတာဘေ့စ်ကို သန့်ရှင်းနိုင်သည် (ပျက်စီးနေသော မှတ်စုများကို ဖျက်ခြင်းဖြင့်)။</string>
     <string name="error_while_renaming_file">ဖိုင်အမည်ပြောင်းစဉ် အမှားဖြစ်နေသည်</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…%1$d ဖိုင်ပို</item>
         <item quantity="other">…%1$d အခြားဖိုင်များ</item>
     </plurals>
+    <string name="moving_database_to_external">ဒေတာဘေ့စ်ကို ပြင်ပ ဖိုလ်ဒါသို့ ရွှေ့ခြင်း</string>
+    <string name="moving_database_to_internal">ဒေတာဘေ့စ်ကို အတွင်းပိုင်း ဖိုလ်ဒါသို့ ရွှေ့ပြောင်းခြင်း</string>
     <string name="new_color">အသစ်အရောင်</string>
     <string name="next">နောက်တစ်ခု</string>
     <string name="no_auto_sort">အလိုအလျောက် စီစဉ်ခြင်း မပြုပါ</string>

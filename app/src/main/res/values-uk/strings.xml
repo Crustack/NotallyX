@@ -119,13 +119,14 @@
     <string name="date_format_note_view">Формат дати й часу в нотатці</string>
     <string name="date_format_overview">Формат дати й часу в огляді нотаток</string>
     <plurals name="days">
+        <item quantity="zero">Днів</item>
+        <item quantity="one">День</item>
+        <item quantity="two">Дні</item>
         <item quantity="few">Дні</item>
         <item quantity="many">Днів</item>
-        <item quantity="one">День</item>
         <item quantity="other">Дня</item>
-        <item quantity="two">Дні</item>
-        <item quantity="zero">Днів</item>
     </plurals>
+    <string name="decrypting_database_biometric">Розшифрування бази даних за допомогою біометричних даних</string>
     <string name="default_color_hint">Це колір за замовчуванням для нових нотаток. Щоб змінити його, зробіть інший колір стандартним.</string>
     <string name="default_list_note_view_mode">Режим перегляду списку за замовчуванням</string>
     <string name="delete">Видалити</string>
@@ -178,6 +179,7 @@
     <string name="enable_lock_description">Це також зашифрує базу даних</string>
     <string name="enable_lock_title">Увімкнути блокування за допомогою біометрії або PIN-коду</string>
     <string name="enabled">Увімкнено</string>
+    <string name="encrypting_database_biometric">Шифрування бази даних за допомогою біометричних даних</string>
     <string name="error">Помилка</string>
     <string name="error_loading_data">Помилка під час завантаження деяких даних із бази даних. Пошкоджені нотатки не відображатимуться. Ви можете очистити базу даних (видаливши пошкоджені нотатки) за допомогою \'%1$s\'</string>
     <string name="error_while_renaming_file">Помилка під час перейменування файлу</string>
@@ -276,13 +278,15 @@
     <string name="months">Місяці</string>
     <string name="more">ще %1$d</string>
     <plurals name="more_files">
+        <item quantity="zero">…ще %1$d файлів</item>
+        <item quantity="one">…ще %1$d файл</item>
+        <item quantity="two">…ще %1$d файли</item>
         <item quantity="few">…ще %1$d файли</item>
         <item quantity="many">…ще %1$d файлів</item>
-        <item quantity="one">…ще %1$d файл</item>
         <item quantity="other">…ще %1$d файлів</item>
-        <item quantity="two">…ще %1$d файли</item>
-        <item quantity="zero">…ще %1$d файлів</item>
     </plurals>
+    <string name="moving_database_to_external">Переміщення бази даних у зовнішню папку</string>
+    <string name="moving_database_to_internal">Переміщення бази даних у внутрішню папку</string>
     <string name="new_color">Новий колір</string>
     <string name="next">Наступне</string>
     <string name="no_auto_sort">Без автосортування</string>
@@ -293,12 +297,12 @@
     <string name="note_too_big_truncating">Нотатка занадто велика для збереження, її було скорочено до %1$s символів (було: %2$s)</string>
     <string name="notes">Нотатки</string>
     <plurals name="notes">
+        <item quantity="zero">Нотаток</item>
+        <item quantity="one">Нотатка</item>
+        <item quantity="two">Нотатки</item>
         <item quantity="few">Нотатки</item>
         <item quantity="many">Нотаток</item>
-        <item quantity="one">Нотатка</item>
         <item quantity="other">Нотаток</item>
-        <item quantity="two">Нотатки</item>
-        <item quantity="zero">Нотаток</item>
     </plurals>
     <string name="notes_sorted_by">Сортувати за</string>
     <plurals name="notes_too_big_truncating">

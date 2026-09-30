@@ -122,6 +122,7 @@
         <item quantity="one">Zi</item>
         <item quantity="other">Zile</item>
     </plurals>
+    <string name="decrypting_database_biometric">Decriptarea bazei de date prin intermediul datelor biometrice</string>
     <string name="default_color_hint">Aceasta este culoarea implicită pentru notele noi. Pentru a o schimba, alege o altă culoare ca implicită</string>
     <string name="default_list_note_view_mode">Modul implicit de afișare a listelor și notelor</string>
     <string name="delete">Şterge</string>
@@ -174,6 +175,7 @@
     <string name="enable_lock_description">Aceasta va cripta și baza de date</string>
     <string name="enable_lock_title">Activează blocarea prin biometrie/PIN</string>
     <string name="enabled">Activat</string>
+    <string name="encrypting_database_biometric">Criptarea bazei de date prin intermediul datelor biometrice</string>
     <string name="error">Eroare</string>
     <string name="error_loading_data">A apărut o eroare la încărcarea unor date din baza de date. Notițele corupte nu vor fi afișate.\nPuteți curăța baza de date (ștergând notițele corupte) folosind „\'%1$s\'”</string>
     <string name="error_while_renaming_file">Eroare la redenumirea fișierului</string>
@@ -275,6 +277,8 @@
         <item quantity="one">…%1$d fișier în plus</item>
         <item quantity="other">…%1$d fișiere în plus</item>
     </plurals>
+    <string name="moving_database_to_external">Mutarea bazei de date într-un folder extern</string>
+    <string name="moving_database_to_internal">Mutarea bazei de date într-un folder intern</string>
     <string name="new_color">Culoare nouă</string>
     <string name="next">Următorul</string>
     <string name="no_auto_sort">Fără sortare automată</string>
