@@ -1,7 +1,6 @@
 package com.philkes.notallyx.presentation.view.misc
 
 import android.content.Context
-import android.os.Build
 import android.text.Editable
 import android.text.TextWatcher
 import android.text.method.KeyListener
@@ -16,6 +15,8 @@ open class EditTextWithWatcher(context: Context, attrs: AttributeSet) :
     var textWatcher: TextWatcher? = null
     private var onSelectionChange: ((selStart: Int, selEnd: Int) -> Unit)? = null
     private var keyListenerInstance: KeyListener? = null
+
+    private var isEditableMode = true
 
     override fun onSelectionChanged(selStart: Int, selEnd: Int) {
         super.onSelectionChanged(selStart, selEnd)
@@ -35,6 +36,7 @@ open class EditTextWithWatcher(context: Context, attrs: AttributeSet) :
     }
 
     fun setCanEdit(value: Boolean) {
+        isEditableMode = value
         if (!value) {
             clearFocus()
         }
@@ -44,19 +46,26 @@ open class EditTextWithWatcher(context: Context, attrs: AttributeSet) :
         isFocusable = value
         isFocusableInTouchMode = value
         setTextIsSelectable(true)
+    }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O_MR1) {
-            setOnClickListener {
-                if (value) {
-                    context.showKeyboard(this)
-                }
-            }
-            setOnFocusChangeListener { v, hasFocus ->
-                if (hasFocus && value) {
-                    context.showKeyboard(this)
-                }
-            }
+    override fun onFocusChanged(
+        focused: Boolean,
+        direction: Int,
+        previouslyFocusedRect: android.graphics.Rect?,
+    ) {
+        super.onFocusChanged(focused, direction, previouslyFocusedRect)
+        if (focused && isEditableMode) {
+            context.showKeyboard(this)
         }
+    }
+
+    override fun performClick(): Boolean {
+        val result = super.performClick()
+        if (isEditableMode) {
+            context.showKeyboard(this)
+            return true
+        }
+        return result
     }
 
     @Deprecated(
