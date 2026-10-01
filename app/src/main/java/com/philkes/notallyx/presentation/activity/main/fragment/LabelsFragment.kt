@@ -201,7 +201,7 @@ class LabelsFragment : Fragment(), LabelListener {
     private fun confirmDeletion(value: String) {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.delete_label)
-            .setMessage(R.string.your_notes_associated)
+            .setMessage("$value\n\n${getString(R.string.your_notes_associated)}")
             .setPositiveButton(R.string.delete) { _, _ -> model.deleteLabel(value) }
             .setCancelButton()
             .show()
