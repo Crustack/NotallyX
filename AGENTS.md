@@ -13,7 +13,7 @@
 ## Tech Stack & Conventions
 
 ### Language & Tooling
-- **Language**: Kotlin 1.9.0 (Standard Kotlin Idioms, Coroutines, Serialization).
+- **Language**: Kotlin 2.1.0 (Standard Kotlin Idioms, Coroutines, Serialization).
 - **Build System**: Gradle Kotlin DSL (`build.gradle.kts`), Android Gradle Plugin 8.7.3, KSP (`com.google.devtools.ksp`) for Room compiler.
 - **Code Formatter**: `ktfmt` with Kotlin standard style (`kotlinLangStyle`).
 

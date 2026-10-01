@@ -13,7 +13,7 @@ plugins {
     id("com.google.devtools.ksp")
     id("com.google.firebase.testlab")
     id("com.ncorti.ktfmt.gradle") version "0.20.1"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.0"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.0"
     id("io.github.crustack.android-translations-converter") version "1.0.7"
     id("io.github.crustack.auto-translation") version "1.0.5"
     id("io.github.takahirom.roborazzi")
@@ -347,7 +347,7 @@ dependencies {
     implementation("com.google.code.findbugs:jsr305:3.0.2")
     implementation("me.zhanghai.android.fastscroll:library:1.3.0")
     implementation("net.lingala.zip4j:zip4j:2.11.5")
-    implementation("net.zetetic:sqlcipher-android:4.13.0")
+    implementation("net.zetetic:sqlcipher-android:4.19.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("org.jsoup:jsoup:1.18.1")
     implementation("org.ocpsoft.prettytime:prettytime:4.0.6.Final")
@@ -372,7 +372,7 @@ dependencies {
     androidTestUtil("androidx.test:orchestrator:1.6.1")
 
     androidTestImplementation("androidx.room:room-testing:$roomVersion")
-    androidTestImplementation("androidx.work:work-testing:2.9.1")
+    androidTestImplementation("androidx.work:work-testing:2.12.0")
 
     val roborazziVersion = "1.43.1"
     testImplementation("io.github.takahirom.roborazzi:roborazzi:$roborazziVersion")
