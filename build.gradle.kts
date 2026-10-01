@@ -14,6 +14,7 @@ buildscript {
 plugins {
     id("com.google.devtools.ksp") version "1.9.0-1.0.13" apply false
     id("com.google.firebase.testlab") version "0.0.1-alpha13" apply false
+    id("io.github.takahirom.roborazzi") version "1.43.1" apply false
 }
 
 tasks.register<Delete>("clean") {
