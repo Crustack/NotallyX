@@ -307,8 +307,8 @@ abstract class NotallyFragment : Fragment(), ItemListener {
 
     private fun setupObserver() {
         getObservable().observe(viewLifecycleOwner) { list ->
-            notesAdapter?.submitList(list)
-            binding?.ImageView?.isVisible = list.isEmpty()
+            notesAdapter?.submitList(list ?: emptyList())
+            binding?.ImageView?.isVisible = list.isNullOrEmpty()
         }
 
         model.preferences.notesSorting.observe(viewLifecycleOwner) { notesSort ->

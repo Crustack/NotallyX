@@ -157,7 +157,11 @@ class NotallyXPreferences private constructor(private val context: ContextWrappe
         StringPreference(
             "autoBackup",
             preferences,
-            context.getExternalBackupsDirectory().toUri().toString(),
+            try {
+                context.getExternalBackupsDirectory().toUri().toString()
+            } catch (_: Exception) {
+                EMPTY_PATH
+            },
             R.string.auto_backups_folder,
         )
     val backupOnSave =
