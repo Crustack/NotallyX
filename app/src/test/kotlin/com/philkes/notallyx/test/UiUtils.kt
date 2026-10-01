@@ -1,0 +1,582 @@
+package com.philkes.notallyx.test
+
+// TODO: duplicate of androidTest UiUtils
+
+import android.os.SystemClock
+import android.util.Log
+import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
+import android.view.accessibility.AccessibilityEvent
+import android.widget.EditText
+import androidx.recyclerview.widget.RecyclerView
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.Root
+import androidx.test.espresso.UiController
+import androidx.test.espresso.ViewAction
+import androidx.test.espresso.ViewInteraction
+import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
+import androidx.test.espresso.action.ViewActions.scrollTo
+import androidx.test.espresso.action.ViewActions.typeTextIntoFocusedView
+import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.contrib.DrawerActions
+import androidx.test.espresso.matcher.BoundedMatcher
+import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
+import androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom
+import androidx.test.espresso.matcher.ViewMatchers.isChecked
+import androidx.test.espresso.matcher.ViewMatchers.isDescendantOfA
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.isNotChecked
+import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
+import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withParent
+import androidx.test.espresso.matcher.ViewMatchers.withText
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import cn.leaqi.drawer.SwipeDrawer
+import com.philkes.notallyx.R
+import com.philkes.notallyx.data.NotallyDatabase
+import junit.framework.TestCase.assertTrue
+import org.hamcrest.Description
+import org.hamcrest.Matcher
+import org.hamcrest.Matchers.allOf
+import org.hamcrest.TypeSafeMatcher
+
+val toolbarBackButton: ViewInteraction
+    get() =
+        onDisplayView(
+            childAtPosition(
+                allOf(withId(R.id.Toolbar), childAtPosition(withId(R.id.main_content_layout), 0)),
+                0,
+            )
+        )
+
+fun onLabelItem(labelText: String): ViewInteraction =
+    onView(
+        allOf(
+            withId(com.philkes.notallyx.R.id.LabelText),
+            withText(labelText),
+            withParent(withParent(withId(R.id.MainListView))),
+            isDisplayed(),
+        )
+    )
+
+fun childAtPosition(parentMatcher: Matcher<View>, position: Int): Matcher<View> {
+
+    return object : TypeSafeMatcher<View>() {
+        override fun describeTo(description: Description) {
+            description.appendText("Child at position $position in parent ")
+            parentMatcher.describeTo(description)
+        }
+
+        public override fun matchesSafely(view: View): Boolean {
+            val parent = view.parent
+            return parent is ViewGroup &&
+                parentMatcher.matches(parent) &&
+                view == parent.getChildAt(position)
+        }
+    }
+}
+
+// fun waitFor(matcher: Matcher<View>, timeoutMs: Long = 5_000) {
+//    val start = System.currentTimeMillis()
+//
+//    while (System.currentTimeMillis() - start < timeoutMs) {
+//        try {
+//            onView(matcher).check(matches(isDisplayed()))
+//            return
+//        } catch (_: NoMatchingViewException) {
+//            // Keep waiting
+//        } catch (_: AssertionError) {
+//            // View exists but isn't displayed yet
+//        }
+//
+//        Thread.sleep(50)
+//    }
+//
+//    // Let Espresso produce the normal, useful failure message
+//    onView(matcher).check(matches(isDisplayed()))
+// }
+//
+// fun waitForRecyclerViewPosition(
+//    recyclerViewMatcher: Matcher<View>,
+//    position: Int,
+//    timeoutMs: Long = 10_000,
+// ) {
+//    val start = System.currentTimeMillis()
+//
+//    while (System.currentTimeMillis() - start < timeoutMs) {
+//        try {
+//            onView(recyclerViewMatcher)
+//                .perform(
+//                    RecyclerViewActions.scrollToPosition<RecyclerView.ViewHolder>(position)
+//                )
+//
+//            return
+//        } catch (_: NoMatchingViewException) {
+//            // RecyclerView not found yet
+//        } catch (_: PerformException) {
+//            // Position doesn't exist yet
+//        }
+//
+//        Thread.sleep(50)
+//    }
+//
+//    // Produce Espresso's normal failure
+//    onView(recyclerViewMatcher)
+//        .perform(RecyclerViewActions.scrollToPosition<RecyclerView.ViewHolder>(position))
+// }
+
+fun ViewInteraction.checkIsPositionChildItem(position: Int, isChild: Boolean = true) =
+    check(
+        matches(
+            atPosition(
+                position = position,
+                itemMatcher =
+                    allOf(hasDescendant(if (isChild) isDrawerOpen() else isDrawerClosed())),
+            )
+        )
+    )
+
+/**
+ * Checks whether the item containing [text] matches the expected [checked] state, with optional
+ * assertions for list [position] and child indentation ([isChild]).
+ *
+ * @param text The text inside the item's EditText
+ * @param checked Expected state of the CheckBox (default: true)
+ * @param position Optional adapter position index to verify list order
+ * @param isChild Optional flag to check if item is indented (true = VISIBLE, false =
+ *   GONE/INVISIBLE)
+ */
+fun ViewInteraction.checkListItem(
+    position: Int,
+    text: String,
+    checked: Boolean? = null,
+    isChild: Boolean? = null,
+): ViewInteraction {
+    checkPositionHasText(position, text)
+    checked?.let { this.checkIsPositionItemChecked(position, it) }
+    //    isChild?.let {
+    //        SystemClock.sleep(300)
+    //        this.checkIsPositionChildItem(position, it)
+    //    }
+    return this
+}
+
+fun ViewInteraction.checkIsPositionItemChecked(position: Int, checked: Boolean = true) =
+    check(
+        matches(
+            atPosition(
+                position = position,
+                itemMatcher =
+                    hasDescendant(
+                        allOf(withId(R.id.CheckBox), if (checked) isChecked() else isNotChecked())
+                    ),
+            )
+        )
+    )
+
+fun ViewInteraction.checkPositionHasText(position: Int, text: String) =
+    check(
+        matches(atPosition(position = position, itemMatcher = allOf(hasDescendant(withText(text)))))
+    )
+
+// Custom matcher to target a specific position in a RecyclerView
+fun atPosition(position: Int, itemMatcher: Matcher<View>): Matcher<View> {
+    return object : BoundedMatcher<View, RecyclerView>(RecyclerView::class.java) {
+        override fun describeTo(description: Description) {
+            description.appendText("has item at position $position: ")
+            itemMatcher.describeTo(description)
+        }
+
+        override fun matchesSafely(recyclerView: RecyclerView): Boolean {
+            val viewHolder =
+                recyclerView.findViewHolderForAdapterPosition(position)
+                    ?: return false // Returns false if position doesn't exist or isn't bound
+            return itemMatcher.matches(viewHolder.itemView)
+        }
+    }
+}
+
+/**
+ * Finds the [dragHandleResId] inside the items matched by [sourceSelector] and [targetSelector],
+ * and delegates the drag-and-drop operation to [dragAndDrop].
+ *
+ * @param sourceSelector Selector matching the source item container or a child within it
+ * @param targetSelector Selector matching the target item container or a child within it
+ * @param dragSpeedMs Duration of the drag gesture in milliseconds
+ * @param dragHandleResId The resource ID of the drag handle icon (defaults to "dragHandle")
+ * @param packageName The application package ID
+ */
+
+/**
+ * Finds the item containing [text] in its EditText and sets its CheckBox to the target [checked]
+ * state if it is not already in that state.
+ *
+ * @param text The string text inside the item's EditText
+ * @param checked The desired state of the CheckBox (default: true)
+ */
+fun ViewInteraction.performListItemCheck(text: String, checked: Boolean = true): ViewInteraction {
+    val targetCheckBox =
+        onView(
+            allOf(
+                withId(R.id.CheckBox),
+                isDescendantOfA(
+                    allOf(
+                        withId(R.id.SwipeLayout),
+                        hasDescendant(allOf(withId(R.id.EditText), withText(text))),
+                    )
+                ),
+            )
+        )
+
+    // Check current state to avoid unnecessary toggle clicks
+    val currentMatcher = if (checked) isNotChecked() else isChecked()
+
+    try {
+        // If it matches the opposite state, click to toggle
+        targetCheckBox.check(matches(currentMatcher)).perform(click())
+    } catch (e: AssertionError) {
+        // Already in the desired state, no action needed
+    }
+
+    return this
+}
+
+/**
+ * Returns a ViewInteraction targeting a specific child view matching [viewMatcher] inside the
+ * RecyclerView item at [position].
+ */
+fun ViewInteraction.onPositionView(
+    position: Int,
+    childMatcher: Matcher<View>? = null,
+): ViewInteraction {
+    var itemContainer: View? = null
+
+    this.check { view, _ ->
+        if (view !is RecyclerView) {
+            throw IllegalArgumentException(
+                "onPositionView must be called on a RecyclerView ViewInteraction."
+            )
+        }
+
+        val viewHolder =
+            view.findViewHolderForAdapterPosition(position)
+                ?: throw AssertionError(
+                    "No ViewHolder found at position $position in RecyclerView."
+                )
+
+        itemContainer = viewHolder.itemView
+    }
+
+    val targetItem =
+        itemContainer
+            ?: throw IllegalStateException("Could not resolve itemView for position $position.")
+    return onView(allOf(childMatcher, isDescendantOfA(org.hamcrest.Matchers.`is`(targetItem))))
+}
+
+// TODO: not working yet
+/** Matches a SwipeDrawer that is currently open in the specified direction. */
+fun isDrawerOpen(): Matcher<View> {
+    return object : BoundedMatcher<View, SwipeDrawer>(SwipeDrawer::class.java) {
+        override fun describeTo(description: Description) {
+            description.appendText("is SwipeDrawer open")
+        }
+
+        override fun matchesSafely(swipeDrawer: SwipeDrawer): Boolean {
+            Log.e(
+                "UiUtils",
+                "isDrawerOpen: ${swipeDrawer.isShown}, direction: ${swipeDrawer.direction}, leftdragOpen: ${swipeDrawer.leftDragOpen}, rightDragOpen: ${swipeDrawer.rightDragOpen}",
+            )
+
+            return swipeDrawer.isShown
+        }
+    }
+}
+
+/** Matches a SwipeDrawer that is fully closed. */
+fun isDrawerClosed(): Matcher<View> {
+    return object : BoundedMatcher<View, SwipeDrawer>(SwipeDrawer::class.java) {
+        override fun describeTo(description: Description) {
+            description.appendText("is SwipeDrawer closed")
+        }
+
+        override fun matchesSafely(swipeDrawer: SwipeDrawer): Boolean {
+            Log.e(
+                "UiUtils",
+                "isDrawerOpen: ${swipeDrawer.isShown}, direction: ${swipeDrawer.direction}, leftdragOpen: ${swipeDrawer.leftDragOpen}, rightDragOpen: ${swipeDrawer.rightDragOpen}",
+            )
+            return !swipeDrawer.isShown
+        }
+    }
+}
+
+fun onDisplayView(viewMatcher: Matcher<View>) = onView(allOf(viewMatcher, isDisplayed()))
+
+fun navigateTo(fragmentId: Int) {
+    onView(withId(R.id.DrawerLayout)).perform(DrawerActions.open())
+    onDisplayView(allOf(withId(fragmentId), isDescendantOfA(withId(R.id.NavigationView))))
+        .perform(click())
+}
+
+fun Int.byId(viewMatcher: Matcher<View>? = null, checkDisplayed: Boolean = true): ViewInteraction {
+    val matcher = viewMatcher?.let { allOf(withId(this), it) } ?: withId(this)
+    return if (checkDisplayed) onDisplayView(matcher) else onView(matcher)
+}
+
+fun Int.byText(
+    viewMatcher: Matcher<View>? = null,
+    checkDisplayed: Boolean = true,
+): ViewInteraction {
+    val matcher = viewMatcher?.let { allOf(withText(this), it) } ?: withText(this)
+    return if (checkDisplayed) onDisplayView(matcher) else onView(matcher)
+}
+
+fun Int.byContentDescription(
+    viewMatcher: Matcher<View>? = null,
+    checkDisplayed: Boolean = true,
+): ViewInteraction {
+    val matcher =
+        viewMatcher?.let { allOf(withContentDescription(this), it) } ?: withContentDescription(this)
+    return if (checkDisplayed) onDisplayView(matcher) else onView(matcher)
+}
+
+fun String.byText(
+    viewMatcher: Matcher<View>? = null,
+    checkDisplayed: Boolean = true,
+): ViewInteraction {
+    val matcher = viewMatcher?.let { allOf(withText(this), it) } ?: withText(this)
+    return if (checkDisplayed) onDisplayView(matcher) else onView(matcher)
+}
+
+fun String.byContentDescription(
+    viewMatcher: Matcher<View>? = null,
+    checkDisplayed: Boolean = true,
+): ViewInteraction {
+    val matcher =
+        viewMatcher?.let { allOf(withContentDescription(this), it) } ?: withContentDescription(this)
+    return if (checkDisplayed) onDisplayView(matcher) else onView(matcher)
+}
+
+class ToastMatcher : TypeSafeMatcher<Root>() {
+
+    override fun describeTo(description: Description) {
+        description.appendText("is toast")
+    }
+
+    override fun matchesSafely(root: Root): Boolean {
+        val type = root.windowLayoutParams.get().type
+        if (type == WindowManager.LayoutParams.TYPE_TOAST) {
+            val windowToken = root.decorView.windowToken
+            val appToken = root.decorView.getApplicationWindowToken()
+            if (windowToken === appToken) {
+                return true
+            }
+        }
+        return false
+    }
+}
+
+fun isToast(): TypeSafeMatcher<Root> = ToastMatcher()
+
+fun assertToastDisplayed(textResId: Int, timeoutMs: Long = 10000) {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    assertToastDisplayed(context.getString(textResId), timeoutMs)
+}
+
+/**
+ * Source:
+ * https://medium.com/@andre.mendes.peixoto/how-to-reliably-assert-toast-messages-in-android-instrumented-tests-f94d830f4de1
+ */
+fun assertToastDisplayed(text: String, timeoutMs: Long = 10000) {
+    var toastDisplayed = false
+    val startTimeMs = System.currentTimeMillis()
+
+    // Set up accessibility event listener to catch toast notifications
+    InstrumentationRegistry.getInstrumentation().uiAutomation.setOnAccessibilityEventListener {
+        event ->
+        if (event.eventType == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) {
+            val className = event.className?.toString() ?: ""
+            val eventText = event.text.toString()
+
+            // Check if this is a Toast event with matching text
+            if (className.contains("android.widget.Toast") && eventText.contains(text)) {
+                toastDisplayed = true
+            }
+        }
+    }
+
+    // Wait for the toast to appear
+    while (!toastDisplayed && System.currentTimeMillis() - startTimeMs < timeoutMs) {
+        SystemClock.sleep(100)
+    }
+
+    // Clean up the listener
+    InstrumentationRegistry.getInstrumentation().uiAutomation.setOnAccessibilityEventListener(null)
+
+    assertTrue("Toast with text '$text' not found within ${timeoutMs}ms", toastDisplayed)
+}
+
+fun assertWorkExecuted(workName: String, timeoutMs: Long = 5000, pollIntervalMs: Long = 100) {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    val workManager = WorkManager.getInstance(context)
+    val startTime = System.currentTimeMillis()
+
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+        val workInfos = workManager.getWorkInfosForUniqueWork(workName).get()
+        val workInfo = workInfos.firstOrNull()
+
+        if (workInfo != null) {
+            // ONE-TIME WORK: Transitions to SUCCEEDED
+            if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+                return // Execution succeeded!
+            }
+
+            // PERIODIC WORK: Re-enqueues after successful run (runAttemptCount == 0)
+            // or is currently running
+            if (workInfo.state == WorkInfo.State.ENQUEUED && workInfo.runAttemptCount == 0) {
+                // If it was enqueued and runAttemptCount is 0, check if execution happened
+                val hasCompletedPeriod = workInfo.nextScheduleTimeMillis > 0
+                if (hasCompletedPeriod) {
+                    return // Periodic execution completed successfully!
+                }
+            }
+        }
+
+        Thread.sleep(pollIntervalMs)
+    }
+
+    // Capture final state for descriptive failure message
+    val finalState =
+        workManager.getWorkInfosForUniqueWork(workName).get().firstOrNull()?.state?.name
+            ?: "NOT_SCHEDULED"
+
+    throw AssertionError(
+        "Work '$workName' did not complete successfully within ${timeoutMs}ms. Final state: $finalState"
+    )
+}
+
+fun waitUntilSucceeds(timeoutMs: Long = 5000, interaction: () -> ViewInteraction) {
+    val endTime = System.currentTimeMillis() + timeoutMs
+    var last: Throwable? = null
+    while (System.currentTimeMillis() < endTime) {
+        try {
+            interaction.invoke()
+            return
+        } catch (t: Throwable) {
+            last = t
+        }
+        SystemClock.sleep(100)
+    }
+    throw AssertionError("Condition not met within ${timeoutMs}ms", last)
+}
+
+fun waitUntil(timeoutMs: Long = 5000, condition: () -> Boolean) {
+    val endTime = System.currentTimeMillis() + timeoutMs
+    var last: Throwable? = null
+    while (System.currentTimeMillis() < endTime) {
+        try {
+            if (condition.invoke()) return
+        } catch (t: Throwable) {
+            last = t
+        }
+        SystemClock.sleep(100)
+    }
+    throw AssertionError("Condition not met within ${timeoutMs}ms", last)
+}
+
+fun checkAndUpdateNoteTitle(noteIdx: Int, textToMatch: String, textToAdd: String) {
+    waitUntilSucceeds {
+        R.id.MainListView.byId()
+            .onPositionView(noteIdx, withId(R.id.Title))
+            .check(matches(withText(textToMatch)))
+            .perform(click())
+    }
+    R.id.EnterTitle.byId()
+        .perform(
+            click(),
+            moveCursorToEnd(),
+            typeTextIntoFocusedView(textToAdd),
+            closeSoftKeyboard(),
+        )
+    toolbarBackButton.perform(click())
+    waitUntilSucceeds {
+        R.id.MainListView.byId()
+            .onPositionView(noteIdx, withId(R.id.Title))
+            .check(matches(withText(textToMatch + textToAdd)))
+    }
+}
+
+fun waitUntilSettingsValue(settingId: Int, valueResId: Int) {
+    waitUntilSucceeds {
+        onView(withId(settingId))
+            .perform(scrollTo())
+            .check(matches(hasDescendant(allOf(withId(R.id.Value), withText(valueResId)))))
+    }
+}
+
+fun enableBiometricLock() {
+    onView(withId(R.id.BiometricLock)).perform(scrollTo(), click())
+    R.string.enabled.byText().perform(click())
+    R.string.continue_.byText().perform(scrollTo(), click())
+    waitUntilSettingsValue(R.id.BiometricLock, R.string.enabled)
+}
+
+fun disableBiometricLock() {
+    onView(withId(R.id.BiometricLock)).perform(scrollTo(), click())
+    R.string.disabled.byText().perform(click())
+    R.string.continue_.byText().perform(scrollTo(), click())
+    waitUntilSettingsValue(R.id.BiometricLock, R.string.disabled)
+}
+
+fun enableDataInPublic() {
+    onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
+    R.string.enabled.byText().perform(click())
+    waitUntilSettingsValue(R.id.DataInPublicFolder, R.string.enabled)
+    waitUntil(10_000L) {
+        NotallyDatabase.getCurrentDatabaseFile(context) ==
+            NotallyDatabase.getExternalDatabaseFile(context)
+    }
+}
+
+fun disableDataInPublic() {
+    onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
+    R.string.disabled.byText().perform(click())
+    waitUntilSettingsValue(R.id.DataInPublicFolder, R.string.disabled)
+    waitUntil(10_000L) {
+        NotallyDatabase.getCurrentDatabaseFile(context) ==
+            NotallyDatabase.getInternalDatabaseFile(context)
+    }
+}
+
+fun moveCursorToEnd(): ViewAction {
+    return object : ViewAction {
+        override fun getConstraints(): Matcher<View> {
+            return isAssignableFrom(EditText::class.java)
+        }
+
+        override fun getDescription(): String {
+            return "Move cursor to end of EditText"
+        }
+
+        override fun perform(uiController: UiController?, view: View?) {
+            val editText = view as EditText
+            editText.setSelection(editText.text.length)
+        }
+    }
+}
+
+fun clickChildViewWithId(id: Int): ViewAction {
+    return object : ViewAction {
+        override fun getConstraints(): Matcher<View>? = null
+
+        override fun getDescription(): String = "Click on a child view with specified id: $id."
+
+        override fun perform(uiController: UiController, view: View) {
+            val childView = view.findViewById<View>(id)
+            childView.performClick()
+        }
+    }
+}

@@ -63,7 +63,6 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
         super.onCreate()
         CaocConfig.Builder.create().customCrashDataCollector(PidCrashDataCollector()).apply()
         registerActivityLifecycleCallbacks(this)
-        if (isTestRunner()) return
         preferences = NotallyXPreferences.getInstance(this)
         if (preferences.useDynamicColors.value) {
             if (DynamicColors.isDynamicColorAvailable()) {
@@ -72,6 +71,7 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
         } else {
             setTheme(R.style.AppTheme)
         }
+        if (isTestRunner()) return
         restorePinnedNotifications()
         preferences.theme.observeForeverWithPrevious { (oldTheme, theme) ->
             when (theme) {

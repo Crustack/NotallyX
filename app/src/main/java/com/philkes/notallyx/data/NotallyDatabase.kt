@@ -118,8 +118,12 @@ abstract class NotallyDatabase : RoomDatabase() {
         fun getDatabase(context: ContextWrapper): LiveData<NotallyDatabase?> {
             if (instance.value == null && !replacementInProgress) {
                 synchronized(this) {
-                    val preferences = NotallyXPreferences.getInstance(context)
-                    this.instance.value = createInstance(context, preferences)
+                    if (isTestRunner()) {
+                        this.instance.value = getTestDatabase(context)
+                    } else {
+                        val preferences = NotallyXPreferences.getInstance(context)
+                        this.instance.value = createInstance(context, preferences)
+                    }
                     return instance
                 }
             }

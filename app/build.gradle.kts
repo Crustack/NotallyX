@@ -16,6 +16,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.0"
     id("io.github.crustack.android-translations-converter") version "1.0.7"
     id("io.github.crustack.auto-translation") version "1.0.5"
+    id("io.github.takahirom.roborazzi")
 }
 
 android {
@@ -314,6 +315,14 @@ afterEvaluate {
     }
 }
 
+roborazzi {
+    // Directory for reference images
+    outputDir.set(file("src/screenshots"))
+    compare {
+        outputDir.set(file("build/outputs/screenshots_comparison"))
+    }
+}
+
 dependencies {
     val navVersion = "2.3.5"
     val roomVersion = "2.6.1"
@@ -365,6 +374,11 @@ dependencies {
     androidTestImplementation("androidx.room:room-testing:$roomVersion")
     androidTestImplementation("androidx.work:work-testing:2.9.1")
 
+    val roborazziVersion = "1.43.1"
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:$roborazziVersion")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-junit-rule:$roborazziVersion")
+    testImplementation("androidx.test.espresso:espresso-core:$espressoVersion")
+    testImplementation("androidx.test.ext:junit:1.3.0")
     testImplementation("androidx.arch.core:core-testing:2.2.0")
     testImplementation("androidx.test:core-ktx:$androidxTestVersion")
     testImplementation("androidx.test:core:$androidxTestVersion")
@@ -376,4 +390,6 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.13.0")
     testImplementation("org.robolectric:robolectric:4.16.1")
     testImplementation("com.github.luben:zstd-jni:1.5.7-6")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+    testImplementation("androidx.test.espresso:espresso-contrib:$espressoVersion")
 }
