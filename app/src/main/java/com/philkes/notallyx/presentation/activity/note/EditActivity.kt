@@ -161,9 +161,8 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         }
     }
 
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (intent == null) return
         setIntent(intent)
         val selectedId = intent.getLongExtra(EXTRA_SELECTED_BASE_NOTE, -1L)
         if (selectedId != -1L) {

@@ -13,3 +13,4 @@ Gemfile*
 *.sh
 !generate-changelogs.sh
 temp
+.kotlin

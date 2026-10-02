@@ -405,8 +405,8 @@ fun Folder.movedToResId(): Int {
     }
 }
 
-fun RadioGroup.checkedTag(): Any {
-    return this.findViewById<RadioButton?>(this.checkedRadioButtonId).tag
+fun RadioGroup.checkedTag(): Any? {
+    return this.findViewById<RadioButton?>(this.checkedRadioButtonId)?.tag
 }
 
 fun Context.showKeyboard(view: View) {
@@ -1127,15 +1127,14 @@ fun RecyclerView.initListView(context: Context) {
 }
 
 val RecyclerView.focusedViewHolder
-    get() =
-        focusedChild?.let { view ->
-            val position = getChildAdapterPosition(view)
-            if (position == RecyclerView.NO_POSITION) {
-                null
-            } else {
-                findViewHolderForAdapterPosition(position)
-            }
+    get() = focusedChild?.let { view ->
+        val position = getChildAdapterPosition(view)
+        if (position == RecyclerView.NO_POSITION) {
+            null
+        } else {
+            findViewHolderForAdapterPosition(position)
         }
+    }
 
 fun RecyclerView.showKeyboardOnFocusedItem() {
     (focusedViewHolder as? ListItemVH)?.let {
