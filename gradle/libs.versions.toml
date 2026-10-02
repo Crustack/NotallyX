@@ -1,0 +1,144 @@
+[versions]
+# SDK / JVM
+compileSdk = "36"
+minSdk = "21"
+targetSdk = "36"
+jvmTarget = "1.8"
+ndk = "29.0.13113456"
+
+# Plugins
+agp = "8.13.2"
+kotlin = "2.1.0"
+ksp = "2.1.0-1.0.29"
+ktfmt = "0.20.1"
+firebaseTestLab = "0.0.1-alpha13"
+roborazzi = "1.43.1"
+translationsConverter = "1.0.7"
+autoTranslation = "1.0.5"
+kotlinSerialization = "2.1.0"
+
+# Libraries
+navigation = "2.3.5"
+room = "2.6.1"
+preference = "1.2.1"
+lifecycle = "2.8.7"
+securityCrypto = "1.1.0-alpha06"
+sqlite = "2.4.0"
+work = "2.9.1"
+biometric = "1.1.0"
+customactivityoncrash = "2.4.0"
+subsamplingScaleImageView = "3.10.0"
+glide = "4.15.1"
+swipeDrawer = "1.6"
+colorpicker = "2.3.0"
+material = "1.12.0"
+jsr305 = "3.0.2"
+fastscroll = "1.3.0"
+zip4j = "2.11.5"
+sqlcipher = "4.13.0"
+kotlinxSerialization = "1.6.3"
+jsoup = "1.18.1"
+prettytime = "4.0.6.Final"
+simpleXml = "2.7.1"
+commonmark = "0.27.0"
+zstd = "1.5.7-6"
+commonsConfiguration = "2.4"
+
+# Test
+espresso = "3.7.0"
+androidxTest = "1.7.0"
+uiautomator = "2.3.0"
+junitExt = "1.3.0"
+testRunner = "1.7.0"
+testRules = "1.7.0"
+orchestrator = "1.6.1"
+workTesting = "2.12.0"
+coreTesting = "2.2.0"
+mockk = "1.13.12"
+junit = "4.13.2"
+assertj = "3.24.2"
+json = "20180813"
+mockitoKotlin = "5.4.0"
+mockitoCore = "5.13.0"
+robolectric = "4.16.1"
+kotlinxCoroutinesTest = "1.8.0"
+
+[libraries]
+# AndroidX
+androidx-navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigation" }
+androidx-navigation-ui = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigation" }
+androidx-preference = { group = "androidx.preference", name = "preference-ktx", version.ref = "preference" }
+androidx-lifecycle-livedata = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "lifecycle" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
+androidx-sqlite = { group = "androidx.sqlite", name = "sqlite-ktx", version.ref = "sqlite" }
+androidx-work = { group = "androidx.work", name = "work-runtime", version.ref = "work" }
+androidx-work-testing = { group = "androidx.work", name = "work-testing", version.ref = "workTesting" }
+androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
+
+# Third-party
+customactivityoncrash = { group = "cat.ereza", name = "customactivityoncrash", version.ref = "customactivityoncrash" }
+subsampling-scale-image-view = { group = "com.davemorrissey.labs", name = "subsampling-scale-image-view-androidx", version.ref = "subsamplingScaleImageView" }
+glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+swipe-drawer = { group = "cn.Leaqi", name = "SwipeDrawer", version.ref = "swipeDrawer" }
+colorpickerview = { group = "com.github.skydoves", name = "colorpickerview", version.ref = "colorpicker" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+jsr305 = { group = "com.google.code.findbugs", name = "jsr305", version.ref = "jsr305" }
+fastscroll = { group = "me.zhanghai.android.fastscroll", name = "library", version.ref = "fastscroll" }
+zip4j = { group = "net.lingala.zip4j", name = "zip4j", version.ref = "zip4j" }
+sqlcipher = { group = "net.zetetic", name = "sqlcipher-android", version.ref = "sqlcipher" }
+kotlinx-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
+prettytime = { group = "org.ocpsoft.prettytime", name = "prettytime", version.ref = "prettytime" }
+simple-xml = { group = "org.simpleframework", name = "simple-xml", version.ref = "simpleXml" }
+commonmark = { group = "org.commonmark", name = "commonmark", version.ref = "commonmark" }
+commonmark-gfm-strikethrough = { group = "org.commonmark", name = "commonmark-ext-gfm-strikethrough", version.ref = "commonmark" }
+commons-configuration = { group = "org.apache.commons", name = "commons-configuration2", version.ref = "commonsConfiguration" }
+
+# Test
+androidx-test-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
+androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
+androidx-test-espresso-contrib = { group = "androidx.test.espresso", name = "espresso-contrib", version.ref = "espresso" }
+androidx-test-espresso-intents = { group = "androidx.test.espresso", name = "espresso-intents", version.ref = "espresso" }
+androidx-test-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitExt" }
+androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "testRunner" }
+androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "testRules" }
+androidx-test-orchestrator = { group = "androidx.test", name = "orchestrator", version.ref = "orchestrator" }
+androidx-test-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "androidxTest" }
+androidx-test-core = { group = "androidx.test", name = "core", version.ref = "androidxTest" }
+androidx-core-testing = { group = "androidx.arch.core", name = "core-testing", version.ref = "coreTesting" }
+roborazzi = { group = "io.github.takahirom.roborazzi", name = "roborazzi", version.ref = "roborazzi" }
+roborazzi-junit-rule = { group = "io.github.takahirom.roborazzi", name = "roborazzi-junit-rule", version.ref = "roborazzi" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+assertj = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
+json = { group = "org.json", name = "json", version.ref = "json" }
+mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockitoKotlin" }
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockitoCore" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
+
+zstd-jni-test = { group = "com.github.luben", name = "zstd-jni", version.ref = "zstd" }
+
+[bundles]
+# Navigation
+navigation = ["androidx-navigation-fragment", "androidx-navigation-ui"]
+# Room
+room = ["androidx-room-ktx", "androidx-room-runtime"]
+# CommonMark
+commonmark = ["commonmark", "commonmark-gfm-strikethrough"]
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+firebase-testlab = { id = "com.google.firebase.testlab", version.ref = "firebaseTestLab" }
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
+ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlinSerialization" }
+translations-converter = { id = "io.github.crustack.android-translations-converter", version.ref = "translationsConverter" }
+auto-translation = { id = "io.github.crustack.auto-translation", version.ref = "autoTranslation" }

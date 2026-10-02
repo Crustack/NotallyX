@@ -2,21 +2,20 @@ import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
 import org.apache.commons.configuration2.PropertiesConfiguration
 import org.apache.commons.configuration2.io.FileHandler
-import org.gradle.kotlin.dsl.androidTestImplementation
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.parcelize")
-    id("com.google.devtools.ksp")
-    id("com.google.firebase.testlab")
-    id("com.ncorti.ktfmt.gradle") version "0.20.1"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.0"
-    id("io.github.crustack.android-translations-converter") version "1.0.7"
-    id("io.github.crustack.auto-translation") version "1.0.5"
-    id("io.github.takahirom.roborazzi")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.firebase.testlab)
+    alias(libs.plugins.ktfmt)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.translations.converter)
+    alias(libs.plugins.auto.translation)
+    alias(libs.plugins.roborazzi)
 }
 
 android {
@@ -324,72 +323,60 @@ roborazzi {
 }
 
 dependencies {
-    val navVersion = "2.3.5"
-    val roomVersion = "2.6.1"
-
-    implementation("androidx.navigation:navigation-fragment-ktx:$navVersion")
-    implementation("androidx.navigation:navigation-ui-ktx:$navVersion")
-    implementation("androidx.preference:preference-ktx:1.2.1")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
-    ksp("androidx.room:room-compiler:$roomVersion")
-    implementation("androidx.room:room-ktx:$roomVersion")
-    implementation("androidx.room:room-runtime:$roomVersion")
-    implementation("androidx.security:security-crypto:1.1.0-alpha06")
-    implementation("androidx.sqlite:sqlite-ktx:2.4.0")
-    implementation("androidx.work:work-runtime:2.9.1")
-    implementation("androidx.biometric:biometric:1.1.0")
-    implementation("cat.ereza:customactivityoncrash:2.4.0")
-    implementation("com.davemorrissey.labs:subsampling-scale-image-view-androidx:3.10.0")
-    implementation("com.github.bumptech.glide:glide:4.15.1")
-    implementation("cn.Leaqi:SwipeDrawer:1.6")
-    implementation("com.github.skydoves:colorpickerview:2.3.0")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("com.google.code.findbugs:jsr305:3.0.2")
-    implementation("me.zhanghai.android.fastscroll:library:1.3.0")
-    implementation("net.lingala.zip4j:zip4j:2.11.5")
-    implementation("net.zetetic:sqlcipher-android:4.19.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-    implementation("org.jsoup:jsoup:1.18.1")
-    implementation("org.ocpsoft.prettytime:prettytime:4.0.6.Final")
-    implementation("org.simpleframework:simple-xml:2.7.1") {
+    implementation(libs.bundles.navigation)
+    implementation(libs.androidx.preference)
+    implementation(libs.androidx.lifecycle.livedata)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.bundles.room)
+    implementation(libs.androidx.security.crypto)
+    implementation(libs.androidx.sqlite)
+    implementation(libs.androidx.work)
+    implementation(libs.androidx.biometric)
+    implementation(libs.customactivityoncrash)
+    implementation(libs.subsampling.scale.image.view)
+    implementation(libs.glide)
+    implementation(libs.swipe.drawer)
+    implementation(libs.colorpickerview)
+    implementation(libs.material)
+    implementation(libs.jsr305)
+    implementation(libs.fastscroll)
+    implementation(libs.zip4j)
+    implementation(libs.sqlcipher)
+    implementation(libs.kotlinx.serialization)
+    implementation(libs.jsoup)
+    implementation(libs.prettytime)
+    implementation(libs.simple.xml) {
         exclude(group = "xpp3", module = "xpp3")
     }
-    implementation("org.commonmark:commonmark:0.27.0")
-    implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.27.0")
-    implementation("com.github.luben:zstd-jni:1.5.7-6@aar")
+    implementation(libs.bundles.commonmark)
+    implementation("com.github.luben:zstd-jni:${libs.versions.zstd.get()}@aar")
 
-    val espressoVersion = "3.7.0"
-    val androidxTestVersion = "1.7.0"
+    androidTestImplementation(libs.androidx.test.uiautomator)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.androidx.test.espresso.contrib)
+    androidTestImplementation(libs.androidx.test.espresso.intents)
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestUtil(libs.androidx.test.orchestrator)
+    androidTestImplementation(libs.androidx.room.testing)
+    androidTestImplementation(libs.androidx.work.testing)
 
-    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
-    androidTestImplementation("androidx.test.espresso:espresso-core:$espressoVersion")
-    androidTestImplementation("androidx.test.espresso:espresso-contrib:$espressoVersion")
-    androidTestImplementation("androidx.test.espresso:espresso-intents:$espressoVersion")
-    androidTestImplementation("androidx.test.ext:junit:1.3.0")
-
-    androidTestImplementation("androidx.test:runner:$androidxTestVersion")
-    androidTestImplementation("androidx.test:rules:$androidxTestVersion")
-    androidTestUtil("androidx.test:orchestrator:1.6.1")
-
-    androidTestImplementation("androidx.room:room-testing:$roomVersion")
-    androidTestImplementation("androidx.work:work-testing:2.12.0")
-
-    val roborazziVersion = "1.43.1"
-    testImplementation("io.github.takahirom.roborazzi:roborazzi:$roborazziVersion")
-    testImplementation("io.github.takahirom.roborazzi:roborazzi-junit-rule:$roborazziVersion")
-    testImplementation("androidx.test.espresso:espresso-core:$espressoVersion")
-    testImplementation("androidx.test.ext:junit:1.3.0")
-    testImplementation("androidx.arch.core:core-testing:2.2.0")
-    testImplementation("androidx.test:core-ktx:$androidxTestVersion")
-    testImplementation("androidx.test:core:$androidxTestVersion")
-    testImplementation("io.mockk:mockk:1.13.12")
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.assertj:assertj-core:3.24.2")
-    testImplementation("org.json:json:20180813")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
-    testImplementation("org.mockito:mockito-core:5.13.0")
-    testImplementation("org.robolectric:robolectric:4.16.1")
-    testImplementation("com.github.luben:zstd-jni:1.5.7-6")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
-    testImplementation("androidx.test.espresso:espresso-contrib:$espressoVersion")
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.junit.rule)
+    testImplementation(libs.androidx.test.espresso.core)
+    testImplementation(libs.androidx.test.junit)
+    testImplementation(libs.androidx.core.testing)
+    testImplementation(libs.androidx.test.core.ktx)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.mockk)
+    testImplementation(libs.junit)
+    testImplementation(libs.assertj)
+    testImplementation(libs.json)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.zstd.jni.test)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.test.espresso.contrib)
 }
