@@ -4,7 +4,6 @@ import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Context
 import android.graphics.drawable.Drawable
-import android.os.Build
 import android.util.AttributeSet
 import android.view.animation.AnimationUtils
 import androidx.appcompat.widget.AppCompatCheckBox
@@ -66,16 +65,14 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 
     private fun animateButtonDrawable() {
         val targetDrawable = getCurrentDrawable()
-        val currentDrawable =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) buttonDrawable else background
         val fadeOut =
-            ObjectAnimator.ofInt(currentDrawable, "alpha", 255, 0).apply {
+            ObjectAnimator.ofInt(this.buttonDrawable, "alpha", 255, 0).apply {
                 duration = 33
                 addListener(onEnd = { buttonDrawable = targetDrawable })
             }
 
         val fadeIn =
-            ObjectAnimator.ofInt(currentDrawable, "alpha", 0, 255).apply {
+            ObjectAnimator.ofInt(this.buttonDrawable, "alpha", 0, 255).apply {
                 duration = 166
                 interpolator =
                     AnimationUtils.loadInterpolator(

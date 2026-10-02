@@ -4,7 +4,7 @@
 
 **NotallyX** is an open-source, minimalistic, yet feature-rich note-taking Android application built with Kotlin. It provides users with a distraction-free experience for creating text notes, task lists, rich-text formatting, media attachments (images, audio, files), labels, reminders, and encrypted backups.
 
-- **Target Platform**: Android (Min SDK: 21, Compile/Target SDK: 36, JVM Target: 1.8).
+- **Target Platform**: Android (Min SDK: 23, Compile/Target SDK: 36, JVM Target: 1.8).
 - **Core Architecture**: MVVM (Model-View-ViewModel) architecture backed by Android Jetpack components (Room, LiveData, ViewModel, Navigation Component, WorkManager) with ViewBinding and DataBinding.
 - **Key Tenets**: User privacy, offline-first reliability, non-destructive data handling, robust backup/restore mechanisms, and clean Kotlin idioms.
 

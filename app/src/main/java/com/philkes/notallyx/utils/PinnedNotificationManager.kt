@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.service.notification.StatusBarNotification
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import com.philkes.notallyx.R
@@ -21,7 +20,6 @@ object PinnedNotificationManager {
     private const val GROUP_PINNED = "notallyx.notifications.group.1.pinned"
     private const val SUMMARY_ID = -1
 
-    @RequiresApi(Build.VERSION_CODES.M)
     fun getPinnedNotifications(context: Context): List<StatusBarNotification?> {
         val manager = context.getSystemService<NotificationManager>()!!
         return manager.activeNotifications.filter { it.tag == NOTIFICATION_TAG }
@@ -72,10 +70,9 @@ object PinnedNotificationManager {
         val manager = context.getSystemService<NotificationManager>()!!
         manager.cancel(NOTIFICATION_TAG, noteId.toInt())
         if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                manager.activeNotifications.none {
-                    it.tag == NOTIFICATION_TAG && it.id != noteId.toInt()
-                }
+            manager.activeNotifications.none {
+                it.tag == NOTIFICATION_TAG && it.id != noteId.toInt()
+            }
         ) {
             manager.cancel(SUMMARY_ID)
         }
