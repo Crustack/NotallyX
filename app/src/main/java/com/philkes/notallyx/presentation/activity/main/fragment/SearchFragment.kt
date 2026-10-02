@@ -10,7 +10,7 @@ import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.isEmpty
 
-class SearchFragment : NotallyFragment() {
+class SearchFragment : NotesFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         // TODO: autofocus and show keyboard
@@ -27,7 +27,7 @@ class SearchFragment : NotallyFragment() {
         model.currentLabel = initialLabel
         if (initialLabel?.isEmpty() == true) {
             val checked =
-                when (initialFolder ?: model.folder.value) {
+                when (initialFolder ?: model.folder.value ?: Folder.NOTES) {
                     Folder.NOTES -> R.id.Notes
                     Folder.DELETED -> R.id.Deleted
                     Folder.ARCHIVED -> R.id.Archived
@@ -36,9 +36,9 @@ class SearchFragment : NotallyFragment() {
             binding?.ChipGroup?.apply {
                 setOnCheckedStateChangeListener { _, checkedId ->
                     when (checkedId.first()) {
-                        R.id.Notes -> model.folder.value = Folder.NOTES
-                        R.id.Deleted -> model.folder.value = Folder.DELETED
-                        R.id.Archived -> model.folder.value = Folder.ARCHIVED
+                        R.id.Notes -> model.setFolder(Folder.NOTES)
+                        R.id.Deleted -> model.setFolder(Folder.DELETED)
+                        R.id.Archived -> model.setFolder(Folder.ARCHIVED)
                     }
                 }
                 check(checked)

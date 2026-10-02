@@ -3,13 +3,13 @@ package com.philkes.notallyx.presentation.view.note.action
 import androidx.annotation.ColorInt
 import com.philkes.notallyx.presentation.activity.note.NoteActionHandler
 import com.philkes.notallyx.presentation.activity.note.NoteListActionHandler
-import com.philkes.notallyx.presentation.viewmodel.NotallyModel
+import com.philkes.notallyx.presentation.viewmodel.edit.NoteModel
 import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 import com.philkes.notallyx.presentation.viewmodel.preference.EditListAction
 
 /** BottomSheet inside list-note for all common note actions and list-item actions. */
 class MoreListBottomSheet(
-    model: NotallyModel,
+    model: NoteModel,
     @ColorInt color: Int?,
     actionHandler: NoteActionHandler,
     listActionHandler: NoteListActionHandler,
@@ -25,7 +25,7 @@ class MoreListBottomSheet(
         const val TAG = "MoreListBottomSheet"
 
         private fun createActions(
-            model: NotallyModel,
+            model: NoteModel,
             actionHandler: NoteActionHandler,
             listActionHandler: NoteListActionHandler,
             topActions: Collection<EditAction>,

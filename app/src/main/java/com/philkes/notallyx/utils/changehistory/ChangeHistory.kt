@@ -1,7 +1,7 @@
 package com.philkes.notallyx.utils.changehistory
 
 import android.util.Log
-import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
+import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import kotlin.IllegalStateException
 
 class ChangeHistory(
@@ -9,10 +9,10 @@ class ChangeHistory(
     private val maxSize: Int = 1000
 ) {
     private val changeStack = ArrayList<Change>()
-    var stackPointer = NotNullLiveData(-1)
+    var stackPointer = NotNullMutableLiveData(-1)
 
-    internal val canUndo = NotNullLiveData(false)
-    internal val canRedo = NotNullLiveData(false)
+    internal val canUndo = NotNullMutableLiveData(false)
+    internal val canRedo = NotNullMutableLiveData(false)
 
     init {
         stackPointer.observeForever {

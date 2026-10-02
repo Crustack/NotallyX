@@ -60,7 +60,7 @@ import com.philkes.notallyx.presentation.setTextSizeSp
 import com.philkes.notallyx.presentation.setupProgressDialog
 import com.philkes.notallyx.presentation.setupReminderChip
 import com.philkes.notallyx.presentation.showKeyboard
-import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
+import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import com.philkes.notallyx.presentation.view.note.ErrorAdapter
 import com.philkes.notallyx.presentation.view.note.action.ActionSelectionBottomSheet
 import com.philkes.notallyx.presentation.view.note.action.AddBottomSheet
@@ -68,7 +68,8 @@ import com.philkes.notallyx.presentation.view.note.action.MoreNoteBottomSheet
 import com.philkes.notallyx.presentation.view.note.audio.AudioAdapter
 import com.philkes.notallyx.presentation.view.note.preview.PreviewFileAdapter
 import com.philkes.notallyx.presentation.view.note.preview.PreviewImageAdapter
-import com.philkes.notallyx.presentation.viewmodel.NotallyModel
+import com.philkes.notallyx.presentation.viewmodel.edit.EditActivityViewModel
+import com.philkes.notallyx.presentation.viewmodel.edit.NoteModel
 import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
@@ -99,7 +100,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     private lateinit var fileAdapter: PreviewFileAdapter
     protected var search = Search()
 
-    internal val notallyModel: NotallyModel by viewModels()
+    internal val notallyModel: EditActivityViewModel by viewModels()
     protected val actionHandler: NoteActionHandler by lazy { NoteActionHandler(this, notallyModel) }
 
     internal lateinit var changeHistory: ChangeHistory
@@ -234,9 +235,10 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         if (
             !notallyModel.isNewNote && notallyModel.type == Type.LIST && savedInstanceState == null
         ) {
-            val lastUsedViewMode = notallyModel.viewMode.value
-            notallyModel.viewMode.value =
+            val lastUsedViewMode = notallyModel.viewMode.value!!
+            notallyModel.setViewMode(
                 preferences.defaultListNoteViewMode.value.toNoteViewMode(lastUsedViewMode)
+            )
         }
         if (initListeners) configureUI()
         binding.ScrollView.visibility = VISIBLE
@@ -750,7 +752,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 )
             },
             onLongClick = { label ->
-                displayEditLabelDialog(label, baseModel) { oldLabel, newLabel ->
+                displayEditLabelDialog(label, notallyModel) { oldLabel, newLabel ->
                     notallyModel.labels.apply {
                         remove(oldLabel)
                         add(newLabel)
@@ -894,7 +896,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             }
 
         val message =
-            if (errors.isNotEmpty() && errors[0].fileType == NotallyModel.FileType.IMAGE) {
+            if (errors.isNotEmpty() && errors[0].fileType == NoteModel.FileType.IMAGE) {
                 R.plurals.cant_add_images
             } else {
                 R.plurals.cant_add_files
@@ -911,7 +913,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     private fun setupAudios() {
         audioAdapter = AudioAdapter { position: Int ->
             if (position != -1) {
-                val audio = notallyModel.audios.value[position]
+                val audio = notallyModel.audios.value!![position]
                 val intent = Intent(this, PlayAudioActivity::class.java)
                 intent.putExtra(PlayAudioActivity.EXTRA_AUDIO, audio)
                 actionHandler.playAudioActivityResultLauncher.launch(intent)
@@ -1048,8 +1050,8 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         var query: String = "",
         var prevMenuItem: MenuItem? = null,
         var nextMenuItem: MenuItem? = null,
-        var resultPos: NotNullLiveData<Int> = NotNullLiveData(-1),
-        var results: NotNullLiveData<Int> = NotNullLiveData(-1),
+        var resultPos: NotNullMutableLiveData<Int> = NotNullMutableLiveData(-1),
+        var results: NotNullMutableLiveData<Int> = NotNullMutableLiveData(-1),
     )
 
     companion object {

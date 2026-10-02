@@ -21,7 +21,7 @@ import com.philkes.notallyx.NotallyXApplication.Companion.AUTO_REMOVE_DELETED_NO
 import com.philkes.notallyx.NotallyXApplication.Companion.TAG
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.presentation.setEnabledSecureFlag
-import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
+import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.EMPTY_PATH
@@ -57,7 +57,7 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
     private lateinit var preferences: NotallyXPreferences
     private var unlockReceiver: UnlockReceiver? = null
 
-    val locked = NotNullLiveData(true)
+    val locked = NotNullMutableLiveData(true)
 
     override fun onCreate() {
         super.onCreate()

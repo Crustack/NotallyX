@@ -10,17 +10,15 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.model.BaseNote
-import com.philkes.notallyx.data.model.Header
 import com.philkes.notallyx.databinding.ActivityPickNoteBinding
 import com.philkes.notallyx.presentation.activity.LockedActivity
+import com.philkes.notallyx.presentation.createItemsFromNotes
 import com.philkes.notallyx.presentation.view.main.BaseNoteAdapter
 import com.philkes.notallyx.presentation.view.main.BaseNoteVHPreferences
 import com.philkes.notallyx.presentation.view.main.createCallback
 import com.philkes.notallyx.presentation.view.misc.ItemListener
-import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesView
 import com.philkes.notallyx.utils.getCurrentImagesDirectory
@@ -76,10 +74,6 @@ open class PickNoteActivity : LockedActivity<ActivityPickNoteBinding>(), ItemLis
                 } else LinearLayoutManager(this@PickNoteActivity)
         }
 
-        val pinned = Header(getString(R.string.pinned))
-        val others = Header(getString(R.string.others))
-        val archived = Header(getString(R.string.archived))
-
         NotallyDatabase.getDatabase(this.application).observe(this) { database ->
             lifecycleScope.launch {
                 val notes =
@@ -87,7 +81,7 @@ open class PickNoteActivity : LockedActivity<ActivityPickNoteBinding>(), ItemLis
                         withContext(Dispatchers.IO) {
                             val raw =
                                 db.getBaseNoteDao().getAllNotes().filter { it.id != excludedNoteId }
-                            BaseNoteModel.transform(raw, pinned, others, archived)
+                            this@PickNoteActivity.createItemsFromNotes(raw)
                         }
                     } ?: return@launch
                 adapter.submitList(notes)

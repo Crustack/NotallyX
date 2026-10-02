@@ -2,13 +2,13 @@ package com.philkes.notallyx.utils
 
 import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.data.model.BaseNote
-import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
+import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 
 class ActionMode {
 
-    val enabled = NotNullLiveData(false)
-    val loading = NotNullLiveData(false)
-    val count = NotNullLiveData(0)
+    val enabled = NotNullMutableLiveData(false)
+    val loading = NotNullMutableLiveData(false)
+    val count = NotNullMutableLiveData(0)
     val selectedNotes = HashMap<Long, BaseNote>()
     val selectedIds = selectedNotes.keys
     val closeListener = MutableLiveData<Event<Set<Long>>>()

@@ -10,7 +10,6 @@ import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.MutableLiveData
@@ -20,7 +19,6 @@ import com.google.android.material.color.DynamicColors
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
 import com.philkes.notallyx.presentation.setupProgressDialog
-import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.Theme
 import com.philkes.notallyx.presentation.viewmodel.progress.MigrationProgress
@@ -42,7 +40,6 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
 
     internal lateinit var binding: T
     internal lateinit var preferences: NotallyXPreferences
-    val baseModel: BaseNoteModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,9 +67,7 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
             }
     }
 
-    open fun initViewModel() {
-        baseModel.startObserving()
-    }
+    open fun initViewModel() {}
 
     private fun setupGlobalExceptionHandler() {
         val previousHandler = Thread.getDefaultUncaughtExceptionHandler()

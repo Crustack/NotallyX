@@ -23,7 +23,6 @@ import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.ColorString
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Folder
-import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.createNoteUrl
 import com.philkes.notallyx.presentation.activity.note.NoteActionHandler.Companion.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS
@@ -40,7 +39,7 @@ import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.note.action.ExportBottomSheet
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
-import com.philkes.notallyx.presentation.viewmodel.NotallyModel
+import com.philkes.notallyx.presentation.viewmodel.edit.EditActivityViewModel
 import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 import com.philkes.notallyx.utils.PinnedNotificationManager
 import com.philkes.notallyx.utils.backup.exportNote
@@ -55,7 +54,7 @@ import kotlinx.coroutines.withContext
 
 class NoteActionHandler(
     private val activity: EditActivity,
-    private val notallyModel: NotallyModel,
+    private val notallyModel: EditActivityViewModel,
 ) {
     lateinit var recordAudioActivityResultLauncher: ActivityResultLauncher<Intent>
     lateinit var addImagesActivityResultLauncher: ActivityResultLauncher<Intent>
@@ -165,7 +164,7 @@ class NoteActionHandler(
                 result ->
                 if (result.resultCode == AppCompatActivity.RESULT_OK) {
                     result.data?.data?.let { uri ->
-                        activity.baseModel.exportNoteToFile(
+                        notallyModel.exportNoteToFile(
                             uri,
                             notallyModel.getBaseNote(),
                             activity.binding.root,
@@ -242,7 +241,9 @@ class NoteActionHandler(
             EditAction.SHARE -> share()
             EditAction.DELETE -> delete()
             EditAction.ARCHIVE -> archive()
-            EditAction.TOGGLE_VIEW_MODE -> toggleViewMode()
+            EditAction.TOGGLE_VIEW_MODE -> {
+                notallyModel.toggleViewMode()
+            }
             EditAction.CONVERT -> convertTo()
             EditAction.DELETE_FOREVER -> deleteForever()
             EditAction.RESTORE -> restore()
@@ -313,14 +314,14 @@ class NoteActionHandler(
                 activity.colorInt.isLightColor(),
                 { selectedColor, oldColor ->
                     if (oldColor != null) {
-                        activity.baseModel.changeColor(oldColor, selectedColor)
+                        notallyModel.changeColor(oldColor, selectedColor)
                     }
                     notallyModel.color = selectedColor
                     activity.setColor()
                     activity.resetIdleTimer()
                 },
             ) { colorToDelete, newColor ->
-                activity.baseModel.changeColor(colorToDelete, newColor)
+                notallyModel.changeColor(colorToDelete, newColor)
                 if (colorToDelete == notallyModel.color) {
                     notallyModel.color = newColor
                     activity.setColor()
@@ -333,7 +334,7 @@ class NoteActionHandler(
     private fun duplicate() {
         activity.lifecycleScope.launch {
             activity.saveNote(true)
-            val duplicateId = activity.baseModel.duplicateNote(notallyModel.getBaseNote())
+            val duplicateId = notallyModel.duplicateNote(notallyModel.getBaseNote())
             activity.openNote(duplicateId, notallyModel.type, clearBackStack = true)
         }
     }
@@ -364,7 +365,7 @@ class NoteActionHandler(
 
     private fun moveNote(toFolder: Folder) {
         if (toFolder != Folder.NOTES) {
-            this.activity.cancelPinAndReminders(notallyModel.id, notallyModel.reminders.value)
+            this.activity.cancelPinAndReminders(notallyModel.id, notallyModel.reminders.value!!)
         }
         val resultIntent =
             Intent().apply {
@@ -388,14 +389,6 @@ class NoteActionHandler(
             }
             .setCancelButton()
             .show()
-    }
-
-    private fun toggleViewMode() {
-        notallyModel.viewMode.value =
-            when (notallyModel.viewMode.value) {
-                NoteViewMode.EDIT -> NoteViewMode.READ_ONLY
-                NoteViewMode.READ_ONLY -> NoteViewMode.EDIT
-            }
     }
 
     private fun convertTo() {

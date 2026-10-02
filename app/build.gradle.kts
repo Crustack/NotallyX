@@ -136,7 +136,6 @@ android {
     }
 
     testOptions { unitTests.isIncludeAndroidResources = true }
-
 }
 
 androidComponents {
@@ -265,7 +264,6 @@ firebaseTestLab {
         execution { maxTestReruns = 2 }
     }
 }
-
 
 //
 // tasks.named<Task>("assembleDebugAndroidTest") {

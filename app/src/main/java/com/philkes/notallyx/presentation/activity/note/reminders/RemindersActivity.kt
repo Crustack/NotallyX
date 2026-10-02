@@ -39,7 +39,7 @@ import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.view.main.reminder.ReminderAdapter
 import com.philkes.notallyx.presentation.view.main.reminder.ReminderListener
-import com.philkes.notallyx.presentation.viewmodel.NotallyModel
+import com.philkes.notallyx.presentation.viewmodel.edit.NoteModel
 import com.philkes.notallyx.utils.canScheduleAlarms
 import com.philkes.notallyx.utils.now
 import java.text.SimpleDateFormat
@@ -50,7 +50,7 @@ import kotlinx.coroutines.launch
 class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderListener {
 
     private lateinit var alarmPermissionActivityResultLauncher: ActivityResultLauncher<Intent>
-    private val model: NotallyModel by viewModels()
+    private val model: NoteModel by viewModels()
     private lateinit var reminderAdapter: ReminderAdapter
     private var selectedReminder: Reminder? = null
 
@@ -71,7 +71,7 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
         val noteId = intent.getLongExtra(NOTE_ID, 0L)
         lifecycleScope.launch {
             model.setState(noteId)
-            if (model.reminders.value.isEmpty()) {
+            if (model.reminders.value!!.isEmpty()) {
                 showDatePickerDialog()
             } else if (!canScheduleAlarms()) {
                 checkNotificationPermission(

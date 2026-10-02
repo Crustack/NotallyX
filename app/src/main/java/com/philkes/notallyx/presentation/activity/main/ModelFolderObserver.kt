@@ -17,11 +17,11 @@ import com.philkes.notallyx.presentation.checkNotificationPermission
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.movedToResId
 import com.philkes.notallyx.presentation.setCancelButton
-import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
+import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import com.philkes.notallyx.presentation.view.misc.tristatecheckbox.TriStateCheckBox
 import com.philkes.notallyx.presentation.view.misc.tristatecheckbox.setMultiChoiceTriStateItems
-import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
+import com.philkes.notallyx.presentation.viewmodel.main.fragment.NotesFragmentViewModel
 import com.philkes.notallyx.utils.deleteAttachments
 import com.philkes.notallyx.utils.shareNote
 import com.philkes.notallyx.utils.showColorSelectDialog
@@ -32,11 +32,8 @@ import kotlinx.coroutines.withContext
 class ModelFolderObserver(
     private val activity: MainActivity,
     private val menu: Menu,
-    private val model: BaseNoteModel,
+    private val model: NotesFragmentViewModel,
 ) : Observer<Folder> {
-
-    private val baseModel
-        get() = activity.baseModel
 
     override fun onChanged(value: Folder) {
         menu.clear()
@@ -60,9 +57,7 @@ class ModelFolderObserver(
         val pinned = menu.addPinned(MenuItem.SHOW_AS_ACTION_ALWAYS)
         menu.addLabels(MenuItem.SHOW_AS_ACTION_ALWAYS)
         menu.addDelete(MenuItem.SHOW_AS_ACTION_ALWAYS)
-        menu.add(R.string.duplicate, R.drawable.content_copy) {
-            baseModel.duplicateSelectedBaseNotes()
-        }
+        menu.add(R.string.duplicate, R.drawable.content_copy) { model.duplicateSelectedBaseNotes() }
         menu.add(R.string.archive, R.drawable.archive) { moveNotes(Folder.ARCHIVED) }
         menu.addChangeColor()
         val pinnedToStatus = menu.addPinnedToStatus()
@@ -76,9 +71,7 @@ class ModelFolderObserver(
             moveNotes(Folder.NOTES)
         }
         menu.addDelete(MenuItem.SHOW_AS_ACTION_ALWAYS)
-        menu.add(R.string.duplicate, R.drawable.content_copy) {
-            baseModel.duplicateSelectedBaseNotes()
-        }
+        menu.add(R.string.duplicate, R.drawable.content_copy) { model.duplicateSelectedBaseNotes() }
         menu.addExportMenu(MenuItem.SHOW_AS_ACTION_ALWAYS)
         val pinned = menu.addPinned()
         menu.addLabels()
@@ -179,7 +172,7 @@ class ModelFolderObserver(
         }
     }
 
-    private fun NotNullLiveData<Int>.observeCount(
+    private fun NotNullMutableLiveData<Int>.observeCount(
         lifecycleOwner: LifecycleOwner,
         share: MenuItem,
         onCountChange: ((Int) -> Unit)? = null,
@@ -191,7 +184,7 @@ class ModelFolderObserver(
         }
     }
 
-    private fun NotNullLiveData<Int>.observeCountAndPinned(
+    private fun NotNullMutableLiveData<Int>.observeCountAndPinned(
         lifecycleOwner: LifecycleOwner,
         share: MenuItem,
         pinned: MenuItem,
@@ -232,28 +225,27 @@ class ModelFolderObserver(
     }
 
     internal fun moveNotes(folderTo: Folder) {
-        if (baseModel.actionMode.loading.value || baseModel.actionMode.isEmpty()) {
+        if (model.actionMode.loading.value || model.actionMode.isEmpty()) {
             return
         }
         try {
-            baseModel.actionMode.loading.value = true
-            val folderFrom = baseModel.actionMode.getFirstNote().folder
-            val ids =
-                baseModel.moveBaseNotes(folderTo) { baseModel.actionMode.loading.postValue(false) }
+            model.actionMode.loading.value = true
+            val folderFrom = model.actionMode.getFirstNote().folder
+            val ids = model.moveBaseNotes(folderTo) { model.actionMode.loading.postValue(false) }
             Snackbar.make(
                     activity.findViewById(R.id.DrawerLayout),
                     activity.getQuantityString(folderTo.movedToResId(), ids.size),
                     Snackbar.LENGTH_SHORT,
                 )
-                .apply { setAction(R.string.undo) { baseModel.moveBaseNotes(ids, folderFrom) } }
+                .apply { setAction(R.string.undo) { model.moveBaseNotes(ids, folderFrom) } }
                 .show()
         } catch (_: Exception) {
-            baseModel.actionMode.loading.postValue(false)
+            model.actionMode.loading.postValue(false)
         }
     }
 
     internal fun share() {
-        val baseNote = baseModel.actionMode.getFirstNote()
+        val baseNote = model.actionMode.getFirstNote()
         activity.shareNote(baseNote)
     }
 
@@ -261,9 +253,9 @@ class ModelFolderObserver(
         MaterialAlertDialogBuilder(activity)
             .setMessage(R.string.delete_selected_notes)
             .setPositiveButton(R.string.delete) { _, _ ->
-                val removedNotes = baseModel.actionMode.selectedNotes.values.toList()
+                val removedNotes = model.actionMode.selectedNotes.values.toList()
                 activity.lifecycleScope.launch {
-                    val deletedNotes = baseModel.deleteSelectedBaseNotes()
+                    val deletedNotes = model.deleteSelectedBaseNotes()
                     Snackbar.make(
                             activity.findViewById(R.id.DrawerLayout),
                             activity.getQuantityString(
@@ -273,7 +265,7 @@ class ModelFolderObserver(
                             Snackbar.LENGTH_SHORT,
                         )
                         .apply {
-                            setAction(R.string.undo) { baseModel.saveNotes(removedNotes) }
+                            setAction(R.string.undo) { model.saveNotes(removedNotes) }
                             addCallback(
                                 object : Snackbar.Callback() {
                                     override fun onDismissed(
@@ -283,7 +275,7 @@ class ModelFolderObserver(
                                         if (event != DISMISS_EVENT_ACTION) {
                                             activity.deleteAttachments(
                                                 deletedNotes,
-                                                baseModel.progress,
+                                                model.progress,
                                             )
                                         }
                                     }
@@ -298,13 +290,13 @@ class ModelFolderObserver(
     }
 
     internal fun label() {
-        val baseNotes = baseModel.actionMode.selectedNotes.values
+        val baseNotes = model.actionMode.selectedNotes.values
         activity.lifecycleScope.launch {
-            val labels = baseModel.getAllLabels()
+            val labels = model.getAllLabels()
             if (labels.isNotEmpty()) {
                 displaySelectLabelsDialog(labels, baseNotes)
             } else {
-                baseModel.actionMode.close(true)
+                model.actionMode.close(true)
                 activity.navigateWithAnimation(R.id.Labels)
             }
         }
@@ -356,7 +348,7 @@ class ModelFolderObserver(
                     noteLabels
                 }
                 baseNotes.zip(updatedBaseNotesLabels).forEach { (baseNote, updatedLabels) ->
-                    baseModel.updateBaseNoteLabels(updatedLabels, baseNote.id)
+                    model.updateBaseNoteLabels(updatedLabels, baseNote.id)
                 }
             }
             .show()

@@ -23,8 +23,7 @@ import androidx.appcompat.app.AppCompatActivity.RESULT_OK
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.MutableLiveData
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.work.WorkManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -33,7 +32,6 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.cancelAutoRemoveOldDeletedNotes
 import com.philkes.notallyx.data.imports.Display
 import com.philkes.notallyx.data.imports.FOLDER_OR_FILE_MIMETYPE
-import com.philkes.notallyx.data.imports.ImportProgress
 import com.philkes.notallyx.data.imports.ImportSource
 import com.philkes.notallyx.data.imports.txt.APPLICATION_TEXT_MIME_TYPES
 import com.philkes.notallyx.databinding.DialogImportBinding
@@ -50,7 +48,7 @@ import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.showDialog
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.TextWithIconAdapter
-import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
+import com.philkes.notallyx.presentation.viewmodel.main.fragment.SettingsViewModel
 import com.philkes.notallyx.presentation.viewmodel.preference.Constants.PASSWORD_EMPTY
 import com.philkes.notallyx.presentation.viewmodel.preference.LongPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
@@ -70,7 +68,6 @@ import com.philkes.notallyx.utils.getExtraBooleanFromBundleOrIntent
 import com.philkes.notallyx.utils.getLastExceptionLog
 import com.philkes.notallyx.utils.getLogFile
 import com.philkes.notallyx.utils.getUriForFile
-import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.openExternalMediaFolder
 import com.philkes.notallyx.utils.reportBug
 import com.philkes.notallyx.utils.security.AuthenticatorProvider
@@ -83,7 +80,7 @@ import kotlinx.coroutines.launch
 
 class SettingsFragment : Fragment() {
 
-    private val model: BaseNoteModel by activityViewModels()
+    private val model: SettingsViewModel by viewModels()
 
     private lateinit var importBackupActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var importRawDatabaseActivityResultLauncher: ActivityResultLauncher<Intent>
@@ -494,9 +491,7 @@ class SettingsFragment : Fragment() {
                 exportBackupActivityResultLauncher.launch(intent)
             }
         }
-        (model.importProgress as? MutableLiveData<ImportProgress>)?.setupImportProgressDialog(
-            this@SettingsFragment
-        )
+        model.importProgress.setupImportProgressDialog(this@SettingsFragment)
     }
 
     private fun NotallyXPreferences.setupAutoBackups(binding: FragmentSettingsBinding) {

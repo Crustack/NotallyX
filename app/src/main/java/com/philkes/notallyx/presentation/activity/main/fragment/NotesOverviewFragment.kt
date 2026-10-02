@@ -5,18 +5,18 @@ import android.view.View
 import androidx.fragment.app.viewModels
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.Folder
-import com.philkes.notallyx.presentation.viewmodel.main.fragment.ArchivedViewModel
+import com.philkes.notallyx.presentation.viewmodel.main.fragment.NotesViewModel
 
-class ArchivedFragment : NotesFragment() {
+class NotesOverviewFragment : NotesFragment() {
 
-    private val archivedViewModel: ArchivedViewModel by viewModels()
+    private val notesViewModel: NotesViewModel by viewModels()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        model.setFolder(Folder.ARCHIVED)
+        model.setFolder(Folder.NOTES)
     }
 
-    override fun getBackground() = R.drawable.archive
+    override fun getObservable() = notesViewModel.baseNotes
 
-    override fun getObservable() = archivedViewModel.archivedNotes
+    override fun getBackground() = R.drawable.notebook
 }
