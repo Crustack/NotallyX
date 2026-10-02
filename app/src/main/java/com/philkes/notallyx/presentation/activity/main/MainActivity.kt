@@ -526,7 +526,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 popExit = androidx.navigation.ui.R.anim.nav_default_pop_exit_anim
                 popEnter = androidx.navigation.ui.R.anim.nav_default_pop_enter_anim
             }
-            popUpTo(navController.graph.startDestination) { inclusive = false }
+            popUpTo(navController.graph.startDestinationId) { inclusive = false }
         }
         navController.navigate(id, null, options)
     }

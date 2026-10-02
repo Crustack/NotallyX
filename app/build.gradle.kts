@@ -2,6 +2,7 @@ import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
 import org.apache.commons.configuration2.PropertiesConfiguration
 import org.apache.commons.configuration2.io.FileHandler
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -153,18 +154,21 @@ android {
         includeInBundle = false
     }
 
-    kotlinOptions {
-        jvmTarget = "1.8"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     buildFeatures {
         viewBinding = true
         dataBinding = true
+        buildConfig = true
     }
 
     packaging {
@@ -325,6 +329,7 @@ roborazzi {
 }
 
 dependencies {
+    implementation(libs.androidx.documentfile)
     implementation(libs.bundles.navigation)
     implementation(libs.androidx.preference)
     implementation(libs.androidx.lifecycle.livedata)

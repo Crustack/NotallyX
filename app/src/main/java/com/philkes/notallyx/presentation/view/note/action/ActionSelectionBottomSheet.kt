@@ -70,9 +70,7 @@ class ActionSelectionBottomSheet(
                         context?.let { ctx ->
                             imageTintList =
                                 android.content.res.ColorStateList.valueOf(
-                                    ctx.getColorFromAttr(
-                                        com.google.android.material.R.attr.colorPrimary
-                                    )
+                                    ctx.getColorFromAttr(androidx.appcompat.R.attr.colorPrimary)
                                 )
                         }
                         setOnClickListener {
@@ -103,9 +101,7 @@ class ActionSelectionBottomSheet(
                         com.google.android.material.R.style.TextAppearance_Material3_TitleMedium,
                     )
                     context?.let { ctx ->
-                        setTextColor(
-                            ctx.getColorFromAttr(com.google.android.material.R.attr.colorPrimary)
-                        )
+                        setTextColor(ctx.getColorFromAttr(androidx.appcompat.R.attr.colorPrimary))
                     }
                 }
             titleContainer.addView(titleView)
