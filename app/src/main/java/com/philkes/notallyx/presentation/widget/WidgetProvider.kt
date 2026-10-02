@@ -223,7 +223,8 @@ class WidgetProvider : AppWidgetProvider() {
                             )
                             setPendingIntentTemplate(
                                 R.id.ListView,
-                                Intent(context, WidgetProvider::class.java).asPendingIntent(context),
+                                Intent(context, WidgetProvider::class.java)
+                                    .asPendingIntent(context),
                             )
                         }
                     manager.updateAppWidget(id, view)
@@ -246,7 +247,8 @@ class WidgetProvider : AppWidgetProvider() {
                             )
                             setPendingIntentTemplate(
                                 R.id.ListView,
-                                Intent(context, WidgetProvider::class.java).asPendingIntent(context),
+                                Intent(context, WidgetProvider::class.java)
+                                    .asPendingIntent(context),
                             )
 
                             noteType?.let {

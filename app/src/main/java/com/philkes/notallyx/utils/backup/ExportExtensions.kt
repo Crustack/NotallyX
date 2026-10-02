@@ -459,7 +459,8 @@ suspend fun ContextWrapper.exportAsZip(
                         BackupProgress(
                             counter.incrementAndGet(),
                             totalAttachments,
-                            countSuffix = getQuantityString(R.plurals.attachments, totalAttachments),
+                            countSuffix =
+                                getQuantityString(R.plurals.attachments, totalAttachments),
                         )
                     )
                 }

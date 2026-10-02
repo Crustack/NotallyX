@@ -210,8 +210,9 @@ class BaseNoteVH(
         isTitleEmpty: Boolean,
     ) {
         binding.LinearLayout.visibility = VISIBLE
-        val keywordItemIdx =
-            initializedItems.indexOfFirst { it.body.contains(keyword, ignoreCase = true) }
+        val keywordItemIdx = initializedItems.indexOfFirst {
+            it.body.contains(keyword, ignoreCase = true)
+        }
         if (keywordItemIdx == -1) {
             return bindList(initializedItems, isTitleEmpty, preferences.textSize.displayBodySize)
         }

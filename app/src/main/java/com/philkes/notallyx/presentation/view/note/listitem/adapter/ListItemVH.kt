@@ -114,13 +114,12 @@ class ListItemVH(
 
         highlights?.let {
             var selected: ListItemHighlight? = null
-            val pairs =
-                highlights.map { highlight ->
-                    if (highlight.selected) {
-                        selected = highlight
-                    }
-                    Pair(highlight.startIdx, highlight.endIdx)
+            val pairs = highlights.map { highlight ->
+                if (highlight.selected) {
+                    selected = highlight
                 }
+                Pair(highlight.startIdx, highlight.endIdx)
+            }
             binding.EditText.highlight(pairs, -1)
             selected?.let { binding.EditText.select(it.startIdx, it.endIdx) }
         }

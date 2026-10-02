@@ -322,8 +322,9 @@ fun MutableList<ListItem>.removeChildrenBelowPositionFromParent(
     thresholdPosition: Int,
 ): List<ListItem> {
     val children = this[parentPosition].children
-    val childrenBelow =
-        children.filterIndexed { idx, _ -> parentPosition + idx + 1 > thresholdPosition - 1 }
+    val childrenBelow = children.filterIndexed { idx, _ ->
+        parentPosition + idx + 1 > thresholdPosition - 1
+    }
     children.removeAll(childrenBelow)
     return childrenBelow
 }

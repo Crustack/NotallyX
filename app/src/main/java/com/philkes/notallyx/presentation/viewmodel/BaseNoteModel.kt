@@ -599,20 +599,19 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     suspend fun duplicateNotes(notes: Collection<BaseNote>): List<Long> {
         val now = System.currentTimeMillis()
-        val copies: List<BaseNote> =
-            notes.map { original ->
-                original
-                    .deepCopy()
-                    .copy(
-                        id = 0L,
-                        title =
-                            if (original.title.isNotEmpty())
-                                "${original.title} (${app.getString(R.string.copy)})"
-                            else app.getString(R.string.copy),
-                        timestamp = now,
-                        modifiedTimestamp = now,
-                    )
-            }
+        val copies: List<BaseNote> = notes.map { original ->
+            original
+                .deepCopy()
+                .copy(
+                    id = 0L,
+                    title =
+                        if (original.title.isNotEmpty())
+                            "${original.title} (${app.getString(R.string.copy)})"
+                        else app.getString(R.string.copy),
+                    timestamp = now,
+                    modifiedTimestamp = now,
+                )
+        }
         return withContext(Dispatchers.IO) { baseNoteDao.insert(copies) }
     }
 
@@ -809,10 +808,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 return list
             } else {
                 val firstPinnedNote = list.indexOfFirst { baseNote -> baseNote.pinned }
-                val firstUnpinnedNote =
-                    list.indexOfFirst { baseNote ->
-                        !baseNote.pinned && baseNote.folder != Folder.ARCHIVED
-                    }
+                val firstUnpinnedNote = list.indexOfFirst { baseNote ->
+                    !baseNote.pinned && baseNote.folder != Folder.ARCHIVED
+                }
                 val mutableList: MutableList<Item> = list.toMutableList()
                 if (firstPinnedNote != -1) {
                     mutableList.add(firstPinnedNote, pinned)
@@ -820,10 +818,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         mutableList.add(firstUnpinnedNote + 1, others)
                     }
                 }
-                val firstArchivedNote =
-                    mutableList.indexOfFirst { item ->
-                        item is BaseNote && item.folder == Folder.ARCHIVED
-                    }
+                val firstArchivedNote = mutableList.indexOfFirst { item ->
+                    item is BaseNote && item.folder == Folder.ARCHIVED
+                }
                 if (firstArchivedNote != -1) {
                     mutableList.add(firstArchivedNote, archived)
                 }

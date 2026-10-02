@@ -147,9 +147,8 @@ class EnumPreference<T>(
     defaultValue: T,
     private val enumClass: Class<T>,
     titleResId: Int? = null,
-) : BasePreference<T>(sharedPreferences, defaultValue, titleResId) where
-T : Enum<T>,
-T : TextProvider {
+) : BasePreference<T>(sharedPreferences, defaultValue, titleResId)
+    where T : Enum<T>, T : TextProvider {
 
     override fun getValue(sharedPreferences: SharedPreferences): T {
         val storedValue = sharedPreferences.getString(key, null)

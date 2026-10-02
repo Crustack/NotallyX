@@ -26,12 +26,11 @@ class MoreNoteBottomSheet(
         ): List<Action> {
             val allPossibleActions = EditAction.entries
 
-            val actionsInBottomSheet =
-                allPossibleActions.filter {
-                    it !in topActions &&
-                        it != bottomAction &&
-                        (it != EditAction.RESTORE || model.folder == Folder.DELETED)
-                }
+            val actionsInBottomSheet = allPossibleActions.filter {
+                it !in topActions &&
+                    it != bottomAction &&
+                    (it != EditAction.RESTORE || model.folder == Folder.DELETED)
+            }
 
             return actionsInBottomSheet.map { editAction ->
                 val (title, icon) =

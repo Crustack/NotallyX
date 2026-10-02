@@ -116,16 +116,13 @@ fun Context.copyToClipBoard(text: CharSequence) {
     }
 }
 
-fun Context.getContentFileName(uri: Uri): String? =
-    runCatching {
-            contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                cursor.moveToFirst()
-                return@use cursor
-                    .getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME)
-                    .let(cursor::getString)
-            }
-        }
-        .getOrNull()
+fun Context.getContentFileName(uri: Uri): String? = runCatching {
+    contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+        cursor.moveToFirst()
+        return@use cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME).let(cursor::getString)
+    }
+}
+    .getOrNull()
 
 fun Context.getFileName(uri: Uri): String? =
     when (uri.scheme) {

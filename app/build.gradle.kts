@@ -1,14 +1,15 @@
+@file:OptIn(ExperimentalRoborazziApi::class)
+
 import com.android.build.gradle.internal.tasks.factory.dependsOn
+import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
-import org.apache.commons.configuration2.PropertiesConfiguration
-import org.apache.commons.configuration2.io.FileHandler
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import org.apache.commons.configuration2.PropertiesConfiguration
+import org.apache.commons.configuration2.io.FileHandler
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.ksp)
     alias(libs.plugins.firebase.testlab)
@@ -30,24 +31,48 @@ android {
         versionCode = project.findProperty("app.versionCode").toString().toInt()
         versionName = project.findProperty("app.versionName").toString()
         androidResources {
-            localeFilters += listOf(
-                "en", "ar", "ca", "cs", "da", "de", "el", "es", "fr", "hu", "in", "it", "ja", "my", "nb", "nl", "nn", "pl", "pt-rBR", "pt-rPT", "ro", "ru", "sk", "sv", "tl", "tr", "uk", "vi", "zh-rCN", "zh-rTW"
-            )
+            localeFilters +=
+                listOf(
+                    "en",
+                    "ar",
+                    "ca",
+                    "cs",
+                    "da",
+                    "de",
+                    "el",
+                    "es",
+                    "fr",
+                    "hu",
+                    "in",
+                    "it",
+                    "ja",
+                    "my",
+                    "nb",
+                    "nl",
+                    "nn",
+                    "pl",
+                    "pt-rBR",
+                    "pt-rPT",
+                    "ro",
+                    "ru",
+                    "sk",
+                    "sv",
+                    "tl",
+                    "tr",
+                    "uk",
+                    "vi",
+                    "zh-rCN",
+                    "zh-rTW",
+                )
         }
         vectorDrawables.generatedDensities?.clear()
-        ndk {
-            debugSymbolLevel = "FULL"
-        }
+        ndk { debugSymbolLevel = "FULL" }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
         testOptions {
             animationsDisabled = true
             execution = "ANDROIDX_TEST_ORCHESTRATOR"
         }
-    }
-    ksp {
-        arg("room.generateKotlin", "true")
-        arg("room.schemaLocation", "$projectDir/schemas")
     }
 
     signingConfigs {
@@ -71,7 +96,7 @@ android {
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
             signingConfig = signingConfigs.getByName("release")
         }
@@ -83,81 +108,9 @@ android {
         }
     }
 
-    applicationVariants.all {
-        this.outputs
-            .map { it as com.android.build.gradle.internal.api.ApkVariantOutputImpl }
-            .forEach { output ->
-                output.outputFileName = "NotallyX-$versionName.apk"
-            }
-
-        if (buildType.isMinifyEnabled) {
-            // Function to copy proguard mapping.txt file
-            fun copyMapping(suffix: String) {
-                val mappingFile = layout.buildDirectory.file("outputs/mapping/${buildType.name}/mapping.txt").get().asFile
-                if (mappingFile.exists()) {
-                    val target =
-                        File(project.projectDir, "obfuscation/mapping-${buildType.name}-$suffix.txt")
-                    target.parentFile.mkdirs()
-                    mappingFile.copyTo(target, overwrite = true)
-                    println("Copied mapping to: ${target.absolutePath}")
-                }
-            }
-            tasks.matching { it.name == "assemble${name.capitalize()}" }
-                .forEach { bundleTask ->
-                    bundleTask.doLast {
-                        copyMapping("apk")
-                    }
-                }
-            tasks.matching { it.name == "bundle${name.capitalize()}" }
-                .forEach { bundleTask ->
-                    bundleTask.doLast {
-                        copyMapping( "bundle")
-                    }
-                }
-
-            if (buildType.name == "release") {
-                // Match the bundle task for this variant
-                tasks.matching { it.name == "bundle${name.capitalize()}" }.forEach { bundleTask ->
-                    bundleTask.doLast {
-                        // Source folder with native debug symbols
-                        val nativeLibsDir = layout.buildDirectory.file(
-                            "intermediates/merged_native_libs/${buildType.name}/merge${buildType.name.capitalize()}NativeLibs/out/lib"
-                        ).get().asFile
-
-                        if (!nativeLibsDir.exists()) {
-                            println("No native debug symbols found in $nativeLibsDir")
-                            return@doLast
-                        }
-                        // Target zip file
-                        val outputZip = File(project.projectDir, "obfuscation/${buildType.name}-debug-symbols.zip")
-                        outputZip.parentFile.mkdirs()
-                        ZipOutputStream(outputZip.outputStream()).use { zipOut ->
-                            nativeLibsDir.walkTopDown().forEach { file ->
-                                if (file.isFile) {
-                                    // Preserve "lib/ABI/..." folder structure in the zip
-                                    val relativePath = nativeLibsDir.toPath().relativize(file.toPath()).toString()
-                                    zipOut.putNextEntry(ZipEntry(relativePath))
-                                    file.inputStream().use { it.copyTo(zipOut) }
-                                    zipOut.closeEntry()
-                                }
-                            }
-                        }
-                        println("Native debug symbols zipped to: ${outputZip.absolutePath}")
-                    }
-                }
-            }
-        }
-    }
-
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
-    }
-
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
-        }
     }
 
     compileOptions {
@@ -169,92 +122,166 @@ android {
         viewBinding = true
         dataBinding = true
         buildConfig = true
+        resValues = true
     }
 
     packaging {
-        resources.excludes += listOf(
-            "DebugProbesKt.bin",
-            "META-INF/**.version",
-            "kotlin/**.kotlin_builtins",
-            "kotlin-tooling-metadata.json"
-        )
+        resources.excludes +=
+            listOf(
+                "DebugProbesKt.bin",
+                "META-INF/**.version",
+                "kotlin/**.kotlin_builtins",
+                "kotlin-tooling-metadata.json",
+            )
     }
 
-    testOptions {
-        unitTests.isIncludeAndroidResources = true
-    }
+    testOptions { unitTests.isIncludeAndroidResources = true }
 
-    firebaseTestLab {
-        val serviceAccountPath = System.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-        if (!serviceAccountPath.isNullOrEmpty()) {
-            serviceAccountCredentials.set(file(serviceAccountPath))
-        }
-        managedDevices {
-            create("galaxyA06") {
-                device = "a06"
-                apiLevel = 35
+}
+
+androidComponents {
+    onVariants { variant ->
+        val versionName = project.findProperty("app.versionName").toString()
+        variant.outputs.forEach { output -> output.outputFileName.set("NotallyX-$versionName.apk") }
+
+        val variantName = variant.name
+        val variantCapitalized = variantName.replaceFirstChar { it.uppercase() }
+        val buildTypeName = variant.buildType ?: variantName
+
+        if (buildTypeName == "release" || buildTypeName == "beta") {
+            fun copyMapping(suffix: String) {
+                val mappingFile =
+                    layout.buildDirectory
+                        .file("outputs/mapping/$buildTypeName/mapping.txt")
+                        .get()
+                        .asFile
+                if (mappingFile.exists()) {
+                    val target =
+                        File(project.projectDir, "obfuscation/mapping-$buildTypeName-$suffix.txt")
+                    target.parentFile.mkdirs()
+                    mappingFile.copyTo(target, overwrite = true)
+                    println("Copied mapping to: ${target.absolutePath}")
+                }
             }
 
-            create("pixel5") {
-                device = "redfin"
-                apiLevel = 30
-            }
+            tasks
+                .matching { it.name == "assemble$variantCapitalized" }
+                .configureEach { doLast { copyMapping("apk") } }
 
-            create("xiaomi14") {
-                device = "houji"
-                apiLevel = 35
-            }
+            tasks
+                .matching { it.name == "bundle$variantCapitalized" }
+                .configureEach { doLast { copyMapping("bundle") } }
 
-            create("mediumPhone") {
-                device = "MediumPhone.arm"
-                apiLevel = 28
-            }
-        }
-        testOptions {
-            fixture {
-                grantedPermissions = "all"
-            }
+            if (buildTypeName == "release") {
+                tasks
+                    .matching { it.name == "bundle$variantCapitalized" }
+                    .configureEach {
+                        doLast {
+                            val nativeLibsDir =
+                                layout.buildDirectory
+                                    .file(
+                                        "intermediates/merged_native_libs/$buildTypeName/merge${variantCapitalized}NativeLibs/out/lib"
+                                    )
+                                    .get()
+                                    .asFile
 
-            execution {
-                maxTestReruns = 2
-
+                            if (!nativeLibsDir.exists()) {
+                                println("No native debug symbols found in $nativeLibsDir")
+                                return@doLast
+                            }
+                            val outputZip =
+                                File(
+                                    project.projectDir,
+                                    "obfuscation/$buildTypeName-debug-symbols.zip",
+                                )
+                            outputZip.parentFile.mkdirs()
+                            ZipOutputStream(outputZip.outputStream()).use { zipOut ->
+                                nativeLibsDir.walkTopDown().forEach { file ->
+                                    if (file.isFile) {
+                                        val relativePath =
+                                            nativeLibsDir
+                                                .toPath()
+                                                .relativize(file.toPath())
+                                                .toString()
+                                        zipOut.putNextEntry(ZipEntry(relativePath))
+                                        file.inputStream().use { it.copyTo(zipOut) }
+                                        zipOut.closeEntry()
+                                    }
+                                }
+                            }
+                            println("Native debug symbols zipped to: ${outputZip.absolutePath}")
+                        }
+                    }
             }
         }
     }
 }
 
-ktfmt {
-    kotlinLangStyle()
+ksp {
+    arg("room.generateKotlin", "true")
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
+
+ktfmt { kotlinLangStyle() }
 
 autoTranslate {
-    provider = deepL {
-        authKey = providers.gradleProperty("DEEPL_API_KEY")
-    }
-    translateStringsXml {
-        enabled = true
-    }
+    provider = deepL { authKey = providers.gradleProperty("DEEPL_API_KEY") }
+    translateStringsXml { enabled = true }
     translateFastlane {
         enabled = false
         targetLanguages = setOf("de-DE", "ru-RU")
     }
 }
 
+firebaseTestLab {
+    val serviceAccountPath = System.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if (!serviceAccountPath.isNullOrEmpty()) {
+        serviceAccountCredentials.set(file(serviceAccountPath))
+    }
+    managedDevices {
+        create("galaxyA06") {
+            device = "a06"
+            apiLevel = 35
+        }
+
+        create("pixel5") {
+            device = "redfin"
+            apiLevel = 30
+        }
+
+        create("xiaomi14") {
+            device = "houji"
+            apiLevel = 35
+        }
+
+        create("mediumPhone") {
+            device = "MediumPhone.arm"
+            apiLevel = 28
+        }
+    }
+    testOptions {
+        fixture { grantedPermissions = "all" }
+
+        execution { maxTestReruns = 2 }
+    }
+}
+
+
 //
-//tasks.named<Task>("assembleDebugAndroidTest") {
+// tasks.named<Task>("assembleDebugAndroidTest") {
 //    doLast {
 //        logger.lifecycle("Task ${name} finished assembling!")
 //    }
-//}
+// }
 
 // Access internal AGP tasks with their explicit type
-//tasks.named<PackageAndroidArtifact>("packageDebugAndroidTest") {
+// tasks.named<PackageAndroidArtifact>("packageDebugAndroidTest") {
 //    doLast {
 //        // Strongly typed access to task properties
 //        val apkFolder = outputDirectory.get().asFile
 //        logger.lifecycle("Packaging APKs into: ${apkFolder.absolutePath}")
 //    }
-//}
+// }
 
 tasks.register<KtfmtFormatTask>("ktfmtPrecommit") {
     source = project.fileTree(rootDir)
@@ -264,13 +291,11 @@ tasks.register<KtfmtFormatTask>("ktfmtPrecommit") {
 tasks.register<Copy>("installLocalGitHooks") {
     val scriptsDir = File(rootProject.rootDir, ".scripts/")
     val hooksDir = File(rootProject.rootDir, ".git/hooks")
-    from(scriptsDir) {
-        include("pre-commit", "pre-commit.bat")
-    }
+    from(scriptsDir) { include("pre-commit", "pre-commit.bat") }
     into(hooksDir)
     inputs.files(file("${scriptsDir}/pre-commit"), file("${scriptsDir}/pre-commit.bat"))
     outputs.dir(hooksDir)
-    fileMode = 509 // 0775 octal in decimal
+    filePermissions { unix(509) }
     // If this throws permission denied:
     // chmod +rwx ./.git/hooks/pre-commit*
 }
@@ -281,28 +306,32 @@ tasks.register("generateChangelogs") {
     doLast {
         val githubToken = providers.gradleProperty("CHANGELOG_GITHUB_TOKEN").orNull
 
-        val command = mutableListOf(
-            "bash",
-            rootProject.file("generate-changelogs.sh").absolutePath,
-            "v${project.findProperty("app.lastVersionName").toString()}",
-            rootProject.file("CHANGELOG.md").absolutePath
-        )
+        val command =
+            mutableListOf(
+                "bash",
+                rootProject.file("generate-changelogs.sh").absolutePath,
+                "v${project.findProperty("app.lastVersionName").toString()}",
+                rootProject.file("CHANGELOG.md").absolutePath,
+            )
         if (!githubToken.isNullOrEmpty()) {
             command.add(githubToken)
         } else {
-            println("CHANGELOG_GITHUB_TOKEN not found, which limits the allowed amount of Github API calls")
+            println(
+                "CHANGELOG_GITHUB_TOKEN not found, which limits the allowed amount of Github API calls"
+            )
         }
-        exec {
+        providers.exec {
             commandLine(command)
             standardOutput = System.out
             errorOutput = System.err
         }
 
         val config = PropertiesConfiguration()
-        val fileHandler = FileHandler(config).apply {
-            file = rootProject.file("gradle.properties")
-            load()
-        }
+        val fileHandler =
+            FileHandler(config).apply {
+                file = rootProject.file("gradle.properties")
+                load()
+            }
         val currentVersionName = config.getProperty("app.versionName")
         config.setProperty("app.lastVersionName", currentVersionName)
         fileHandler.save()
@@ -311,9 +340,7 @@ tasks.register("generateChangelogs") {
 }
 
 afterEvaluate {
-    tasks.named("bundleRelease").configure {
-        dependsOn(tasks.named("testReleaseUnitTest"))
-    }
+    tasks.named("bundleRelease").configure { dependsOn(tasks.named("testReleaseUnitTest")) }
     tasks.named("assembleRelease").configure {
         dependsOn(tasks.named("testReleaseUnitTest"))
         finalizedBy(tasks.named("generateChangelogs"))
@@ -323,9 +350,7 @@ afterEvaluate {
 roborazzi {
     // Directory for reference images
     outputDir.set(file("src/screenshots"))
-    compare {
-        outputDir.set(file("build/outputs/screenshots_comparison"))
-    }
+    compare { outputDir.set(file("build/outputs/screenshots_comparison")) }
 }
 
 dependencies {
@@ -352,9 +377,7 @@ dependencies {
     implementation(libs.kotlinx.serialization)
     implementation(libs.jsoup)
     implementation(libs.prettytime)
-    implementation(libs.simple.xml) {
-        exclude(group = "xpp3", module = "xpp3")
-    }
+    implementation(libs.simple.xml) { exclude(group = "xpp3", module = "xpp3") }
     implementation(libs.bundles.commonmark)
     implementation("com.github.luben:zstd-jni:${libs.versions.zstd.get()}@aar")
 

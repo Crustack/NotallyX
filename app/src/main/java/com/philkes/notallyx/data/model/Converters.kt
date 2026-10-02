@@ -38,13 +38,12 @@ object Converters {
     @TypeConverter
     fun filesToJson(files: List<FileAttachment>): String {
         return try {
-            val objects =
-                files.map { file ->
-                    val jsonObject = JSONObject()
-                    jsonObject.put("localName", file.localName)
-                    jsonObject.put("originalName", file.originalName)
-                    jsonObject.put("mimeType", file.mimeType)
-                }
+            val objects = files.map { file ->
+                val jsonObject = JSONObject()
+                jsonObject.put("localName", file.localName)
+                jsonObject.put("originalName", file.originalName)
+                jsonObject.put("mimeType", file.mimeType)
+            }
             JSONArray(objects).toString()
         } catch (e: Exception) {
             ConverterErrorReporter.reportError(
@@ -77,13 +76,12 @@ object Converters {
     @TypeConverter
     fun audiosToJson(audios: List<Audio>): String {
         return try {
-            val objects =
-                audios.map { audio ->
-                    val jsonObject = JSONObject()
-                    jsonObject.put("name", audio.name)
-                    jsonObject.put("duration", audio.duration)
-                    jsonObject.put("timestamp", audio.timestamp)
-                }
+            val objects = audios.map { audio ->
+                val jsonObject = JSONObject()
+                jsonObject.put("name", audio.name)
+                jsonObject.put("duration", audio.duration)
+                jsonObject.put("timestamp", audio.timestamp)
+            }
             JSONArray(objects).toString()
         } catch (e: Exception) {
             ConverterErrorReporter.reportError(
@@ -166,18 +164,17 @@ object Converters {
         }
 
     fun spansToJSONArray(list: List<SpanRepresentation>): JSONArray {
-        val objects =
-            list.map { representation ->
-                val jsonObject = JSONObject()
-                jsonObject.put("bold", representation.bold)
-                jsonObject.put("link", representation.link)
-                jsonObject.put("linkData", representation.linkData)
-                jsonObject.put("italic", representation.italic)
-                jsonObject.put("monospace", representation.monospace)
-                jsonObject.put("strikethrough", representation.strikethrough)
-                jsonObject.put("start", representation.start)
-                jsonObject.put("end", representation.end)
-            }
+        val objects = list.map { representation ->
+            val jsonObject = JSONObject()
+            jsonObject.put("bold", representation.bold)
+            jsonObject.put("link", representation.link)
+            jsonObject.put("linkData", representation.linkData)
+            jsonObject.put("italic", representation.italic)
+            jsonObject.put("monospace", representation.monospace)
+            jsonObject.put("strikethrough", representation.strikethrough)
+            jsonObject.put("start", representation.start)
+            jsonObject.put("end", representation.end)
+        }
         return JSONArray(objects)
     }
 
@@ -222,15 +219,14 @@ object Converters {
         }
 
     fun itemsToJSONArray(list: List<ListItem>): JSONArray {
-        val objects =
-            list.map { item ->
-                val jsonObject = JSONObject()
-                jsonObject.put("body", item.body)
-                jsonObject.put("checked", item.checked)
-                jsonObject.put("isChild", item.isChild)
-                jsonObject.put("order", item.order)
-                jsonObject.put("checkedTimestamp", item.checkedTimestamp)
-            }
+        val objects = list.map { item ->
+            val jsonObject = JSONObject()
+            jsonObject.put("body", item.body)
+            jsonObject.put("checked", item.checked)
+            jsonObject.put("isChild", item.isChild)
+            jsonObject.put("order", item.order)
+            jsonObject.put("checkedTimestamp", item.checkedTimestamp)
+        }
         return JSONArray(objects)
     }
 
@@ -246,15 +242,14 @@ object Converters {
         }
 
     fun remindersToJSONArray(reminders: List<Reminder>): JSONArray {
-        val objects =
-            reminders.map { reminder ->
-                JSONObject().apply {
-                    put("id", reminder.id) // Store date as long timestamp
-                    put("dateTime", reminder.dateTime.time) // Store date as long timestamp
-                    put("repetition", reminder.repetition?.let { repetitionToJsonObject(it) })
-                    put("isNotificationVisible", reminder.isNotificationVisible)
-                }
+        val objects = reminders.map { reminder ->
+            JSONObject().apply {
+                put("id", reminder.id) // Store date as long timestamp
+                put("dateTime", reminder.dateTime.time) // Store date as long timestamp
+                put("repetition", reminder.repetition?.let { repetitionToJsonObject(it) })
+                put("isNotificationVisible", reminder.isNotificationVisible)
             }
+        }
         return JSONArray(objects)
     }
 

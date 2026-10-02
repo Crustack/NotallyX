@@ -50,24 +50,22 @@ class ViewImageActivity : LockedActivity<ActivityViewImageBinding>() {
         setContentView(binding.root)
         configureEdgeToEdgeInsets()
 
-        val savedList =
-            savedInstanceState?.let {
-                BundleCompat.getParcelableArrayList(
-                    it,
-                    EXTRA_DELETED_IMAGES,
-                    FileAttachment::class.java,
-                )
-            }
+        val savedList = savedInstanceState?.let {
+            BundleCompat.getParcelableArrayList(
+                it,
+                EXTRA_DELETED_IMAGES,
+                FileAttachment::class.java,
+            )
+        }
         deletedImages = savedList ?: ArrayList()
 
         val resultIntent = Intent()
         resultIntent.putExtra(EXTRA_DELETED_IMAGES, deletedImages)
         setResult(RESULT_OK, resultIntent)
 
-        val savedImage =
-            savedInstanceState?.let {
-                BundleCompat.getParcelable(it, CURRENT_IMAGE, FileAttachment::class.java)
-            }
+        val savedImage = savedInstanceState?.let {
+            BundleCompat.getParcelable(it, CURRENT_IMAGE, FileAttachment::class.java)
+        }
         if (savedImage != null) {
             currentImage = savedImage
         }

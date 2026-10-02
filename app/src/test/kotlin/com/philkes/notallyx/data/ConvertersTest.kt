@@ -23,7 +23,7 @@ class ConvertersTest {
                     "mimeType": "image/jpeg"
                 }
             ]
-        """
+            """
                 .trimIndent()
 
         val files = Converters.jsonToFiles(json)
@@ -53,7 +53,7 @@ class ConvertersTest {
                     "mimeType": "image/jpeg"
                 }
             ]
-        """
+            """
                 .trimIndent()
 
         val files = Converters.jsonToFiles(json)

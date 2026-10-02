@@ -142,19 +142,18 @@ abstract class CommonDao(private val database: NotallyDatabase) {
         // 2) Remap note links in spans for all inserted notes
         for ((noteId, spans) in insertedParts) {
             var changed = false
-            val updated =
-                spans.map { span ->
-                    if (span.link && span.linkData?.isNoteUrl() == true) {
-                        val url = span.linkData!!
-                        val oldTargetId = url.getNoteIdFromUrl()
-                        val type = url.getNoteTypeFromUrl()
-                        val newTargetId = idMap[oldTargetId]
-                        if (newTargetId != null) {
-                            changed = true
-                            span.copy(linkData = newTargetId.createNoteUrl(type))
-                        } else span
+            val updated = spans.map { span ->
+                if (span.link && span.linkData?.isNoteUrl() == true) {
+                    val url = span.linkData!!
+                    val oldTargetId = url.getNoteIdFromUrl()
+                    val type = url.getNoteTypeFromUrl()
+                    val newTargetId = idMap[oldTargetId]
+                    if (newTargetId != null) {
+                        changed = true
+                        span.copy(linkData = newTargetId.createNoteUrl(type))
                     } else span
-                }
+                } else span
+            }
             if (changed) {
                 try {
                     baseNoteDao.updateSpans(noteId, updated)

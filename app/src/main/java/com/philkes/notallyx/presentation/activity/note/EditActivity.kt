@@ -426,19 +426,18 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     protected fun updateSearchResults(query: String) {
         val amountBefore = search.results.value
         searchJob?.cancel()
-        searchJob =
-            lifecycleScope.launch {
-                val amount = highlightSearchResults(query)
-                this@EditActivity.search.results.value = amount
-                if (amount > 0) {
-                    search.resultPos.value =
-                        when {
-                            amountBefore < 1 -> 0
-                            search.resultPos.value >= amount -> amount - 1
-                            else -> search.resultPos.value
-                        }
-                }
+        searchJob = lifecycleScope.launch {
+            val amount = highlightSearchResults(query)
+            this@EditActivity.search.results.value = amount
+            if (amount > 0) {
+                search.resultPos.value =
+                    when {
+                        amountBefore < 1 -> 0
+                        search.resultPos.value >= amount -> amount - 1
+                        else -> search.resultPos.value
+                    }
             }
+        }
     }
 
     /**
