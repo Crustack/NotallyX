@@ -141,21 +141,16 @@ class ReminderReceiver : BroadcastReceiver() {
                 PinnedNotificationManager.notify(context, note)
             }
             context.getSystemService<NotificationManager>()?.let { manager ->
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    manager.activeNotifications.ofNote(noteId).forEach { notification ->
-                        val reminderId = notification.id
-                        Log.d(
-                            TAG,
-                            "Updating notification for noteId: $noteId reminderId: $reminderId",
-                        )
-                        notify(
-                            context,
-                            noteId,
-                            reminderId.toLong(),
-                            schedule = false,
-                            isOnlyUpdate = true,
-                        )
-                    }
+                manager.activeNotifications.ofNote(noteId).forEach { notification ->
+                    val reminderId = notification.id
+                    Log.d(TAG, "Updating notification for noteId: $noteId reminderId: $reminderId")
+                    notify(
+                        context,
+                        noteId,
+                        reminderId.toLong(),
+                        schedule = false,
+                        isOnlyUpdate = true,
+                    )
                 }
             }
             //            val mostRecentReminder = note.reminders.findLastNotified() ?: return

@@ -1,10 +1,8 @@
 package com.philkes.notallyx.utils.security
 
 import android.content.ContextWrapper
-import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import androidx.annotation.RequiresApi
 import java.io.File
 import java.security.KeyStore
 import javax.crypto.Cipher
@@ -66,7 +64,6 @@ fun decryptDatabase(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.M)
 fun getOrCreateSecretKey(keyName: String = ENCRYPTION_KEY_NAME): SecretKey {
     // If Secretkey was previously created for that keyName, then grab and return it.
     val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
@@ -101,7 +98,6 @@ fun getOrCreateSecretKey(keyName: String = ENCRYPTION_KEY_NAME): SecretKey {
     return keyGenerator.generateKey()
 }
 
-@RequiresApi(Build.VERSION_CODES.M)
 fun getInitializedCipherForEncryption(keyName: String = ENCRYPTION_KEY_NAME): Cipher {
     val cipher = getCipher()
     val secretKey = getOrCreateSecretKey(keyName)
@@ -109,7 +105,6 @@ fun getInitializedCipherForEncryption(keyName: String = ENCRYPTION_KEY_NAME): Ci
     return cipher
 }
 
-@RequiresApi(Build.VERSION_CODES.M)
 fun getInitializedCipherForDecryption(
     keyName: String = ENCRYPTION_KEY_NAME,
     iv: ByteArray,
@@ -120,7 +115,6 @@ fun getInitializedCipherForDecryption(
     return cipher
 }
 
-@RequiresApi(Build.VERSION_CODES.M)
 fun getCipher(): Cipher {
     return Cipher.getInstance(
         KeyProperties.KEY_ALGORITHM_AES +

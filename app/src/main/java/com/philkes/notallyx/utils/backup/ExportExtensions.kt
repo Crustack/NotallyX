@@ -606,9 +606,7 @@ suspend fun ContextWrapper.copyDatabase(
     database!!.checkpoint()
     val preferences = NotallyXPreferences.getInstance(this)
     val databaseFile = NotallyDatabase.getCurrentDatabaseFile(this)
-    return if (
-        decrypt && preferences.isLockEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-    ) {
+    return if (decrypt && preferences.isLockEnabled) {
         val cipher = getInitializedCipherForDecryption(iv = preferences.iv.value!!)
         val passphrase = cipher.doFinal(preferences.databaseEncryptionKey.value)
         val decryptedFile =
@@ -1048,14 +1046,10 @@ private fun ContextWrapper.tryPostErrorNotification(e: Throwable) {
             manager.notify(NOTIFICATION_ID, notificationBuilder.build())
         }
     }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        if (
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-                PackageManager.PERMISSION_GRANTED
-        ) {
-            postErrorNotification(e)
-        }
-    } else {
+    if (
+        checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+    ) {
         postErrorNotification(e)
     }
 }

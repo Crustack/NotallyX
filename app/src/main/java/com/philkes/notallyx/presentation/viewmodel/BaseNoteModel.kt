@@ -5,7 +5,6 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.print.PdfPrintListener
 import android.view.View
 import androidx.core.net.toUri
@@ -669,7 +668,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         if (preferences.dataInPublicFolder.value) {
             DatabaseTransitionActivity.disableDataInPublic(app, preferences)
         }
-        if (preferences.isLockEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (preferences.isLockEnabled) {
             DatabaseTransitionActivity.disableBiometricLock(app, preferences)
         }
         preferences.reset()

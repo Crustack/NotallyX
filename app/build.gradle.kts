@@ -20,17 +20,19 @@ plugins {
 
 android {
     namespace = "com.philkes.notallyx"
-    compileSdk = 36
-    ndkVersion = "29.0.13113456"
+    compileSdk = libs.versions.compileSdk.get().toInt()
+    ndkVersion = libs.versions.ndk.get()
     defaultConfig {
         applicationId = "com.philkes.notallyx"
-        minSdk = 21
-        targetSdk = 36
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = project.findProperty("app.versionCode").toString().toInt()
         versionName = project.findProperty("app.versionName").toString()
-        resourceConfigurations += listOf(
-            "en", "ar", "ca", "cs", "da", "de", "el", "es", "fr", "hu", "in", "it", "ja", "my", "nb", "nl", "nn", "pl", "pt-rBR", "pt-rPT", "ro", "ru", "sk", "sv", "tl", "tr", "uk", "vi", "zh-rCN", "zh-rTW"
-        )
+        androidResources {
+            localeFilters += listOf(
+                "en", "ar", "ca", "cs", "da", "de", "el", "es", "fr", "hu", "in", "it", "ja", "my", "nb", "nl", "nn", "pl", "pt-rBR", "pt-rPT", "ro", "ru", "sk", "sv", "tl", "tr", "uk", "vi", "zh-rCN", "zh-rTW"
+            )
+        }
         vectorDrawables.generatedDensities?.clear()
         ndk {
             debugSymbolLevel = "FULL"

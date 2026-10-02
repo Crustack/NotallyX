@@ -62,15 +62,11 @@ private fun Context.scheduleReminder(noteId: Long, reminderId: Long, dateTime: D
     val pendingIntent = createReminderAlarmIntent(noteId, reminderId)
     val alarmManager = getSystemService<AlarmManager>()
     if (canScheduleAlarms()) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager?.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                dateTime.time,
-                pendingIntent,
-            )
-        } else {
-            alarmManager?.setExact(AlarmManager.RTC_WAKEUP, dateTime.time, pendingIntent)
-        }
+        alarmManager?.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            dateTime.time,
+            pendingIntent,
+        )
     }
 }
 
@@ -88,10 +84,7 @@ fun Context.cancelReminder(noteId: Long, reminderId: Long) {
     getSystemService<NotificationManager>()?.let { manager ->
         val notificationTag = ReminderReceiver.reminderNotificationTag(noteId)
         manager.cancel(notificationTag, reminderId.toInt())
-        if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                manager.activeNotifications.noneExceptFor(noteId, reminderId)
-        ) {
+        if (manager.activeNotifications.noneExceptFor(noteId, reminderId)) {
             Log.d(TAG, "cancelReminder: cancel reminder summary notification")
             manager.cancel(ReminderReceiver.SUMMARY_ID)
         }

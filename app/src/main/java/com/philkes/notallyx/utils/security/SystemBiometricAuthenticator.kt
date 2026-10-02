@@ -21,7 +21,6 @@ class SystemBiometricAuthenticator(
         showBiometricOrPinPrompt(
             isForDecrypt = isForDecrypt,
             context = activity,
-            activityResultLauncher = null,
             titleResId = titleResId,
             descriptionResId = descriptionResId,
             cipherIv = cipherIv,

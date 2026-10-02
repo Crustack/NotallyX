@@ -1,6 +1,5 @@
 package com.philkes.notallyx.presentation.view.note.action
 
-import android.os.Build
 import androidx.annotation.ColorInt
 import com.philkes.notallyx.R
 import com.philkes.notallyx.presentation.activity.note.NoteActionHandler
@@ -23,13 +22,11 @@ class AddBottomSheet(handler: NoteActionHandler, @ColorInt color: Int?) :
                     true
                 },
             ) +
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                    listOf(
-                        Action(R.string.record_audio, R.drawable.record_audio) { _ ->
-                            actionHandler.recordAudio()
-                            true
-                        }
-                    )
-                else listOf()
+                listOf(
+                    Action(R.string.record_audio, R.drawable.record_audio) { _ ->
+                        actionHandler.recordAudio()
+                        true
+                    }
+                )
     }
 }
