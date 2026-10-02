@@ -14,12 +14,12 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.getColorFromAttr
 import com.philkes.notallyx.presentation.getString
-import com.philkes.notallyx.presentation.viewmodel.NotallyModel
+import com.philkes.notallyx.presentation.viewmodel.edit.NoteModel
 import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 
 class ActionSelectionBottomSheet(
     actions: List<EditAction>,
-    model: NotallyModel,
+    model: NoteModel,
     private val oldAction: EditAction,
     private val title: String? = null,
     private val onReset: (() -> Unit)? = null,

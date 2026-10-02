@@ -19,7 +19,7 @@ import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.toText
 import com.philkes.notallyx.presentation.view.misc.Progress
-import com.philkes.notallyx.presentation.viewmodel.NotallyModel
+import com.philkes.notallyx.presentation.viewmodel.edit.NoteModel
 import com.philkes.notallyx.utils.MIME_TYPE_ZIP
 import com.philkes.notallyx.utils.NoteSplitUtils
 import com.philkes.notallyx.utils.backup.importAudio
@@ -75,8 +75,8 @@ class NotesImporter(private val app: Application, private val database: NotallyD
                 ImportProgress(total = totalFiles, stage = ImportStage.IMPORT_FILES)
             )
             importDataFolder?.let {
-                importFiles(files, it, NotallyModel.FileType.ANY, progress, totalFiles, counter)
-                importFiles(images, it, NotallyModel.FileType.IMAGE, progress, totalFiles, counter)
+                importFiles(files, it, NoteModel.FileType.ANY, progress, totalFiles, counter)
+                importFiles(images, it, NoteModel.FileType.IMAGE, progress, totalFiles, counter)
                 importAudios(audios, it, progress, totalFiles, counter)
             }
             // Insert notes with split handling for oversized text notes, skipping duplicates
@@ -120,7 +120,7 @@ class NotesImporter(private val app: Application, private val database: NotallyD
     private suspend fun importFiles(
         files: List<FileAttachment>,
         sourceFolder: File,
-        fileType: NotallyModel.FileType,
+        fileType: NoteModel.FileType,
         progress: MutableLiveData<Progress>?,
         total: Int?,
         counter: AtomicInteger?,
@@ -128,7 +128,7 @@ class NotesImporter(private val app: Application, private val database: NotallyD
         files.forEach { file ->
             val uri = File(sourceFolder, file.localName).toUri()
             val (fileAttachment, error) =
-                if (fileType == NotallyModel.FileType.IMAGE) app.importImage(uri, file.mimeType)
+                if (fileType == NoteModel.FileType.IMAGE) app.importImage(uri, file.mimeType)
                 else app.importFile(uri, file.mimeType)
             fileAttachment?.let {
                 file.localName = fileAttachment.localName

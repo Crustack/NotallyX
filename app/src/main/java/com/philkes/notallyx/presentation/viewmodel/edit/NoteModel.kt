@@ -1,4 +1,4 @@
-package com.philkes.notallyx.presentation.viewmodel
+package com.philkes.notallyx.presentation.viewmodel.edit
 
 import android.app.Application
 import android.content.Intent
@@ -14,6 +14,7 @@ import android.text.style.TypefaceSpan
 import android.text.style.URLSpan
 import androidx.core.text.getSpans
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.R
@@ -31,13 +32,12 @@ import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.attachmentsDifferFrom
-import com.philkes.notallyx.data.model.copy
 import com.philkes.notallyx.data.model.deepCopy
 import com.philkes.notallyx.presentation.activity.note.reminders.ReminderReceiver
 import com.philkes.notallyx.presentation.activity.note.reminders.RemindersActivity.Companion.NEW_REMINDER_ID
 import com.philkes.notallyx.presentation.applySpans
 import com.philkes.notallyx.presentation.showToast
-import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
+import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.TextSizeSp
@@ -65,10 +65,11 @@ import kotlinx.coroutines.withContext
 
 data class BackupFile(val targetPath: String, val file: File)
 
-class NotallyModel(private val app: Application) : AndroidViewModel(app) {
+/** Core ViewModel for note content editing, attachments, reminders, and auto-save logic. */
+open class NoteModel(protected val app: Application) : AndroidViewModel(app) {
 
-    private val database = NotallyDatabase.getDatabase(app)
-    private var baseNoteDao: BaseNoteDao? = null
+    protected val database = NotallyDatabase.getDatabase(app)
+    protected var baseNoteDao: BaseNoteDao? = null
 
     val preferences = NotallyXPreferences.getInstance(app)
     val textSize: TextSizeSp = preferences.textSizeNoteEditor.value
@@ -93,15 +94,34 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
 
     val items = ArrayList<ListItem>()
 
-    val images = NotNullLiveData<List<FileAttachment>>(emptyList())
-    val files = NotNullLiveData<List<FileAttachment>>(emptyList())
-    val audios = NotNullLiveData<List<Audio>>(emptyList())
+    val images: LiveData<List<FileAttachment>>
+        field = NotNullMutableLiveData<List<FileAttachment>>(emptyList())
+    val files: LiveData<List<FileAttachment>>
+        field = NotNullMutableLiveData<List<FileAttachment>>(emptyList())
+    val audios: LiveData<List<Audio>>
+        field = NotNullMutableLiveData<List<Audio>>(emptyList())
+    val reminders: LiveData<List<Reminder>>
+        field = NotNullMutableLiveData<List<Reminder>>(emptyList())
+    val viewMode: LiveData<NoteViewMode>
+        field = NotNullMutableLiveData(NoteViewMode.EDIT)
+    val addingFiles: LiveData<Progress>
+        field = MutableLiveData<Progress>()
+    val eventBus: LiveData<Event<List<FileError>>>
+        field = MutableLiveData<Event<List<FileError>>>()
 
-    val reminders = NotNullLiveData<List<Reminder>>(emptyList())
-    val viewMode = NotNullLiveData(NoteViewMode.EDIT)
+    fun setViewMode(mode: NoteViewMode) {
+        viewMode.value = mode
+    }
 
-    val addingFiles = MutableLiveData<Progress>()
-    val eventBus = MutableLiveData<Event<List<FileError>>>()
+    fun toggleViewMode(): NoteViewMode {
+        val newMode =
+            when (viewMode.value) {
+                NoteViewMode.EDIT -> NoteViewMode.READ_ONLY
+                NoteViewMode.READ_ONLY -> NoteViewMode.EDIT
+            }
+        setViewMode(newMode)
+        return newMode
+    }
 
     var imageRoot = app.getCurrentImagesDirectory()
     var audioRoot = app.getCurrentAudioDirectory()
@@ -257,7 +277,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
                 files.value = baseNote.files
                 audios.value = baseNote.audios
                 reminders.value = baseNote.reminders
-                viewMode.value = baseNote.viewMode
+                setViewMode(baseNote.viewMode)
                 isPinnedToStatus = baseNote.isPinnedToStatus
             } else {
                 originalNote = createBaseNote(createInDb)
@@ -462,7 +482,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
         if (updatedReminder.id != NEW_REMINDER_ID) {
             app.cancelReminder(id, updatedReminder.id)
         }
-        val updatedReminders = reminders.value.copy().toMutableList()
+        val updatedReminders = reminders.value.toMutableList()
         val idx = updatedReminders.indexOfFirst { it.id == updatedReminder.id }
         if (idx != -1) {
             updatedReminders[idx] = updatedReminder

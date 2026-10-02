@@ -38,7 +38,7 @@ import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.showKeyboard
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.MenuDialog
-import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
+import com.philkes.notallyx.presentation.viewmodel.main.fragment.SettingsViewModel
 import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
 import com.philkes.notallyx.presentation.viewmodel.preference.BooleanPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.Constants.PASSWORD_EMPTY
@@ -89,7 +89,7 @@ fun PreferenceBinding.setup(
     preference: EnumPreference<BiometricLock>,
     value: BiometricLock,
     context: Context,
-    model: BaseNoteModel,
+    model: SettingsViewModel,
     onEnableSuccess: () -> Unit,
     onDisableSuccess: () -> Unit,
     onNotSetup: () -> Unit,
@@ -150,7 +150,7 @@ fun PreferenceBinding.setup(
     value: NotesSort,
     context: Context,
     layoutInflater: LayoutInflater,
-    model: BaseNoteModel,
+    model: SettingsViewModel,
 ) {
     Title.setText(preference.titleResId!!)
 

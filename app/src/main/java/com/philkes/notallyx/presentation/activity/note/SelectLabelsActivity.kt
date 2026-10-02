@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.viewModels
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -19,9 +20,11 @@ import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.main.label.SelectableLabelAdapter
+import com.philkes.notallyx.presentation.viewmodel.main.fragment.LabelsViewModel
 
 class SelectLabelsActivity : LockedActivity<ActivityLabelBinding>() {
 
+    private val labelsViewModel: LabelsViewModel by viewModels()
     private lateinit var selectedLabels: ArrayList<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -106,7 +109,7 @@ class SelectLabelsActivity : LockedActivity<ActivityLabelBinding>() {
             .setPositiveButton(R.string.save) { dialog, _ ->
                 val value = binding.EditText.text.toString().trim()
                 if (value.isNotEmpty()) {
-                    baseModel.insertLabel(value) { success ->
+                    labelsViewModel.insertLabel(value) { success ->
                         if (success) {
                             dialog.dismiss()
                         } else showToast(R.string.label_exists)
@@ -137,7 +140,7 @@ class SelectLabelsActivity : LockedActivity<ActivityLabelBinding>() {
             )
         }
 
-        baseModel.labels.observe(this) { labels ->
+        labelsViewModel.labels.observe(this) { labels ->
             labelAdapter.submitList(labels)
             if (labels.isEmpty()) {
                 binding.EmptyState.visibility = View.VISIBLE

@@ -1,6 +1,7 @@
 package com.philkes.notallyx.utils.backup
 
 import android.Manifest
+import android.app.Activity
 import android.app.Application
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -38,13 +39,12 @@ import com.philkes.notallyx.data.model.toHtml
 import com.philkes.notallyx.data.model.toJson
 import com.philkes.notallyx.data.model.toMarkdown
 import com.philkes.notallyx.data.model.toTxt
-import com.philkes.notallyx.presentation.activity.LockedActivity
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.view.misc.Progress
-import com.philkes.notallyx.presentation.viewmodel.BackupFile
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
+import com.philkes.notallyx.presentation.viewmodel.edit.BackupFile
 import com.philkes.notallyx.presentation.viewmodel.preference.Constants.PASSWORD_EMPTY
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.EMPTY_PATH
@@ -1055,13 +1055,12 @@ private fun ContextWrapper.tryPostErrorNotification(e: Throwable) {
     }
 }
 
-fun LockedActivity<*>.exportNotes(
+fun MainActivity.exportNotes(
     notes: Collection<BaseNote>,
     mimeType: ExportMimeType,
     exportToFileResultLauncher: ActivityResultLauncher<Intent>,
     exportToFolderResultLauncher: ActivityResultLauncher<Intent>,
 ) {
-    baseModel.selectedExportMimeType = mimeType
     if (notes.size == 1) {
         exportNote(notes.first(), mimeType, exportToFileResultLauncher)
     } else {
@@ -1075,12 +1074,11 @@ fun LockedActivity<*>.exportNotes(
     }
 }
 
-fun LockedActivity<*>.exportNote(
+fun Activity.exportNote(
     note: BaseNote,
     mimeType: ExportMimeType,
     exportToFileResultLauncher: ActivityResultLauncher<Intent>,
 ) {
-    baseModel.selectedExportMimeType = mimeType
     val suggestedName =
         (note.title.ifBlank { getString(R.string.note) }) + "." + mimeType.fileExtension
     val intent =

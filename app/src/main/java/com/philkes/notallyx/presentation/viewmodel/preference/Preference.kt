@@ -14,7 +14,7 @@ import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.presentation.format
 import com.philkes.notallyx.presentation.merge
-import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
+import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import com.philkes.notallyx.presentation.view.note.listitem.adapter.CheckedListItemAdapter
 import com.philkes.notallyx.presentation.view.note.listitem.sorting.ListItemCheckedTimestampSortCallback
 import com.philkes.notallyx.presentation.view.note.listitem.sorting.ListItemParentSortCallback
@@ -33,7 +33,7 @@ import javax.crypto.Cipher
 import org.ocpsoft.prettytime.PrettyTime
 
 /**
- * Every Preference can be observed like a [NotNullLiveData].
+ * Every Preference can be observed like a [NotNullMutableLiveData].
  *
  * @param titleResId Optional string resource id, if preference can be set via the UI.
  */
@@ -42,7 +42,7 @@ abstract class BasePreference<T>(
     val defaultValue: T,
     val titleResId: Int? = null,
 ) {
-    private var data: NotNullLiveData<T>? = null
+    private var data: NotNullMutableLiveData<T>? = null
     private var cachedValue: T? = null
 
     val value: T
@@ -55,11 +55,11 @@ abstract class BasePreference<T>(
 
     protected abstract fun getValue(sharedPreferences: SharedPreferences): T
 
-    fun getData(): NotNullLiveData<T> {
+    fun getData(): NotNullMutableLiveData<T> {
         if (data == null) {
-            data = NotNullLiveData(value)
+            data = NotNullMutableLiveData(value)
         }
-        return data as NotNullLiveData<T>
+        return data as NotNullMutableLiveData<T>
     }
 
     internal fun save(value: T) {
@@ -89,7 +89,7 @@ abstract class BasePreference<T>(
         return getData().merge(other)
     }
 
-    fun <C> merge(other: NotNullLiveData<C>): MediatorLiveData<Pair<T, C>> {
+    fun <C> merge(other: NotNullMutableLiveData<C>): MediatorLiveData<Pair<T, C>> {
         return getData().merge(other)
     }
 

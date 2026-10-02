@@ -76,6 +76,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.switchMap
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -96,6 +97,8 @@ import com.philkes.notallyx.data.imports.ImportProgress
 import com.philkes.notallyx.data.imports.ImportStage
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
+import com.philkes.notallyx.data.model.Header
+import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.findNextNotificationDate
 import com.philkes.notallyx.data.model.haveAnyRepetition
@@ -103,12 +106,13 @@ import com.philkes.notallyx.databinding.DialogInputBinding
 import com.philkes.notallyx.databinding.DialogProgressBinding
 import com.philkes.notallyx.databinding.LabelBinding
 import com.philkes.notallyx.presentation.activity.main.MainActivity
-import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
+import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.view.misc.StylableEditTextWithHistory
 import com.philkes.notallyx.presentation.view.note.listitem.ListManager
 import com.philkes.notallyx.presentation.view.note.listitem.adapter.ListItemVH
-import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel
+import com.philkes.notallyx.presentation.viewmodel.edit.EditActivityViewModel
+import com.philkes.notallyx.presentation.viewmodel.main.fragment.LabelsViewModel
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.TimeFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.displayBodySize
@@ -118,6 +122,7 @@ import com.philkes.notallyx.utils.changehistory.EditTextState
 import com.philkes.notallyx.utils.changehistory.EditTextWithHistoryChange
 import com.philkes.notallyx.utils.getUrl
 import java.util.Date
+import kotlin.collections.emptyList
 import me.zhanghai.android.fastscroll.FastScrollNestedScrollView
 import me.zhanghai.android.fastscroll.FastScrollerBuilder
 import me.zhanghai.android.fastscroll.PopupStyles
@@ -419,11 +424,15 @@ fun Context.hideKeyboard(view: View) {
         ?.hideSoftInputFromWindow(view.windowToken, 0)
 }
 
-fun MutableLiveData<out Progress>.setupProgressDialog(activity: Activity) {
+fun LiveData<out Progress>?.postProgress(value: Progress) {
+    (this as? MutableLiveData<Progress>)?.postValue(value)
+}
+
+fun LiveData<out Progress>.setupProgressDialog(activity: Activity) {
     setupProgressDialog(activity, activity.layoutInflater, activity as LifecycleOwner)
 }
 
-fun MutableLiveData<out Progress>.setupProgressDialog(fragment: Fragment) {
+fun LiveData<out Progress>.setupProgressDialog(fragment: Fragment) {
     setupProgressDialog(
         fragment.requireContext(),
         fragment.layoutInflater,
@@ -431,35 +440,48 @@ fun MutableLiveData<out Progress>.setupProgressDialog(fragment: Fragment) {
     )
 }
 
-fun MutableLiveData<ImportProgress>.setupImportProgressDialog(fragment: Fragment) {
+fun <X, Y> LiveData<X>.switchMapNullSafe(
+    transform: (@JvmSuppressWildcards X) -> @JvmSuppressWildcards LiveData<List<Y>>
+) = switchMap { value ->
+    if (value == null) {
+        MutableLiveData<List<Y>>(emptyList())
+    } else {
+        transform(value)
+    }
+}
+
+fun LiveData<out Progress>.setupImportProgressDialog(fragment: Fragment) {
     setupProgressDialog(
         fragment.requireContext(),
         fragment.layoutInflater,
         fragment.viewLifecycleOwner,
     ) { context, binding, progress ->
+        val importProgress = progress as ImportProgress
         val stageStr =
             context.getString(
-                when (progress.stage) {
+                when (importProgress.stage) {
                     ImportStage.IMPORT_NOTES -> R.string.imported_notes
                     ImportStage.EXTRACT_FILES -> R.string.extracted_files
                     ImportStage.IMPORT_FILES -> R.string.imported_files
                 }
             )
         binding.Count.text =
-            "${context.getString(R.string.count, progress.current, progress.total)} $stageStr"
+            "${context.getString(R.string.count, importProgress.current, importProgress.total)} $stageStr"
     }
 }
 
-fun <T, C> NotNullLiveData<T>.merge(liveData: NotNullLiveData<C>): MediatorLiveData<Pair<T, C>> {
+fun <T, C> NotNullMutableLiveData<T>.merge(
+    liveData: NotNullMutableLiveData<C>
+): MediatorLiveData<Pair<T, C>> {
     return MediatorLiveData<Pair<T, C>>().apply {
         addSource(this@merge) { value1 -> value = Pair(value1, liveData.value) }
         addSource(liveData) { value2 -> value = Pair(this@merge.value, value2) }
     }
 }
 
-fun <T, C, B> NotNullLiveData<T>.merge(
-    liveData: NotNullLiveData<C>,
-    liveData2: NotNullLiveData<B>,
+fun <T, C, B> NotNullMutableLiveData<T>.merge(
+    liveData: NotNullMutableLiveData<C>,
+    liveData2: NotNullMutableLiveData<B>,
 ): MediatorLiveData<Triple<T, C, B>> {
     return MediatorLiveData<Triple<T, C, B>>().apply {
         addSource(this@merge) { value1 -> value = Triple(value1, liveData.value, liveData2.value) }
@@ -468,14 +490,14 @@ fun <T, C, B> NotNullLiveData<T>.merge(
     }
 }
 
-fun <T, C> NotNullLiveData<T>.merge(liveData: LiveData<C>): MediatorLiveData<Pair<T, C?>> {
+fun <T, C> NotNullMutableLiveData<T>.merge(liveData: LiveData<C>): MediatorLiveData<Pair<T, C?>> {
     return MediatorLiveData<Pair<T, C?>>().apply {
         addSource(this@merge) { value1 -> value = Pair(value1, liveData.value) }
         addSource(liveData) { value2 -> value = Pair(this@merge.value, value2) }
     }
 }
 
-private fun <T : Progress> MutableLiveData<T>.setupProgressDialog(
+private fun <T : Progress> LiveData<T>.setupProgressDialog(
     context: Context,
     layoutInflater: LayoutInflater,
     viewLifecycleOwner: LifecycleOwner,
@@ -580,23 +602,41 @@ fun Activity.setEnabledSecureFlag(enabled: Boolean) {
 
 fun Fragment.displayEditLabelDialog(
     oldValue: String,
-    model: BaseNoteModel,
+    viewModel: LabelsViewModel,
     onUpdateLabel: ((oldLabel: String, newLabel: String) -> Unit)? = null,
 ) {
-    requireContext().displayEditLabelDialog(oldValue, model, layoutInflater, onUpdateLabel)
+    requireContext().displayEditLabelDialog(oldValue, viewModel, layoutInflater, onUpdateLabel)
 }
 
 fun Activity.displayEditLabelDialog(
     oldValue: String,
-    model: BaseNoteModel,
+    viewModel: EditActivityViewModel,
     onUpdateLabel: ((oldLabel: String, newLabel: String) -> Unit)? = null,
 ) {
-    displayEditLabelDialog(oldValue, model, layoutInflater, onUpdateLabel)
+    displayEditLabelDialog(oldValue, viewModel, layoutInflater, onUpdateLabel)
 }
 
 fun Context.displayEditLabelDialog(
     oldValue: String,
-    model: BaseNoteModel,
+    viewModel: LabelsViewModel,
+    layoutInflater: LayoutInflater,
+    onUpdateLabel: ((oldLabel: String, newLabel: String) -> Unit)? = null,
+) {
+    displayEditLabelDialog(oldValue, viewModel::updateLabel, layoutInflater, onUpdateLabel)
+}
+
+fun Context.displayEditLabelDialog(
+    oldValue: String,
+    viewModel: EditActivityViewModel,
+    layoutInflater: LayoutInflater,
+    onUpdateLabel: ((oldLabel: String, newLabel: String) -> Unit)? = null,
+) {
+    displayEditLabelDialog(oldValue, viewModel::updateLabel, layoutInflater, onUpdateLabel)
+}
+
+fun Context.displayEditLabelDialog(
+    oldValue: String,
+    updateLabel: (oldValue: String, newValue: String, onComplete: (Boolean) -> Unit) -> Unit,
     layoutInflater: LayoutInflater,
     onUpdateLabel: ((oldLabel: String, newLabel: String) -> Unit)? = null,
 ) {
@@ -609,7 +649,7 @@ fun Context.displayEditLabelDialog(
         .setPositiveButton(R.string.save) { dialog, _ ->
             val value = dialogBinding.EditText.text.toString().trim()
             if (value.isNotEmpty()) {
-                model.updateLabel(oldValue, value) { success ->
+                updateLabel(oldValue, value) { success ->
                     if (success) {
                         onUpdateLabel?.invoke(oldValue, value)
                         dialog.dismiss()
@@ -1202,3 +1242,31 @@ fun Chip.setupReminderChip(
 
 fun Context.exportedText(notesAndAttachments: NotesAndAttachments) =
     "${getString(R.string.exported)} ${notesAndAttachments.first} ${if(notesAndAttachments.first == 1) getString(R.string.note) else getString(R.string.notes)} (${notesAndAttachments.second} ${getQuantityString(R.plurals.attachments, notesAndAttachments.second)})"
+
+fun Context.createItemsFromNotes(list: List<BaseNote>): List<Item> {
+    val pinned by lazy { Header(getString(R.string.pinned)) }
+    val others by lazy { Header(getString(R.string.others)) }
+    val archived by lazy { Header(getString(R.string.archived)) }
+    if (list.isEmpty()) {
+        return list
+    } else {
+        val firstPinnedNote = list.indexOfFirst { baseNote -> baseNote.pinned }
+        val firstUnpinnedNote = list.indexOfFirst { baseNote ->
+            !baseNote.pinned && baseNote.folder != Folder.ARCHIVED
+        }
+        val mutableList: MutableList<Item> = list.toMutableList()
+        if (firstPinnedNote != -1) {
+            mutableList.add(firstPinnedNote, pinned)
+            if (firstUnpinnedNote != -1) {
+                mutableList.add(firstUnpinnedNote + 1, others)
+            }
+        }
+        val firstArchivedNote = mutableList.indexOfFirst { item ->
+            item is BaseNote && item.folder == Folder.ARCHIVED
+        }
+        if (firstArchivedNote != -1) {
+            mutableList.add(firstArchivedNote, archived)
+        }
+        return mutableList
+    }
+}

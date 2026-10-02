@@ -5,7 +5,7 @@
 
     <fragment
         android:id="@+id/Notes"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.NotesFragment"
+        android:name="com.philkes.notallyx.presentation.activity.main.fragment.NotesOverviewFragment"
         android:label="@string/notes">
 
         <action
@@ -81,7 +81,11 @@
     <fragment
         android:id="@+id/DisplayLabel"
         android:name="com.philkes.notallyx.presentation.activity.main.fragment.DisplayLabelFragment"
-        android:label="{notallyx.intent.extra.DISPLAYED_LABEL}" />
+        android:label="{notallyx.intent.extra.DISPLAYED_LABEL}">
+        <argument
+            android:name="notallyx.intent.extra.DISPLAYED_LABEL"
+            app:argType="string" />
+    </fragment>
 
     <fragment
         android:id="@+id/Unlabeled"

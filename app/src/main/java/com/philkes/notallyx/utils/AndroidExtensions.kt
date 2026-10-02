@@ -46,7 +46,7 @@ import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showToast
-import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
+import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
 import com.philkes.notallyx.utils.backup.FILE_TIMESTAMP_FORMAT
 import com.philkes.notallyx.utils.backup.LOG_DATE_FORMATTER
@@ -90,8 +90,8 @@ fun <T> LiveData<T>.observeForeverSkipFirst(observer: Observer<T>) {
     }
 }
 
-fun <T, C> NotNullLiveData<T>.mergeSkipFirst(
-    liveData: NotNullLiveData<C>
+fun <T, C> NotNullMutableLiveData<T>.mergeSkipFirst(
+    liveData: NotNullMutableLiveData<C>
 ): MediatorLiveData<Pair<T, C>> {
     return MediatorLiveData<Pair<T, C>>().apply {
         addSource(

@@ -13,13 +13,13 @@ import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.children
 import androidx.drawerlayout.widget.DrawerLayout
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
@@ -30,14 +30,13 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.google.android.material.transition.platform.MaterialFade
 import com.philkes.notallyx.R
-import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.ConverterErrorReporter
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.databinding.ActivityMainBinding
 import com.philkes.notallyx.presentation.activity.LockedActivity
 import com.philkes.notallyx.presentation.activity.main.fragment.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
-import com.philkes.notallyx.presentation.activity.main.fragment.NotallyFragment
+import com.philkes.notallyx.presentation.activity.main.fragment.NotesFragment
 import com.philkes.notallyx.presentation.activity.main.fragment.SearchFragment
 import com.philkes.notallyx.presentation.activity.note.EditListActivity
 import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
@@ -46,9 +45,11 @@ import com.philkes.notallyx.presentation.activity.note.handleRejection
 import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.setupProgressDialog
 import com.philkes.notallyx.presentation.showToast
-import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel.Companion.CURRENT_LABEL_EMPTY
-import com.philkes.notallyx.presentation.viewmodel.BaseNoteModel.Companion.CURRENT_LABEL_NONE
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
+import com.philkes.notallyx.presentation.viewmodel.main.MainActivityViewModel
+import com.philkes.notallyx.presentation.viewmodel.main.fragment.NotesFragmentViewModel
+import com.philkes.notallyx.presentation.viewmodel.main.fragment.NotesFragmentViewModel.Companion.CURRENT_LABEL_EMPTY
+import com.philkes.notallyx.presentation.viewmodel.main.fragment.NotesFragmentViewModel.Companion.CURRENT_LABEL_NONE
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.START_VIEW_DEFAULT
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.START_VIEW_UNLABELED
 import com.philkes.notallyx.presentation.viewmodel.progress.MigrationProgress
@@ -61,6 +62,9 @@ import kotlinx.coroutines.launch
 
 class MainActivity : LockedActivity<ActivityMainBinding>() {
 
+    private val notallyFragmentModel: NotesFragmentViewModel by viewModels()
+    private val mainActivityViewModel: MainActivityViewModel by viewModels()
+
     private lateinit var navController: NavController
     private lateinit var configuration: AppBarConfiguration
     private lateinit var exportFileActivityResultLauncher: ActivityResultLauncher<Intent>
@@ -70,14 +74,14 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     private val actionModeCancelCallback =
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                baseModel.actionMode.close(true)
+                notallyFragmentModel.actionMode.close(true)
             }
         }
 
     var getCurrentFragmentNotes: (() -> Collection<BaseNote>?)? = null
 
     override fun onSupportNavigateUp(): Boolean {
-        baseModel.keyword = ""
+        notallyFragmentModel.keyword = ""
         return navController.navigateUp(configuration)
     }
 
@@ -112,7 +116,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                         neutralButtonTextResId = R.string.clean_up,
                         neutralButtonClickListener = { dialog, _ ->
                             ConverterErrorReporter.dismissAllDialogs()
-                            baseModel.cleanupDatabase {
+                            mainActivityViewModel.cleanupDatabase {
                                 showToast(getString(R.string.cleanup_finished_title))
                             }
                         },
@@ -125,7 +129,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             this,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    if (baseModel.actionMode.enabled.value) {
+                    if (notallyFragmentModel.actionMode.enabled.value) {
                         return
                     }
                     if (
@@ -141,10 +145,13 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         )
         onBackPressedDispatcher.addCallback(this, actionModeCancelCallback)
 
-        baseModel.progress.setupProgressDialog(this)
+        mainActivityViewModel.progress.setupProgressDialog(this)
+        notallyFragmentModel.progress.setupProgressDialog(this)
     }
 
-    override fun initViewModel() {}
+    override fun initViewModel() {
+        mainActivityViewModel.startObserving()
+    }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -158,8 +165,8 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                     grantResults.isNotEmpty() &&
                         grantResults[0] == PackageManager.PERMISSION_GRANTED
                 ) {
-                    val baseNotes = baseModel.actionMode.selectedNotes.values
-                    baseModel.pinBaseNotesToStatusBar(
+                    val baseNotes = notallyFragmentModel.actionMode.selectedNotes.values
+                    notallyFragmentModel.pinBaseNotesToStatusBar(
                         this@MainActivity,
                         baseNotes.any { !it.isPinnedToStatus },
                     )
@@ -171,7 +178,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     private fun checkForMigrations(savedInstanceState: Bundle?) {
         // Run migrations first (blocking dialog), then proceed with initial navigation
         val proceed: () -> Unit = {
-            baseModel.startObserving()
+            mainActivityViewModel.startObserving()
             val fragmentIdToLoad = intent.getIntExtra(EXTRA_FRAGMENT_TO_OPEN, -1)
             if (fragmentIdToLoad != -1) {
                 navController.navigate(fragmentIdToLoad, intent.extras)
@@ -287,7 +294,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             ?.fragments
             ?.firstOrNull()
             ?.let { fragment ->
-                return if (fragment is NotallyFragment) {
+                return if (fragment is NotesFragment) {
                     fragment.prepareNewNoteIntent(intent)
                 } else intent
             } ?: intent
@@ -296,26 +303,15 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     private var labelsMenuItems: List<MenuItem> = listOf()
     private var labelsMoreMenuItem: MenuItem? = null
     private var labels: List<Label> = listOf()
-    private var labelsLiveData: LiveData<List<Label>>? = null
 
     private fun setupMenu() {
         binding.NavigationView.menu.apply {
             add(0, R.id.Notes, 0, R.string.notes).setCheckable(true).setIcon(R.drawable.home)
 
             addStaticLabelsMenuItems()
-            NotallyDatabase.getDatabase(application).observe(this@MainActivity) { database ->
-                labelsLiveData?.removeObservers(this@MainActivity)
-                if (database == null) {
-                    labelsLiveData = null
-                    return@observe
-                }
-                labelsLiveData =
-                    database.getLabelDao().getAll().also {
-                        it.observe(this@MainActivity) { labels ->
-                            this@MainActivity.labels = labels
-                            setupLabelsMenuItems(labels, preferences.maxLabels.value)
-                        }
-                    }
+            mainActivityViewModel.labels.observe(this@MainActivity) { labels ->
+                this@MainActivity.labels = labels
+                setupLabelsMenuItems(labels, mainActivityViewModel.preferences.maxLabels.value)
             }
 
             add(2, R.id.Deleted, CATEGORY_SYSTEM + 1, R.string.deleted)
@@ -331,10 +327,10 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 .setCheckable(true)
                 .setIcon(R.drawable.settings)
         }
-        baseModel.preferences.labelsHidden.observe(this) { hiddenLabels ->
-            hideLabelsInNavigation(hiddenLabels, baseModel.preferences.maxLabels.value)
+        mainActivityViewModel.preferences.labelsHidden.observe(this) { hiddenLabels ->
+            hideLabelsInNavigation(hiddenLabels, mainActivityViewModel.preferences.maxLabels.value)
         }
-        baseModel.preferences.maxLabels.observe(this) { maxLabels ->
+        mainActivityViewModel.preferences.maxLabels.observe(this) { maxLabels ->
             binding.NavigationView.menu.setupLabelsMenuItems(labels, maxLabels)
         }
     }
@@ -342,7 +338,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     private fun Menu.addStaticLabelsMenuItems() {
         add(1, R.id.Unlabeled, CATEGORY_CONTAINER + 1, R.string.unlabeled)
             .setCheckable(true)
-            .setChecked(baseModel.currentLabel == CURRENT_LABEL_NONE)
+            .setChecked(notallyFragmentModel.currentLabel == CURRENT_LABEL_NONE)
             .setIcon(R.drawable.label_off)
         add(1, R.id.Labels, CATEGORY_CONTAINER + 2, R.string.labels)
             .setCheckable(true)
@@ -357,7 +353,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 .mapIndexed { index, label ->
                     add(1, R.id.DisplayLabel, CATEGORY_CONTAINER + index + 3, label.value)
                         .setCheckable(true)
-                        .setChecked(baseModel.currentLabel == label.value)
+                        .setChecked(notallyFragmentModel.currentLabel == label.value)
                         .setVisible(index < maxLabelsToDisplay)
                         .setIcon(R.drawable.label)
                         .setOnMenuItemClickListener {
@@ -380,7 +376,10 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             } else null
         configuration = AppBarConfiguration(binding.NavigationView.menu, binding.DrawerLayout)
         setupActionBarWithNavController(navController, configuration)
-        hideLabelsInNavigation(baseModel.preferences.labelsHidden.value, maxLabelsToDisplay)
+        hideLabelsInNavigation(
+            mainActivityViewModel.preferences.labelsHidden.value,
+            maxLabelsToDisplay,
+        )
     }
 
     private fun navigateToLabel(label: String) {
@@ -402,7 +401,9 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     }
 
     private fun setupActionMode() {
-        binding.ActionMode.setNavigationOnClickListener { baseModel.actionMode.close(true) }
+        binding.ActionMode.setNavigationOnClickListener {
+            notallyFragmentModel.actionMode.close(true)
+        }
 
         val transition =
             MaterialFade().apply {
@@ -414,7 +415,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 excludeTarget(binding.NavigationView, true)
             }
 
-        baseModel.actionMode.enabled.observe(this) { enabled ->
+        notallyFragmentModel.actionMode.enabled.observe(this) { enabled ->
             TransitionManager.beginDelayedTransition(binding.RelativeLayout, transition)
             if (enabled) {
                 binding.Toolbar.visibility = View.GONE
@@ -429,15 +430,19 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         }
 
         val menu = binding.ActionMode.menu
-        baseModel.folder.observe(this@MainActivity, ModelFolderObserver(this, menu, baseModel))
-        baseModel.actionMode.loading.observe(this@MainActivity) { loading ->
+        notallyFragmentModel.folder.observe(
+            this@MainActivity,
+            ModelFolderObserver(this, menu, notallyFragmentModel),
+        )
+        notallyFragmentModel.actionMode.loading.observe(this@MainActivity) { loading ->
             menu.setGroupEnabled(Menu.NONE, !loading)
         }
     }
 
     internal fun exportSelectedNotes(mimeType: ExportMimeType) {
+        notallyFragmentModel.selectedExportMimeType = mimeType
         exportNotes(
-            baseModel.actionMode.selectedNotes.values,
+            notallyFragmentModel.actionMode.selectedNotes.values,
             mimeType,
             exportFileActivityResultLauncher,
             exportNotesActivityResultLauncher,
@@ -479,17 +484,17 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             when (fragmentIdToLoad) {
                 R.id.DisplayLabel ->
                     bundle?.getString(EXTRA_DISPLAYED_LABEL)?.let {
-                        baseModel.currentLabel = it
+                        notallyFragmentModel.currentLabel = it
                         binding.NavigationView.menu.children
                             .find { menuItem -> menuItem.title == it }
                             ?.let { menuItem -> menuItem.isChecked = true }
                     }
                 R.id.Unlabeled -> {
-                    baseModel.currentLabel = CURRENT_LABEL_NONE
+                    notallyFragmentModel.currentLabel = CURRENT_LABEL_NONE
                     binding.NavigationView.setCheckedItem(destination.id)
                 }
                 else -> {
-                    baseModel.currentLabel = CURRENT_LABEL_EMPTY
+                    notallyFragmentModel.currentLabel = CURRENT_LABEL_EMPTY
                     binding.NavigationView.setCheckedItem(destination.id)
                 }
             }
@@ -536,7 +541,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
                     result.data?.data?.let { uri ->
-                        baseModel.exportSelectedNoteToFile(uri, binding.root)
+                        notallyFragmentModel.exportSelectedNoteToFile(uri, binding.root)
                     }
                 }
             }
@@ -544,7 +549,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
                     result.data?.data?.let { uri ->
-                        baseModel.exportSelectedNotesToFolder(uri, binding.root)
+                        notallyFragmentModel.exportSelectedNotesToFolder(uri, binding.root)
                     }
                 }
             }
@@ -580,7 +585,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
 
                 if (isInSearchFragment) {
                     // If in Search fragment, navigate back to cancel search
-                    baseModel.keyword = ""
+                    notallyFragmentModel.keyword = ""
                     navController.popBackStack()
                 } else {
                     // Navigate to search fragment
@@ -591,17 +596,17 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                             ?.fragments
                             ?.firstOrNull()
 
-                    if (currentFragment is NotallyFragment) {
+                    if (currentFragment is NotesFragment) {
                         navController.navigate(
                             R.id.Search,
                             Bundle().apply {
                                 putSerializable(
                                     SearchFragment.EXTRA_INITIAL_FOLDER,
-                                    baseModel.folder.value,
+                                    notallyFragmentModel.folder.value,
                                 )
                                 putSerializable(
                                     SearchFragment.EXTRA_INITIAL_LABEL,
-                                    baseModel.currentLabel,
+                                    notallyFragmentModel.currentLabel,
                                 )
                             },
                         )

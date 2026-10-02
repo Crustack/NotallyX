@@ -16,7 +16,7 @@ import com.philkes.notallyx.data.model.BaseNote.Companion.COLOR_DEFAULT
 import com.philkes.notallyx.presentation.applySpans
 import com.philkes.notallyx.presentation.getQuantityStringPlain
 import com.philkes.notallyx.presentation.showToast
-import com.philkes.notallyx.presentation.viewmodel.NotallyModel
+import com.philkes.notallyx.presentation.viewmodel.edit.NoteModel
 import com.philkes.notallyx.utils.decodeToBitmap
 import com.philkes.notallyx.utils.getFileName
 import com.philkes.notallyx.utils.getMimeType
@@ -658,18 +658,18 @@ fun Intent.generateBaseNote(context: ContextWrapper): SharedNote {
             val filesByType = it.groupBy { uri ->
                 context.getMimeType(uri)?.let { mimeType ->
                     if (mimeType.isImageMimeType) {
-                        NotallyModel.FileType.IMAGE
+                        NoteModel.FileType.IMAGE
                     } else {
-                        NotallyModel.FileType.ANY
+                        NoteModel.FileType.ANY
                     }
-                } ?: NotallyModel.FileType.ANY
+                } ?: NoteModel.FileType.ANY
             }
             val images =
-                filesByType[NotallyModel.FileType.IMAGE]?.let { images ->
+                filesByType[NoteModel.FileType.IMAGE]?.let { images ->
                     images.map { FileAttachment("", it.toString(), "") }
                 } ?: listOf()
             val files =
-                filesByType[NotallyModel.FileType.ANY]?.let { otherFiles ->
+                filesByType[NoteModel.FileType.ANY]?.let { otherFiles ->
                     otherFiles.map { FileAttachment("", it.toString(), "") }
                 } ?: listOf()
             Pair(images, files)

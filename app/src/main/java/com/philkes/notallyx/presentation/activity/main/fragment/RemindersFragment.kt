@@ -2,6 +2,7 @@ package com.philkes.notallyx.presentation.activity.main.fragment
 
 import android.os.Bundle
 import android.view.View
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.recyclerview.widget.SortedListAdapterCallback
@@ -13,11 +14,13 @@ import com.philkes.notallyx.presentation.view.main.BaseNoteAdapter
 import com.philkes.notallyx.presentation.view.main.sorting.BaseNoteLastNotificationSort
 import com.philkes.notallyx.presentation.view.main.sorting.BaseNoteMostRecentNotificationSort
 import com.philkes.notallyx.presentation.view.main.sorting.BaseNoteNextNotificationSort
+import com.philkes.notallyx.presentation.viewmodel.main.fragment.RemindersViewModel
 import com.philkes.notallyx.presentation.viewmodel.preference.SortDirection
 
-class RemindersFragment : NotallyFragment() {
+class RemindersFragment : NotesFragment() {
+    private val remindersViewModel: RemindersViewModel by viewModels()
     private val currentReminderNotes = MutableLiveData<List<Item>>()
-    private val allReminderNotes: LiveData<List<Item>> by lazy { model.reminderNotes!! }
+    private val allReminderNotes: LiveData<List<Item>> by lazy { remindersViewModel.reminderNotes }
     private var filterMode = FilterOptions.UPCOMING
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

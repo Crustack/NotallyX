@@ -32,7 +32,7 @@ import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.parseToColorString
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.Progress
-import com.philkes.notallyx.presentation.viewmodel.NotallyModel.FileType
+import com.philkes.notallyx.presentation.viewmodel.edit.NoteModel.FileType
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.utils.FileError
 import com.philkes.notallyx.utils.SUBFOLDER_AUDIOS
