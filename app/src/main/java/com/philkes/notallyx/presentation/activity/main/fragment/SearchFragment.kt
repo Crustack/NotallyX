@@ -14,10 +14,9 @@ class SearchFragment : NotallyFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         // TODO: autofocus and show keyboard
-        val initialFolder =
-            arguments?.let {
-                BundleCompat.getSerializable(it, EXTRA_INITIAL_FOLDER, Folder::class.java)
-            }
+        val initialFolder = arguments?.let {
+            BundleCompat.getSerializable(it, EXTRA_INITIAL_FOLDER, Folder::class.java)
+        }
         binding?.ChipGroup?.visibility = View.VISIBLE
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             binding?.MainListView?.scrollIndicators = View.SCROLL_INDICATOR_TOP

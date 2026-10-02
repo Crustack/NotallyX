@@ -331,33 +331,30 @@ class ModelFolderObserver(
                 checkedPositions[idx] = state
             }
             .setPositiveButton(R.string.save) { _, _ ->
-                val checkedLabels =
-                    checkedPositions.mapIndexedNotNull { index, checked ->
-                        if (checked == TriStateCheckBox.State.CHECKED) {
-                            labels[index]
-                        } else null
-                    }
-                val uncheckedLabels =
-                    checkedPositions.mapIndexedNotNull { index, checked ->
-                        if (checked == TriStateCheckBox.State.UNCHECKED) {
-                            labels[index]
-                        } else null
-                    }
-                val updatedBaseNotesLabels =
-                    baseNotes.map { baseNote ->
-                        val noteLabels = baseNote.labels.toMutableList()
-                        checkedLabels.forEach { checkedLabel ->
-                            if (!noteLabels.contains(checkedLabel)) {
-                                noteLabels.add(checkedLabel)
-                            }
+                val checkedLabels = checkedPositions.mapIndexedNotNull { index, checked ->
+                    if (checked == TriStateCheckBox.State.CHECKED) {
+                        labels[index]
+                    } else null
+                }
+                val uncheckedLabels = checkedPositions.mapIndexedNotNull { index, checked ->
+                    if (checked == TriStateCheckBox.State.UNCHECKED) {
+                        labels[index]
+                    } else null
+                }
+                val updatedBaseNotesLabels = baseNotes.map { baseNote ->
+                    val noteLabels = baseNote.labels.toMutableList()
+                    checkedLabels.forEach { checkedLabel ->
+                        if (!noteLabels.contains(checkedLabel)) {
+                            noteLabels.add(checkedLabel)
                         }
-                        uncheckedLabels.forEach { uncheckedLabel ->
-                            if (noteLabels.contains(uncheckedLabel)) {
-                                noteLabels.remove(uncheckedLabel)
-                            }
-                        }
-                        noteLabels
                     }
+                    uncheckedLabels.forEach { uncheckedLabel ->
+                        if (noteLabels.contains(uncheckedLabel)) {
+                            noteLabels.remove(uncheckedLabel)
+                        }
+                    }
+                    noteLabels
+                }
                 baseNotes.zip(updatedBaseNotesLabels).forEach { (baseNote, updatedLabels) ->
                     baseModel.updateBaseNoteLabels(updatedLabels, baseNote.id)
                 }

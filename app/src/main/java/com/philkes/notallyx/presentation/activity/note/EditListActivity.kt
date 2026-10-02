@@ -113,24 +113,24 @@ class EditListActivity : EditActivity(Type.LIST) {
         alreadyNotifiedItemPos: MutableSet<Int>,
     ): Int {
         return mapIndexedSuspended { idx, item ->
-                val occurrences =
-                    withContext(Dispatchers.Default) { item.body.findAllOccurrences(search) }
-                occurrences.onEach { (startIdx, endIdx) ->
-                    adapter?.highlightText(
-                        ListItemHighlight(
-                            idx,
-                            resultPosCounter.getAndIncrement(),
-                            startIdx,
-                            endIdx,
-                            false,
-                        )
+            val occurrences =
+                withContext(Dispatchers.Default) { item.body.findAllOccurrences(search) }
+            occurrences.onEach { (startIdx, endIdx) ->
+                adapter?.highlightText(
+                    ListItemHighlight(
+                        idx,
+                        resultPosCounter.getAndIncrement(),
+                        startIdx,
+                        endIdx,
+                        false,
                     )
-                }
-                if (occurrences.isNotEmpty()) {
-                    alreadyNotifiedItemPos.add(idx)
-                }
-                occurrences.size
+                )
             }
+            if (occurrences.isNotEmpty()) {
+                alreadyNotifiedItemPos.add(idx)
+            }
+            occurrences.size
+        }
             .sum()
     }
 
@@ -141,24 +141,24 @@ class EditListActivity : EditActivity(Type.LIST) {
         alreadyNotifiedItemPos: MutableSet<Int>,
     ): Int {
         return mapIndexedSuspended { idx, item ->
-                val occurrences =
-                    withContext(Dispatchers.Default) { item.body.findAllOccurrences(search) }
-                occurrences.onEach { (startIdx, endIdx) ->
-                    adapter?.highlightText(
-                        ListItemHighlight(
-                            idx,
-                            resultPosCounter.getAndIncrement(),
-                            startIdx,
-                            endIdx,
-                            false,
-                        )
+            val occurrences =
+                withContext(Dispatchers.Default) { item.body.findAllOccurrences(search) }
+            occurrences.onEach { (startIdx, endIdx) ->
+                adapter?.highlightText(
+                    ListItemHighlight(
+                        idx,
+                        resultPosCounter.getAndIncrement(),
+                        startIdx,
+                        endIdx,
+                        false,
                     )
-                }
-                if (occurrences.isNotEmpty()) {
-                    alreadyNotifiedItemPos.add(idx)
-                }
-                occurrences.size
+                )
             }
+            if (occurrences.isNotEmpty()) {
+                alreadyNotifiedItemPos.add(idx)
+            }
+            occurrences.size
+        }
             .sum()
     }
 

@@ -43,21 +43,18 @@ class CleanupMissingAttachmentsWorker(appContext: Context, params: WorkerParamet
             val originalFiles = ArrayList(note.files)
             val originalAudios = ArrayList(note.audios)
 
-            val filteredImages =
-                originalImages.filter { fa: FileAttachment ->
-                    val file = ctx.resolveAttachmentFile(SUBFOLDER_IMAGES, fa.localName)
-                    file != null && file.exists()
-                }
-            val filteredFiles =
-                originalFiles.filter { fa: FileAttachment ->
-                    val file = ctx.resolveAttachmentFile(SUBFOLDER_FILES, fa.localName)
-                    file != null && file.exists()
-                }
-            val filteredAudios =
-                originalAudios.filter { au: Audio ->
-                    val file = ctx.resolveAttachmentFile(SUBFOLDER_AUDIOS, au.name)
-                    file != null && file.exists()
-                }
+            val filteredImages = originalImages.filter { fa: FileAttachment ->
+                val file = ctx.resolveAttachmentFile(SUBFOLDER_IMAGES, fa.localName)
+                file != null && file.exists()
+            }
+            val filteredFiles = originalFiles.filter { fa: FileAttachment ->
+                val file = ctx.resolveAttachmentFile(SUBFOLDER_FILES, fa.localName)
+                file != null && file.exists()
+            }
+            val filteredAudios = originalAudios.filter { au: Audio ->
+                val file = ctx.resolveAttachmentFile(SUBFOLDER_AUDIOS, au.name)
+                file != null && file.exists()
+            }
 
             val imgRemoved = originalImages.size - filteredImages.size
             val fileRemoved = originalFiles.size - filteredFiles.size

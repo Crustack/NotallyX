@@ -63,21 +63,21 @@ class HtmlUtilsTest {
         assertThat(body)
             .isEqualTo(
                 """
-            This text needs to be fat
+                This text needs to be fat
 
-            A very italic
+                A very italic
 
-            Outdated stuff
+                Outdated stuff
 
-            System.out.println("Super useful code");
+                System.out.println("Super useful code");
 
-            https://github.com/Crustack/NotallyX
-
-
+                https://github.com/Crustack/NotallyX
 
 
-            I want to format this
-            """
+
+
+                I want to format this
+                """
                     .trimIndent()
                     .trimMargin()
             )
@@ -152,21 +152,21 @@ class HtmlUtilsTest {
         assertThat(body)
             .isEqualTo(
                 """
-            This text needs to be fat
+                This text needs to be fat
 
-            A very italic
+                A very italic
 
-            Outdated stuff
+                Outdated stuff
 
-            System.out.println("Super useful code");
+                System.out.println("Super useful code");
 
-            https://github.com/Crustack/NotallyX
-
-
+                https://github.com/Crustack/NotallyX
 
 
-            I want to format this
-            """
+
+
+                I want to format this
+                """
                     .trimIndent()
                     .trimMargin()
             )

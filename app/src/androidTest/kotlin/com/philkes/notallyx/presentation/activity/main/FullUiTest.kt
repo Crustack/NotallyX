@@ -206,7 +206,8 @@ class FullUiTest {
                         createBaseNote(
                             title = "List",
                             pinned = true,
-                            items = listOf(createListItem("A"), createListItem("B", isChild = true)),
+                            items =
+                                listOf(createListItem("A"), createListItem("B", isChild = true)),
                         ),
                     )
                 )
@@ -283,7 +284,8 @@ class FullUiTest {
                         createBaseNote(
                             title = "List",
                             pinned = true,
-                            items = listOf(createListItem("A"), createListItem("B", isChild = true)),
+                            items =
+                                listOf(createListItem("A"), createListItem("B", isChild = true)),
                         ),
                     )
                 )

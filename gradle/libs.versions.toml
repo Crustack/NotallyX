@@ -7,12 +7,12 @@ jvmTarget = "1.8"
 ndk = "29.0.13113456"
 
 # Plugins
-agp = "8.13.2"
+agp = "9.4.1"
 kotlin = "2.4.20"
 ksp = "2.3.12"
 ktfmt = "0.27.0"
 firebaseTestLab = "0.0.1-alpha13"
-roborazzi = "1.43.1"
+roborazzi = "1.76.0"
 translationsConverter = "1.0.7"
 autoTranslation = "1.0.5"
 kotlinSerialization = "2.4.20"
@@ -25,7 +25,7 @@ lifecycle = "2.11.0"
 securityCrypto = "1.1.0"
 sqlite = "2.7.1"
 work = "2.12.0"
-biometric = "1.4.0-alpha07"
+biometric = "1.1.0"
 customactivityoncrash = "2.4.0"
 subsamplingScaleImageView = "3.10.0"
 glide = "4.15.1"
@@ -135,8 +135,7 @@ commonmark = ["commonmark", "commonmark-gfm-strikethrough"]
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize" }
+kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 firebase-testlab = { id = "com.google.firebase.testlab", version.ref = "firebaseTestLab" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }

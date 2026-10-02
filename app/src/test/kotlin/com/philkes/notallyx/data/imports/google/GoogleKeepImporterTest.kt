@@ -40,7 +40,7 @@ class GoogleKeepImporterTest {
                 }
               ]
             }
-        """
+            """
                 .trimIndent()
         val expected =
             createBaseNote(
@@ -64,7 +64,7 @@ class GoogleKeepImporterTest {
               "isArchived": false,
               "title": "Trashed Note",
             }
-        """
+            """
                 .trimIndent()
 
         val actual = with(importer) { json.parseToBaseNote() }
@@ -83,7 +83,7 @@ class GoogleKeepImporterTest {
               "isArchived": true,
               "title": "Archived Note",
             }
-        """
+            """
                 .trimIndent()
 
         val actual = with(importer) { json.parseToBaseNote() }
@@ -101,7 +101,7 @@ class GoogleKeepImporterTest {
               "isPinned": true,
               "title": "Pinned Note",
             }
-        """
+            """
                 .trimIndent()
 
         val actual = with(importer) { json.parseToBaseNote() }
@@ -126,7 +126,7 @@ class GoogleKeepImporterTest {
                     }
                 ]
             }
-        """
+            """
                 .trimIndent()
 
         val actual = with(importer) { json.parseToBaseNote() }
@@ -156,7 +156,7 @@ class GoogleKeepImporterTest {
                 }
               ],
             }
-        """
+            """
                 .trimIndent()
 
         val actual = with(importer) { json.parseToBaseNote() }
@@ -182,7 +182,7 @@ class GoogleKeepImporterTest {
                 }
               ],
             }
-        """
+            """
                 .trimIndent()
 
         val actual = with(importer) { json.parseToBaseNote() }
@@ -208,7 +208,7 @@ class GoogleKeepImporterTest {
                 }
               ],
             }
-        """
+            """
                 .trimIndent()
 
         val actual = with(importer) { json.parseToBaseNote() }

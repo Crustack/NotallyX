@@ -77,15 +77,14 @@ interface BaseNoteDao {
     suspend fun insertSafe(context: ContextWrapper, baseNotes: List<BaseNote>): List<Long> {
         val truncatedNotes = mutableListOf<BaseNote>()
         var truncatedCharacterSize = 0
-        val notes =
-            baseNotes.map { baseNote ->
-                val (truncated, note) = baseNote.truncated()
-                if (truncated) {
-                    truncatedCharacterSize += baseNote.body.length
-                    truncatedNotes.add(note)
-                }
-                note
+        val notes = baseNotes.map { baseNote ->
+            val (truncated, note) = baseNote.truncated()
+            if (truncated) {
+                truncatedCharacterSize += baseNote.body.length
+                truncatedNotes.add(note)
             }
+            note
+        }
         if (truncatedNotes.isNotEmpty()) {
             context.log(
                 TAG,

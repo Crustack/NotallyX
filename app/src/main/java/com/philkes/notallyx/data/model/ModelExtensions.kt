@@ -199,33 +199,33 @@ fun BaseNote.toHtml(showDateCreated: Boolean, imagesRootFolder: File?) = buildSt
     append("<meta charset=\"UTF-8\"><title>$title</title>")
     append(
         """
-    <style>
-        @page {
-            margin: 1in;
-        }
+        <style>
+            @page {
+                margin: 1in;
+            }
 
-        body {
-            font-family: sans-serif;
-            line-height: 1.5;
-            word-wrap: break-word;
-        }
+            body {
+                font-family: sans-serif;
+                line-height: 1.5;
+                word-wrap: break-word;
+            }
 
-        img {
-            max-width: 100%;
-            height: auto;
-            margin-top: 12px;
-            margin-bottom: 12px;
-        }
+            img {
+                max-width: 100%;
+                height: auto;
+                margin-top: 12px;
+                margin-bottom: 12px;
+            }
 
-        h2, h3 {
-            margin-bottom: 12px;
-        }
+            h2, h3 {
+                margin-bottom: 12px;
+            }
 
-        p {
-            margin-bottom: 10px;
-        }
-    </style>
-    """
+            p {
+                margin-bottom: 10px;
+            }
+        </style>
+        """
             .trimIndent()
     )
     append("</head><body>")
@@ -299,8 +299,9 @@ private fun String.toMarkdownWithSpans(spans: List<SpanRepresentation>): String 
 
     // Prioritize links: avoid adding other markers within link ranges to reduce nesting issues
     val linkRanges = spans.filter { it.link }.map { it.start to it.end }
-    fun inLinkRange(index: Int): Boolean =
-        linkRanges.any { index >= it.first && index <= it.second }
+    fun inLinkRange(index: Int): Boolean = linkRanges.any {
+        index >= it.first && index <= it.second
+    }
 
     // Add markers for non-link spans first
     spans
@@ -654,16 +655,15 @@ fun Intent.generateBaseNote(context: ContextWrapper): SharedNote {
             }
     val (images, files) =
         intentFiles?.let {
-            val filesByType =
-                it.groupBy { uri ->
-                    context.getMimeType(uri)?.let { mimeType ->
-                        if (mimeType.isImageMimeType) {
-                            NotallyModel.FileType.IMAGE
-                        } else {
-                            NotallyModel.FileType.ANY
-                        }
-                    } ?: NotallyModel.FileType.ANY
-                }
+            val filesByType = it.groupBy { uri ->
+                context.getMimeType(uri)?.let { mimeType ->
+                    if (mimeType.isImageMimeType) {
+                        NotallyModel.FileType.IMAGE
+                    } else {
+                        NotallyModel.FileType.ANY
+                    }
+                } ?: NotallyModel.FileType.ANY
+            }
             val images =
                 filesByType[NotallyModel.FileType.IMAGE]?.let { images ->
                     images.map { FileAttachment("", it.toString(), "") }

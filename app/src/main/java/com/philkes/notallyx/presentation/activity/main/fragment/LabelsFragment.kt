@@ -90,10 +90,9 @@ class LabelsFragment : Fragment(), LabelListener {
 
                     currentList?.let { list ->
                         val size = list.size
-                        val updatedLabels =
-                            list.mapIndexed { index, labelData ->
-                                Label(labelData.value, size - 1 - index)
-                            }
+                        val updatedLabels = list.mapIndexed { index, labelData ->
+                            Label(labelData.value, size - 1 - index)
+                        }
                         model.updateLabels(updatedLabels)
                     }
                     didReorder = false
@@ -161,10 +160,9 @@ class LabelsFragment : Fragment(), LabelListener {
     private fun setupObserver() {
         model.labels.observe(viewLifecycleOwner) { labels ->
             val hiddenLabels = model.preferences.labelsHidden.value
-            val labelsData =
-                labels.map { label ->
-                    LabelData(label.value, !hiddenLabels.contains(label.value), label.order)
-                }
+            val labelsData = labels.map { label ->
+                LabelData(label.value, !hiddenLabels.contains(label.value), label.order)
+            }
             labelAdapter?.submitList(labelsData)
             binding?.ImageView?.isVisible = labels.isEmpty()
         }

@@ -415,10 +415,9 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
         representations: ArrayList<SpanRepresentation>
     ): ArrayList<SpanRepresentation> {
         representations.forEachIndexed { index, representation ->
-            val match =
-                representations.find { spanRepresentation ->
-                    spanRepresentation.isEqualInSize(representation)
-                }
+            val match = representations.find { spanRepresentation ->
+                spanRepresentation.isEqualInSize(representation)
+            }
             if (match != null && representations.indexOf(match) != index) {
                 if (match.bold) {
                     representation.bold = true

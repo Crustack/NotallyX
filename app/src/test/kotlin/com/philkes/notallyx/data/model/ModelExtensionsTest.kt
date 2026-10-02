@@ -155,7 +155,7 @@ class ModelExtensionsTest {
               "timestamp": 12354632465,
               "labels": ["label"]
             }
-        """
+            """
                 .trimIndent()
                 .trimStart(),
             json,

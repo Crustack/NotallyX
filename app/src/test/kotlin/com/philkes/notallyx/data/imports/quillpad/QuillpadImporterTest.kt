@@ -28,21 +28,21 @@ class QuillpadImporterTest {
         // language=json
         val json =
             """
-          {
-              "title": "Normal Note",
-              "content": "This is some note, nothing special",
-              "creationDate": 1729518341,
-              "modifiedDate": 1729518341,
-              "notebookId": 2,
-              "id": 4,
-              "tags": [
-                {
-                  "name": "Tag1",
-                  "id": 1
-                }
-              ]
-            }
-        """
+            {
+                "title": "Normal Note",
+                "content": "This is some note, nothing special",
+                "creationDate": 1729518341,
+                "modifiedDate": 1729518341,
+                "notebookId": 2,
+                "id": 4,
+                "tags": [
+                  {
+                    "name": "Tag1",
+                    "id": 1
+                  }
+                ]
+              }
+            """
                 .trimIndent()
         val expected =
             createBaseNote(
@@ -71,7 +71,7 @@ class QuillpadImporterTest {
               "deletionDate": 1775998149,
               "id": 8
             }
-        """
+            """
                 .trimIndent()
 
         val actual = json.parseToBaseNote()
@@ -95,7 +95,7 @@ class QuillpadImporterTest {
               "modifiedDate": 1775998168,
               "id": 9
             }
-        """
+            """
                 .trimIndent()
 
         val actual = json.parseToBaseNote()
@@ -117,7 +117,7 @@ class QuillpadImporterTest {
               "modifiedDate": 1775998168,
               "id": 9
             }
-        """
+            """
                 .trimIndent()
 
         val actual = json.parseToBaseNote()
@@ -130,26 +130,26 @@ class QuillpadImporterTest {
         // language=json
         val json =
             """
-           {
-              "title": "List Note",
-              "isList": true,
-              "taskList": [
-                {
-                  "id": 0,
-                  "content": "Task1",
-                  "isDone": false
-                },
-                {
-                  "id": 1,
-                  "content": "Task2",
-                  "isDone": true
-                }
-              ],
-              "creationDate": 1775997909,
-              "modifiedDate": 1775997985,
-              "id": 3
-          }
-        """
+             {
+                "title": "List Note",
+                "isList": true,
+                "taskList": [
+                  {
+                    "id": 0,
+                    "content": "Task1",
+                    "isDone": false
+                  },
+                  {
+                    "id": 1,
+                    "content": "Task2",
+                    "isDone": true
+                  }
+                ],
+                "creationDate": 1775997909,
+                "modifiedDate": 1775997985,
+                "id": 3
+            }
+            """
                 .trimIndent()
 
         val actual = json.parseToBaseNote()
@@ -171,19 +171,19 @@ class QuillpadImporterTest {
         // language=json
         val json =
             """
-           {
-              "title": "Image Note",
-              "creationDate": 1775998031,
-              "modifiedDate": 1775998049,
-              "attachments": [
-                {
-                  "description": "image.jpg",
-                  "fileName": "image.jpg"
-                }
-              ],
-              "id": 5
-            }
-        """
+            {
+               "title": "Image Note",
+               "creationDate": 1775998031,
+               "modifiedDate": 1775998049,
+               "attachments": [
+                 {
+                   "description": "image.jpg",
+                   "fileName": "image.jpg"
+                 }
+               ],
+               "id": 5
+             }
+            """
                 .trimIndent()
 
         val actual = json.parseToBaseNote()
@@ -241,7 +241,7 @@ class QuillpadImporterTest {
               ],
               "id": 7
             }
-        """
+            """
                 .trimIndent()
 
         val actual = json.parseToBaseNote()
@@ -269,7 +269,7 @@ class QuillpadImporterTest {
                 }
               ]
             }
-        """
+            """
                 .trimIndent()
 
         val actual = json.parseToBaseNote()

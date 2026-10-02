@@ -240,14 +240,11 @@ class ReminderReceiver : BroadcastReceiver() {
     private suspend fun rescheduleAlarms(context: Context) {
         val now = Date()
         val noteReminders = getDatabase(context)?.getBaseNoteDao()?.getAllReminders() ?: return
-        val noteRemindersWithFutureNotify =
-            noteReminders.flatMap { (noteId, reminders) ->
-                reminders
-                    .filter { reminder ->
-                        reminder.repetition != null || reminder.dateTime.after(now)
-                    }
-                    .map { reminder -> Pair(noteId, reminder) }
-            }
+        val noteRemindersWithFutureNotify = noteReminders.flatMap { (noteId, reminders) ->
+            reminders
+                .filter { reminder -> reminder.repetition != null || reminder.dateTime.after(now) }
+                .map { reminder -> Pair(noteId, reminder) }
+        }
         Log.d(TAG, "rescheduleAlarms: ${noteRemindersWithFutureNotify.size} alarms")
         noteRemindersWithFutureNotify.forEach { (noteId, reminder) ->
             context.scheduleReminder(noteId, reminder)
@@ -256,10 +253,9 @@ class ReminderReceiver : BroadcastReceiver() {
 
     private suspend fun cancelAlarms(context: Context) {
         val noteReminders = getDatabase(context)?.getBaseNoteDao()?.getAllReminders() ?: return
-        val noteRemindersWithFutureNotify =
-            noteReminders.flatMap { (noteId, reminders) ->
-                reminders.map { reminder -> Pair(noteId, reminder.id) }
-            }
+        val noteRemindersWithFutureNotify = noteReminders.flatMap { (noteId, reminders) ->
+            reminders.map { reminder -> Pair(noteId, reminder.id) }
+        }
         Log.d(TAG, "cancelAlarms: ${noteRemindersWithFutureNotify.size} alarms")
         noteRemindersWithFutureNotify.forEach { (noteId, reminderId) ->
             context.cancelReminder(noteId, reminderId)

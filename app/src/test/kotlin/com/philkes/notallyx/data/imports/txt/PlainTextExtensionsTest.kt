@@ -11,10 +11,10 @@ class PlainTextExtensionsTest {
     fun `extractListItems NotallyX syntax`() {
         val text =
             """
-        [ ] 🧪 10:00 AM - Chemistry Lab
-        [✓] 📖 1:00 PM - History Lecture
-        [✓] 🏋️ 5:00 PM - Gym Session
-        """
+            [ ] 🧪 10:00 AM - Chemistry Lab
+            [✓] 📖 1:00 PM - History Lecture
+            [✓] 🏋️ 5:00 PM - Gym Session
+            """
                 .trimIndent()
 
         val syntax = text.findListSyntaxRegex()
@@ -34,10 +34,10 @@ class PlainTextExtensionsTest {
     fun `extractListItems Markdown syntax`() {
         val text =
             """
-        - [ ] 🧪 10:00 AM - Chemistry Lab
-        - [x] 📖 1:00 PM - History Lecture
-        - [X] 🏋️ 5:00 PM - Gym Session
-        """
+            - [ ] 🧪 10:00 AM - Chemistry Lab
+            - [x] 📖 1:00 PM - History Lecture
+            - [X] 🏋️ 5:00 PM - Gym Session
+            """
                 .trimIndent()
 
         val syntax = text.findListSyntaxRegex()
@@ -57,11 +57,11 @@ class PlainTextExtensionsTest {
     fun `extractListItems isChild indentation`() {
         val text =
             """
-          - [ ] Monday:
-             - [ ] 🧪 10:00 AM - Chemistry Lab
-             - [x] 📖 1:00 PM - History Lecture
-             - [X] 🏋️ 5:00 PM - Gym Session
-        """
+            - [ ] Monday:
+               - [ ] 🧪 10:00 AM - Chemistry Lab
+               - [x] 📖 1:00 PM - History Lecture
+               - [X] 🏋️ 5:00 PM - Gym Session
+            """
                 .trimIndent()
 
         val syntax = text.findListSyntaxRegex()
@@ -82,11 +82,11 @@ class PlainTextExtensionsTest {
     fun `extractListItems with checkContains`() {
         val text =
             """
-        Monday:
-        - 🧪 10:00 AM - Chemistry Lab
-        - 📖 1:00 PM - History Lecture
-        - 🏋️ 5:00 PM - Gym Session
-        """
+            Monday:
+            - 🧪 10:00 AM - Chemistry Lab
+            - 📖 1:00 PM - History Lecture
+            - 🏋️ 5:00 PM - Gym Session
+            """
                 .trimIndent()
 
         val syntax = text.findListSyntaxRegex(checkContains = true)
@@ -107,10 +107,10 @@ class PlainTextExtensionsTest {
     fun `extractListItems with plainNewLineAllowed`() {
         val text =
             """
-        🧪 10:00 AM - Chemistry Lab
-        📖 1:00 PM - History Lecture
-        🏋️ 5:00 PM - Gym Session
-        """
+            🧪 10:00 AM - Chemistry Lab
+            📖 1:00 PM - History Lecture
+            🏋️ 5:00 PM - Gym Session
+            """
                 .trimIndent()
 
         val syntax = text.findListSyntaxRegex(plainNewLineAllowed = true)
