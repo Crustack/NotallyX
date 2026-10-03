@@ -19,6 +19,7 @@ plugins {
     alias(libs.plugins.auto.translation)
     alias(libs.plugins.roborazzi)
     alias(libs.plugins.koin.compiler)
+    kotlin("plugin.compose") version libs.versions.kotlin
 }
 
 android {
@@ -124,6 +125,7 @@ android {
         dataBinding = true
         buildConfig = true
         resValues = true
+        compose = true
     }
 
     packaging {
@@ -388,6 +390,12 @@ dependencies {
     implementation(libs.bundles.commonmark)
     implementation("com.github.luben:zstd-jni:${libs.versions.zstd.get()}@aar")
 
+    // Compose
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.bundles.compose)
+    implementation(libs.androidx.navigation.compose)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+
     // Koin
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.core)
@@ -404,6 +412,7 @@ dependencies {
     androidTestUtil(libs.androidx.test.orchestrator)
     androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.androidx.work.testing)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
 
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.junit.rule)

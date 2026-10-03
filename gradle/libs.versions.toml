@@ -1,8 +1,8 @@
 [versions]
 # SDK / JVM
-compileSdk = "36"
+compileSdk = "37"
 minSdk = "24"
-targetSdk = "36"
+targetSdk = "37"
 jvmTarget = "1.8"
 ndk = "29.0.13113456"
 
@@ -18,6 +18,11 @@ autoTranslation = "1.0.5"
 kotlinSerialization = "2.4.20"
 koin = "4.2.2"
 koinCompilerPlugin = "1.2.1"
+
+# Compose
+composeBom = "2026.09.00"
+activityCompose = "1.13.0"
+lifecycleRuntimeCompose = "2.11.0"
 
 # Libraries
 navigation = "2.10.2"
@@ -80,6 +85,16 @@ androidx-work-testing = { group = "androidx.work", name = "work-testing", versio
 androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
 androidx-documentfile = { group = "androidx.documentfile", name = "documentfile", version.ref = "documentfile" }
 
+# Compose
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleRuntimeCompose" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
+
 # Third-party
 customactivityoncrash = { group = "cat.ereza", name = "customactivityoncrash", version.ref = "customactivityoncrash" }
 subsampling-scale-image-view = { group = "com.davemorrissey.labs", name = "subsampling-scale-image-view-androidx", version.ref = "subsamplingScaleImageView" }
@@ -133,6 +148,14 @@ koin-test = { group = "io.insert-koin", name = "koin-test" }
 koin-test-junit4 = { group = "io.insert-koin", name = "koin-test-junit4" }
 
 [bundles]
+# Compose
+compose = [
+    "androidx-compose-material3",
+    "androidx-compose-ui",
+    "androidx-compose-ui-tooling-preview",
+    "androidx-activity-compose",
+    "androidx-lifecycle-runtime-compose"
+]
 # Navigation
 navigation = ["androidx-navigation-fragment", "androidx-navigation-ui"]
 # Room
@@ -142,6 +165,7 @@ commonmark = ["commonmark", "commonmark-gfm-strikethrough"]
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 firebase-testlab = { id = "com.google.firebase.testlab", version.ref = "firebaseTestLab" }
