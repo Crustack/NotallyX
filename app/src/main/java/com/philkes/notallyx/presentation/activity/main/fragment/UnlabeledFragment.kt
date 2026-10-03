@@ -3,11 +3,11 @@ package com.philkes.notallyx.presentation.activity.main.fragment
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.LiveData
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.UnlabeledViewModel
+import kotlinx.coroutines.flow.Flow
 
 class UnlabeledFragment : NotesFragment() {
 
@@ -20,7 +20,7 @@ class UnlabeledFragment : NotesFragment() {
 
     override fun getBackground() = R.drawable.label_off
 
-    override fun getObservable(): LiveData<List<Item>> {
+    override fun getFlow(): Flow<List<Item>> {
         return unlabeledViewModel.unlabeledNotes
     }
 }

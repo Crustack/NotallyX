@@ -1,12 +1,12 @@
 package com.philkes.notallyx.data.dao
 
-import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.philkes.notallyx.data.model.Label
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface LabelDao {
@@ -26,8 +26,7 @@ interface LabelDao {
     @Query("UPDATE Label SET value = :newValue WHERE value = :oldValue")
     suspend fun update(oldValue: String, newValue: String)
 
-    @Query("SELECT * FROM Label ORDER BY `order` DESC, value ASC")
-    fun getAll(): LiveData<List<Label>>
+    @Query("SELECT * FROM Label ORDER BY `order` DESC, value ASC") fun getAll(): Flow<List<Label>>
 
     @Query("SELECT value FROM Label ORDER BY `order` DESC, value ASC")
     suspend fun getArrayOfAll(): Array<String>

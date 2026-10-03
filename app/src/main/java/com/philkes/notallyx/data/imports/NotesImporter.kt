@@ -4,7 +4,6 @@ import android.app.Application
 import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
-import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
@@ -28,6 +27,7 @@ import com.philkes.notallyx.utils.backup.importImage
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.flow.MutableStateFlow
 
 data class ImportResult(val inserted: Int, val duplicates: Int, val corruptedNotes: Int)
 
@@ -36,7 +36,7 @@ class NotesImporter(private val app: Application, private val database: NotallyD
     suspend fun import(
         uri: Uri,
         importSource: ImportSource,
-        progress: MutableLiveData<Progress>? = null,
+        progress: MutableStateFlow<Progress?>? = null,
     ): ImportResult {
         val tempDir = File(app.cacheDir, "${IMPORT_CACHE_FOLDER}_${UUID.randomUUID()}")
         if (!tempDir.exists()) {
@@ -54,7 +54,7 @@ class NotesImporter(private val app: Application, private val database: NotallyD
                     }.import(app, uri, tempDir, progress)
                 } catch (e: Exception) {
                     Log.e(TAG, "import: failed", e)
-                    progress?.postValue(ImportProgress(inProgress = false))
+                    progress?.value = ImportProgress(inProgress = false)
                     throw e
                 }
             val labelDao = database.getLabelDao()
@@ -71,9 +71,7 @@ class NotesImporter(private val app: Application, private val database: NotallyD
             val audios = notes.flatMap { it.audios }.distinct()
             val totalFiles = files.size + images.size + audios.size
             val counter = AtomicInteger(1)
-            progress?.postValue(
-                ImportProgress(total = totalFiles, stage = ImportStage.IMPORT_FILES)
-            )
+            progress?.value = ImportProgress(total = totalFiles, stage = ImportStage.IMPORT_FILES)
             importDataFolder?.let {
                 importFiles(files, it, NoteModel.FileType.ANY, progress, totalFiles, counter)
                 importFiles(images, it, NoteModel.FileType.IMAGE, progress, totalFiles, counter)
@@ -106,7 +104,7 @@ class NotesImporter(private val app: Application, private val database: NotallyD
                     }
                 }
             }
-            progress?.postValue(ImportProgress(inProgress = false))
+            progress?.value = ImportProgress(inProgress = false)
             return ImportResult(
                 inserted = insertedCount,
                 duplicates = (totalCandidates - insertedCount - corruptedCount),
@@ -121,7 +119,7 @@ class NotesImporter(private val app: Application, private val database: NotallyD
         files: List<FileAttachment>,
         sourceFolder: File,
         fileType: NoteModel.FileType,
-        progress: MutableLiveData<Progress>?,
+        progress: MutableStateFlow<Progress?>?,
         total: Int?,
         counter: AtomicInteger?,
     ) {
@@ -136,20 +134,19 @@ class NotesImporter(private val app: Application, private val database: NotallyD
                 file.mimeType = fileAttachment.mimeType
             }
             error?.let { Log.e(TAG, "Failed to import: $error") }
-            progress?.postValue(
+            progress?.value =
                 ImportProgress(
                     current = counter!!.getAndIncrement(),
                     total = total!!,
                     stage = ImportStage.IMPORT_FILES,
                 )
-            )
         }
     }
 
     private suspend fun importAudios(
         audios: List<Audio>,
         sourceFolder: File,
-        progress: MutableLiveData<Progress>?,
+        progress: MutableStateFlow<Progress?>?,
         totalFiles: Int,
         counter: AtomicInteger,
     ) {
@@ -159,13 +156,12 @@ class NotesImporter(private val app: Application, private val database: NotallyD
             originalAudio.name = audio.name
             originalAudio.duration = if (audio.duration == 0L) null else audio.duration
             originalAudio.timestamp = audio.timestamp
-            progress?.postValue(
+            progress?.value =
                 ImportProgress(
                     current = counter.getAndIncrement(),
                     total = totalFiles,
                     stage = ImportStage.IMPORT_FILES,
                 )
-            )
         }
     }
 

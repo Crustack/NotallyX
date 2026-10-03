@@ -12,7 +12,6 @@ import android.net.Uri
 import android.util.Log
 import androidx.core.database.getLongOrNull
 import androidx.documentfile.provider.DocumentFile
-import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.NotallyDatabase.Companion.DATABASE_NAME
@@ -61,6 +60,7 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
 import net.lingala.zip4j.ZipFile
 import net.lingala.zip4j.exception.ZipException
@@ -96,7 +96,7 @@ fun getOptionalColumns(db: SQLiteDatabase, tableName: String): Array<String> {
 suspend fun ContextWrapper.importRawDatabase(
     dbFileUri: Uri,
     checkDuplicates: Boolean,
-    importProgress: MutableLiveData<Progress>? = null,
+    importProgress: MutableStateFlow<Progress?>? = null,
 ): ImportResult {
     val tempDbFile = File(cacheDir, DATABASE_NAME + "_IMPORT")
     try {
@@ -109,7 +109,7 @@ suspend fun ContextWrapper.importRawDatabase(
                 val (baseNotes, originalIds, labels, corruptedNotes) =
                     readBaseNotes(tempDbFile, importProgress)
                 val import = import(baseNotes, originalIds, labels, corruptedNotes, checkDuplicates)
-                importProgress?.postValue(ImportProgress(inProgress = false))
+                importProgress?.value = ImportProgress(inProgress = false)
                 return import
             }
     } finally {
@@ -126,7 +126,7 @@ data class BaseNotesImport(
 
 fun ContextWrapper.readBaseNotes(
     dbFile: File,
-    progress: MutableLiveData<Progress>? = null,
+    progress: MutableStateFlow<Progress?>? = null,
 ): BaseNotesImport {
     val database = SQLiteDatabase.openDatabase(dbFile.path, null, SQLiteDatabase.OPEN_READONLY)
     try {
@@ -139,14 +139,14 @@ fun ContextWrapper.readBaseNotes(
 
         val total = baseNoteCursor.count
         var counter = 1
-        progress?.postValue(ImportProgress(0, total))
+        progress?.value = ImportProgress(0, total)
         val originalIds = ArrayList<Long>(baseNoteCursor.count)
         val (baseNotes, corrupted) =
             baseNoteCursor.toList { cursor ->
                 val baseNote = cursor.toBaseNote(database)
                 val originalId = cursor.getLong(cursor.getColumnIndexOrThrow("id"))
                 originalIds.add(originalId)
-                progress?.postValue(ImportProgress(counter++, total))
+                progress?.value = ImportProgress(counter++, total)
                 baseNote
             }
         return BaseNotesImport(baseNotes, originalIds, labels, corrupted)
@@ -164,9 +164,9 @@ suspend fun ContextWrapper.importZip(
     databaseFolder: File,
     zipPassword: String,
     checkDuplicates: Boolean,
-    progress: MutableLiveData<Progress>? = null,
+    progress: MutableStateFlow<Progress?>? = null,
 ) {
-    progress?.postValue(ImportProgress(indeterminate = true))
+    progress?.value = ImportProgress(indeterminate = true)
     try {
         val result =
             withContext(Dispatchers.IO) {
@@ -218,7 +218,7 @@ suspend fun ContextWrapper.importZip(
                     baseNotes.fold(0) { acc, baseNote ->
                         acc + baseNote.images.size + baseNote.files.size + baseNote.audios.size
                     }
-                progress?.postValue(ImportProgress(0, total, stage = ImportStage.IMPORT_FILES))
+                progress?.value = ImportProgress(0, total, stage = ImportStage.IMPORT_FILES)
 
                 val current = AtomicInteger(1)
                 val imageRoot = getCurrentImagesDirectory()
@@ -255,13 +255,12 @@ suspend fun ContextWrapper.importZip(
                         } catch (exception: Exception) {
                             log(TAG, throwable = exception)
                         } finally {
-                            progress?.postValue(
+                            progress?.value =
                                 ImportProgress(
                                     current.getAndIncrement(),
                                     total,
                                     stage = ImportStage.IMPORT_FILES,
                                 )
-                            )
                         }
                     }
                 }
@@ -307,7 +306,7 @@ private fun ContextWrapper.importFiles(
     zipFile: ZipFile,
     current: AtomicInteger,
     total: Int,
-    importingBackup: MutableLiveData<Progress>? = null,
+    importingBackup: MutableStateFlow<Progress?>? = null,
 ) {
     files.forEach { file ->
         try {
@@ -321,9 +320,8 @@ private fun ContextWrapper.importFiles(
         } catch (e: Exception) {
             log(TAG, throwable = e)
         } finally {
-            importingBackup?.postValue(
+            importingBackup?.value =
                 ImportProgress(current.getAndIncrement(), total, stage = ImportStage.IMPORT_FILES)
-            )
         }
     }
 }

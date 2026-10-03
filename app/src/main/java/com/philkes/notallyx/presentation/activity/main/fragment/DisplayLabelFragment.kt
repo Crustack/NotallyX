@@ -4,11 +4,11 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.LiveData
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.DisplayLabelViewModel
+import kotlinx.coroutines.flow.Flow
 
 class DisplayLabelFragment : NotesFragment() {
 
@@ -22,7 +22,7 @@ class DisplayLabelFragment : NotesFragment() {
 
     override fun getBackground() = R.drawable.label
 
-    override fun getObservable(): LiveData<List<Item>> {
+    override fun getFlow(): Flow<List<Item>> {
         label =
             requireNotNull(
                 requireArguments().getString(EXTRA_DISPLAYED_LABEL),

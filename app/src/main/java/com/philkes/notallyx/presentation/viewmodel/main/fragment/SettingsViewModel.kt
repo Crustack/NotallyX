@@ -6,8 +6,6 @@ import android.content.Intent
 import android.net.Uri
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
@@ -26,7 +24,6 @@ import com.philkes.notallyx.presentation.exportedText
 import com.philkes.notallyx.presentation.restartApplication
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showToast
-import com.philkes.notallyx.presentation.switchMapNullSafe
 import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.viewmodel.preference.BasePreference
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
@@ -45,6 +42,13 @@ import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.toMessage
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -57,20 +61,25 @@ class SettingsViewModel(private val app: Application) : AndroidViewModel(app) {
 
     val preferences = NotallyXPreferences.getInstance(app)
 
-    val labels: LiveData<List<Label>> =
-        NotallyDatabase.getDatabase(app).switchMapNullSafe { database ->
-            database!!.getLabelDao().getAll()
-        }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val labels: StateFlow<List<Label>> =
+        NotallyDatabase.getDatabase(app)
+            .flatMapLatest { database -> database?.getLabelDao()?.getAll() ?: flowOf(emptyList()) }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList(),
+            )
 
-    val importProgress: LiveData<Progress>
-        field = MutableLiveData<Progress>()
-    val progress: LiveData<Progress>
-        field = MutableLiveData<Progress>()
+    val importProgress: StateFlow<Progress?>
+        field = MutableStateFlow<Progress?>(null)
+    val progress: StateFlow<Progress?>
+        field = MutableStateFlow<Progress?>(null)
 
     internal var showRefreshBackupsFolderAfterThemeChange = false
 
     init {
-        NotallyDatabase.getDatabase(app).observeForever(::init)
+        viewModelScope.launch { NotallyDatabase.getDatabase(app).collect { init(it) } }
     }
 
     private fun init(database: NotallyDatabase?) {

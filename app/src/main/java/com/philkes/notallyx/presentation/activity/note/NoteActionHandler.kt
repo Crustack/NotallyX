@@ -11,7 +11,6 @@ import android.text.style.URLSpan
 import android.text.style.UnderlineSpan
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.IntentCompat
 import androidx.lifecycle.lifecycleScope
@@ -365,7 +364,7 @@ class NoteActionHandler(
 
     private fun moveNote(toFolder: Folder) {
         if (toFolder != Folder.NOTES) {
-            this.activity.cancelPinAndReminders(notallyModel.id, notallyModel.reminders.value!!)
+            this.activity.cancelPinAndReminders(notallyModel.id, notallyModel.reminders.value)
         }
         val resultIntent =
             Intent().apply {
@@ -410,7 +409,6 @@ class NoteActionHandler(
         }
     }
 
-    @RequiresApi(24)
     fun recordAudio() {
         val permission = Manifest.permission.RECORD_AUDIO
         if (activity.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {

@@ -355,7 +355,6 @@ dependencies {
     implementation(libs.androidx.documentfile)
     implementation(libs.bundles.navigation)
     implementation(libs.androidx.preference)
-    implementation(libs.androidx.lifecycle.livedata)
     ksp(libs.androidx.room.compiler)
     implementation(libs.bundles.room)
     implementation(libs.androidx.security.crypto)

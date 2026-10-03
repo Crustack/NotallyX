@@ -6,8 +6,6 @@ import android.net.Uri
 import android.print.PdfPrintListener
 import android.view.View
 import androidx.documentfile.provider.DocumentFile
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
@@ -21,7 +19,6 @@ import com.philkes.notallyx.presentation.createItemsFromNotes
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.showSnackbar
 import com.philkes.notallyx.presentation.showToast
-import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.viewmodel.BaseViewModel
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
@@ -40,6 +37,8 @@ import com.philkes.notallyx.utils.viewFile
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -51,11 +50,11 @@ class NotesFragmentViewModel(app: Application) : BaseViewModel(app) {
         get() = app.getCurrentImagesDirectory()
 
     val actionMode = ActionMode()
-    val progress: LiveData<Progress>
-        field = MutableLiveData<Progress>()
+    val progress: StateFlow<Progress?>
+        field = MutableStateFlow<Progress?>(null)
 
-    val folder: LiveData<Folder>
-        field = NotNullMutableLiveData(Folder.NOTES)
+    val folder: StateFlow<Folder>
+        field = MutableStateFlow(Folder.NOTES)
 
     fun setFolder(folder: Folder) {
         this.folder.value = folder
@@ -74,9 +73,8 @@ class NotesFragmentViewModel(app: Application) : BaseViewModel(app) {
     var searchResults: SearchResult? = null
 
     init {
-        databaseLiveData.observeForever(::initDatabase)
-        folder.observeForever { newFolder ->
-            searchResults?.fetch(keyword, newFolder, currentLabel)
+        viewModelScope.launch {
+            folder.collect { newFolder -> searchResults?.fetch(keyword, newFolder, currentLabel) }
         }
     }
 
@@ -263,12 +261,12 @@ class NotesFragmentViewModel(app: Application) : BaseViewModel(app) {
         val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
             app.log(TAG, throwable = throwable)
             actionMode.close(true)
-            progress.postValue(ExportNotesProgress(inProgress = false))
+            progress.value = ExportNotesProgress(inProgress = false)
             app.showToast(R.string.something_went_wrong)
         }
         viewModelScope.launch(exceptionHandler) {
             val counter = AtomicInteger(0)
-            progress.postValue(ExportNotesProgress(total = notes.size))
+            progress.value = ExportNotesProgress(total = notes.size)
             when (selectedExportMimeType) {
                 ExportMimeType.PDF -> {
                     for (note in notes) {
@@ -283,7 +281,7 @@ class NotesFragmentViewModel(app: Application) : BaseViewModel(app) {
                                 object : PdfPrintListener {
                                     override fun onSuccess(file: DocumentFile) {
                                         actionMode.close(true)
-                                        progress.postValue(ExportNotesProgress(inProgress = false))
+                                        progress.value = ExportNotesProgress(inProgress = false)
                                         val message =
                                             app.getQuantityString(
                                                 R.plurals.exported_notes,
@@ -297,7 +295,7 @@ class NotesFragmentViewModel(app: Application) : BaseViewModel(app) {
                                     override fun onFailure(message: CharSequence?) {
                                         app.log(TAG, stackTrace = message as String?)
                                         actionMode.close(true)
-                                        progress.postValue(ExportNotesProgress(inProgress = false))
+                                        progress.value = ExportNotesProgress(inProgress = false)
                                     }
                                 },
                         )
@@ -316,7 +314,7 @@ class NotesFragmentViewModel(app: Application) : BaseViewModel(app) {
                         )
                     }
                     actionMode.close(true)
-                    progress.postValue(ExportNotesProgress(inProgress = false))
+                    progress.value = ExportNotesProgress(inProgress = false)
                     val message = app.getQuantityString(R.plurals.exported_notes, counter.get())
                     snackbarView.showSnackbar("$message to '${app.toReadablePath(folderUri)}'")
                 }

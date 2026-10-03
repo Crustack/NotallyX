@@ -14,4 +14,3 @@ Gemfile*
 !generate-changelogs.sh
 temp
 .kotlin
-.agents

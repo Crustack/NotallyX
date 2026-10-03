@@ -2,13 +2,9 @@ package com.philkes.notallyx.data
 
 import android.content.Context
 import android.content.ContextWrapper
-import android.os.Build
 import android.util.Log
 import androidx.annotation.MainThread
-import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -33,6 +29,8 @@ import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.security.getInitializedCipherForDecryption
 import com.philkes.notallyx.utils.security.isEncryptedDatabase
 import java.io.File
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @TypeConverters(Converters::class)
@@ -55,7 +53,8 @@ abstract class NotallyDatabase : RoomDatabase() {
 
         const val DATABASE_NAME = "NotallyDatabase"
 
-        @Volatile private var instance: MutableLiveData<NotallyDatabase?> = MutableLiveData(null)
+        val instance: StateFlow<NotallyDatabase?>
+            field = MutableStateFlow(null)
         @Volatile private var replacementInProgress = false
 
         fun getCurrentDatabaseFile(context: ContextWrapper): File {
@@ -115,16 +114,17 @@ abstract class NotallyDatabase : RoomDatabase() {
         }
 
         @MainThread
-        fun getDatabase(context: ContextWrapper): LiveData<NotallyDatabase?> {
+        fun getDatabase(context: ContextWrapper): StateFlow<NotallyDatabase?> {
             if (instance.value == null && !replacementInProgress) {
                 synchronized(this) {
-                    if (isTestRunner()) {
-                        this.instance.value = getTestDatabase(context)
-                    } else {
-                        val preferences = NotallyXPreferences.getInstance(context)
-                        this.instance.value = createInstance(context, preferences)
+                    if (instance.value == null) {
+                        if (isTestRunner()) {
+                            instance.value = getTestDatabase(context)
+                        } else {
+                            val preferences = NotallyXPreferences.getInstance(context)
+                            instance.value = createInstance(context, preferences)
+                        }
                     }
-                    return instance
                 }
             }
             return instance
@@ -133,8 +133,8 @@ abstract class NotallyDatabase : RoomDatabase() {
         @MainThread
         fun clearInstance() {
             synchronized(this) {
-                this.instance.value?.let { database ->
-                    this.instance.value = null
+                instance.value?.let { database ->
+                    instance.value = null
                     if (database.isOpen) {
                         database.close()
                     }
@@ -231,34 +231,31 @@ abstract class NotallyDatabase : RoomDatabase() {
             biometricLock: BiometricLock = preferences.biometricLock.value,
         ): Builder<NotallyDatabase> {
             return this.apply {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    if (biometricLock == BiometricLock.ENABLED) {
-                        if (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
-                            initializeDecryption(context, preferences, this)
-                        } else {
-                            context.log(
-                                DATABASE_NAME,
-                                "Database is not encrypted even though biometric lock is enabled, disabling biometric lock",
-                            )
-
-                            preferences.biometricLock.save(BiometricLock.DISABLED)
-                        }
+                if (biometricLock == BiometricLock.ENABLED) {
+                    if (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
+                        initializeDecryption(context, preferences, this)
                     } else {
-                        if (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
-                            context.log(
-                                DATABASE_NAME,
-                                "Database is encrypted even though biometric lock is disabled, enabling biometric lock",
-                            )
+                        context.log(
+                            DATABASE_NAME,
+                            "Database is not encrypted even though biometric lock is enabled, disabling biometric lock",
+                        )
 
-                            preferences.biometricLock.save(BiometricLock.ENABLED)
-                            initializeDecryption(context, preferences, this)
-                        }
+                        preferences.biometricLock.save(BiometricLock.DISABLED)
+                    }
+                } else {
+                    if (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
+                        context.log(
+                            DATABASE_NAME,
+                            "Database is encrypted even though biometric lock is disabled, enabling biometric lock",
+                        )
+
+                        preferences.biometricLock.save(BiometricLock.ENABLED)
+                        initializeDecryption(context, preferences, this)
                     }
                 }
             }
         }
 
-        @RequiresApi(Build.VERSION_CODES.M)
         private fun initializeDecryption(
             context: ContextWrapper,
             preferences: NotallyXPreferences,

@@ -10,14 +10,13 @@ import android.view.View.GONE
 import android.view.View.VISIBLE
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.presentation.addIconButton
+import com.philkes.notallyx.presentation.collectIn
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.setOnNextAction
 import com.philkes.notallyx.presentation.showKeyboard
@@ -28,6 +27,8 @@ import com.philkes.notallyx.utils.findAllOccurrences
 import com.philkes.notallyx.utils.getFileName
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -40,7 +41,8 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
 
     private var searchResultIndices: List<Pair<Int, Int>>? = null
     private lateinit var saveAsActivityResultLauncher: ActivityResultLauncher<Intent>
-    private var originalFileUri: MutableLiveData<Uri?> = MutableLiveData(null)
+    val originalFileUri: StateFlow<Uri?>
+        field = MutableStateFlow<Uri?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Store the original URI if this is a txt file being opened
@@ -64,19 +66,16 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
 
     override fun configureUI() {
         // Set the file name as the title and make it non-editable
-        originalFileUri.observe(
-            this,
-            Observer { uri ->
-                uri?.let {
-                    val fileName = getFileName(it)
-                    if (!fileName.isNullOrEmpty()) {
-                        notallyModel.title = fileName
-                        binding.EnterTitle.setText(fileName)
-                        binding.EnterTitle.isEnabled = false
-                    }
+        originalFileUri.collectIn(this) { uri ->
+            uri?.let {
+                val fileName = getFileName(it)
+                if (!fileName.isNullOrEmpty()) {
+                    notallyModel.title = fileName
+                    binding.EnterTitle.setText(fileName)
+                    binding.EnterTitle.isEnabled = false
                 }
-            },
-        )
+            }
+        }
 
         binding.EnterTitle.setOnNextAction { binding.EnterBody.requestFocus() }
 
@@ -194,8 +193,12 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
     override fun initChangeHistory() {
         changeHistory =
             ChangeHistory().apply {
-                canUndo.observe(this@EditTextPlainActivity) { canUndo -> undo?.isEnabled = canUndo }
-                canRedo.observe(this@EditTextPlainActivity) { canRedo -> redo?.isEnabled = canRedo }
+                canUndo.collectIn(this@EditTextPlainActivity) { canUndo ->
+                    undo?.isEnabled = canUndo
+                }
+                canRedo.collectIn(this@EditTextPlainActivity) { canRedo ->
+                    redo?.isEnabled = canRedo
+                }
             }
     }
 

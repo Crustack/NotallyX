@@ -22,6 +22,7 @@ import com.philkes.notallyx.presentation.activity.main.fragment.DisplayLabelFrag
 import com.philkes.notallyx.presentation.add
 import com.philkes.notallyx.presentation.displayEditLabelDialog
 import com.philkes.notallyx.presentation.initListView
+import com.philkes.notallyx.presentation.repeatOnLifecycleScope
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.showToast
@@ -29,6 +30,7 @@ import com.philkes.notallyx.presentation.view.main.label.LabelAdapter
 import com.philkes.notallyx.presentation.view.main.label.LabelData
 import com.philkes.notallyx.presentation.view.main.label.LabelListener
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.LabelsViewModel
+import kotlinx.coroutines.flow.combine
 
 class LabelsFragment : Fragment(), LabelListener {
 
@@ -149,22 +151,20 @@ class LabelsFragment : Fragment(), LabelListener {
                 hiddenLabels.remove(value.value)
             }
             model.savePreference(model.preferences.labelsHidden, hiddenLabels)
-
-            val currentList = labelAdapter!!.currentList.toMutableList()
-            currentList[position] =
-                currentList[position].copy(visibleInNavigation = !value.visibleInNavigation)
-            labelAdapter!!.submitList(currentList)
         }
     }
 
     private fun setupObserver() {
-        model.labels.observe(viewLifecycleOwner) { labels ->
-            val hiddenLabels = model.preferences.labelsHidden.value
-            val labelsData = labels.map { label ->
-                LabelData(label.value, !hiddenLabels.contains(label.value), label.order)
-            }
-            labelAdapter?.submitList(labelsData)
-            binding?.ImageView?.isVisible = labels.isEmpty()
+        viewLifecycleOwner.repeatOnLifecycleScope {
+            combine(model.labels, model.preferences.labelsHidden.flow) { labels, hiddenLabels ->
+                    labels.map { label ->
+                        LabelData(label.value, !hiddenLabels.contains(label.value), label.order)
+                    }
+                }
+                .collect { labelsData ->
+                    labelAdapter?.submitList(labelsData)
+                    binding?.ImageView?.isVisible = labelsData.isEmpty()
+                }
         }
     }
 

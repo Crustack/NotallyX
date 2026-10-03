@@ -8,7 +8,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.core.widget.doAfterTextChanged
-import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -21,6 +20,7 @@ import com.philkes.notallyx.databinding.DialogColorPickerBinding
 import com.philkes.notallyx.presentation.createTextView
 import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.extractColor
+import com.philkes.notallyx.presentation.repeatOnLifecycleScope
 import com.philkes.notallyx.presentation.setLightStatusAndNavBar
 import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.showToast
@@ -238,36 +238,40 @@ private fun AppCompatActivity.showEditColorDialog(
                 },
             )
         }
-    val observer: Observer<ColorString> = Observer { defaultColor ->
-        dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.apply {
-            val currentColor = binding.ColorPicker.colorEnvelope.toColorString()
-            val isDefaultColor = currentColor == defaultColor
-            setText(if (isDefaultColor) R.string.text_default else R.string.make_default)
-            if (!isDefaultColor) {
-                TooltipCompat.setTooltipText(this, getString(R.string.set_as_default_color_message))
-                setOnClickListener {
-                    val newColor = binding.ColorPicker.colorEnvelope.toColorString()
-                    preferences.defaultNoteColor.save(newColor)
+    val job = repeatOnLifecycleScope {
+        preferences.defaultNoteColor.flow.collect { defaultColor ->
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.apply {
+                val currentColor = binding.ColorPicker.colorEnvelope.toColorString()
+                val isDefaultColor = currentColor == defaultColor
+                setText(if (isDefaultColor) R.string.text_default else R.string.make_default)
+                if (!isDefaultColor) {
+                    TooltipCompat.setTooltipText(
+                        this,
+                        getString(R.string.set_as_default_color_message),
+                    )
+                    setOnClickListener {
+                        val newColor = binding.ColorPicker.colorEnvelope.toColorString()
+                        preferences.defaultNoteColor.save(newColor)
+                    }
+                } else {
+                    TooltipCompat.setTooltipText(this, getString(R.string.default_color_hint))
+                    setOnClickListener { performLongClick() }
                 }
-            } else {
-                TooltipCompat.setTooltipText(this, getString(R.string.default_color_hint))
-                setOnClickListener { performLongClick() }
-            }
-            (this as? MaterialButton)?.apply {
-                icon =
-                    if (isDefaultColor)
-                        ContextCompat.getDrawable(
-                            this@showEditColorDialog,
-                            R.drawable.star_rate_filled,
-                        )
-                    else ContextCompat.getDrawable(this@showEditColorDialog, R.drawable.star)
-                iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
-                iconPadding = 0
+                (this as? MaterialButton)?.apply {
+                    icon =
+                        if (isDefaultColor)
+                            ContextCompat.getDrawable(
+                                this@showEditColorDialog,
+                                R.drawable.star_rate_filled,
+                            )
+                        else ContextCompat.getDrawable(this@showEditColorDialog, R.drawable.star)
+                    iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
+                    iconPadding = 0
+                }
             }
         }
     }
-    preferences.defaultNoteColor.observe(this@showEditColorDialog, observer)
-    dialog.setOnDismissListener { preferences.defaultNoteColor.removeObserver(observer) }
+    dialog.setOnDismissListener { job.cancel() }
 }
 
 private fun AppCompatActivity.showDeleteColorDialog(

@@ -14,10 +14,10 @@ import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.presentation.activity.note.NoteActionHandler
 import com.philkes.notallyx.presentation.add
 import com.philkes.notallyx.presentation.checkNotificationPermission
+import com.philkes.notallyx.presentation.collectIn
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.movedToResId
 import com.philkes.notallyx.presentation.setCancelButton
-import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import com.philkes.notallyx.presentation.view.misc.tristatecheckbox.TriStateCheckBox
 import com.philkes.notallyx.presentation.view.misc.tristatecheckbox.setMultiChoiceTriStateItems
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
@@ -26,6 +26,7 @@ import com.philkes.notallyx.utils.deleteAttachments
 import com.philkes.notallyx.utils.shareNote
 import com.philkes.notallyx.utils.showColorSelectDialog
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -37,7 +38,6 @@ class ModelFolderObserver(
 
     override fun onChanged(value: Folder) {
         menu.clear()
-        model.actionMode.count.removeObservers(activity)
 
         menu.add(
             R.string.select_all,
@@ -172,19 +172,19 @@ class ModelFolderObserver(
         }
     }
 
-    private fun NotNullMutableLiveData<Int>.observeCount(
+    private fun StateFlow<Int>.observeCount(
         lifecycleOwner: LifecycleOwner,
         share: MenuItem,
         onCountChange: ((Int) -> Unit)? = null,
     ) {
-        observe(lifecycleOwner) { count ->
+        collectIn(lifecycleOwner) { count ->
             activity.binding.ActionMode.title = count.toString()
             onCountChange?.invoke(count)
-            share.setVisible(count == 1)
+            share.isVisible = count == 1
         }
     }
 
-    private fun NotNullMutableLiveData<Int>.observeCountAndPinned(
+    private fun StateFlow<Int>.observeCountAndPinned(
         lifecycleOwner: LifecycleOwner,
         share: MenuItem,
         pinned: MenuItem,
@@ -225,13 +225,13 @@ class ModelFolderObserver(
     }
 
     internal fun moveNotes(folderTo: Folder) {
-        if (model.actionMode.loading.value || model.actionMode.isEmpty()) {
+        if (model.actionMode.isLoading() || model.actionMode.isEmpty()) {
             return
         }
         try {
-            model.actionMode.loading.value = true
+            model.actionMode.setLoading(true)
             val folderFrom = model.actionMode.getFirstNote().folder
-            val ids = model.moveBaseNotes(folderTo) { model.actionMode.loading.postValue(false) }
+            val ids = model.moveBaseNotes(folderTo) { model.actionMode.setLoading(false) }
             Snackbar.make(
                     activity.findViewById(R.id.DrawerLayout),
                     activity.getQuantityString(folderTo.movedToResId(), ids.size),
@@ -240,7 +240,7 @@ class ModelFolderObserver(
                 .apply { setAction(R.string.undo) { model.moveBaseNotes(ids, folderFrom) } }
                 .show()
         } catch (_: Exception) {
-            model.actionMode.loading.postValue(false)
+            model.actionMode.setLoading(false)
         }
     }
 

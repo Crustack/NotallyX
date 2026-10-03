@@ -2,7 +2,6 @@ package com.philkes.notallyx.data.imports.quillpad
 
 import android.app.Application
 import android.net.Uri
-import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.imports.ExternalImporter
 import com.philkes.notallyx.data.imports.ImportException
@@ -30,6 +29,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import kotlin.collections.forEach
 import kotlin.collections.map
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 
@@ -46,9 +46,9 @@ class QuillpadImporter : ExternalImporter {
         app: Application,
         source: Uri,
         destination: File,
-        progress: MutableLiveData<Progress>?,
+        progress: MutableStateFlow<Progress?>?,
     ): Pair<List<BaseNote>, File> {
-        progress?.postValue(ImportProgress(indeterminate = true, stage = ImportStage.EXTRACT_FILES))
+        progress?.value = ImportProgress(indeterminate = true, stage = ImportStage.EXTRACT_FILES)
         val dataFolder =
             try {
                 app.contentResolver.openInputStream(source)!!.use { unzip(destination, it) }
@@ -78,15 +78,13 @@ class QuillpadImporter : ExternalImporter {
 
         val notebookMap = quillpadBackup.notebooks.associate { it.id to it.name }
         val total = quillpadBackup.notes.size
-        progress?.postValue(ImportProgress(0, total, stage = ImportStage.IMPORT_NOTES))
+        progress?.value = ImportProgress(0, total, stage = ImportStage.IMPORT_NOTES)
         var counter = 1
 
         val baseNotes =
             quillpadBackup.notes.map { quillpadNote ->
                 val result = quillpadNote.toBaseNote(notebookMap)
-                progress?.postValue(
-                    ImportProgress(counter++, total, stage = ImportStage.IMPORT_NOTES)
-                )
+                progress?.value = ImportProgress(counter++, total, stage = ImportStage.IMPORT_NOTES)
                 result
             }
 

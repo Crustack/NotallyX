@@ -12,7 +12,6 @@ import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.LiveData
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -39,6 +38,7 @@ import com.philkes.notallyx.presentation.activity.note.reminders.RemindersActivi
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.hideKeyboard
 import com.philkes.notallyx.presentation.movedToResId
+import com.philkes.notallyx.presentation.repeatOnLifecycleScope
 import com.philkes.notallyx.presentation.showKeyboard
 import com.philkes.notallyx.presentation.view.main.BaseNoteAdapter
 import com.philkes.notallyx.presentation.view.main.BaseNoteVHPreferences
@@ -46,6 +46,8 @@ import com.philkes.notallyx.presentation.view.main.createCallback
 import com.philkes.notallyx.presentation.view.misc.ItemListener
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.NotesFragmentViewModel
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesView
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 
 abstract class NotesFragment : Fragment(), ItemListener {
 
@@ -306,20 +308,26 @@ abstract class NotesFragment : Fragment(), ItemListener {
     }
 
     private fun setupObserver() {
-        getObservable().observe(viewLifecycleOwner) { list ->
-            notesAdapter?.submitList(list ?: emptyList())
-            binding?.ImageView?.isVisible = list.isNullOrEmpty()
-        }
-
-        model.preferences.notesSorting.observe(viewLifecycleOwner) { notesSort ->
-            notesAdapter?.setNotesSort(notesSort)
-        }
-
-        model.actionMode.closeListener.observe(viewLifecycleOwner) { event ->
-            event.handle { ids ->
-                notesAdapter?.currentList?.forEachIndexed { index, item ->
-                    if (item is BaseNote && ids.contains(item.id)) {
-                        notesAdapter?.notifyItemChanged(index, 0)
+        viewLifecycleOwner.repeatOnLifecycleScope {
+            launch {
+                getFlow().collect { list ->
+                    notesAdapter?.submitList(list)
+                    binding?.ImageView?.isVisible = list.isEmpty()
+                }
+            }
+            launch {
+                model.preferences.notesSorting.flow.collect { notesSort ->
+                    notesAdapter?.setNotesSort(notesSort)
+                }
+            }
+            launch {
+                model.actionMode.closeListener.collect { event ->
+                    event?.handle { ids ->
+                        notesAdapter?.currentList?.forEachIndexed { index, item ->
+                            if (item is BaseNote && ids.contains(item.id)) {
+                                notesAdapter?.notifyItemChanged(index, 0)
+                            }
+                        }
                     }
                 }
             }
@@ -347,7 +355,7 @@ abstract class NotesFragment : Fragment(), ItemListener {
 
     abstract fun getBackground(): Int
 
-    abstract fun getObservable(): LiveData<List<Item>>
+    abstract fun getFlow(): Flow<List<Item>>
 
     open fun prepareNewNoteIntent(intent: Intent): Intent {
         return intent

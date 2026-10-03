@@ -35,6 +35,7 @@ import com.philkes.notallyx.presentation.checkNotificationPermission
 import com.philkes.notallyx.presentation.format
 import com.philkes.notallyx.presentation.getQuantityStringPlain
 import com.philkes.notallyx.presentation.initListView
+import com.philkes.notallyx.presentation.repeatOnLifecycleScope
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.view.main.reminder.ReminderAdapter
@@ -71,7 +72,7 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
         val noteId = intent.getLongExtra(NOTE_ID, 0L)
         lifecycleScope.launch {
             model.setState(noteId)
-            if (model.reminders.value!!.isEmpty()) {
+            if (model.reminders.value.isEmpty()) {
                 showDatePickerDialog()
             } else if (!canScheduleAlarms()) {
                 checkNotificationPermission(
@@ -173,11 +174,15 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
             initListView(this@RemindersActivity)
             adapter = reminderAdapter
         }
-        model.reminders.observe(this) { reminders ->
-            reminderAdapter.submitList(reminders)
-            if (reminders.isEmpty()) {
-                binding.EmptyState.visibility = View.VISIBLE
-            } else binding.EmptyState.visibility = View.INVISIBLE
+        repeatOnLifecycleScope {
+            launch {
+                model.reminders.collect { reminders ->
+                    reminderAdapter.submitList(reminders)
+                    if (reminders.isEmpty()) {
+                        binding.EmptyState.visibility = View.VISIBLE
+                    } else binding.EmptyState.visibility = View.INVISIBLE
+                }
+            }
         }
     }
 

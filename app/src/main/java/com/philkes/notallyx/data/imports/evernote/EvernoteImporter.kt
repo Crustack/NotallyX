@@ -4,7 +4,6 @@ import android.app.Application
 import android.net.Uri
 import android.util.Base64
 import android.webkit.MimeTypeMap
-import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.imports.ExternalImporter
 import com.philkes.notallyx.data.imports.ImportException
@@ -29,6 +28,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.simpleframework.xml.Serializer
 import org.simpleframework.xml.convert.AnnotationStrategy
 import org.simpleframework.xml.core.Persister
@@ -40,9 +40,9 @@ class EvernoteImporter : ExternalImporter {
         app: Application,
         source: Uri,
         destination: File,
-        progress: MutableLiveData<Progress>?,
+        progress: MutableStateFlow<Progress?>?,
     ): Pair<List<BaseNote>, File> {
-        progress?.postValue(ImportProgress(indeterminate = true))
+        progress?.value = ImportProgress(indeterminate = true)
         if (MimeTypeMap.getFileExtensionFromUrl(source.toString()) != "enex") {
             throw ImportException(
                 R.string.invalid_evernote,
@@ -53,13 +53,13 @@ class EvernoteImporter : ExternalImporter {
             parseExport(app.contentResolver.openInputStream(source)!!)!!
 
         val total = evernoteExport.notes.size
-        progress?.postValue(ImportProgress(total = total))
+        progress?.value = ImportProgress(total = total)
         var counter = 1
         try {
             val notes =
                 evernoteExport.notes.map {
                     val note = it.mapToBaseNote()
-                    progress?.postValue(ImportProgress(current = counter++, total = total))
+                    progress?.value = ImportProgress(current = counter++, total = total)
                     note
                 }
             val resources =
@@ -82,11 +82,9 @@ class EvernoteImporter : ExternalImporter {
         app: Application,
         resources: Collection<EvernoteResource>,
         dir: File,
-        progress: MutableLiveData<Progress>? = null,
+        progress: MutableStateFlow<Progress?>? = null,
     ) {
-        progress?.postValue(
-            ImportProgress(total = resources.size, stage = ImportStage.EXTRACT_FILES)
-        )
+        progress?.value = ImportProgress(total = resources.size, stage = ImportStage.EXTRACT_FILES)
         resources.forEachIndexed { idx, it ->
             val file = File(dir, it.attributes!!.fileName)
             try {
@@ -95,13 +93,12 @@ class EvernoteImporter : ExternalImporter {
             } catch (e: Exception) {
                 app.log(TAG, throwable = e)
             }
-            progress?.postValue(
+            progress?.value =
                 ImportProgress(
                     current = idx + 1,
                     total = resources.size,
                     stage = ImportStage.EXTRACT_FILES,
                 )
-            )
         }
     }
 

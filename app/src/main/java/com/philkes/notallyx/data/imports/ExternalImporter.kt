@@ -2,10 +2,10 @@ package com.philkes.notallyx.data.imports
 
 import android.app.Application
 import android.net.Uri
-import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.presentation.view.misc.Progress
 import java.io.File
+import kotlinx.coroutines.flow.MutableStateFlow
 
 interface ExternalImporter {
 
@@ -19,6 +19,6 @@ interface ExternalImporter {
         app: Application,
         source: Uri,
         destination: File,
-        progress: MutableLiveData<Progress>? = null,
+        progress: MutableStateFlow<Progress?>? = null,
     ): Pair<List<BaseNote>, File?>
 }

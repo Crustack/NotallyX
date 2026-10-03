@@ -2,11 +2,11 @@ package com.philkes.notallyx.presentation.activity.note
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -14,6 +14,7 @@ import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.databinding.ActivityPickNoteBinding
 import com.philkes.notallyx.presentation.activity.LockedActivity
+import com.philkes.notallyx.presentation.collectIn
 import com.philkes.notallyx.presentation.createItemsFromNotes
 import com.philkes.notallyx.presentation.view.main.BaseNoteAdapter
 import com.philkes.notallyx.presentation.view.main.BaseNoteVHPreferences
@@ -24,7 +25,6 @@ import com.philkes.notallyx.presentation.viewmodel.preference.NotesView
 import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import java.util.Collections
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 open class PickNoteActivity : LockedActivity<ActivityPickNoteBinding>(), ItemListener {
@@ -74,20 +74,17 @@ open class PickNoteActivity : LockedActivity<ActivityPickNoteBinding>(), ItemLis
                 } else LinearLayoutManager(this@PickNoteActivity)
         }
 
-        NotallyDatabase.getDatabase(this.application).observe(this) { database ->
-            lifecycleScope.launch {
-                val notes =
-                    database?.let { db ->
-                        withContext(Dispatchers.IO) {
-                            val raw =
-                                db.getBaseNoteDao().getAllNotes().filter { it.id != excludedNoteId }
-                            this@PickNoteActivity.createItemsFromNotes(raw)
-                        }
-                    } ?: return@launch
-                adapter.submitList(notes)
-                binding.EmptyView.visibility =
-                    if (notes.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
-            }
+        NotallyDatabase.getDatabase(this.application).collectIn(this) { database ->
+            val notes =
+                database?.let { db ->
+                    withContext(Dispatchers.IO) {
+                        val raw =
+                            db.getBaseNoteDao().getAllNotes().filter { it.id != excludedNoteId }
+                        this@PickNoteActivity.createItemsFromNotes(raw)
+                    }
+                } ?: return@collectIn
+            adapter.submitList(notes)
+            binding.EmptyView.visibility = if (notes.isEmpty()) View.VISIBLE else View.GONE
         }
     }
 

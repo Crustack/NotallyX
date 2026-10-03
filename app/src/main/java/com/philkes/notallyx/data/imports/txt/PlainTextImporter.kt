@@ -3,7 +3,6 @@ package com.philkes.notallyx.data.imports.txt
 import android.app.Application
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
-import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.data.imports.ExternalImporter
 import com.philkes.notallyx.data.imports.markdown.parseBodyAndSpansFromMarkdown
 import com.philkes.notallyx.data.model.BaseNote
@@ -17,6 +16,7 @@ import com.philkes.notallyx.utils.MIME_TYPE_JSON
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.readFileContents
 import java.io.File
+import kotlinx.coroutines.flow.MutableStateFlow
 
 class PlainTextImporter : ExternalImporter {
 
@@ -24,7 +24,7 @@ class PlainTextImporter : ExternalImporter {
         app: Application,
         source: Uri,
         destination: File,
-        progress: MutableLiveData<Progress>?,
+        progress: MutableStateFlow<Progress?>?,
     ): Pair<List<BaseNote>, File?> {
         val notes = mutableListOf<BaseNote>()
         fun readTxtFiles(file: DocumentFile) {

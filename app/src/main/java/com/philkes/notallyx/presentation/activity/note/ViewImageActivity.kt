@@ -25,6 +25,7 @@ import com.philkes.notallyx.databinding.ActivityViewImageBinding
 import com.philkes.notallyx.presentation.activity.LockedActivity
 import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
 import com.philkes.notallyx.presentation.add
+import com.philkes.notallyx.presentation.collectIn
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.view.note.image.ImageAdapter
 import com.philkes.notallyx.utils.SUBFOLDER_IMAGES
@@ -82,21 +83,20 @@ class ViewImageActivity : LockedActivity<ActivityViewImageBinding>() {
 
         val id = intent.getLongExtra(EXTRA_SELECTED_BASE_NOTE, 0)
 
-        NotallyDatabase.getDatabase(this.application).observe(this@ViewImageActivity) { database ->
-            lifecycleScope.launch {
-                val json =
-                    database?.let {
-                        withContext(Dispatchers.IO) { database.getBaseNoteDao().getImages(id) }
-                    } ?: return@launch
-                val original = Converters.jsonToFiles(json)
-                val images = ArrayList<FileAttachment>(original.size)
-                original.filterNotTo(images) { image -> deletedImages.contains(image) }
+        NotallyDatabase.getDatabase(this.application).collectIn(this@ViewImageActivity) { database
+            ->
+            val json =
+                database?.let {
+                    withContext(Dispatchers.IO) { database.getBaseNoteDao().getImages(id) }
+                } ?: return@collectIn
+            val original = Converters.jsonToFiles(json)
+            val images = ArrayList<FileAttachment>(original.size)
+            original.filterNotTo(images) { image -> deletedImages.contains(image) }
 
-                val mediaRoot = application.getCurrentImagesDirectory()
-                val adapter = ImageAdapter(mediaRoot, images)
-                binding.MainListView.adapter = adapter
-                setupToolbar(binding, adapter)
-            }
+            val mediaRoot = application.getCurrentImagesDirectory()
+            val adapter = ImageAdapter(mediaRoot, images)
+            binding.MainListView.adapter = adapter
+            setupToolbar(binding, adapter)
         }
 
         exportFileActivityResultLauncher =

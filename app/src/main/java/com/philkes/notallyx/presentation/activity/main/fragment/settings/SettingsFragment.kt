@@ -41,6 +41,7 @@ import com.philkes.notallyx.presentation.activity.DatabaseTransitionActivity
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.presentation.format
 import com.philkes.notallyx.presentation.getQuantityStringPlain
+import com.philkes.notallyx.presentation.repeatOnLifecycleScope
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.setEnabledSecureFlag
 import com.philkes.notallyx.presentation.setupImportProgressDialog
@@ -76,6 +77,7 @@ import com.philkes.notallyx.utils.wrapWithChooser
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class SettingsFragment : Fragment() {
@@ -274,153 +276,195 @@ class SettingsFragment : Fragment() {
     }
 
     private fun NotallyXPreferences.setupAppearance(binding: FragmentSettingsBinding) {
-        notesView.observe(viewLifecycleOwner) { value ->
-            binding.View.setup(notesView, value, requireContext()) { newValue ->
-                model.savePreference(notesView, newValue)
-            }
-        }
-
-        theme.merge(useDynamicColors).observe(viewLifecycleOwner) {
-            (themeValue, useDynamicColorsValue) ->
-            binding.Theme.setup(
-                theme,
-                themeValue,
-                useDynamicColorsValue,
-                requireContext(),
-                layoutInflater,
-            ) { newThemeValue, newUseDynamicColorsValue ->
-                model.savePreference(theme, newThemeValue)
-                model.savePreference(useDynamicColors, newUseDynamicColorsValue)
-                val packageManager = requireContext().packageManager
-                val intent = packageManager.getLaunchIntentForPackage(requireContext().packageName)
-                val componentName = intent!!.component
-                val mainIntent =
-                    Intent.makeRestartActivityTask(componentName).apply {
-                        putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, R.id.Settings)
+        viewLifecycleOwner.repeatOnLifecycleScope {
+            launch {
+                notesView.flow.collect { value ->
+                    binding.View.setup(notesView, value, requireContext()) { newValue ->
+                        model.savePreference(notesView, newValue)
                     }
-                mainIntent.setPackage(requireContext().packageName)
-                requireContext().startActivity(mainIntent)
-                Runtime.getRuntime().exit(0)
-            }
-        }
-
-        dateFormatOverview.merge(timeFormatOverview).observe(viewLifecycleOwner) { (date, time) ->
-            binding.DateFormatOverview.setupDateTimeFormat(
-                R.string.date_format_overview,
-                dateFormatOverview,
-                timeFormatOverview,
-                requireContext(),
-                layoutInflater,
-            ) { newDate, newTime ->
-                model.savePreference(dateFormatOverview, newDate)
-                model.savePreference(timeFormatOverview, newTime)
-            }
-        }
-
-        dateFormatNoteView.merge(timeFormatNoteView).observe(viewLifecycleOwner) { (date, time) ->
-            binding.DateFormatNoteView.setupDateTimeFormat(
-                R.string.date_format_note_view,
-                dateFormatNoteView,
-                timeFormatNoteView,
-                requireContext(),
-                layoutInflater,
-            ) { newDate, newTime ->
-                model.savePreference(dateFormatNoteView, newDate)
-                model.savePreference(timeFormatNoteView, newTime)
-            }
-        }
-
-        textSizeNoteEditor.observe(viewLifecycleOwner) { value ->
-            binding.TextSize.setupTextSizePreference(
-                textSizeNoteEditor,
-                requireContext(),
-                value = value,
-            ) { newValue ->
-                model.savePreference(textSizeNoteEditor, newValue)
-            }
-        }
-        textSizeOverview.observe(viewLifecycleOwner) { value ->
-            binding.TextSizeOverview.setupTextSizePreference(
-                textSizeOverview,
-                requireContext(),
-                value = value,
-            ) { newValue ->
-                model.savePreference(textSizeOverview, newValue)
-            }
-        }
-        alwaysShowSearchBar.observe(viewLifecycleOwner) { value ->
-            binding.ShowSearchInTopBar.setup(
-                alwaysShowSearchBar,
-                value,
-                requireContext(),
-                layoutInflater,
-                R.string.always_show_search_bar_hint,
-            ) { enabled ->
-                model.savePreference(alwaysShowSearchBar, enabled)
-            }
-        }
-        notesSorting.observe(viewLifecycleOwner) { notesSort ->
-            binding.NotesSortOrder.setup(
-                notesSorting,
-                notesSort,
-                requireContext(),
-                layoutInflater,
-                model,
-            )
-        }
-
-        listItemSorting.observe(viewLifecycleOwner) { value ->
-            binding.CheckedListItemSorting.setup(listItemSorting, value, requireContext()) {
-                newValue ->
-                model.savePreference(listItemSorting, newValue)
-            }
-        }
-
-        defaultListNoteViewMode.observe(viewLifecycleOwner) { value ->
-            binding.DefaultListNoteViewMode.setup(
-                defaultListNoteViewMode,
-                value,
-                requireContext(),
-            ) { newValue ->
-                model.savePreference(defaultListNoteViewMode, newValue)
-            }
-        }
-
-        autoRemoveDeletedNotesAfterDays.observe(viewLifecycleOwner) { value ->
-            binding.AutoEmptyBin.setup(
-                autoRemoveDeletedNotesAfterDays,
-                requireContext(),
-                labelFormatter = { v ->
-                    if (v == 0) requireContext().getString(R.string.off)
-                    else "$v ${requireContext().getQuantityStringPlain(R.plurals.days, v)}"
-                },
-            ) { newValue ->
-                Log.d("Stepper", "save auto remove")
-                model.savePreference(autoRemoveDeletedNotesAfterDays, newValue)
-                val workManager = WorkManager.getInstance(requireContext())
-                if (newValue > 0) {
-                    workManager.scheduleAutoRemoveOldDeletedNotes(
-                        requireContext() as ContextWrapper
-                    )
-                } else {
-                    workManager.cancelAutoRemoveOldDeletedNotes()
                 }
             }
-        }
 
-        binding.MaxLabels.setup(maxLabels, requireContext()) { newValue ->
-            model.savePreference(maxLabels, newValue)
-        }
+            launch {
+                combine(theme.flow, useDynamicColors.flow) { themeValue, useDynamicColorsValue ->
+                        Pair(themeValue, useDynamicColorsValue)
+                    }
+                    .collect { (themeValue, useDynamicColorsValue) ->
+                        binding.Theme.setup(
+                            theme,
+                            themeValue,
+                            useDynamicColorsValue,
+                            requireContext(),
+                            layoutInflater,
+                        ) { newThemeValue, newUseDynamicColorsValue ->
+                            model.savePreference(theme, newThemeValue)
+                            model.savePreference(useDynamicColors, newUseDynamicColorsValue)
+                            val packageManager = requireContext().packageManager
+                            val intent =
+                                packageManager.getLaunchIntentForPackage(
+                                    requireContext().packageName
+                                )
+                            val componentName = intent!!.component
+                            val mainIntent =
+                                Intent.makeRestartActivityTask(componentName).apply {
+                                    putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, R.id.Settings)
+                                }
+                            mainIntent.setPackage(requireContext().packageName)
+                            requireContext().startActivity(mainIntent)
+                            Runtime.getRuntime().exit(0)
+                        }
+                    }
+            }
 
-        startView.merge(model.labels).observe(viewLifecycleOwner) { (startViewValue, labelsValue) ->
-            binding.StartView.setupStartView(
-                startView,
-                startViewValue,
-                labelsValue?.map { it.value },
-                requireContext(),
-                layoutInflater,
-            ) { newValue ->
-                model.savePreference(startView, newValue)
+            launch {
+                combine(dateFormatOverview.flow, timeFormatOverview.flow) { date, time ->
+                        Pair(date, time)
+                    }
+                    .collect { (date, time) ->
+                        binding.DateFormatOverview.setupDateTimeFormat(
+                            R.string.date_format_overview,
+                            dateFormatOverview,
+                            timeFormatOverview,
+                            requireContext(),
+                            layoutInflater,
+                        ) { newDate, newTime ->
+                            model.savePreference(dateFormatOverview, newDate)
+                            model.savePreference(timeFormatOverview, newTime)
+                        }
+                    }
+            }
+
+            launch {
+                combine(dateFormatNoteView.flow, timeFormatNoteView.flow) { date, time ->
+                        Pair(date, time)
+                    }
+                    .collect { (date, time) ->
+                        binding.DateFormatNoteView.setupDateTimeFormat(
+                            R.string.date_format_note_view,
+                            dateFormatNoteView,
+                            timeFormatNoteView,
+                            requireContext(),
+                            layoutInflater,
+                        ) { newDate, newTime ->
+                            model.savePreference(dateFormatNoteView, newDate)
+                            model.savePreference(timeFormatNoteView, newTime)
+                        }
+                    }
+            }
+
+            launch {
+                textSizeNoteEditor.flow.collect { value ->
+                    binding.TextSize.setupTextSizePreference(
+                        textSizeNoteEditor,
+                        requireContext(),
+                        value = value,
+                    ) { newValue ->
+                        model.savePreference(textSizeNoteEditor, newValue)
+                    }
+                }
+            }
+
+            launch {
+                textSizeOverview.flow.collect { value ->
+                    binding.TextSizeOverview.setupTextSizePreference(
+                        textSizeOverview,
+                        requireContext(),
+                        value = value,
+                    ) { newValue ->
+                        model.savePreference(textSizeOverview, newValue)
+                    }
+                }
+            }
+
+            launch {
+                alwaysShowSearchBar.flow.collect { value ->
+                    binding.ShowSearchInTopBar.setup(
+                        alwaysShowSearchBar,
+                        value,
+                        requireContext(),
+                        layoutInflater,
+                        R.string.always_show_search_bar_hint,
+                    ) { enabled ->
+                        model.savePreference(alwaysShowSearchBar, enabled)
+                    }
+                }
+            }
+
+            launch {
+                notesSorting.flow.collect { notesSort ->
+                    binding.NotesSortOrder.setup(
+                        notesSorting,
+                        notesSort,
+                        requireContext(),
+                        layoutInflater,
+                        model,
+                    )
+                }
+            }
+
+            launch {
+                listItemSorting.flow.collect { value ->
+                    binding.CheckedListItemSorting.setup(
+                        listItemSorting,
+                        value,
+                        requireContext(),
+                    ) { newValue ->
+                        model.savePreference(listItemSorting, newValue)
+                    }
+                }
+            }
+
+            launch {
+                defaultListNoteViewMode.flow.collect { value ->
+                    binding.DefaultListNoteViewMode.setup(
+                        defaultListNoteViewMode,
+                        value,
+                        requireContext(),
+                    ) { newValue ->
+                        model.savePreference(defaultListNoteViewMode, newValue)
+                    }
+                }
+            }
+
+            launch {
+                autoRemoveDeletedNotesAfterDays.flow.collect { value ->
+                    binding.AutoEmptyBin.setup(
+                        autoRemoveDeletedNotesAfterDays,
+                        requireContext(),
+                        labelFormatter = { v ->
+                            if (v == 0) requireContext().getString(R.string.off)
+                            else "$v ${requireContext().getQuantityStringPlain(R.plurals.days, v)}"
+                        },
+                    ) { newValue ->
+                        Log.d("Stepper", "save auto remove")
+                        model.savePreference(autoRemoveDeletedNotesAfterDays, newValue)
+                        val workManager = WorkManager.getInstance(requireContext())
+                        if (newValue > 0) {
+                            workManager.scheduleAutoRemoveOldDeletedNotes(
+                                requireContext() as ContextWrapper
+                            )
+                        } else {
+                            workManager.cancelAutoRemoveOldDeletedNotes()
+                        }
+                    }
+                }
+            }
+
+            launch {
+                combine(startView.flow, model.labels) { startViewValue, labelsValue ->
+                        Pair(startViewValue, labelsValue)
+                    }
+                    .collect { (startViewValue, labelsValue) ->
+                        binding.StartView.setupStartView(
+                            startView,
+                            startViewValue,
+                            labelsValue.map { it.value },
+                            requireContext(),
+                            layoutInflater,
+                        ) { newValue ->
+                            model.savePreference(startView, newValue)
+                        }
+                    }
             }
         }
     }
@@ -440,26 +484,32 @@ class SettingsFragment : Fragment() {
             MaxLabels.setup(maxLabels, requireContext()) { newValue ->
                 model.savePreference(maxLabels, newValue)
             }
-            labelTagsHiddenInOverview.observe(viewLifecycleOwner) { value ->
-                binding.LabelsHiddenInOverview.setup(
-                    labelTagsHiddenInOverview,
-                    value,
-                    requireContext(),
-                    layoutInflater,
-                    R.string.labels_hidden_in_overview,
-                ) { enabled ->
-                    model.savePreference(labelTagsHiddenInOverview, enabled)
+            viewLifecycleOwner.repeatOnLifecycleScope {
+                launch {
+                    labelTagsHiddenInOverview.flow.collect { value ->
+                        binding.LabelsHiddenInOverview.setup(
+                            labelTagsHiddenInOverview,
+                            value,
+                            requireContext(),
+                            layoutInflater,
+                            R.string.labels_hidden_in_overview,
+                        ) { enabled ->
+                            model.savePreference(labelTagsHiddenInOverview, enabled)
+                        }
+                    }
                 }
-            }
-            imagesHiddenInOverview.observe(viewLifecycleOwner) { value ->
-                binding.ImagesHiddenInOverview.setup(
-                    imagesHiddenInOverview,
-                    value,
-                    requireContext(),
-                    layoutInflater,
-                    R.string.images_hidden_in_overview,
-                ) { enabled ->
-                    model.savePreference(imagesHiddenInOverview, enabled)
+                launch {
+                    imagesHiddenInOverview.flow.collect { value ->
+                        binding.ImagesHiddenInOverview.setup(
+                            imagesHiddenInOverview,
+                            value,
+                            requireContext(),
+                            layoutInflater,
+                            R.string.images_hidden_in_overview,
+                        ) { enabled ->
+                            model.savePreference(imagesHiddenInOverview, enabled)
+                        }
+                    }
                 }
             }
         }
@@ -495,37 +545,50 @@ class SettingsFragment : Fragment() {
     }
 
     private fun NotallyXPreferences.setupAutoBackups(binding: FragmentSettingsBinding) {
-        backupsFolder.observe(viewLifecycleOwner) { value ->
-            binding.BackupsFolder.setupBackupsFolder(
-                value,
-                requireContext(),
-                ::displayChooseBackupFolderDialog,
-            ) {
-                model.disableBackups()
+        viewLifecycleOwner.repeatOnLifecycleScope {
+            launch {
+                backupsFolder.flow.collect { value ->
+                    binding.BackupsFolder.setupBackupsFolder(
+                        value,
+                        requireContext(),
+                        ::displayChooseBackupFolderDialog,
+                    ) {
+                        model.disableBackups()
+                    }
+                }
             }
-        }
-        backupOnSave.merge(backupsFolder).observe(viewLifecycleOwner) { (onSave, backupFolder) ->
-            binding.BackupOnSave.setup(
-                backupOnSave,
-                onSave,
-                requireContext(),
-                layoutInflater,
-                messageResId = R.string.auto_backup_on_save,
-                enabled = backupFolder != EMPTY_PATH,
-                disabledTextResId = R.string.auto_backups_folder_set,
-            ) { enabled ->
-                model.savePreference(backupOnSave, enabled)
+            launch {
+                combine(backupOnSave.flow, backupsFolder.flow) { onSave, backupFolder ->
+                        Pair(onSave, backupFolder)
+                    }
+                    .collect { (onSave, backupFolder) ->
+                        binding.BackupOnSave.setup(
+                            backupOnSave,
+                            onSave,
+                            requireContext(),
+                            layoutInflater,
+                            messageResId = R.string.auto_backup_on_save,
+                            enabled = backupFolder != EMPTY_PATH,
+                            disabledTextResId = R.string.auto_backups_folder_set,
+                        ) { enabled ->
+                            model.savePreference(backupOnSave, enabled)
+                        }
+                    }
             }
-        }
-        periodicBackups.merge(backupsFolder).observe(viewLifecycleOwner) {
-            (periodicBackup, backupFolder) ->
-            setupPeriodicBackup(
-                binding,
-                periodicBackup,
-                backupFolder,
-                periodicBackups,
-                periodicBackupLastExecution,
-            )
+            launch {
+                combine(periodicBackups.flow, backupsFolder.flow) { periodicBackup, backupFolder ->
+                        Pair(periodicBackup, backupFolder)
+                    }
+                    .collect { (periodicBackup, backupFolder) ->
+                        setupPeriodicBackup(
+                            binding,
+                            periodicBackup,
+                            backupFolder,
+                            periodicBackups,
+                            periodicBackupLastExecution,
+                        )
+                    }
+            }
         }
     }
 
@@ -697,25 +760,32 @@ class SettingsFragment : Fragment() {
                 model.savePreference(preference, preference.value.copy(periodInDays = 0))
             }
         }
-        lastExecutionPreference
-            .merge(model.preferences.dateFormatOverview, model.preferences.timeFormatOverview)
-            .observe(viewLifecycleOwner) { (time, _, _) ->
-                binding.PeriodicBackupLastExecution.apply {
-                    if (time != -1L) {
-                        isVisible = true
-                        text =
-                            Date(time)
-                                .format(
-                                    model.preferences.dateFormatOverview.value,
-                                    model.preferences.timeFormatOverview.value,
-                                    ensureFullFormat = true,
-                                )
-                                .let { lastBackupFormatted ->
-                                    "${requireContext().getString(R.string.auto_backup_last)}: $lastBackupFormatted"
-                                }
-                    } else isVisible = false
+        viewLifecycleOwner.repeatOnLifecycleScope {
+            combine(
+                    lastExecutionPreference.flow,
+                    model.preferences.dateFormatOverview.flow,
+                    model.preferences.timeFormatOverview.flow,
+                ) { time, dateFormat, timeFormat ->
+                    Triple(time, dateFormat, timeFormat)
                 }
-            }
+                .collect { (time, dateFormat, timeFormat) ->
+                    binding.PeriodicBackupLastExecution.apply {
+                        if (time != -1L) {
+                            isVisible = true
+                            text =
+                                Date(time)
+                                    .format(
+                                        dateFormat,
+                                        timeFormat,
+                                        ensureFullFormat = true,
+                                    )
+                                    .let { lastBackupFormatted ->
+                                        "${requireContext().getString(R.string.auto_backup_last)}: $lastBackupFormatted"
+                                    }
+                        } else isVisible = false
+                    }
+                }
+        }
         binding.PeriodicBackupsPeriodInDays.setup(
             value.periodInDays,
             R.string.backup_period_days,
@@ -739,34 +809,40 @@ class SettingsFragment : Fragment() {
     }
 
     private fun NotallyXPreferences.setupSecurity(binding: FragmentSettingsBinding) {
-        biometricLock.observe(viewLifecycleOwner) { value ->
-            binding.BiometricLock.setup(
-                biometricLock,
-                value,
-                requireContext(),
-                model,
-                ::showEnableBiometricLock,
-                ::showDisableBiometricLock,
-                ::showBiometricsNotSetupDialog,
-            )
-        }
-
-        backupPassword.observe(viewLifecycleOwner) { value ->
-            binding.BackupPassword.setupBackupPassword(
-                backupPassword,
-                value,
-                requireContext(),
-                layoutInflater,
-            ) { newValue ->
-                model.savePreference(backupPassword, newValue)
+        viewLifecycleOwner.repeatOnLifecycleScope {
+            launch {
+                biometricLock.flow.collect { value ->
+                    binding.BiometricLock.setup(
+                        biometricLock,
+                        value,
+                        requireContext(),
+                        model,
+                        ::showEnableBiometricLock,
+                        ::showDisableBiometricLock,
+                        ::showBiometricsNotSetupDialog,
+                    )
+                }
             }
-        }
-
-        secureFlag.observe(viewLifecycleOwner) { value ->
-            binding.SecureFlag.setup(secureFlag, value, requireContext(), layoutInflater) { newValue
-                ->
-                model.savePreference(secureFlag, newValue)
-                activity?.setEnabledSecureFlag(newValue)
+            launch {
+                backupPassword.flow.collect { value ->
+                    binding.BackupPassword.setupBackupPassword(
+                        backupPassword,
+                        value,
+                        requireContext(),
+                        layoutInflater,
+                    ) { newValue ->
+                        model.savePreference(backupPassword, newValue)
+                    }
+                }
+            }
+            launch {
+                secureFlag.flow.collect { value ->
+                    binding.SecureFlag.setup(secureFlag, value, requireContext(), layoutInflater) {
+                        newValue ->
+                        model.savePreference(secureFlag, newValue)
+                        activity?.setEnabledSecureFlag(newValue)
+                    }
+                }
             }
         }
     }
@@ -820,24 +896,26 @@ class SettingsFragment : Fragment() {
                     },
                 )
             }
-            dataInPublicFolder.observe(viewLifecycleOwner) { value ->
-                binding.DataInPublicFolder.setup(
-                    dataInPublicFolder,
-                    value,
-                    requireContext(),
-                    layoutInflater,
-                    R.string.data_in_public_message,
-                ) { enabled ->
-                    if (enabled) {
-                        DatabaseTransitionActivity.start(
-                            requireActivity(),
-                            DatabaseAction.ENABLE_DATA_IN_PUBLIC,
-                        )
-                    } else {
-                        DatabaseTransitionActivity.start(
-                            requireActivity(),
-                            DatabaseAction.DISABLE_DATA_IN_PUBLIC,
-                        )
+            viewLifecycleOwner.repeatOnLifecycleScope {
+                dataInPublicFolder.flow.collect { value ->
+                    binding.DataInPublicFolder.setup(
+                        dataInPublicFolder,
+                        value,
+                        requireContext(),
+                        layoutInflater,
+                        R.string.data_in_public_message,
+                    ) { enabled ->
+                        if (enabled) {
+                            DatabaseTransitionActivity.start(
+                                requireActivity(),
+                                DatabaseAction.ENABLE_DATA_IN_PUBLIC,
+                            )
+                        } else {
+                            DatabaseTransitionActivity.start(
+                                requireActivity(),
+                                DatabaseAction.DISABLE_DATA_IN_PUBLIC,
+                            )
+                        }
                     }
                 }
             }
@@ -956,8 +1034,14 @@ class SettingsFragment : Fragment() {
     }
 
     private fun displayChooseBackupFolderDialog() {
+        val hintText =
+            try {
+                getString(R.string.auto_backups_folder_hint, getString(R.string.documentation))
+            } catch (_: Exception) {
+                getString(R.string.auto_backups_folder_hint)
+            }
         showDialog(
-            getString(R.string.auto_backups_folder_hint, getString(R.string.documentation)),
+            hintText,
             R.string.choose_folder,
             { _, _ ->
                 val intent = Intent(ACTION_OPEN_DOCUMENT_TREE).wrapWithChooser(requireContext())
@@ -978,13 +1062,11 @@ class SettingsFragment : Fragment() {
                 requireActivity(),
                 isForDecrypt = false,
                 onSuccess = { cipher ->
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        DatabaseTransitionActivity.start(
-                            requireActivity(),
-                            DatabaseAction.ENABLE_BIOMETRIC_LOCK,
-                            cipher,
-                        )
-                    }
+                    DatabaseTransitionActivity.start(
+                        requireActivity(),
+                        DatabaseAction.ENABLE_BIOMETRIC_LOCK,
+                        cipher,
+                    )
                 },
             ) {
                 showBiometricsNotSetupDialog()
@@ -999,13 +1081,11 @@ class SettingsFragment : Fragment() {
                 model.preferences.iv.value!!,
                 isForDecrypt = true,
                 onSuccess = { cipher ->
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        DatabaseTransitionActivity.start(
-                            requireActivity(),
-                            DatabaseAction.DISABLE_BIOMETRIC_LOCK,
-                            cipher,
-                        )
-                    }
+                    DatabaseTransitionActivity.start(
+                        requireActivity(),
+                        DatabaseAction.DISABLE_BIOMETRIC_LOCK,
+                        cipher,
+                    )
                 },
             ) {}
         }

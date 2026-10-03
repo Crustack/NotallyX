@@ -18,5 +18,5 @@ class ArchivedFragment : NotesFragment() {
 
     override fun getBackground() = R.drawable.archive
 
-    override fun getObservable() = archivedViewModel.archivedNotes
+    override fun getFlow() = archivedViewModel.archivedNotes
 }

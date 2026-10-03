@@ -21,7 +21,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -89,6 +88,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -379,10 +379,10 @@ suspend fun ContextWrapper.exportAsZip(
     fileUri: Uri,
     compress: Boolean = false,
     password: String = PASSWORD_EMPTY,
-    backupProgress: MutableLiveData<Progress>? = null,
+    backupProgress: MutableStateFlow<Progress?>? = null,
     retryOnFail: Boolean = true,
 ): NotesAndAttachments {
-    backupProgress?.postValue(BackupProgress(indeterminate = true))
+    backupProgress?.value = BackupProgress(indeterminate = true)
     val tempFile = createTempFile("export", "tmp", cacheDir)
     try {
         val zipFile =
@@ -406,13 +406,12 @@ suspend fun ContextWrapper.exportAsZip(
         val files = databaseOriginal.getBaseNoteDao().getAllFiles().toFileAttachments()
         val audios = databaseOriginal.getBaseNoteDao().getAllAudios()
         val totalAttachments = images.count() + files.count() + audios.size
-        backupProgress?.postValue(
+        backupProgress?.value =
             BackupProgress(
                 0,
                 totalAttachments,
                 countSuffix = getQuantityString(R.plurals.attachments, totalAttachments),
             )
-        )
 
         val counter = AtomicInteger(0)
         val missingAttachments = ArrayList<String>()
@@ -455,14 +454,13 @@ suspend fun ContextWrapper.exportAsZip(
                 } catch (exception: Exception) {
                     log(TAG, throwable = exception)
                 } finally {
-                    backupProgress?.postValue(
+                    backupProgress?.value =
                         BackupProgress(
                             counter.incrementAndGet(),
                             totalAttachments,
                             countSuffix =
                                 getQuantityString(R.plurals.attachments, totalAttachments),
                         )
-                    )
                 }
             }
         try {
@@ -517,7 +515,7 @@ suspend fun ContextWrapper.exportAsZip(
                 throwable = e,
             )
         }
-        backupProgress?.postValue(BackupProgress(inProgress = false))
+        backupProgress?.value = BackupProgress(inProgress = false)
         // Post skipped attachments notification if any were missing
         if (missingAttachments.isNotEmpty()) {
             postSkippedAttachmentsNotification(missingAttachments)
@@ -630,7 +628,7 @@ private fun Sequence<FileAttachment>.export(
     zipParameters: ZipParameters,
     subfolder: String,
     context: ContextWrapper,
-    backupProgress: MutableLiveData<Progress>?,
+    backupProgress: MutableStateFlow<Progress?>?,
     total: Int,
     counter: AtomicInteger,
     missingDisplayNames: MutableList<String>,
@@ -650,13 +648,12 @@ private fun Sequence<FileAttachment>.export(
         } catch (exception: Exception) {
             context.log(TAG, throwable = exception)
         } finally {
-            backupProgress?.postValue(
+            backupProgress?.value =
                 BackupProgress(
                     counter.incrementAndGet(),
                     total,
                     countSuffix = context.getQuantityString(R.plurals.attachments, total),
                 )
-            )
         }
     }
 }
@@ -780,7 +777,7 @@ fun exportPdfFileFolder(
     folder: DocumentFile,
     fileName: String = note.title,
     pdfPrintListener: PdfPrintListener? = null,
-    progress: MutableLiveData<Progress>? = null,
+    progress: MutableStateFlow<Progress?>? = null,
     counter: AtomicInteger? = null,
     total: Int? = null,
     duplicateFileCount: Int = 1,
@@ -815,7 +812,7 @@ fun exportPdfFile(
     app: ContextWrapper,
     note: BaseNote,
     outputFile: DocumentFile,
-    progress: MutableLiveData<Progress>? = null,
+    progress: MutableStateFlow<Progress?>? = null,
     counter: AtomicInteger? = null,
     total: Int? = null,
     pdfPrintListener: PdfPrintListener? = null,
@@ -835,9 +832,8 @@ fun exportPdfFile(
                     app.contentResolver.openInputStream(file.uri)?.copyTo(outStream)
                 }
                 if (progress != null) {
-                    progress.postValue(
+                    progress.value =
                         BackupProgress(current = counter!!.incrementAndGet(), total = total!!)
-                    )
                     if (counter.get() == total) {
                         pdfPrintListener?.onSuccess(file)
                     }
@@ -859,7 +855,7 @@ suspend fun exportPlainTextFileFolder(
     exportType: ExportMimeType,
     folder: DocumentFile,
     fileName: String = note.title,
-    progress: MutableLiveData<Progress>? = null,
+    progress: MutableStateFlow<Progress?>? = null,
     counter: AtomicInteger? = null,
     total: Int? = null,
     duplicateFileCount: Int = 1,
@@ -888,7 +884,7 @@ suspend fun exportPlainTextFileFolder(
                     exportPlainTextFile(app, note, it, exportType)
                     it
                 }
-        progress?.postValue(BackupProgress(current = counter!!.incrementAndGet(), total = total!!))
+        progress?.value = BackupProgress(current = counter!!.incrementAndGet(), total = total!!)
         return@withContext file
     }
 }

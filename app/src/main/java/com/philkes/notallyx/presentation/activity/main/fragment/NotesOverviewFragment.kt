@@ -16,7 +16,7 @@ class NotesOverviewFragment : NotesFragment() {
         model.setFolder(Folder.NOTES)
     }
 
-    override fun getObservable() = notesViewModel.baseNotes
+    override fun getFlow() = notesViewModel.baseNotes
 
     override fun getBackground() = R.drawable.notebook
 }

@@ -2,7 +2,6 @@ package com.philkes.notallyx
 
 import android.app.Activity
 import android.app.Application
-import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.IntentFilter
@@ -10,7 +9,6 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.lifecycle.Observer
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkInfo
@@ -21,11 +19,11 @@ import com.philkes.notallyx.NotallyXApplication.Companion.AUTO_REMOVE_DELETED_NO
 import com.philkes.notallyx.NotallyXApplication.Companion.TAG
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.presentation.setEnabledSecureFlag
-import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.EMPTY_PATH
 import com.philkes.notallyx.presentation.viewmodel.preference.Theme
+import com.philkes.notallyx.presentation.viewmodel.preference.withPrevious
 import com.philkes.notallyx.presentation.widget.WidgetProvider
 import com.philkes.notallyx.utils.AutoRemoveDeletedNotesWorker
 import com.philkes.notallyx.utils.PidCrashDataCollector
@@ -42,22 +40,24 @@ import com.philkes.notallyx.utils.backup.modifiedNoteBackupExists
 import com.philkes.notallyx.utils.backup.scheduleAutoBackup
 import com.philkes.notallyx.utils.backup.updateAutoBackup
 import com.philkes.notallyx.utils.log
-import com.philkes.notallyx.utils.observeOnce
 import com.philkes.notallyx.utils.security.UnlockReceiver
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class NotallyXApplication : Application(), Application.ActivityLifecycleCallbacks {
 
-    private lateinit var biometricLockObserver: Observer<BiometricLock>
+    private val applicationScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private lateinit var preferences: NotallyXPreferences
     private var unlockReceiver: UnlockReceiver? = null
 
-    val locked = NotNullMutableLiveData(true)
+    val locked = MutableStateFlow(true)
 
     override fun onCreate() {
         super.onCreate()
@@ -73,85 +73,107 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
         }
         if (isTestRunner()) return
         restorePinnedNotifications()
-        preferences.theme.observeForeverWithPrevious { (oldTheme, theme) ->
-            when (theme) {
-                Theme.DARK,
-                Theme.SUPER_DARK ->
-                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 
-                Theme.LIGHT ->
-                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        applicationScope.launch {
+            preferences.theme.flow.withPrevious().collect { (oldTheme, theme) ->
+                when (theme) {
+                    Theme.DARK,
+                    Theme.SUPER_DARK ->
+                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 
-                Theme.FOLLOW_SYSTEM ->
-                    AppCompatDelegate.setDefaultNightMode(
-                        AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+                    Theme.LIGHT ->
+                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+
+                    Theme.FOLLOW_SYSTEM ->
+                        AppCompatDelegate.setDefaultNightMode(
+                            AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+                        )
+                }
+                if (oldTheme != null) {
+                    WidgetProvider.updateWidgets(
+                        this@NotallyXApplication,
+                        locked = preferences.isLockEnabled && locked.value,
                     )
+                }
             }
-            if (oldTheme != null) {
+        }
+
+        applicationScope.launch {
+            preferences.backupsFolder.flow.withPrevious().collect {
+                (backupFolderBefore, backupFolder) ->
+                checkUpdatePeriodicBackup(
+                    backupFolderBefore ?: "",
+                    backupFolder,
+                    preferences.periodicBackups.value.periodInDays.toLong(),
+                    execute = true,
+                )
+                checkUpdateAutoBackupOnSave(backupFolderBefore ?: "", backupFolder)
+            }
+        }
+
+        applicationScope.launch {
+            preferences.periodicBackups.flow.collect { value ->
+                val backupFolder = preferences.backupsFolder.value
+                checkUpdatePeriodicBackup(backupFolder, backupFolder, value.periodInDays.toLong())
+            }
+        }
+
+        applicationScope.launch {
+            preferences.autoRemoveDeletedNotesAfterDays.flow.collect { value ->
+                checkUpdateAutoRemoveOldDeletedNotes(value)
+            }
+        }
+
+        val filter = IntentFilter().apply { addAction(Intent.ACTION_SCREEN_OFF) }
+        applicationScope.launch {
+            preferences.biometricLock.flow.collect { biometricLock ->
+                if (biometricLock == BiometricLock.ENABLED) {
+                    if (unlockReceiver == null) {
+                        unlockReceiver = UnlockReceiver(this@NotallyXApplication)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            registerReceiver(unlockReceiver, filter, RECEIVER_NOT_EXPORTED)
+                        } else {
+                            registerReceiver(unlockReceiver, filter)
+                        }
+                    }
+                } else {
+                    unlockReceiver?.let { unregisterReceiver(it) }
+                    unlockReceiver = null
+                    if (locked.value) {
+                        locked.value = false
+                    }
+                }
+            }
+        }
+
+        applicationScope.launch {
+            locked.collect { isLocked ->
                 WidgetProvider.updateWidgets(
-                    this,
-                    locked = preferences.isLockEnabled && locked.value,
+                    this@NotallyXApplication,
+                    locked = preferences.isLockEnabled && isLocked,
                 )
             }
         }
 
-        preferences.backupsFolder.observeForeverWithPrevious { (backupFolderBefore, backupFolder) ->
-            checkUpdatePeriodicBackup(
-                backupFolderBefore,
-                backupFolder,
-                preferences.periodicBackups.value.periodInDays.toLong(),
-                execute = true,
-            )
-            checkUpdateAutoBackupOnSave(backupFolderBefore, backupFolder)
-        }
-        preferences.periodicBackups.observeForever { value ->
-            val backupFolder = preferences.backupsFolder.value
-            checkUpdatePeriodicBackup(backupFolder, backupFolder, value.periodInDays.toLong())
-        }
-        preferences.autoRemoveDeletedNotesAfterDays.observeForever { value ->
-            checkUpdateAutoRemoveOldDeletedNotes(value)
-        }
-
-        val filter = IntentFilter().apply { addAction(Intent.ACTION_SCREEN_OFF) }
-        biometricLockObserver = Observer { biometricLock ->
-            if (biometricLock == BiometricLock.ENABLED) {
-                unlockReceiver = UnlockReceiver(this)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    registerReceiver(unlockReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-                } else {
-                    registerReceiver(unlockReceiver, filter)
-                }
-            } else {
-                unlockReceiver?.let { unregisterReceiver(it) }
-                unlockReceiver = null
-                if (locked.value) {
-                    locked.postValue(false)
-                }
-            }
-        }
-        preferences.biometricLock.observeForever(biometricLockObserver)
-
-        locked.observeForever { isLocked ->
-            WidgetProvider.updateWidgets(this, locked = preferences.isLockEnabled && isLocked)
-        }
-
-        preferences.backupPassword.observeForeverWithPrevious {
-            (previousBackupPassword, backupPassword) ->
-            if (preferences.backupOnSave.value) {
-                val backupPath = preferences.backupsFolder.value
-                if (backupPath != EMPTY_PATH) {
-                    if (
-                        !modifiedNoteBackupExists(backupPath) ||
-                            (previousBackupPassword != null &&
-                                previousBackupPassword != backupPassword)
-                    ) {
-                        deleteModifiedNoteBackup(backupPath)
-                        runOnIODispatcher {
-                            autoBackupOnSave(
-                                backupPath,
-                                savedNote = null,
-                                password = backupPassword,
-                            )
+        applicationScope.launch {
+            preferences.backupPassword.flow.withPrevious().collect {
+                (previousBackupPassword, backupPassword) ->
+                if (preferences.backupOnSave.value) {
+                    val backupPath = preferences.backupsFolder.value
+                    if (backupPath != EMPTY_PATH) {
+                        if (
+                            !modifiedNoteBackupExists(backupPath) ||
+                                (previousBackupPassword != null &&
+                                    previousBackupPassword != backupPassword)
+                        ) {
+                            deleteModifiedNoteBackup(backupPath)
+                            runOnIODispatcher {
+                                autoBackupOnSave(
+                                    backupPath,
+                                    savedNote = null,
+                                    password = backupPassword,
+                                )
+                            }
                         }
                     }
                 }
@@ -202,8 +224,8 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
         execute: Boolean = false,
     ) {
         val workManager = getWorkManagerSafe() ?: return
-        workManager.getWorkInfosForUniqueWorkLiveData(AUTO_BACKUP_WORK_NAME).observeOnce { workInfos
-            ->
+        applicationScope.launch {
+            val workInfos = workManager.getWorkInfosForUniqueWorkFlow(AUTO_BACKUP_WORK_NAME).first()
             if (backupFolder == EMPTY_PATH || periodInDays < 1) {
                 if (workInfos?.containsNonCancelled() == true) {
                     workManager.cancelAutoBackup()
@@ -213,7 +235,7 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
                     workInfos.all { it.state == WorkInfo.State.CANCELLED } ||
                     folderChanged(backupFolderBefore, backupFolder)
             ) {
-                workManager.scheduleAutoBackup(this, periodInDays)
+                workManager.scheduleAutoBackup(this@NotallyXApplication, periodInDays)
                 if (execute) {
                     runOnIODispatcher { createBackup() }
                 }
