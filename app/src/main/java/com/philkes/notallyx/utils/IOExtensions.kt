@@ -9,14 +9,12 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.core.net.toUri
-import androidx.lifecycle.LiveData
 import com.philkes.notallyx.data.NotallyDatabase.Companion.DATABASE_NAME
 import com.philkes.notallyx.data.model.Attachment
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.isImage
-import com.philkes.notallyx.presentation.postProgress
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
@@ -34,6 +32,8 @@ import java.nio.file.Files
 import java.security.MessageDigest
 import java.util.zip.CRC32
 import kotlin.collections.map
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import net.lingala.zip4j.ZipFile
 
 private const val TAG = "IO"
@@ -345,7 +345,7 @@ fun InputStream.copyToLarge(target: OutputStream, bufferSize: Int = BUFFER_SIZE)
 
 fun ContextWrapper.deleteAttachments(
     notes: Collection<BaseNote>,
-    progress: LiveData<Progress>? = null,
+    progress: StateFlow<Progress?>? = null,
 ) {
     val attachments = ArrayList<Attachment>()
     notes.forEach { note ->
@@ -359,10 +359,11 @@ fun ContextWrapper.deleteAttachments(
 fun ContextWrapper.deleteAttachments(
     attachments: Collection<Attachment>,
     ids: LongArray? = null,
-    progress: LiveData<Progress>? = null,
+    progress: StateFlow<Progress?>? = null,
 ) {
     if (attachments.isNotEmpty()) {
-        progress.postProgress(DeleteAttachmentProgress(0, attachments.size))
+        (progress as? MutableStateFlow<Progress?>)?.value =
+            DeleteAttachmentProgress(0, attachments.size)
         val imageRoot = getExternalImagesDirectory()
         val audioRoot = getExternalAudioDirectory()
         val fileRoot = getExternalFilesDirectory()
@@ -379,13 +380,14 @@ fun ContextWrapper.deleteAttachments(
             if (file != null && file.exists()) {
                 file.delete()
             }
-            progress.postProgress(DeleteAttachmentProgress(index + 1, attachments.size))
+            (progress as? MutableStateFlow<Progress?>)?.value =
+                DeleteAttachmentProgress(index + 1, attachments.size)
         }
     }
     if (ids?.isNotEmpty() == true) {
         WidgetProvider.sendBroadcast(this, ids)
     }
-    progress.postProgress(DeleteAttachmentProgress(inProgress = false))
+    (progress as? MutableStateFlow<Progress?>)?.value = DeleteAttachmentProgress(inProgress = false)
 }
 
 fun Context.getBackupDir() = getEmptyFolder("backup")

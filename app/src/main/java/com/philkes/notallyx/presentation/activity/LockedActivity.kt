@@ -12,7 +12,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.viewbinding.ViewBinding
 import com.google.android.material.color.DynamicColors
@@ -27,6 +26,8 @@ import com.philkes.notallyx.utils.secondsBetween
 import com.philkes.notallyx.utils.security.AuthenticatorProvider
 import com.philkes.notallyx.utils.splitOversizedNotes
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -37,6 +38,13 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
     private lateinit var notallyXApplication: NotallyXApplication
     private lateinit var biometricAuthenticationActivityResultLauncher:
         ActivityResultLauncher<Intent>
+
+    val migrationProgress: StateFlow<MigrationProgress?>
+        field = MutableStateFlow<MigrationProgress?>(null)
+
+    protected fun setMigrationProgress(progress: MigrationProgress?) {
+        migrationProgress.value = progress
+    }
 
     internal lateinit var binding: T
     internal lateinit var preferences: NotallyXPreferences
@@ -81,23 +89,20 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
                         val time = System.currentTimeMillis()
                         if (!isExceptionAlreadyBeingHandled(time)) {
                             EXCEPTION_HANDLER_MUTEX_LAST_TIMESTAMP = time
-                            val migrationProgress =
-                                MutableLiveData<MigrationProgress>().apply {
-                                    setupProgressDialog(this@LockedActivity)
-                                    postValue(
-                                        MigrationProgress(
-                                            R.string.migration_splitting_notes,
-                                            indeterminate = true,
-                                        )
-                                    )
-                                }
+                            migrationProgress.setupProgressDialog(this@LockedActivity)
+                            setMigrationProgress(
+                                MigrationProgress(
+                                    R.string.migration_splitting_notes,
+                                    indeterminate = true,
+                                )
+                            )
                             log(
                                 TAG,
                                 msg =
                                     "SQLiteBlobTooBigException occurred, trying to fix broken notes...",
                             )
                             withContext(Dispatchers.IO) { application.splitOversizedNotes() }
-                            migrationProgress.postValue(
+                            setMigrationProgress(
                                 MigrationProgress(R.string.migrating_data, inProgress = false)
                             )
                         }

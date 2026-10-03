@@ -33,7 +33,6 @@
 // import org.junit.runner.RunWith
 //
 // @RunWith(AndroidJUnit4::class)
-// @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
 // class BaseNoteModelDataInPublicTest {
 //
 //    private lateinit var app: Application

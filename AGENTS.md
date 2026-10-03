@@ -4,8 +4,8 @@
 
 **NotallyX** is an open-source, minimalistic, yet feature-rich note-taking Android application built with Kotlin. It provides users with a distraction-free experience for creating text notes, task lists, rich-text formatting, media attachments (images, audio, files), labels, reminders, and encrypted backups.
 
-- **Target Platform**: Android (Min SDK: 23, Compile/Target SDK: 36, JVM Target: 1.8).
-- **Core Architecture**: MVVM (Model-View-ViewModel) architecture backed by Android Jetpack components (Room, LiveData, ViewModel, Navigation Component, WorkManager) with ViewBinding and DataBinding.
+- **Target Platform**: Android (Min SDK: 24, Compile/Target SDK: 36, JVM Target: 17).
+- **Core Architecture**: MVVM (Model-View-ViewModel) architecture backed by Android Jetpack components (Room, Kotlin Coroutines Flow/StateFlow, ViewModel, Navigation Component, WorkManager) with ViewBinding and DataBinding.
 - **Key Tenets**: User privacy, offline-first reliability, non-destructive data handling, robust backup/restore mechanisms, and clean Kotlin idioms.
 
 ---
@@ -13,8 +13,8 @@
 ## Tech Stack & Conventions
 
 ### Language & Tooling
-- **Language**: Kotlin 2.1.0 (Standard Kotlin Idioms, Coroutines, Serialization).
-- **Build System**: Gradle Kotlin DSL (`build.gradle.kts`), Android Gradle Plugin 8.7.3, KSP (`com.google.devtools.ksp`) for Room compiler.
+- **Language**: Kotlin 2.4.20 (Standard Kotlin Idioms, Coroutines, Serialization).
+- **Build System**: Gradle Kotlin DSL (`build.gradle.kts`), Android Gradle Plugin 9.4.1, KSP (`com.google.devtools.ksp`) for Room compiler.
 - **Code Formatter**: `ktfmt` with Kotlin standard style (`kotlinLangStyle`).
 
 ### UI Framework & Conventions
@@ -24,11 +24,11 @@
 - **Lists**: `RecyclerView` using custom ViewHolders (`*VH`), ListAdapters / custom Adapters (`*Adapter`), and `ItemTouchHelper` for drag-and-drop / swipe interactions.
 
 ### State Management & Concurrency
-- **State Holders**: `AndroidViewModel` subclasses (`BaseNoteModel`, `NotallyModel`) handling business logic and exposing observable state.
-- **Observables**: `LiveData`, `MutableLiveData`, and custom `NotNullLiveData`.
+- **State Holders**: `AndroidViewModel` subclasses handling business logic and exposing observable state.
+- **Observables**: Kotlin Coroutines `StateFlow` and `MutableStateFlow` (`asStateFlow()`).
 - **Async & Concurrency**: Kotlin Coroutines (`viewModelScope`, `CoroutineScope`).
 - **Dispatchers**:
-  - `Dispatchers.Main`: UI interactions and LiveData updates.
+  - `Dispatchers.Main`: UI interactions and StateFlow emissions.
   - `Dispatchers.IO`: Database operations, disk I/O, file exports/imports, compression, encryption.
   - Always handle coroutine exceptions using `CoroutineExceptionHandler` or try-catch blocks around suspend calls.
 
@@ -37,7 +37,7 @@
 - **Encryption**: Optional SQLCipher database encryption (`net.zetetic:sqlcipher-android`) and AndroidX Security EncryptedSharedPreferences for sensitive settings.
 - **Storage Strategy**:
   - Internal storage for private app data and default SQLite database.
-  - Optional external storage storage mode (`dataInPublicFolder`).
+  - Optional external storage mode (`dataInPublicFolder`).
   - Strict WAL checkpointing (`pragma wal_checkpoint(FULL)`) before any database export, backup, or replacement.
 - **Type Converters**: `Converters.kt` converts complex models (spans, attachments, folders, reminders, labels) to/from JSON strings.
 
@@ -82,7 +82,7 @@ NotallyX/
 - **Offload Heavy Work**: Perform file I/O, parsing (JSON/Markdown/HTML), and database queries on `Dispatchers.IO`.
 - **Format with ktfmt**: Ensure Kotlin files comply with `ktfmt` by running `./gradlew ktfmtFormat`.
 - **Follow Existing Patterns**: Match existing naming conventions (`*Activity`, `*Fragment`, `*Model`, `*VH`, `*Adapter`, `*Dao`).
-- **Write Unit & Robolectric Tests**: Add tests under `app/src/test/` whenever introducing business logic, migration steps, or parser utilities.
+- **Write Unit, Robolectric & Roborazzi Tests**: Add unit tests under `app/src/test/` and Roborazzi screenshot tests whenever introducing business logic, migration steps, parser utilities, or UI changes.
 
 ### Don'ts
 - **NO Blocking Main Thread**: Never invoke synchronous database queries, heavy regex, or file operations on the main thread.
@@ -96,63 +96,68 @@ NotallyX/
 
 ### 1. Adding a New Screen / Feature
 1. **Layout**: Create an XML layout in `app/src/main/res/layout/` with ViewBinding support.
-2. **ViewModel**: Expose `LiveData` or `NotNullLiveData` state in an existing or new `ViewModel` (`AndroidViewModel`).
+2. **ViewModel**: Expose `StateFlow` state in an existing or new `ViewModel` (`AndroidViewModel` / base view models).
 3. **Activity/Fragment**:
    - Create the Activity in `presentation/activity/` or Fragment in `presentation/activity/main/fragment/`.
    - Bind views using `ViewBinding`.
-   - Observe ViewModel `LiveData` in `onCreate()` / `onViewCreated()`.
+   - Collect ViewModel `StateFlow` states in `onCreate()` / `onViewCreated()` using lifecycle-aware collection (`viewLifecycleOwner.lifecycleScope.launch`).
 4. **Navigation**: If part of the main navigation, declare the fragment/destination in `app/src/main/res/navigation/navigation.xml` and register menu actions in `MainActivity`.
 5. **Manifest**: Register new Activities in `app/src/main/AndroidManifest.xml`.
 
-#### Example ViewModel Pattern:
+#### Example ViewModel Pattern with StateFlow:
 ```kotlin
 class FeatureViewModel(application: Application) : AndroidViewModel(application) {
-    private val _uiState = MutableLiveData<FeatureUiState>(FeatureUiState.Loading)
-    val uiState: LiveData<FeatureUiState> = _uiState
+    val uiState: StateFlow<FeatureUiState>
+        field = MutableStateFlow<FeatureUiState>(FeatureUiState.Loading)
 
     fun loadData() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val data = fetchData()
-                _uiState.postValue(FeatureUiState.Success(data))
+                uiState.value = FeatureUiState.Success(data)
             } catch (e: Exception) {
-                _uiState.postValue(FeatureUiState.Error(e.message ?: "Unknown error"))
+                uiState.value = FeatureUiState.Error(e.message ?: "Unknown error")
             }
         }
     }
 }
 ```
 
-#### Example Activity ViewBinding Pattern:
+#### Example Fragment StateFlow Collection Pattern:
 ```kotlin
-class FeatureActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityFeatureBinding
+class FeatureFragment : Fragment(R.layout.fragment_feature) {
+    private var binding: FragmentFeatureBinding? = null
     private val viewModel: FeatureViewModel by viewModels()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityFeatureBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        binding = FragmentFeatureBinding.bind(view)
 
-        setupToolbar()
         observeViewModel()
         viewModel.loadData()
     }
 
     private fun observeViewModel() {
-        viewModel.uiState.observe(this) { state ->
-            when (state) {
-                is FeatureUiState.Loading -> binding.progressBar.visibility = View.VISIBLE
-                is FeatureUiState.Success -> {
-                    binding.progressBar.visibility = View.GONE
-                    binding.textViewContent.text = state.data
-                }
-                is FeatureUiState.Error -> {
-                    binding.progressBar.visibility = View.GONE
-                    showToast(state.message)
+        viewLifecycleOwner.repeatOnLifecycleScope {
+            viewModel.uiState.collect { state ->
+                when (state) {
+                    is FeatureUiState.Loading -> binding.progressBar.visibility = View.VISIBLE
+                    is FeatureUiState.Success -> {
+                        binding.progressBar.visibility = View.GONE
+                        binding.textViewContent.text = state.data
+                    }
+                    is FeatureUiState.Error -> {
+                        binding.progressBar.visibility = View.GONE
+                        showToast(state.message)
+                    }
                 }
             }
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 }
 ```
@@ -177,9 +182,9 @@ When modifying Room entities (`BaseNote`, `Label`, etc.):
 
 ---
 
-### 3. Writing and Running Tests
+### 3. Writing and Running Tests & Roborazzi Screenshot Tests
 
-The test suite contains both pure unit tests and Robolectric tests (`testOptions.unitTests.isIncludeAndroidResources = true`).
+The test suite contains unit tests, Robolectric tests (`testOptions.unitTests.isIncludeAndroidResources = true`), and Roborazzi screenshot tests.
 
 #### Running Tests via CLI:
 ```bash
@@ -188,6 +193,12 @@ The test suite contains both pure unit tests and Robolectric tests (`testOptions
 
 # Run debug unit tests specifically
 ./gradlew testDebugUnitTest
+
+# Record Roborazzi reference screenshots
+./gradlew recordRoborazziDebug
+
+# Verify Roborazzi screenshot tests against reference images
+./gradlew verifyRoborazziDebug
 
 # Reformat code with ktfmt
 ./gradlew ktfmtFormat

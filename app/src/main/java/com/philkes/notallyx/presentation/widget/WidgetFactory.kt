@@ -32,7 +32,7 @@ class WidgetFactory(
     private val preferences = NotallyXPreferences.getInstance(app)
 
     init {
-        NotallyDatabase.getDatabase(app).observeForever { database = it }
+        database = NotallyDatabase.getDatabase(app).value
     }
 
     override fun onCreate() {}
@@ -50,6 +50,7 @@ class WidgetFactory(
     }
 
     override fun onDataSetChanged() {
+        database = NotallyDatabase.getDatabase(app).value
         baseNote = database?.getBaseNoteDao()?.get(id)
     }
 

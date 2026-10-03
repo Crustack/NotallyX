@@ -2,7 +2,6 @@ package com.philkes.notallyx.data.imports.google
 
 import android.app.Application
 import android.net.Uri
-import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.imports.ExternalImporter
 import com.philkes.notallyx.data.imports.ImportException
@@ -25,6 +24,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
@@ -42,9 +42,9 @@ class GoogleKeepImporter : ExternalImporter {
         app: Application,
         source: Uri,
         destination: File,
-        progress: MutableLiveData<Progress>?,
+        progress: MutableStateFlow<Progress?>?,
     ): Pair<List<BaseNote>, File> {
-        progress?.postValue(ImportProgress(indeterminate = true, stage = ImportStage.EXTRACT_FILES))
+        progress?.value = ImportProgress(indeterminate = true, stage = ImportStage.EXTRACT_FILES)
         val dataFolder =
             try {
                 app.contentResolver.openInputStream(source)!!.use { unzip(destination, it) }
@@ -66,7 +66,7 @@ class GoogleKeepImporter : ExternalImporter {
                 }
                 .toList()
         val total = noteFiles.size
-        progress?.postValue(ImportProgress(0, total, stage = ImportStage.IMPORT_NOTES))
+        progress?.value = ImportProgress(0, total, stage = ImportStage.IMPORT_NOTES)
         var counter = 1
         val baseNotes =
             noteFiles
@@ -84,9 +84,8 @@ class GoogleKeepImporter : ExternalImporter {
                             )
                             null
                         }
-                    progress?.postValue(
+                    progress?.value =
                         ImportProgress(counter++, total, stage = ImportStage.IMPORT_NOTES)
-                    )
                     baseNote
                 }
                 .toList()

@@ -2,18 +2,22 @@ package com.philkes.notallyx.presentation.viewmodel.main.fragment
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.dao.CommonDao
 import com.philkes.notallyx.data.dao.LabelDao
 import com.philkes.notallyx.data.model.Label
-import com.philkes.notallyx.presentation.switchMapNullSafe
 import com.philkes.notallyx.presentation.viewmodel.executeAsyncWithCallback
 import com.philkes.notallyx.presentation.viewmodel.preference.BasePreference
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.START_VIEW_DEFAULT
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class LabelsViewModel(app: Application) : AndroidViewModel(app) {
@@ -24,13 +28,18 @@ class LabelsViewModel(app: Application) : AndroidViewModel(app) {
 
     val preferences = NotallyXPreferences.getInstance(app)
 
-    val labels: LiveData<List<Label>> =
-        NotallyDatabase.getDatabase(app).switchMapNullSafe { database ->
-            database!!.getLabelDao().getAll()
-        }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val labels: StateFlow<List<Label>> =
+        NotallyDatabase.getDatabase(app)
+            .flatMapLatest { database -> database?.getLabelDao()?.getAll() ?: flowOf(emptyList()) }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList(),
+            )
 
     init {
-        NotallyDatabase.getDatabase(app).observeForever(::init)
+        viewModelScope.launch { NotallyDatabase.getDatabase(app).collect { init(it) } }
     }
 
     private fun init(database: NotallyDatabase?) {

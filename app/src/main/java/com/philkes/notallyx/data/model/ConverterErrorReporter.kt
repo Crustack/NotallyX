@@ -1,19 +1,21 @@
 package com.philkes.notallyx.data.model
 
 import android.app.Dialog
-import androidx.lifecycle.MutableLiveData
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 /** Helper to register Converter errors while accessing the database. */
 object ConverterErrorReporter {
     val enabled = AtomicBoolean(true)
-    val errors = MutableLiveData<Throwable?>(null)
+    val errors: StateFlow<Throwable?>
+        field = MutableStateFlow<Throwable?>(null)
     val activeDialogs = Collections.synchronizedSet(mutableSetOf<Dialog>())
 
     fun reportError(throwable: Throwable) {
         if (enabled.get() && errors.value == null) {
-            errors.postValue(throwable)
+            errors.value = throwable
         }
     }
 
@@ -26,6 +28,6 @@ object ConverterErrorReporter {
     fun dismissAllDialogs() {
         activeDialogs.toList().forEach { it.dismiss() }
         synchronized(activeDialogs) { activeDialogs.clear() }
-        errors.postValue(null)
+        errors.value = null
     }
 }

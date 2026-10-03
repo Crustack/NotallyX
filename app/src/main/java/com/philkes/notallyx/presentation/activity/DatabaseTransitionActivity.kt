@@ -3,9 +3,7 @@ package com.philkes.notallyx.presentation.activity
 import android.app.Application
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.color.DynamicColors
@@ -89,9 +87,7 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                         showToast(R.string.biometrics_setup_success)
                     }
                     DatabaseAction.DISABLE_BIOMETRIC_LOCK -> {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            disableBiometricLock(notallyXApplication, preferences, cipher)
-                        }
+                        disableBiometricLock(notallyXApplication, preferences, cipher)
                         showToast(R.string.biometrics_disable_success)
                     }
                 }
@@ -326,7 +322,6 @@ class DatabaseTransitionActivity : AppCompatActivity() {
             }
         }
 
-        @RequiresApi(Build.VERSION_CODES.M)
         suspend fun disableBiometricLock(
             app: Application,
             preferences: NotallyXPreferences,

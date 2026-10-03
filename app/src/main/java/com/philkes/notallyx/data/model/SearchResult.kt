@@ -1,8 +1,6 @@
 package com.philkes.notallyx.data.model
 
 import android.content.ContextWrapper
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.asLiveData
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.utils.log
 import kotlinx.coroutines.CoroutineScope
@@ -11,6 +9,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 
 class SearchResult(
     context: ContextWrapper,
@@ -33,8 +35,7 @@ class SearchResult(
     private val searchParams = MutableStateFlow<SearchParams?>(null)
 
     private val _isLoading = MutableStateFlow(false)
-    val isLoading: LiveData<Boolean> =
-        _isLoading.asLiveData(scope.coroutineContext + Dispatchers.Main)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     private val resultFlow: Flow<List<Item>> =
@@ -48,7 +49,7 @@ class SearchResult(
                 } else {
                     _isLoading.value = true
                     baseNoteDao
-                        .getBaseNotesByKeyword(params.keyword, params.folder, params.label)
+                        .getByKeyword(params.keyword, params.folder, params.label)
                         .map { transform(it) }
                         .onEach { _isLoading.value = false }
                         .catch {
@@ -61,21 +62,18 @@ class SearchResult(
             }
             .flowOn(Dispatchers.IO)
 
-    val results: LiveData<List<Item>> =
-        resultFlow.asLiveData(scope.coroutineContext + Dispatchers.Main)
+    val results: StateFlow<List<Item>> =
+        resultFlow.stateIn(
+            scope = scope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList(),
+        )
 
     fun fetch(keyword: String, folder: Folder, label: String?) {
         searchParams.value = SearchParams(keyword, folder, label)
     }
 
-    fun observe(
-        owner: androidx.lifecycle.LifecycleOwner,
-        observer: androidx.lifecycle.Observer<List<Item>>,
-    ) {
-        results.observe(owner, observer)
-    }
-
-    val value: List<Item>?
+    val value: List<Item>
         get() = results.value
 
     companion object {

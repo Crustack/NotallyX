@@ -1,24 +1,26 @@
 package com.philkes.notallyx.utils.changehistory
 
 import android.util.Log
-import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import kotlin.IllegalStateException
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class ChangeHistory(
     /** Maximum number of changes to keep in memory. Oldest entries are evicted when full. */
     private val maxSize: Int = 1000
 ) {
     private val changeStack = ArrayList<Change>()
-    var stackPointer = NotNullMutableLiveData(-1)
+    val stackPointer: StateFlow<Int>
+        field = MutableStateFlow(-1)
 
-    internal val canUndo = NotNullMutableLiveData(false)
-    internal val canRedo = NotNullMutableLiveData(false)
+    val canUndo: StateFlow<Boolean>
+        field = MutableStateFlow(false)
+
+    val canRedo: StateFlow<Boolean>
+        field = MutableStateFlow(false)
 
     init {
-        stackPointer.observeForever {
-            canUndo.value = it > -1
-            canRedo.value = it >= -1 && it < changeStack.size - 1
-        }
+        updateStackPointer(-1)
     }
 
     fun push(change: Change) {
@@ -34,14 +36,15 @@ class ChangeHistory(
             }
         }
         changeStack.add(change)
-        stackPointer.value = newStackPointer + 1
+        updateStackPointer(newStackPointer + 1)
     }
 
     fun redo() {
-        stackPointer.value += 1
-        if (stackPointer.value >= changeStack.size) {
+        val newPointer = stackPointer.value + 1
+        if (newPointer >= changeStack.size) {
             throw ChangeHistoryException("There is no Change to redo!")
         }
+        updateStackPointer(newPointer)
         val makeListAction = changeStack[stackPointer.value]
         Log.d(TAG, "redo: $makeListAction")
         makeListAction.redo()
@@ -60,7 +63,7 @@ class ChangeHistory(
         val makeListAction = changeStack[stackPointer.value]
         Log.d(TAG, "undo: $makeListAction")
         makeListAction.undo()
-        stackPointer.value -= 1
+        updateStackPointer(stackPointer.value - 1)
     }
 
     fun undoAll() {
@@ -71,7 +74,7 @@ class ChangeHistory(
 
     fun reset() {
         changeStack.clear()
-        stackPointer.value = -1
+        updateStackPointer(-1)
     }
 
     internal fun lookUp(position: Int = 0): Change {
@@ -85,6 +88,13 @@ class ChangeHistory(
         while (changeStack.size > stackPointer.value + 1) {
             changeStack.removeAt(stackPointer.value + 1)
         }
+        updateStackPointer(stackPointer.value)
+    }
+
+    private fun updateStackPointer(value: Int) {
+        stackPointer.value = value
+        canUndo.value = value > -1
+        canRedo.value = value >= -1 && value < changeStack.size - 1
     }
 
     inner class ChangeHistoryException(message: String) :

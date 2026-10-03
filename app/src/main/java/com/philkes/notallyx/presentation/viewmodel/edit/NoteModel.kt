@@ -14,8 +14,6 @@ import android.text.style.TypefaceSpan
 import android.text.style.URLSpan
 import androidx.core.text.getSpans
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
@@ -37,7 +35,6 @@ import com.philkes.notallyx.presentation.activity.note.reminders.ReminderReceive
 import com.philkes.notallyx.presentation.activity.note.reminders.RemindersActivity.Companion.NEW_REMINDER_ID
 import com.philkes.notallyx.presentation.applySpans
 import com.philkes.notallyx.presentation.showToast
-import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.TextSizeSp
@@ -60,6 +57,8 @@ import com.philkes.notallyx.utils.getTempAudioFile
 import com.philkes.notallyx.utils.scheduleReminder
 import java.io.File
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -94,20 +93,20 @@ open class NoteModel(protected val app: Application) : AndroidViewModel(app) {
 
     val items = ArrayList<ListItem>()
 
-    val images: LiveData<List<FileAttachment>>
-        field = NotNullMutableLiveData<List<FileAttachment>>(emptyList())
-    val files: LiveData<List<FileAttachment>>
-        field = NotNullMutableLiveData<List<FileAttachment>>(emptyList())
-    val audios: LiveData<List<Audio>>
-        field = NotNullMutableLiveData<List<Audio>>(emptyList())
-    val reminders: LiveData<List<Reminder>>
-        field = NotNullMutableLiveData<List<Reminder>>(emptyList())
-    val viewMode: LiveData<NoteViewMode>
-        field = NotNullMutableLiveData(NoteViewMode.EDIT)
-    val addingFiles: LiveData<Progress>
-        field = MutableLiveData<Progress>()
-    val eventBus: LiveData<Event<List<FileError>>>
-        field = MutableLiveData<Event<List<FileError>>>()
+    val images: StateFlow<List<FileAttachment>>
+        field = MutableStateFlow<List<FileAttachment>>(emptyList())
+    val files: StateFlow<List<FileAttachment>>
+        field = MutableStateFlow<List<FileAttachment>>(emptyList())
+    val audios: StateFlow<List<Audio>>
+        field = MutableStateFlow<List<Audio>>(emptyList())
+    val reminders: StateFlow<List<Reminder>>
+        field = MutableStateFlow<List<Reminder>>(emptyList())
+    val viewMode: StateFlow<NoteViewMode>
+        field = MutableStateFlow(NoteViewMode.EDIT)
+    val addingFiles: StateFlow<Progress?>
+        field = MutableStateFlow<Progress?>(null)
+    val eventBus: StateFlow<Event<List<FileError>>?>
+        field = MutableStateFlow<Event<List<FileError>>?>(null)
 
     fun setViewMode(mode: NoteViewMode) {
         viewMode.value = mode
@@ -130,7 +129,9 @@ open class NoteModel(protected val app: Application) : AndroidViewModel(app) {
     var originalNote: BaseNote? = null
 
     init {
-        database.observeForever { it?.let { baseNoteDao = it.getBaseNoteDao() } }
+        viewModelScope.launch {
+            database.collect { db -> db?.let { baseNoteDao = it.getBaseNoteDao() } }
+        }
     }
 
     fun addAudio() {
@@ -181,7 +182,7 @@ open class NoteModel(protected val app: Application) : AndroidViewModel(app) {
                 R.string.error_while_renaming_file
             }
         viewModelScope.launch {
-            addingFiles.postValue(AddFilesProgress(0, uris.size))
+            addingFiles.value = AddFilesProgress(0, uris.size)
 
             val successes = ArrayList<FileAttachment>()
             val errors = ArrayList<FileError>()
@@ -191,10 +192,10 @@ open class NoteModel(protected val app: Application) : AndroidViewModel(app) {
                     app.importFile(uri, directory, fileType, errorWhileRenaming)
                 fileAttachment?.let { successes.add(it) }
                 error?.let { errors.add(it) }
-                addingFiles.postValue(AddFilesProgress(index + 1, uris.size))
+                addingFiles.value = AddFilesProgress(index + 1, uris.size)
             }
 
-            addingFiles.postValue(AddFilesProgress(inProgress = false))
+            addingFiles.value = AddFilesProgress(inProgress = false)
 
             if (successes.isNotEmpty()) {
                 val copy =

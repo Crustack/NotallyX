@@ -21,7 +21,6 @@ kotlinSerialization = "2.4.20"
 navigation = "2.10.2"
 room = "2.8.5"
 preference = "1.2.1"
-lifecycle = "2.11.0"
 securityCrypto = "1.1.0"
 sqlite = "2.7.1"
 work = "2.12.0"
@@ -68,7 +67,6 @@ documentfile = "1.1.0"
 androidx-navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigation" }
 androidx-navigation-ui = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigation" }
 androidx-preference = { group = "androidx.preference", name = "preference-ktx", version.ref = "preference" }
-androidx-lifecycle-livedata = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "lifecycle" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }

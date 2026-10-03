@@ -15,7 +15,9 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.databinding.ActivityLabelBinding
 import com.philkes.notallyx.databinding.DialogInputBinding
 import com.philkes.notallyx.presentation.activity.LockedActivity
+import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EXTRA_SELECTED_LABELS
 import com.philkes.notallyx.presentation.add
+import com.philkes.notallyx.presentation.repeatOnLifecycleScope
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.showToast
@@ -139,12 +141,13 @@ class SelectLabelsActivity : LockedActivity<ActivityLabelBinding>() {
                 DividerItemDecoration(this@SelectLabelsActivity, RecyclerView.VERTICAL)
             )
         }
-
-        labelsViewModel.labels.observe(this) { labels ->
-            labelAdapter.submitList(labels)
-            if (labels.isEmpty()) {
-                binding.EmptyState.visibility = View.VISIBLE
-            } else binding.EmptyState.visibility = View.INVISIBLE
+        repeatOnLifecycleScope {
+            labelsViewModel.labels.collect { labels ->
+                labelAdapter.submitList(labels)
+                if (labels.isEmpty()) {
+                    binding.EmptyState.visibility = View.VISIBLE
+                } else binding.EmptyState.visibility = View.INVISIBLE
+            }
         }
     }
 

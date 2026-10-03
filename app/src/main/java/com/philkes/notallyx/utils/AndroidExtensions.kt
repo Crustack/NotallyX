@@ -27,9 +27,6 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.Observer
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.BuildConfig
@@ -46,7 +43,6 @@ import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showToast
-import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
 import com.philkes.notallyx.utils.backup.FILE_TIMESTAMP_FORMAT
 import com.philkes.notallyx.utils.backup.LOG_DATE_FORMATTER
@@ -72,36 +68,6 @@ fun <T> createObserverSkipFirst(observer: Observer<T>): Observer<T> {
                 observer.onChanged(value)
             }
         }
-    }
-}
-
-fun <T> LiveData<T>.observeSkipFirst(lifecycleOwner: LifecycleOwner, observer: Observer<T>) {
-    this.observe(lifecycleOwner, createObserverSkipFirst(observer))
-}
-
-fun <T> LiveData<T>.observeForeverSkipFirst(observer: Observer<T>) {
-    var isFirstEvent = true
-    this.observeForever { value ->
-        if (isFirstEvent) {
-            isFirstEvent = false
-        } else {
-            observer.onChanged(value)
-        }
-    }
-}
-
-fun <T, C> NotNullMutableLiveData<T>.mergeSkipFirst(
-    liveData: NotNullMutableLiveData<C>
-): MediatorLiveData<Pair<T, C>> {
-    return MediatorLiveData<Pair<T, C>>().apply {
-        addSource(
-            this@mergeSkipFirst,
-            createObserverSkipFirst { value1 -> value = Pair(value1, liveData.value) },
-        )
-        addSource(
-            liveData,
-            createObserverSkipFirst { value2 -> value = Pair(this@mergeSkipFirst.value, value2) },
-        )
     }
 }
 
@@ -582,17 +548,6 @@ fun NotificationManager.createChannelIfNotExists(
         val channel = NotificationChannel(channelId, channelId, importance)
         createNotificationChannel(channel)
     }
-}
-
-fun <T> LiveData<T>.observeOnce(observer: Observer<T>) {
-    val wrapperObserver =
-        object : Observer<T> {
-            override fun onChanged(value: T) {
-                this@observeOnce.removeObserver(this)
-                observer.onChanged(value)
-            }
-        }
-    this.observeForever(wrapperObserver)
 }
 
 fun Context.getDocumentFolder(uri: Uri): DocumentFile? {

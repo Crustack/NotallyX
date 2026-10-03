@@ -5,7 +5,6 @@ import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.drawable.Drawable
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -47,12 +46,14 @@ import com.philkes.notallyx.presentation.activity.note.reminders.RemindersActivi
 import com.philkes.notallyx.presentation.add
 import com.philkes.notallyx.presentation.addIconButton
 import com.philkes.notallyx.presentation.bindLabels
+import com.philkes.notallyx.presentation.collectIn
 import com.philkes.notallyx.presentation.displayEditLabelDialog
 import com.philkes.notallyx.presentation.displayFormattedTimestamp
 import com.philkes.notallyx.presentation.extractColor
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.hideKeyboard
 import com.philkes.notallyx.presentation.isLightColor
+import com.philkes.notallyx.presentation.repeatOnLifecycleScope
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.setControlsContrastColorForAllViews
 import com.philkes.notallyx.presentation.setLightStatusAndNavBar
@@ -60,7 +61,6 @@ import com.philkes.notallyx.presentation.setTextSizeSp
 import com.philkes.notallyx.presentation.setupProgressDialog
 import com.philkes.notallyx.presentation.setupReminderChip
 import com.philkes.notallyx.presentation.showKeyboard
-import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import com.philkes.notallyx.presentation.view.note.ErrorAdapter
 import com.philkes.notallyx.presentation.view.note.action.ActionSelectionBottomSheet
 import com.philkes.notallyx.presentation.view.note.action.AddBottomSheet
@@ -85,13 +85,15 @@ import com.philkes.notallyx.utils.findWebUrls
 import com.philkes.notallyx.utils.getUriForFile
 import com.philkes.notallyx.utils.isInLandscapeMode
 import com.philkes.notallyx.utils.log
-import com.philkes.notallyx.utils.mergeSkipFirst
-import com.philkes.notallyx.utils.observeSkipFirst
 import com.philkes.notallyx.utils.textMaxLengthFilter
 import com.philkes.notallyx.utils.wrapWithChooser
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
@@ -235,7 +237,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         if (
             !notallyModel.isNewNote && notallyModel.type == Type.LIST && savedInstanceState == null
         ) {
-            val lastUsedViewMode = notallyModel.viewMode.value!!
+            val lastUsedViewMode = notallyModel.viewMode.value
             notallyModel.setViewMode(
                 preferences.defaultListNoteViewMode.value.toNoteViewMode(lastUsedViewMode)
             )
@@ -366,9 +368,9 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     protected open fun initChangeHistory() {
         changeHistory =
             ChangeHistory().apply {
-                canUndo.observe(this@EditActivity) { canUndo -> undo?.isEnabled = canUndo }
-                canRedo.observe(this@EditActivity) { canRedo -> redo?.isEnabled = canRedo }
-                stackPointer.observe(this@EditActivity) { _ -> resetIdleTimer() }
+                canUndo.collectIn(this@EditActivity) { canUndo -> undo?.isEnabled = canUndo }
+                canRedo.collectIn(this@EditActivity) { canRedo -> redo?.isEnabled = canRedo }
+                stackPointer.collectIn(this@EditActivity) { _ -> resetIdleTimer() }
             }
     }
 
@@ -430,14 +432,15 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         searchJob?.cancel()
         searchJob = lifecycleScope.launch {
             val amount = highlightSearchResults(query)
-            this@EditActivity.search.results.value = amount
+            search.setResults(amount)
             if (amount > 0) {
-                search.resultPos.value =
+                search.setResultPos(
                     when {
                         amountBefore < 1 -> 0
                         search.resultPos.value >= amount -> amount - 1
                         else -> search.resultPos.value
                     }
+                )
             }
         }
     }
@@ -459,24 +462,22 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             search.nextMenuItem =
                 menu
                     .add(R.string.previous, R.drawable.arrow_upward) {
-                        search.resultPos.apply {
-                            if (value > 0) {
-                                value -= 1
-                            } else {
-                                value = search.results.value - 1
-                            }
+                        val pos = search.resultPos.value
+                        if (pos > 0) {
+                            search.setResultPos(pos - 1)
+                        } else {
+                            search.setResultPos(search.results.value - 1)
                         }
                     }
                     .setEnabled(false)
             search.prevMenuItem =
                 menu
                     .add(R.string.next, R.drawable.arrow_downward) {
-                        search.resultPos.apply {
-                            if (value < search.results.value - 1) {
-                                value += 1
-                            } else {
-                                value = 0
-                            }
+                        val pos = search.resultPos.value
+                        if (pos < search.results.value - 1) {
+                            search.setResultPos(pos + 1)
+                        } else {
+                            search.setResultPos(0)
                         }
                     }
                     .setEnabled(false)
@@ -678,14 +679,17 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         binding.EnterTitle.filters = textMaxLengthFilter
         binding.EnterBody.filters = textMaxLengthFilter
 
-        search.results.mergeSkipFirst(search.resultPos).observe(this) { (amount, pos) ->
-            val hasResults = amount > 0
-            binding.SearchResults.text = if (hasResults) "${pos + 1}/$amount" else "0"
-            search.nextMenuItem?.isEnabled = hasResults
-            search.prevMenuItem?.isEnabled = hasResults
-        }
+        search.results
+            .combine(search.resultPos) { amount, pos -> Pair(amount, pos) }
+            .drop(1)
+            .collectIn(this) { (amount, pos) ->
+                val hasResults = amount > 0
+                binding.SearchResults.text = if (hasResults) "${pos + 1}/$amount" else "0"
+                search.nextMenuItem?.isEnabled = hasResults
+                search.prevMenuItem?.isEnabled = hasResults
+            }
 
-        search.resultPos.observeSkipFirst(this) { pos -> selectSearchResult(pos) }
+        search.resultPos.drop(1).collectIn(this) { pos -> selectSearchResult(pos) }
 
         binding.EnterSearchKeyword.apply {
             doAfterTextChanged { text ->
@@ -700,15 +704,23 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     }
 
     protected open fun setupAdditionalListeners() {
-        notallyModel.viewMode.observe(this) { value ->
-            updateToggleViewMode()
-            value?.let { toggleCanEdit(it) }
-        }
-        preferences.editNoteActivityTopActions.observe(this) { topActions ->
-            updateTopActions(topActions)
-        }
-        preferences.editNoteActivityBottomAction.observe(this) { bottomAction ->
-            updateBottomActions(bottomAction)
+        repeatOnLifecycleScope {
+            launch {
+                notallyModel.viewMode.collect { value ->
+                    updateToggleViewMode()
+                    toggleCanEdit(value)
+                }
+            }
+            launch {
+                preferences.editNoteActivityTopActions.flow.collect { topActions ->
+                    updateTopActions(topActions)
+                }
+            }
+            launch {
+                preferences.editNoteActivityBottomAction.flow.collect { bottomAction ->
+                    updateBottomActions(bottomAction)
+                }
+            }
         }
     }
 
@@ -828,10 +840,14 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             )
         }
 
-        notallyModel.images.observe(this) { list ->
-            imageAdapter.submitList(list)
-            binding.ImagePreview.isVisible = list.isNotEmpty()
-            binding.ImagePreviewPosition.isVisible = list.size > 1
+        repeatOnLifecycleScope {
+            launch {
+                notallyModel.images.collect { list ->
+                    imageAdapter.submitList(list)
+                    binding.ImagePreview.isVisible = list.isNotEmpty()
+                    binding.ImagePreviewPosition.isVisible = list.size > 1
+                }
+            }
         }
     }
 
@@ -868,15 +884,19 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             layoutManager =
                 LinearLayoutManager(this@EditActivity, LinearLayoutManager.HORIZONTAL, false)
         }
-        notallyModel.files.observe(this) { list ->
-            fileAdapter.submitList(list)
-            val visible = list.isNotEmpty()
-            binding.FilesPreview.apply {
-                isVisible = visible
-                if (visible) {
-                    post {
-                        scrollToPosition(fileAdapter.itemCount)
-                        requestLayout()
+        repeatOnLifecycleScope {
+            launch {
+                notallyModel.files.collect { list ->
+                    fileAdapter.submitList(list)
+                    val visible = list.isNotEmpty()
+                    binding.FilesPreview.apply {
+                        isVisible = visible
+                        if (visible) {
+                            post {
+                                scrollToPosition(fileAdapter.itemCount)
+                                requestLayout()
+                            }
+                        }
                     }
                 }
             }
@@ -890,9 +910,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 adapter = ErrorAdapter(errors)
                 layoutManager = LinearLayoutManager(this@EditActivity)
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    scrollIndicators = View.SCROLL_INDICATOR_TOP or View.SCROLL_INDICATOR_BOTTOM
-                }
+                scrollIndicators = View.SCROLL_INDICATOR_TOP or View.SCROLL_INDICATOR_BOTTOM
             }
 
         val message =
@@ -913,7 +931,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     private fun setupAudios() {
         audioAdapter = AudioAdapter { position: Int ->
             if (position != -1) {
-                val audio = notallyModel.audios.value!![position]
+                val audio = notallyModel.audios.value[position]
                 val intent = Intent(this, PlayAudioActivity::class.java)
                 intent.putExtra(PlayAudioActivity.EXTRA_AUDIO, audio)
                 actionHandler.playAudioActivityResultLauncher.launch(intent)
@@ -921,19 +939,21 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         }
         binding.AudioRecyclerView.adapter = audioAdapter
 
-        notallyModel.audios.observe(this) { list ->
-            audioAdapter.submitList(list)
-            binding.AudioHeader.isVisible = list.isNotEmpty()
-            binding.AudioRecyclerView.isVisible = list.isNotEmpty()
+        repeatOnLifecycleScope {
+            launch {
+                notallyModel.audios.collect { list ->
+                    audioAdapter.submitList(list)
+                    binding.AudioHeader.isVisible = list.isNotEmpty()
+                    binding.AudioRecyclerView.isVisible = list.isNotEmpty()
+                }
+            }
         }
     }
 
     open fun setColor() {
         colorInt = extractColor(notallyModel.color)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            changeStatusAndNavigationBarColor(colorInt)
-            window.setLightStatusAndNavBar(colorInt.isLightColor())
-        }
+        changeStatusAndNavigationBarColor(colorInt)
+        window.setLightStatusAndNavBar(colorInt.isLightColor())
         binding.apply {
             ScrollView.apply {
                 setBackgroundColor(colorInt)
@@ -988,8 +1008,12 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         setupFiles()
         setupAudios()
         notallyModel.addingFiles.setupProgressDialog(this)
-        notallyModel.eventBus.observe(this) { event ->
-            event.handle { errors -> displayFileErrors(errors) }
+        repeatOnLifecycleScope {
+            launch {
+                notallyModel.eventBus.collect { event ->
+                    event?.handle { errors -> displayFileErrors(errors) }
+                }
+            }
         }
 
         binding.root.isSaveFromParentEnabled = false
@@ -1046,13 +1070,24 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         }
     }
 
-    data class Search(
+    class Search(
         var query: String = "",
         var prevMenuItem: MenuItem? = null,
         var nextMenuItem: MenuItem? = null,
-        var resultPos: NotNullMutableLiveData<Int> = NotNullMutableLiveData(-1),
-        var results: NotNullMutableLiveData<Int> = NotNullMutableLiveData(-1),
-    )
+    ) {
+        val resultPos: StateFlow<Int>
+            field = MutableStateFlow(-1)
+        val results: StateFlow<Int>
+            field = MutableStateFlow(-1)
+
+        fun setResultPos(pos: Int) {
+            resultPos.value = pos
+        }
+
+        fun setResults(res: Int) {
+            results.value = res
+        }
+    }
 
     companion object {
         private const val TAG = "EditActivity"

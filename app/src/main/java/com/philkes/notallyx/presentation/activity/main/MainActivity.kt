@@ -20,7 +20,6 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.children
 import androidx.drawerlayout.widget.DrawerLayout
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
@@ -42,7 +41,9 @@ import com.philkes.notallyx.presentation.activity.note.EditListActivity
 import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
 import com.philkes.notallyx.presentation.activity.note.NoteActionHandler
 import com.philkes.notallyx.presentation.activity.note.handleRejection
+import com.philkes.notallyx.presentation.collectIn
 import com.philkes.notallyx.presentation.dp
+import com.philkes.notallyx.presentation.repeatOnLifecycleScope
 import com.philkes.notallyx.presentation.setupProgressDialog
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
@@ -99,13 +100,15 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
 
         setupActivityResultLaunchers()
 
-        preferences.alwaysShowSearchBar.observe(this) { invalidateOptionsMenu() }
+        repeatOnLifecycleScope {
+            launch { preferences.alwaysShowSearchBar.flow.collect { invalidateOptionsMenu() } }
+        }
 
         checkForMigrations(savedInstanceState)
 
-        ConverterErrorReporter.errors.observe(this@MainActivity) { throwable ->
+        ConverterErrorReporter.errors.collectIn(this@MainActivity) { throwable ->
             if (throwable == null) {
-                return@observe
+                return@collectIn
             }
             application.log("Converters", throwable = throwable)
             if (ConverterErrorReporter.activeDialogs.isEmpty()) {
@@ -187,20 +190,17 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             }
         }
         if (preferences.dataSchemaId.value < LATEST_DATA_SCHEMA) {
-            val migrationProgress = MutableLiveData<MigrationProgress>()
             migrationProgress.setupProgressDialog(this)
             lifecycleScope.launch {
                 // Initial title
-                migrationProgress.postValue(
+                setMigrationProgress(
                     MigrationProgress(R.string.migrating_data, indeterminate = true)
                 )
                 application.runMigrations { titleId ->
-                    migrationProgress.postValue(MigrationProgress(titleId, indeterminate = true))
+                    setMigrationProgress(MigrationProgress(titleId, indeterminate = true))
                 }
                 // Dismiss
-                migrationProgress.postValue(
-                    MigrationProgress(R.string.migrating_data, inProgress = false)
-                )
+                setMigrationProgress(MigrationProgress(R.string.migrating_data, inProgress = false))
                 proceed()
             }
         } else {
@@ -309,10 +309,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             add(0, R.id.Notes, 0, R.string.notes).setCheckable(true).setIcon(R.drawable.home)
 
             addStaticLabelsMenuItems()
-            mainActivityViewModel.labels.observe(this@MainActivity) { labels ->
-                this@MainActivity.labels = labels
-                setupLabelsMenuItems(labels, mainActivityViewModel.preferences.maxLabels.value)
-            }
 
             add(2, R.id.Deleted, CATEGORY_SYSTEM + 1, R.string.deleted)
                 .setCheckable(true)
@@ -327,11 +323,29 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 .setCheckable(true)
                 .setIcon(R.drawable.settings)
         }
-        mainActivityViewModel.preferences.labelsHidden.observe(this) { hiddenLabels ->
-            hideLabelsInNavigation(hiddenLabels, mainActivityViewModel.preferences.maxLabels.value)
-        }
-        mainActivityViewModel.preferences.maxLabels.observe(this) { maxLabels ->
-            binding.NavigationView.menu.setupLabelsMenuItems(labels, maxLabels)
+        repeatOnLifecycleScope {
+            launch {
+                mainActivityViewModel.labels.collect { labels ->
+                    this@MainActivity.labels = labels
+                    binding.NavigationView.menu.setupLabelsMenuItems(
+                        labels,
+                        mainActivityViewModel.preferences.maxLabels.value,
+                    )
+                }
+            }
+            launch {
+                mainActivityViewModel.preferences.labelsHidden.flow.collect { hiddenLabels ->
+                    hideLabelsInNavigation(
+                        hiddenLabels,
+                        mainActivityViewModel.preferences.maxLabels.value,
+                    )
+                }
+            }
+            launch {
+                mainActivityViewModel.preferences.maxLabels.flow.collect { maxLabels ->
+                    binding.NavigationView.menu.setupLabelsMenuItems(labels, maxLabels)
+                }
+            }
         }
     }
 
@@ -415,7 +429,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 excludeTarget(binding.NavigationView, true)
             }
 
-        notallyFragmentModel.actionMode.enabled.observe(this) { enabled ->
+        notallyFragmentModel.actionMode.enabled.collectIn(this) { enabled ->
             TransitionManager.beginDelayedTransition(binding.RelativeLayout, transition)
             if (enabled) {
                 binding.Toolbar.visibility = View.GONE
@@ -430,11 +444,13 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         }
 
         val menu = binding.ActionMode.menu
-        notallyFragmentModel.folder.observe(
-            this@MainActivity,
-            ModelFolderObserver(this, menu, notallyFragmentModel),
-        )
-        notallyFragmentModel.actionMode.loading.observe(this@MainActivity) { loading ->
+        val folderObserver = ModelFolderObserver(this, menu, notallyFragmentModel)
+        repeatOnLifecycleScope {
+            launch {
+                notallyFragmentModel.folder.collect { folder -> folderObserver.onChanged(folder) }
+            }
+        }
+        notallyFragmentModel.actionMode.loading.collectIn(this@MainActivity) { loading ->
             menu.setGroupEnabled(Menu.NONE, !loading)
         }
     }

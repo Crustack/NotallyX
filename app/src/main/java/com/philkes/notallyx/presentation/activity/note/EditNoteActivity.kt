@@ -2,7 +2,6 @@ package com.philkes.notallyx.presentation.activity.note
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.text.style.URLSpan
 import android.view.View
@@ -134,12 +133,10 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                 FormattingActionModeCallback(this, binding.EnterBody)
             } else null
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            binding.EnterBody.customInsertionActionModeCallback =
-                if (canEdit) {
-                    FormattingActionModeCallback(this, binding.EnterBody)
-                } else null
-        }
+        binding.EnterBody.customInsertionActionModeCallback =
+            if (canEdit) {
+                FormattingActionModeCallback(this, binding.EnterBody)
+            } else null
         if (canEdit) {
             binding.EnterBody.setOnSelectionChange { selStart, selEnd ->
                 if (selEnd - selStart > 0) {

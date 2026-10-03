@@ -1,22 +1,26 @@
 package com.philkes.notallyx.utils
 
-import androidx.lifecycle.MutableLiveData
 import com.philkes.notallyx.data.model.BaseNote
-import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class ActionMode {
 
-    val enabled = NotNullMutableLiveData(false)
-    val loading = NotNullMutableLiveData(false)
-    val count = NotNullMutableLiveData(0)
+    val enabled: StateFlow<Boolean>
+        field = MutableStateFlow(false)
+    val loading: StateFlow<Boolean>
+        field = MutableStateFlow(false)
+    val count: StateFlow<Int>
+        field = MutableStateFlow(0)
     val selectedNotes = HashMap<Long, BaseNote>()
     val selectedIds = selectedNotes.keys
-    val closeListener = MutableLiveData<Event<Set<Long>>>()
+    val closeListener: StateFlow<Event<Set<Long>>?>
+        field = MutableStateFlow<Event<Set<Long>>?>(null)
     var addListener: (() -> Unit)? = null
 
     private fun refresh() {
         count.value = selectedNotes.size
-        enabled.value = selectedNotes.size != 0
+        enabled.value = selectedNotes.isNotEmpty()
     }
 
     fun add(id: Long, baseNote: BaseNote) {
@@ -51,7 +55,13 @@ class ActionMode {
         refresh()
     }
 
+    fun setLoading(loading: Boolean) {
+        this.loading.value = loading
+    }
+
     fun isEnabled() = enabled.value
+
+    fun isLoading() = loading.value
 
     // We assume selectedNotes.size is 1
     fun getFirstNote() = selectedNotes.values.first()

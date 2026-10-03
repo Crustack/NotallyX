@@ -5,7 +5,6 @@ import android.net.Uri
 import android.print.PdfPrintListener
 import android.view.View
 import androidx.documentfile.provider.DocumentFile
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.dao.CommonDao
@@ -25,6 +24,9 @@ import com.philkes.notallyx.utils.toReadablePath
 import com.philkes.notallyx.utils.viewFile
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -35,7 +37,9 @@ class EditActivityViewModel(app: Application) : NoteModel(app) {
 
     var selectedExportMimeType: ExportMimeType = ExportMimeType.TXT
 
-    val allLabels: LiveData<List<Label>> by lazy { labelDao.getAll() }
+    val allLabels: StateFlow<List<Label>> by lazy {
+        labelDao.getAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }
 
     fun exportNoteToFile(fileUri: Uri, note: BaseNote, snackbarView: View) {
         val exceptionHandler = CoroutineExceptionHandler { _, throwable ->

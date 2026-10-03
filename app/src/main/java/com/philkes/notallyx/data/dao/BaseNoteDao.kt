@@ -1,7 +1,6 @@
 package com.philkes.notallyx.data.dao
 
 import android.content.ContextWrapper
-import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -46,7 +45,7 @@ interface BaseNoteDao {
 
     private fun BaseNote.truncated(): Pair<Boolean, BaseNote> {
         return if (body.length > MAX_BODY_CHAR_LENGTH) {
-            return Pair(
+            Pair(
                 true,
                 copy(
                     body = body.take(MAX_BODY_CHAR_LENGTH),
@@ -116,7 +115,7 @@ interface BaseNoteDao {
     @Query("DELETE FROM BaseNote WHERE folder = :folder") suspend fun deleteFrom(folder: Folder)
 
     @Query("SELECT * FROM BaseNote WHERE folder = :folder ORDER BY pinned DESC, timestamp DESC")
-    fun getFrom(folder: Folder): LiveData<List<BaseNote>>
+    fun getByFolder(folder: Folder): Flow<List<BaseNote>>
 
     @Query("SELECT * FROM BaseNote WHERE folder = 'NOTES' ORDER BY pinned DESC, timestamp DESC")
     suspend fun getAllNotes(): List<BaseNote>
@@ -125,8 +124,6 @@ interface BaseNoteDao {
         "SELECT * FROM BaseNote WHERE folder = 'NOTES' AND isPinnedToStatus = 1 ORDER BY timestamp DESC"
     )
     suspend fun getAllPinnedToStatusNotes(): List<BaseNote>
-
-    @Query("SELECT * FROM BaseNote") fun getAllAsync(): LiveData<List<BaseNote>>
 
     @Query("SELECT * FROM BaseNote") fun getAll(): List<BaseNote>
 
@@ -167,14 +164,9 @@ interface BaseNoteDao {
     @Query("SELECT color FROM BaseNote WHERE id = :id ") fun getColorOfNote(id: Long): String?
 
     @Query(
-        "SELECT id, title, type, reminders FROM BaseNote WHERE reminders IS NOT NULL AND reminders != '[]'"
-    )
-    fun getAllRemindersAsync(): LiveData<List<NoteReminder>>
-
-    @Query(
         "SELECT * FROM BaseNote WHERE reminders IS NOT NULL AND reminders != '[]' AND folder = 'NOTES'"
     )
-    fun getAllBaseNotesWithReminders(): LiveData<List<BaseNote>>
+    fun getAllWithReminders(): Flow<List<BaseNote>>
 
     @Query("SELECT id FROM BaseNote WHERE folder = 'DELETED'")
     suspend fun getDeletedNoteIds(): LongArray
@@ -218,9 +210,6 @@ interface BaseNoteDao {
 
     @Query("UPDATE BaseNote SET labels = :labels WHERE id = :id")
     suspend fun updateLabels(id: Long, labels: List<String>)
-
-    @Query("UPDATE BaseNote SET labels = :labels WHERE id IN (:ids)")
-    suspend fun updateLabels(ids: LongArray, labels: List<String>)
 
     @Query("UPDATE BaseNote SET items = :items WHERE id = :id")
     suspend fun updateItems(id: Long, items: List<ListItem>)
@@ -280,41 +269,41 @@ interface BaseNoteDao {
      *
      * For example, a request for all base notes having the label 'Important' will also return base
      * notes with the label 'Unimportant'. To prevent this, we use the extension function `map`
-     * directly on the LiveData to filter the results accordingly.
+     * directly on the FLow to filter the results accordingly.
      */
-    fun getBaseNotesByLabel(label: String): Flow<List<BaseNote>> {
-        val result = getBaseNotesByLabel(label, setOf(Folder.NOTES, Folder.ARCHIVED))
+    fun getByLabel(label: String): Flow<List<BaseNote>> {
+        val result = getByLabel(label, setOf(Folder.NOTES, Folder.ARCHIVED))
         return result.map { list -> list.filter { baseNote -> baseNote.labels.contains(label) } }
     }
 
     @Query(
         "SELECT * FROM BaseNote WHERE folder IN (:folders) AND labels LIKE '%' || :label || '%' ORDER BY folder DESC, pinned DESC, timestamp DESC"
     )
-    fun getBaseNotesByLabel(label: String, folders: Collection<Folder>): Flow<List<BaseNote>>
+    fun getByLabel(label: String, folders: Collection<Folder>): Flow<List<BaseNote>>
 
     @Query(
         "SELECT * FROM BaseNote WHERE folder = :folder AND labels == '[]' ORDER BY pinned DESC, timestamp DESC"
     )
-    fun getBaseNotesWithoutLabel(folder: Folder): Flow<List<BaseNote>>
+    fun getWithoutLabel(folder: Folder): Flow<List<BaseNote>>
 
-    suspend fun getListOfBaseNotesByLabel(label: String): List<BaseNote> {
-        val result = getListOfBaseNotesByLabelImpl(label)
+    suspend fun getListByLabel(label: String): List<BaseNote> {
+        val result = getListByLabelImpl(label)
         return result.filter { baseNote -> baseNote.labels.contains(label) }
     }
 
     @Query("SELECT * FROM BaseNote WHERE labels LIKE '%' || :label || '%'")
-    suspend fun getListOfBaseNotesByLabelImpl(label: String): List<BaseNote>
+    suspend fun getListByLabelImpl(label: String): List<BaseNote>
 
-    fun getBaseNotesByKeyword(
+    fun getByKeyword(
         keyword: String,
         folder: Folder,
         label: String?,
     ): Flow<List<BaseNote>> {
         val result =
             when (label) {
-                null -> getBaseNotesByKeywordUnlabeledImpl(keyword, folder)
-                "" -> getBaseNotesByKeywordImpl(keyword, folder)
-                else -> getBaseNotesByKeywordImpl(keyword, folder, label)
+                null -> getByKeywordUnlabeledImpl(keyword, folder)
+                "" -> getByKeywordImpl(keyword, folder)
+                else -> getByKeywordImpl(keyword, folder, label)
             }
         return result.map { list -> list.filter { baseNote -> matchesKeyword(baseNote, keyword) } }
     }
@@ -322,7 +311,7 @@ interface BaseNoteDao {
     @Query(
         "SELECT * FROM BaseNote WHERE folder = :folder AND labels LIKE '%' || :label || '%' AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%' OR items LIKE '%' || :keyword || '%') ORDER BY pinned DESC, timestamp DESC"
     )
-    fun getBaseNotesByKeywordImpl(
+    fun getByKeywordImpl(
         keyword: String,
         folder: Folder,
         label: String,
@@ -331,12 +320,12 @@ interface BaseNoteDao {
     @Query(
         "SELECT * FROM BaseNote WHERE folder = :folder AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%' OR items LIKE '%' || :keyword || '%' OR labels LIKE '%' || :keyword || '%') ORDER BY pinned DESC, timestamp DESC"
     )
-    fun getBaseNotesByKeywordImpl(keyword: String, folder: Folder): Flow<List<BaseNote>>
+    fun getByKeywordImpl(keyword: String, folder: Folder): Flow<List<BaseNote>>
 
     @Query(
         "SELECT * FROM BaseNote WHERE folder = :folder AND labels == '[]' AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%' OR items LIKE '%' || :keyword || '%') ORDER BY pinned DESC, timestamp DESC"
     )
-    fun getBaseNotesByKeywordUnlabeledImpl(keyword: String, folder: Folder): Flow<List<BaseNote>>
+    fun getByKeywordUnlabeledImpl(keyword: String, folder: Folder): Flow<List<BaseNote>>
 
     private fun matchesKeyword(baseNote: BaseNote, keyword: String): Boolean {
         if (baseNote.title.contains(keyword, true)) {

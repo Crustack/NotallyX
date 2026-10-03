@@ -13,7 +13,6 @@ import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import cat.ereza.customactivityoncrash.CustomActivityOnCrash
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -41,6 +40,7 @@ import java.io.File
 import java.util.Date
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -54,7 +54,7 @@ class ErrorActivity : AppCompatActivity() {
     private lateinit var exportDatabaseActivityResultLauncher: ActivityResultLauncher<Intent>
     private var backupPath: File? = null
     private var appLogs: File? = null
-    private val backupProgress = MutableLiveData<Progress>()
+    private val backupProgress = MutableStateFlow<Progress?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -4,21 +4,14 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
 import androidx.core.content.edit
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MediatorLiveData
-import androidx.lifecycle.Observer
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.presentation.format
-import com.philkes.notallyx.presentation.merge
-import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import com.philkes.notallyx.presentation.view.note.listitem.adapter.CheckedListItemAdapter
 import com.philkes.notallyx.presentation.view.note.listitem.sorting.ListItemCheckedTimestampSortCallback
 import com.philkes.notallyx.presentation.view.note.listitem.sorting.ListItemParentSortCallback
-import com.philkes.notallyx.utils.createObserverSkipFirst
 import com.philkes.notallyx.utils.deserializeEnums
 import com.philkes.notallyx.utils.fromCamelCaseToEnumName
 import com.philkes.notallyx.utils.serializeEnums
@@ -30,10 +23,16 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.crypto.Cipher
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.scan
 import org.ocpsoft.prettytime.PrettyTime
 
 /**
- * Every Preference can be observed like a [NotNullMutableLiveData].
+ * Every Preference can be observed as a [StateFlow].
  *
  * @param titleResId Optional string resource id, if preference can be set via the UI.
  */
@@ -42,7 +41,7 @@ abstract class BasePreference<T>(
     val defaultValue: T,
     val titleResId: Int? = null,
 ) {
-    private var data: NotNullMutableLiveData<T>? = null
+    private var dataFlow: MutableStateFlow<T>? = null
     private var cachedValue: T? = null
 
     val value: T
@@ -55,78 +54,40 @@ abstract class BasePreference<T>(
 
     protected abstract fun getValue(sharedPreferences: SharedPreferences): T
 
-    fun getData(): NotNullMutableLiveData<T> {
-        if (data == null) {
-            data = NotNullMutableLiveData(value)
+    val flow: StateFlow<T>
+        get() {
+            if (dataFlow == null) {
+                dataFlow = MutableStateFlow(value)
+            }
+            return dataFlow!!.asStateFlow()
         }
-        return data as NotNullMutableLiveData<T>
+
+    fun getData(): MutableStateFlow<T> {
+        if (dataFlow == null) {
+            dataFlow = MutableStateFlow(value)
+        }
+        return dataFlow!!
     }
 
     internal fun save(value: T) {
         sharedPreferences.edit(true) { put(value) }
         cachedValue = value
-        getData().postValue(value)
+        getData().value = value
     }
 
     protected abstract fun SharedPreferences.Editor.put(value: T)
 
-    fun observe(lifecycleOwner: LifecycleOwner, observer: Observer<T>) {
-        getData().observe(lifecycleOwner, observer)
-    }
-
-    fun <C> merge(other: BasePreference<C>): MediatorLiveData<Pair<T, C>> {
-        return getData().merge(other.getData())
-    }
-
-    fun <C, B> merge(
-        other: BasePreference<C>,
-        other2: BasePreference<B>,
-    ): MediatorLiveData<Triple<T, C, B>> {
-        return getData().merge(other.getData(), other2.getData())
-    }
-
-    fun <C> merge(other: LiveData<C>): MediatorLiveData<Pair<T, C?>> {
-        return getData().merge(other)
-    }
-
-    fun <C> merge(other: NotNullMutableLiveData<C>): MediatorLiveData<Pair<T, C>> {
-        return getData().merge(other)
-    }
-
-    fun observeForever(observer: Observer<T>) {
-        getData().observeForever(observer)
-    }
-
-    fun removeObserver(observer: Observer<T>) {
-        getData().removeObserver(observer)
-    }
-
-    fun removeObservers(lifecycleOwner: LifecycleOwner) {
-        getData().removeObservers(lifecycleOwner)
-    }
-
-    fun observeForeverWithPrevious(observer: Observer<Pair<T?, T>>) {
-        val mediator = MediatorLiveData<Pair<T?, T>>()
-        var previousValue: T? = null
-
-        mediator.addSource(getData()) { currentValue ->
-            mediator.value = Pair(previousValue, currentValue!!)
-            previousValue = currentValue
-        }
-
-        mediator.observeForever(observer)
-    }
-
     fun refresh() {
         cachedValue = null
-        getData().postValue(value)
+        getData().value = value
     }
 
     fun getFreshValue() = getValue(sharedPreferences)
 }
 
-fun <T> BasePreference<T>.observeForeverSkipFirst(observer: Observer<T>) {
-    this.observeForever(createObserverSkipFirst(observer))
+fun <T> Flow<T>.withPrevious(): Flow<Pair<T?, T>> {
+    return scan<T, Pair<T?, T>?>(null) { prev, current -> Pair(prev?.second, current) }
+        .filterNotNull()
 }
 
 interface TextProvider {

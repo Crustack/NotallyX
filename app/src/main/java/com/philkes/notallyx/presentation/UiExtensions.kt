@@ -72,11 +72,10 @@ import androidx.core.view.updatePadding
 import androidx.core.widget.TextViewCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MediatorLiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.switchMap
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -106,7 +105,6 @@ import com.philkes.notallyx.databinding.DialogInputBinding
 import com.philkes.notallyx.databinding.DialogProgressBinding
 import com.philkes.notallyx.databinding.LabelBinding
 import com.philkes.notallyx.presentation.activity.main.MainActivity
-import com.philkes.notallyx.presentation.view.misc.NotNullMutableLiveData
 import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.view.misc.StylableEditTextWithHistory
 import com.philkes.notallyx.presentation.view.note.listitem.ListManager
@@ -122,7 +120,10 @@ import com.philkes.notallyx.utils.changehistory.EditTextState
 import com.philkes.notallyx.utils.changehistory.EditTextWithHistoryChange
 import com.philkes.notallyx.utils.getUrl
 import java.util.Date
-import kotlin.collections.emptyList
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import me.zhanghai.android.fastscroll.FastScrollNestedScrollView
 import me.zhanghai.android.fastscroll.FastScrollerBuilder
 import me.zhanghai.android.fastscroll.PopupStyles
@@ -424,33 +425,28 @@ fun Context.hideKeyboard(view: View) {
         ?.hideSoftInputFromWindow(view.windowToken, 0)
 }
 
-fun LiveData<out Progress>?.postProgress(value: Progress) {
-    (this as? MutableLiveData<Progress>)?.postValue(value)
-}
+inline fun LifecycleOwner.repeatOnLifecycleScope(
+    state: Lifecycle.State = Lifecycle.State.STARTED,
+    crossinline block: suspend CoroutineScope.() -> Unit,
+) = lifecycleScope.launch { repeatOnLifecycle(state) { block() } }
 
-fun LiveData<out Progress>.setupProgressDialog(activity: Activity) {
-    setupProgressDialog(activity, activity.layoutInflater, activity as LifecycleOwner)
-}
-
-fun LiveData<out Progress>.setupProgressDialog(fragment: Fragment) {
-    setupProgressDialog(
-        fragment.requireContext(),
-        fragment.layoutInflater,
-        fragment.viewLifecycleOwner,
-    )
-}
-
-fun <X, Y> LiveData<X>.switchMapNullSafe(
-    transform: (@JvmSuppressWildcards X) -> @JvmSuppressWildcards LiveData<List<Y>>
-) = switchMap { value ->
-    if (value == null) {
-        MutableLiveData<List<Y>>(emptyList())
-    } else {
-        transform(value)
+inline fun <T> Flow<T>.collectIn(
+    owner: LifecycleOwner,
+    minActiveState: Lifecycle.State = Lifecycle.State.STARTED,
+    crossinline action: suspend (value: T) -> Unit,
+) {
+    owner.lifecycleScope.launch {
+        owner.repeatOnLifecycle(minActiveState) { collect { action(it) } }
     }
 }
 
-fun LiveData<out Progress>.setupImportProgressDialog(fragment: Fragment) {
+@JvmName("setupProgressDialogStateFlow")
+fun StateFlow<out Progress?>.setupProgressDialog(activity: Activity) {
+    setupProgressDialog(activity, activity.layoutInflater, activity as LifecycleOwner)
+}
+
+@JvmName("setupImportProgressDialogStateFlow")
+fun StateFlow<out Progress?>.setupImportProgressDialog(fragment: Fragment) {
     setupProgressDialog(
         fragment.requireContext(),
         fragment.layoutInflater,
@@ -470,34 +466,7 @@ fun LiveData<out Progress>.setupImportProgressDialog(fragment: Fragment) {
     }
 }
 
-fun <T, C> NotNullMutableLiveData<T>.merge(
-    liveData: NotNullMutableLiveData<C>
-): MediatorLiveData<Pair<T, C>> {
-    return MediatorLiveData<Pair<T, C>>().apply {
-        addSource(this@merge) { value1 -> value = Pair(value1, liveData.value) }
-        addSource(liveData) { value2 -> value = Pair(this@merge.value, value2) }
-    }
-}
-
-fun <T, C, B> NotNullMutableLiveData<T>.merge(
-    liveData: NotNullMutableLiveData<C>,
-    liveData2: NotNullMutableLiveData<B>,
-): MediatorLiveData<Triple<T, C, B>> {
-    return MediatorLiveData<Triple<T, C, B>>().apply {
-        addSource(this@merge) { value1 -> value = Triple(value1, liveData.value, liveData2.value) }
-        addSource(liveData) { value2 -> value = Triple(this@merge.value, value2, liveData2.value) }
-        addSource(liveData2) { value3 -> value = Triple(this@merge.value, liveData.value, value3) }
-    }
-}
-
-fun <T, C> NotNullMutableLiveData<T>.merge(liveData: LiveData<C>): MediatorLiveData<Pair<T, C?>> {
-    return MediatorLiveData<Pair<T, C?>>().apply {
-        addSource(this@merge) { value1 -> value = Pair(value1, liveData.value) }
-        addSource(liveData) { value2 -> value = Pair(this@merge.value, value2) }
-    }
-}
-
-private fun <T : Progress> LiveData<T>.setupProgressDialog(
+private fun <T : Progress> StateFlow<T?>.setupProgressDialog(
     context: Context,
     layoutInflater: LayoutInflater,
     viewLifecycleOwner: LifecycleOwner,
@@ -511,30 +480,39 @@ private fun <T : Progress> LiveData<T>.setupProgressDialog(
             .setCancelable(false)
             .create()
 
-    observe(viewLifecycleOwner) { progress ->
-        dialog.setTitle(progress.titleId)
-        if (progress.inProgress) {
-            if (progress.indeterminate) {
-                dialogBinding.apply {
-                    ProgressBar.isIndeterminate = true
-                    Count.setText(R.string.calculating)
-                }
-            } else {
-                dialogBinding.apply {
-                    ProgressBar.apply {
-                        isIndeterminate = false
-                        max = progress.total
-                        setProgressCompat(progress.current, true)
-                    }
-                    if (renderProgress == null) {
-                        Count.text =
-                            context.getString(R.string.count, progress.current, progress.total) +
-                                (progress.countSuffix?.let { " $it" } ?: "")
-                    } else renderProgress.invoke(context, this, progress)
-                }
+    viewLifecycleOwner.repeatOnLifecycleScope {
+        collect { progress ->
+            if (progress == null) {
+                dialog.dismiss()
+                return@collect
             }
-            dialog.show()
-        } else dialog.dismiss()
+            dialog.setTitle(progress.titleId)
+            if (progress.inProgress) {
+                if (progress.indeterminate) {
+                    dialogBinding.apply {
+                        ProgressBar.isIndeterminate = true
+                        Count.setText(R.string.calculating)
+                    }
+                } else {
+                    dialogBinding.apply {
+                        ProgressBar.apply {
+                            isIndeterminate = false
+                            max = progress.total
+                            setProgressCompat(progress.current, true)
+                        }
+                        if (renderProgress == null) {
+                            Count.text =
+                                context.getString(
+                                    R.string.count,
+                                    progress.current,
+                                    progress.total,
+                                ) + (progress.countSuffix?.let { " $it" } ?: "")
+                        } else renderProgress.invoke(context, this, progress)
+                    }
+                }
+                dialog.show()
+            } else dialog.dismiss()
+        }
     }
 }
 
