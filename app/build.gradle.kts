@@ -248,9 +248,9 @@ firebaseTestLab {
             apiLevel = 30
         }
 
-        create("xiaomi14") {
-            device = "houji"
-            apiLevel = 35
+        create("pixel10ProXL") {
+            device = "mustang"
+            apiLevel = 36
         }
 
         create("mediumPhone") {
