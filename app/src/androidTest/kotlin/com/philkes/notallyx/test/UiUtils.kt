@@ -4,7 +4,10 @@ import android.graphics.Point
 import android.graphics.Typeface
 import android.os.SystemClock
 import android.text.Spanned
+import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
+import android.text.style.TypefaceSpan
+import android.text.style.URLSpan
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
@@ -825,6 +828,97 @@ fun hasBoldSpan(start: Int, end: Int): Matcher<View> {
                     editable.getSpanStart(span) == start &&
                     editable.getSpanEnd(span) == end
             }
+        }
+    }
+}
+
+fun hasItalicSpan(start: Int, end: Int): Matcher<View> {
+    return object : BoundedMatcher<View, EditText>(EditText::class.java) {
+        override fun describeTo(description: Description) {
+            description.appendText("has italic span from $start to $end")
+        }
+
+        override fun matchesSafely(editText: EditText): Boolean {
+            val editable = editText.text as? Spanned ?: return false
+            val styleSpans = editable.getSpans(0, editable.length, StyleSpan::class.java)
+            return styleSpans.any { span ->
+                span.style == Typeface.ITALIC &&
+                    editable.getSpanStart(span) == start &&
+                    editable.getSpanEnd(span) == end
+            }
+        }
+    }
+}
+
+fun hasStrikethroughSpan(start: Int, end: Int): Matcher<View> {
+    return object : BoundedMatcher<View, EditText>(EditText::class.java) {
+        override fun describeTo(description: Description) {
+            description.appendText("has strikethrough span from $start to $end")
+        }
+
+        override fun matchesSafely(editText: EditText): Boolean {
+            val editable = editText.text as? Spanned ?: return false
+            val spans = editable.getSpans(0, editable.length, StrikethroughSpan::class.java)
+            return spans.any { span ->
+                editable.getSpanStart(span) == start && editable.getSpanEnd(span) == end
+            }
+        }
+    }
+}
+
+fun hasMonospaceSpan(start: Int, end: Int): Matcher<View> {
+    return object : BoundedMatcher<View, EditText>(EditText::class.java) {
+        override fun describeTo(description: Description) {
+            description.appendText("has monospace span from $start to $end")
+        }
+
+        override fun matchesSafely(editText: EditText): Boolean {
+            val editable = editText.text as? Spanned ?: return false
+            val spans = editable.getSpans(0, editable.length, TypefaceSpan::class.java)
+            return spans.any { span ->
+                span.family == "monospace" &&
+                    editable.getSpanStart(span) == start &&
+                    editable.getSpanEnd(span) == end
+            }
+        }
+    }
+}
+
+fun hasUrlSpan(start: Int, end: Int, url: String? = null): Matcher<View> {
+    return object : BoundedMatcher<View, EditText>(EditText::class.java) {
+        override fun describeTo(description: Description) {
+            description.appendText("has url span from $start to $end with url $url")
+        }
+
+        override fun matchesSafely(editText: EditText): Boolean {
+            val editable = editText.text as? Spanned ?: return false
+            val spans = editable.getSpans(0, editable.length, URLSpan::class.java)
+            return spans.any { span ->
+                (url == null || span.url == url) &&
+                    editable.getSpanStart(span) == start &&
+                    editable.getSpanEnd(span) == end
+            }
+        }
+    }
+}
+
+fun hasNoSpans(start: Int = 0, end: Int = -1): Matcher<View> {
+    return object : BoundedMatcher<View, EditText>(EditText::class.java) {
+        override fun describeTo(description: Description) {
+            description.appendText("has no formatting spans")
+        }
+
+        override fun matchesSafely(editText: EditText): Boolean {
+            val editable = editText.text as? Spanned ?: return true
+            val effectiveEnd = if (end == -1) editable.length else end
+            val spans =
+                editable.getSpans(start, effectiveEnd, Any::class.java).filter {
+                    it is StyleSpan ||
+                        it is StrikethroughSpan ||
+                        it is TypefaceSpan ||
+                        it is URLSpan
+                }
+            return spans.isEmpty()
         }
     }
 }
