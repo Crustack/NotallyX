@@ -16,6 +16,8 @@ roborazzi = "1.76.0"
 translationsConverter = "1.0.7"
 autoTranslation = "1.0.5"
 kotlinSerialization = "2.4.20"
+koin = "4.2.2"
+koinCompilerPlugin = "1.2.1"
 
 # Libraries
 navigation = "2.10.2"
@@ -122,6 +124,14 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 
 zstd-jni-test = { group = "com.github.luben", name = "zstd-jni", version.ref = "zstd" }
 
+# Koin
+koin-bom = { group = "io.insert-koin", name = "koin-bom", version.ref = "koin" }
+koin-core = { group = "io.insert-koin", name = "koin-core" }
+koin-android = { group = "io.insert-koin", name = "koin-android" }
+koin-androidx-workmanager = { group = "io.insert-koin", name = "koin-androidx-workmanager" }
+koin-test = { group = "io.insert-koin", name = "koin-test" }
+koin-test-junit4 = { group = "io.insert-koin", name = "koin-test-junit4" }
+
 [bundles]
 # Navigation
 navigation = ["androidx-navigation-fragment", "androidx-navigation-ui"]
@@ -140,3 +150,4 @@ ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlinSerialization" }
 translations-converter = { id = "io.github.crustack.android-translations-converter", version.ref = "translationsConverter" }
 auto-translation = { id = "io.github.crustack.auto-translation", version.ref = "autoTranslation" }
+koin-compiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koinCompilerPlugin" }

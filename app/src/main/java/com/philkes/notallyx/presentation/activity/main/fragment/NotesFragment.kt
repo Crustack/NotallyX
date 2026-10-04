@@ -11,7 +11,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -48,6 +47,7 @@ import com.philkes.notallyx.presentation.viewmodel.main.fragment.NotesFragmentVi
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesView
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import org.koin.androidx.viewmodel.ext.android.activityViewModel
 
 abstract class NotesFragment : Fragment(), ItemListener {
 
@@ -57,7 +57,7 @@ abstract class NotesFragment : Fragment(), ItemListener {
 
     internal var binding: FragmentNotesBinding? = null
 
-    internal val model: NotesFragmentViewModel by activityViewModels()
+    internal val model: NotesFragmentViewModel by activityViewModel()
 
     override fun onDestroyView() {
         super.onDestroyView()

@@ -23,7 +23,6 @@ import androidx.appcompat.app.AppCompatActivity.RESULT_OK
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.work.WorkManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -79,10 +78,11 @@ import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class SettingsFragment : Fragment() {
 
-    private val model: SettingsViewModel by viewModels()
+    private val model: SettingsViewModel by viewModel()
 
     private lateinit var importBackupActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var importRawDatabaseActivityResultLauncher: ActivityResultLauncher<Intent>

@@ -1,0 +1,54 @@
+{
+  "skill_name": "di-migration",
+  "evals": [
+    {
+      "id": 1,
+      "name": "hilt-network-module",
+      "prompt": "I have this Hilt module in my Android app and I want to migrate to Koin. Here's my NetworkModule.kt:\n\n```kotlin\n@Module\n@InstallIn(SingletonComponent::class)\nobject NetworkModule {\n    @Provides\n    @Singleton\n    fun provideOkHttpClient(\n        @AuthInterceptor authInterceptor: Interceptor,\n        loggingInterceptor: HttpLoggingInterceptor\n    ): OkHttpClient = OkHttpClient.Builder()\n        .addInterceptor(authInterceptor)\n        .addInterceptor(loggingInterceptor)\n        .build()\n\n    @Provides\n    @Singleton\n    fun provideRetrofit(client: OkHttpClient): Retrofit =\n        Retrofit.Builder().client(client).baseUrl(BASE_URL).build()\n\n    @Provides\n    @Singleton\n    fun provideApiService(retrofit: Retrofit): ApiService =\n        retrofit.create(ApiService::class.java)\n}\n```\n\nAlso my ViewModel uses @HiltViewModel with SavedStateHandle. Can you convert everything?",
+      "expected_output": "Should follow the 8-step migration workflow. Step 1: Inventory the NetworkModule bindings (3 singletons + qualifier). Step 2: Plan mapping @Provides/@Singleton → single{}, @AuthInterceptor → named(\"auth\"). Step 3: Gradle changes removing Hilt deps, adding Koin deps. Step 4: Generate Koin module with single{} blocks, named(\"auth\") qualifier. Step 5: startKoin{} setup. Step 6: ViewModel conversion from @HiltViewModel to viewModelOf() with SavedStateHandle. Step 7: Test config. Step 8: Verification checklist.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "dagger-subcomponents-scopes",
+      "prompt": "We have a legacy Android app using Dagger 2 with subcomponents for user sessions. The AppComponent creates a UserSessionSubcomponent when the user logs in, which provides UserRepository and SessionManager scoped to the session lifetime. When the user logs out, the subcomponent is destroyed. How do I migrate this to Koin while keeping the same scoping behavior?",
+      "expected_output": "Should follow 8-step workflow. Step 1: Inventory AppComponent + UserSessionSubcomponent bindings. Step 2: Plan mapping subcomponent → scope<T>, @SessionScope → scope<UserSessionScope>{}. Step 3: Gradle remove Dagger, add Koin. Step 4: Generate scope<UserSessionScope>{ scoped{SessionManager(get())} scoped{UserRepository(get())} }. Step 5: startKoin setup. Step 6: Replace component.inject() with by inject(), createScope on login, scope.close() on logout. Step 7: Test with KoinTestRule. Step 8: Checklist.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "koin3-to-koin4-kmp",
+      "prompt": "I'm upgrading our KMP project from Koin 3.5 to Koin 4. We have common modules and platform-specific modules for Android and iOS. We also use koin-annotations with KSP. What do I need to change?",
+      "expected_output": "Should follow 8-step workflow. Step 1: Inventory existing Koin modules, KSP setup, platform modules. Step 2: Plan — upgrade to Safe DSL single<T>() syntax, remove KSP. Step 3: Gradle — add io.insert-koin.compiler.plugin, update to Koin 4.2.1, remove KSP plugin and koin-ksp-compiler, require Kotlin ≥ 2.3.20. Step 4: Convert singleOf(::Class) to single<Class>(), factoryOf(::Class) to factory<Class>(), viewModelOf(::VM) to viewModel<VM>(), keep lambda for third-party types. Step 5: Application wiring with KoinContext for Compose. Step 6: getViewModel → koinViewModel, get() → koinInject() in Compose. Step 7: Test with checkModules(). Step 8: Checklist. Module structure stays as val module = module { }.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "toothpick-full-migration",
+      "prompt": "We have a legacy Android app still using Toothpick for DI. It uses KTP.openScopes with a scope tree: Application → Activity → Fragment. Each scope has its own Toothpick Module with bind().to() and bind().toInstance(). We also have @Inject field injection everywhere and a custom ViewModelProvider.Factory wired through Toothpick. How do I migrate all of this to Koin?",
+      "expected_output": "Should follow 8-step workflow. Step 1: Inventory all Toothpick Modules, scope tree, @Inject fields, ViewModelFactory. Step 2: Plan mapping bind().to() → singleOf(::Impl){bind<Interface>()}, KTP.openScopes → scope<T>{}, @Inject → by inject(). Step 3: Gradle remove toothpick/smoothie, add Koin. Step 4: Convert each Toothpick Module to Koin module{}, scope<Activity>{scoped{}}, scope<Fragment>{scoped{}}. Step 5: startKoin in Application, KoinScopeComponent for scoped Activities/Fragments. Step 6: Replace @Inject lateinit var with by inject(), remove Toothpick.inject() calls, remove ViewModelFactory. Step 7: Test migration from ToothPickRule to KoinTestRule. Step 8: Full cleanup checklist.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "name": "koin-dsl-to-safe-dsl",
+      "prompt": "I have a Koin-based Android app with about 15 DSL modules using single { }, factory { }, and viewModel { }. Some modules use named qualifiers and scopes. I want to add compile-time safety with the Koin Compiler Plugin but keep the DSL module structure. Can you show me how to convert my modules? Here's one of them:\n\nval dataModule = module {\n    single { AppDatabase.create(androidContext()) }\n    single { get<AppDatabase>().userDao() }\n    singleOf(::UserRepository) { bind<Repository>() }\n    factory { params -> DataSync(get(), params.get()) }\n}\n\nAnd my viewModel module:\n\nval viewModelModule = module {\n    viewModelOf(::MainViewModel)\n    viewModel { DetailViewModel(get(), get()) }\n}",
+      "expected_output": "Should follow 8-step workflow. Step 1: Inventory the 2 shown modules (4 bindings in dataModule, 2 in viewModelModule). Step 2: Plan — keep module {} structure, convert to Safe DSL single<T>() syntax. Step 3: Gradle add io.insert-koin.compiler.plugin, update to Koin 4.2.1, require Kotlin ≥ 2.3.20. Step 4: Convert dataModule — keep lambda for AppDatabase.create() and userDao() (third-party/custom logic), convert singleOf(::UserRepository) to single<UserRepository>().withOptions { bind<Repository>() }, convert factory to factory<DataSync>() with @InjectedParam on DataSync's runtime param. Convert viewModelModule — viewModelOf(::MainViewModel) to viewModel<MainViewModel>(), viewModel{DetailViewModel(get(),get())} to viewModel<DetailViewModel>(). Step 5: startKoin unchanged. Step 6: Only add @InjectedParam to DataSync class. Step 7: checkModules() test. Step 8: Checklist.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "name": "ksp-to-compiler-plugin",
+      "prompt": "Our Android project uses Koin annotations with KSP (koin-annotations 1.4 + koin-ksp-compiler). We want to move to the new Koin Compiler Plugin for better compile-time safety and faster builds. We're already on Kotlin 2.3. Here's our current setup:\n\n```kotlin\n// build.gradle.kts\nplugins {\n    id(\"com.google.devtools.ksp\") version \"2.1.21-2.0.2\"\n}\n\ndependencies {\n    implementation(\"io.insert-koin:koin-core:3.5.6\")\n    implementation(\"io.insert-koin:koin-android:3.5.6\")\n    implementation(\"io.insert-koin:koin-annotations:1.4.0\")\n    ksp(\"io.insert-koin:koin-ksp-compiler:1.4.0\")\n    implementation(\"io.insert-koin:koin-androidx-compose:3.5.6\")\n}\n\nksp {\n    arg(\"KOIN_USE_COMPOSE_VIEWMODEL\", \"true\")\n    arg(\"KOIN_DEFAULT_MODULE\", \"false\")\n}\n```\n\nWe have @Module classes with @ComponentScan, @Singleton, @Factory, @KoinViewModel annotations. What needs to change?",
+      "expected_output": "Should follow 8-step workflow. Step 1: Inventory existing KSP annotations and modules. Step 2: Plan — mostly Gradle changes, minimal code changes (@KoinViewModel import). Step 3: Gradle — remove KSP plugin, remove ksp() dependency, remove ksp{} block, add io.insert-koin.compiler.plugin 1.0.0-RC1, update all deps to 4.2.1. Step 4: Code changes — update @KoinViewModel import from org.koin.android.annotation to org.koin.core.annotation, remove import org.koin.ksp.generated.module, optionally update DSL to single<T>() style. Step 5: Application wiring stays same. Step 6: Minimal injection site changes. Step 7: Tests with updated deps. Step 8: Checklist including delete build/generated/ksp/, verify K2 compilation.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "name": "ksp-to-compiler-kmp",
+      "prompt": "We have a KMP project (Android + iOS) using Koin annotations with KSP. The KSP setup is painful — we have per-target ksp() dependencies and task dependency hacks. We want to move to the Koin Compiler Plugin. We're on Kotlin 2.3. Here's our KMP build.gradle.kts:\n\n```kotlin\nplugins {\n    id(\"com.google.devtools.ksp\") version \"2.1.21-2.0.2\"\n}\n\nkotlin {\n    sourceSets.named(\"commonMain\").configure {\n        kotlin.srcDir(\"build/generated/ksp/metadata/commonMain/kotlin\")\n    }\n}\n\ndependencies {\n    commonMainImplementation(\"io.insert-koin:koin-core:3.5.6\")\n    commonMainImplementation(\"io.insert-koin:koin-annotations:1.4.0\")\n    add(\"kspCommonMainMetadata\", \"io.insert-koin:koin-ksp-compiler:1.4.0\")\n    add(\"kspAndroid\", \"io.insert-koin:koin-ksp-compiler:1.4.0\")\n    add(\"kspIosX64\", \"io.insert-koin:koin-ksp-compiler:1.4.0\")\n    add(\"kspIosArm64\", \"io.insert-koin:koin-ksp-compiler:1.4.0\")\n}\n\ntasks.matching { it.name.startsWith(\"ksp\") && it.name != \"kspCommonMainKotlinMetadata\" }\n    .configureEach { dependsOn(\"kspCommonMainKotlinMetadata\") }\n```",
+      "expected_output": "Should follow 8-step workflow. Step 1: Inventory KMP modules, per-target KSP config. Step 2: Plan massive simplification. Step 3: Gradle — remove KSP plugin, ALL per-target ksp() dependencies, source set hack, task dependency hack; add single io.insert-koin.compiler.plugin; update to koin 4.2.1. Step 4: Minimal code changes (import updates). Step 5: Application wiring. Step 6: Injection sites. Step 7: Tests. Step 8: Checklist. Should emphasize the dramatic build.gradle.kts simplification as a key benefit.",
+      "files": []
+    }
+  ]
+}
