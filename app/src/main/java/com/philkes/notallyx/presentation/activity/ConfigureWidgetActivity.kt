@@ -24,18 +24,15 @@ class ConfigureWidgetActivity : PickNoteActivity() {
         setResult(RESULT_CANCELED, result)
     }
 
-    override fun onClick(position: Int) {
-        if (position != -1) {
-            val baseNote = adapter.getItem(position) as BaseNote
-            preferences.updateWidget(id, baseNote.id, baseNote.type)
+    override fun onNotePicked(note: BaseNote) {
+        preferences.updateWidget(id, note.id, note.type)
 
-            val manager = AppWidgetManager.getInstance(this)
-            WidgetProvider.updateWidget(application, manager, id, baseNote.id, baseNote.type)
+        val manager = AppWidgetManager.getInstance(this)
+        WidgetProvider.updateWidget(application, manager, id, note.id, note.type)
 
-            val success = Intent()
-            success.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
-            setResult(RESULT_OK, success)
-            finish()
-        }
+        val success = Intent()
+        success.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
+        setResult(RESULT_OK, success)
+        finish()
     }
 }

@@ -9,7 +9,6 @@ import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Header
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.databinding.RecyclerBaseNoteBinding
-import com.philkes.notallyx.databinding.RecyclerHeaderBinding
 import com.philkes.notallyx.presentation.view.main.sorting.BaseNoteColorSort
 import com.philkes.notallyx.presentation.view.main.sorting.BaseNoteCreationDateSort
 import com.philkes.notallyx.presentation.view.main.sorting.BaseNoteModifiedDateSort
@@ -109,10 +108,7 @@ class BaseNoteAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
-            0 -> {
-                val binding = RecyclerHeaderBinding.inflate(inflater, parent, false)
-                HeaderVH(binding)
-            }
+            0 -> HeaderVH.create(parent)
             else -> {
                 val binding = RecyclerBaseNoteBinding.inflate(inflater, parent, false)
                 BaseNoteVH(binding, dateFormat, timeFormat, preferences, listener)

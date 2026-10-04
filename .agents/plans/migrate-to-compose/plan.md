@@ -22,6 +22,12 @@ The migration is structured into **phased, ordered modules**, starting with the 
    - Use `@Preview` annotations for every Composable component for rapid visual verification.
    - Leverage the existing Roborazzi screenshot test suite in [`ScreenshotTests.kt`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/test/kotlin/com/philkes/notallyx/presentation/activity/main/ScreenshotTests.kt) (`editNote`, `settings`, `navigationDrawer`, `labels`, `reminders`, `notesOverview`) to record reference screenshots before migration and verify pixel-perfect parity after each phase using `./gradlew verifyRoborazziDebug`.
 
+4. **Active Replacement of Legacy XML Layout Usages**:
+   - Each phase and checklist item mandates not only writing the new Composable functions, but also **actively replacing all legacy XML ViewBinding/DataBinding layout usages** in the corresponding Activities, Fragments, ViewHolders, Adapters, and Dialogs.
+   - Activities/Fragments replace `setContentView(binding.root)` with `setContent { NotallyXTheme { Screen(...) } }`.
+   - ViewHolders/Adapters replace ViewBinding inflation with `ComposeView` hosting the new Composable.
+   - A step or phase is completed **only when the newly created Compose view is actively used in place of the XML view in app execution**.
+
 ---
 
 ## Phase Breakdown & Domain Groups
@@ -217,10 +223,10 @@ Convert legacy Android RemoteViews widgets to **AndroidX Glance**:
 - [x] Implement `BaseNoteCard.kt` (`recycler_base_note.xml`).
 
 ### Phase 2: Simple Utility & Media Display Activities
-- [ ] Migrate `PickNoteActivity` to `PickNoteScreen.kt` (`activity_pick_note.xml`).
-- [ ] Migrate `ViewImageActivity` to `ViewImageScreen.kt` (`activity_view_image.xml`, `recycler_image.xml`).
-- [ ] Migrate `DatabaseTransitionActivity` to `DatabaseTransitionScreen.kt` (`activity_database_transition.xml`).
-- [ ] Migrate `ErrorActivity` to `ErrorScreen.kt` (`activity_error.xml`).
+- [x] Migrate `PickNoteActivity` to `PickNoteScreen.kt` (`activity_pick_note.xml`).
+- [x] Migrate `ViewImageActivity` to `ViewImageScreen.kt` (`activity_view_image.xml`, `recycler_image.xml`).
+- [x] Migrate `DatabaseTransitionActivity` to `DatabaseTransitionScreen.kt` (`activity_database_transition.xml`).
+- [x] Migrate `ErrorActivity` to `ErrorScreen.kt` (`activity_error.xml`).
 
 ### Phase 3: Audio Recording & Playback
 - [ ] Migrate `PlayAudioActivity` to `PlayAudioScreen.kt` (`activity_play_audio.xml`, `recycler_audio.xml`).

@@ -4,19 +4,20 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.color.DynamicColors
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.NotallyDatabase.Companion.DATABASE_NAME
-import com.philkes.notallyx.databinding.ActivityDatabaseTransitionBinding
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.presentation.showToast
+import com.philkes.notallyx.presentation.theme.NotallyXTheme
+import com.philkes.notallyx.presentation.view.screens.DatabaseTransitionScreen
 import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
-import com.philkes.notallyx.presentation.viewmodel.preference.Theme
 import com.philkes.notallyx.utils.backup.FILE_TIMESTAMP_FORMAT
 import com.philkes.notallyx.utils.backup.copyDatabase
 import com.philkes.notallyx.utils.copyToLarge
@@ -45,20 +46,6 @@ class DatabaseTransitionActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val notallyXApplication = application as NotallyXApplication
-        if (preferences.useDynamicColors.value) {
-            if (DynamicColors.isDynamicColorAvailable()) {
-                DynamicColors.applyToActivitiesIfAvailable(notallyXApplication)
-            }
-        } else {
-            when (preferences.theme.value) {
-                Theme.SUPER_DARK -> theme.applyStyle(R.style.AppTheme_SuperDark, true)
-                else -> theme.applyStyle(R.style.AppTheme, true)
-            }
-        }
-
-        val binding = ActivityDatabaseTransitionBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        if (savedInstanceState != null) return
 
         val actionName = intent.getStringExtra(EXTRA_ACTION)
         val action =
@@ -91,7 +78,14 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                     else R.string.decrypting_database_biometric
                 }
             }
-        binding.TransitionText.setText(messageResId)
+
+        setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                DatabaseTransitionScreen(statusText = stringResource(id = messageResId))
+            }
+        }
+
+        if (savedInstanceState != null) return
 
         lifecycleScope.launch {
             try {
