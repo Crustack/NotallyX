@@ -1,8 +1,10 @@
 package com.philkes.notallyx.test
 
-import android.content.ContextWrapper
 import android.graphics.Point
+import android.graphics.Typeface
 import android.os.SystemClock
+import android.text.Spanned
+import android.text.style.StyleSpan
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
@@ -53,7 +55,6 @@ import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.utils.security.AuthenticatorProvider
 import java.security.SecureRandom
 import junit.framework.TestCase.assertTrue
@@ -61,24 +62,6 @@ import org.hamcrest.Description
 import org.hamcrest.Matcher
 import org.hamcrest.Matchers.allOf
 import org.hamcrest.TypeSafeMatcher
-
-val context
-    get() = ContextWrapper(InstrumentationRegistry.getInstrumentation().targetContext)
-
-val database: NotallyDatabase
-    get() = NotallyDatabase.getDatabase(context).value!!
-
-val preferences: NotallyXPreferences
-    get() = NotallyXPreferences.getInstance(ContextWrapper(context))
-
-val toolbarBackButton: ViewInteraction
-    get() =
-        onDisplayView(
-            childAtPosition(
-                allOf(withId(R.id.Toolbar), childAtPosition(withId(R.id.main_content_layout), 0)),
-                0,
-            )
-        )
 
 fun onLabelItem(labelText: String): ViewInteraction =
     onView(
@@ -713,7 +696,7 @@ fun waitUntil(timeoutMs: Long = 5000, condition: () -> Boolean) {
     throw AssertionError("Condition not met within ${timeoutMs}ms", last)
 }
 
-fun initFakeBiometric(): FakeBiometricAuthenticator {
+fun UiTestBase.initFakeBiometric(): FakeBiometricAuthenticator {
     val fakeBiometricAuthenticator = FakeBiometricAuthenticator()
     val randomIv = ByteArray(16)
     SecureRandom().nextBytes(randomIv)
@@ -722,7 +705,7 @@ fun initFakeBiometric(): FakeBiometricAuthenticator {
     return fakeBiometricAuthenticator
 }
 
-fun checkAndUpdateNoteTitle(noteIdx: Int, textToMatch: String, textToAdd: String) {
+fun UiTestBase.checkAndUpdateNoteTitle(noteIdx: Int, textToMatch: String, textToAdd: String) {
     waitUntilSucceeds {
         R.id.MainListView.byId()
             .onPositionView(noteIdx, withId(R.id.Title))
@@ -766,7 +749,7 @@ fun disableBiometricLock() {
     waitUntilSettingsValue(R.id.BiometricLock, R.string.disabled)
 }
 
-fun enableDataInPublic() {
+fun UiTestBase.enableDataInPublic() {
     onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
     R.string.enabled.byText().perform(click())
     waitUntilSettingsValue(R.id.DataInPublicFolder, R.string.enabled)
@@ -776,7 +759,7 @@ fun enableDataInPublic() {
     }
 }
 
-fun disableDataInPublic() {
+fun UiTestBase.disableDataInPublic() {
     onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
     R.string.disabled.byText().perform(click())
     waitUntilSettingsValue(R.id.DataInPublicFolder, R.string.disabled)
@@ -807,6 +790,41 @@ fun moveCursorToEnd(): ViewAction {
         override fun perform(uiController: UiController?, view: View?) {
             val editText = view as EditText
             editText.setSelection(editText.text.length)
+        }
+    }
+}
+
+fun setSelection(start: Int, end: Int): ViewAction {
+    return object : ViewAction {
+        override fun getConstraints(): Matcher<View> {
+            return isAssignableFrom(EditText::class.java)
+        }
+
+        override fun getDescription(): String {
+            return "Set selection ($start, $end)"
+        }
+
+        override fun perform(uiController: UiController?, view: View?) {
+            val editText = view as EditText
+            editText.setSelection(start, end)
+        }
+    }
+}
+
+fun hasBoldSpan(start: Int, end: Int): Matcher<View> {
+    return object : BoundedMatcher<View, EditText>(EditText::class.java) {
+        override fun describeTo(description: Description) {
+            description.appendText("has bold span from $start to $end")
+        }
+
+        override fun matchesSafely(editText: EditText): Boolean {
+            val editable = editText.text as? Spanned ?: return false
+            val styleSpans = editable.getSpans(0, editable.length, StyleSpan::class.java)
+            return styleSpans.any { span ->
+                span.style == Typeface.BOLD &&
+                    editable.getSpanStart(span) == start &&
+                    editable.getSpanEnd(span) == end
+            }
         }
     }
 }
