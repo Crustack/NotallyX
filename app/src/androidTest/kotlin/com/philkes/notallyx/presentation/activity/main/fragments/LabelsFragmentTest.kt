@@ -1,11 +1,16 @@
 package com.philkes.notallyx.presentation.activity.main.fragments
 
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.action.ViewActions.scrollTo
+import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.contrib.DrawerActions
+import androidx.test.espresso.matcher.ViewMatchers.isDescendantOfA
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withParent
 import androidx.test.espresso.matcher.ViewMatchers.withText
@@ -92,6 +97,97 @@ class LabelsFragmentTest : UiTestBase() {
         }
 
         R.string.delete.byText(withId(android.R.id.button1)).perform(scrollTo(), click())
+
+        scenario.close()
+    }
+
+    @Test
+    fun unlabeledNotesFilter() {
+        // 1. Insert unlabeled and labeled notes
+        runBlocking {
+            database.getLabelDao().insert(listOf(Label("Work", 0)))
+            database
+                .getBaseNoteDao()
+                .insert(
+                    listOf(
+                        createBaseNote(
+                            title = "Unlabeled Note",
+                            body = "Unlabeled Body",
+                            labels = emptyList(),
+                        ),
+                        createBaseNote(
+                            title = "Labeled Note",
+                            body = "Labeled Body",
+                            labels = listOf("Work"),
+                        ),
+                    )
+                )
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        navigateTo(R.id.Unlabeled)
+
+        waitUntilSucceeds { onView(withText("Unlabeled Note")).check(matches(isDisplayed())) }
+        onView(withText("Labeled Note")).check(doesNotExist())
+
+        scenario.close()
+    }
+
+    @Test
+    fun labelsNavigationFilter() {
+        // 1. Insert multiple notes with different labels
+        runBlocking {
+            database.getLabelDao().insert(listOf(Label("Work", 0), Label("Personal", 1)))
+            database
+                .getBaseNoteDao()
+                .insert(
+                    listOf(
+                        createBaseNote(
+                            title = "Work Note 1",
+                            body = "Work Body 1",
+                            labels = listOf("Work"),
+                        ),
+                        createBaseNote(
+                            title = "Work Note 2",
+                            body = "Work Body 2",
+                            labels = listOf("Work"),
+                        ),
+                        createBaseNote(
+                            title = "Personal Note 1",
+                            body = "Personal Body 1",
+                            labels = listOf("Personal"),
+                        ),
+                    )
+                )
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        // Open drawer and check if each label is displayed in navigation view
+        onView(withId(R.id.DrawerLayout)).perform(DrawerActions.open())
+
+        onDisplayView(allOf(withText("Work"), isDescendantOfA(withId(R.id.NavigationView))))
+            .check(matches(isDisplayed()))
+
+        onDisplayView(allOf(withText("Personal"), isDescendantOfA(withId(R.id.NavigationView))))
+            .check(matches(isDisplayed()))
+
+        // Click on "Work" label in navigation view
+        onDisplayView(allOf(withText("Work"), isDescendantOfA(withId(R.id.NavigationView))))
+            .perform(click())
+
+        waitUntilSucceeds { onView(withText("Work Note 1")).check(matches(isDisplayed())) }
+        onView(withText("Work Note 2")).check(matches(isDisplayed()))
+        onView(withText("Personal Note 1")).check(doesNotExist())
+
+        // Open drawer again and click on "Personal" label
+        onView(withId(R.id.DrawerLayout)).perform(DrawerActions.open())
+
+        onDisplayView(allOf(withText("Personal"), isDescendantOfA(withId(R.id.NavigationView))))
+            .perform(click())
+
+        waitUntilSucceeds { onView(withText("Personal Note 1")).check(matches(isDisplayed())) }
+        onView(withText("Work Note 1")).check(doesNotExist())
+        onView(withText("Work Note 2")).check(doesNotExist())
 
         scenario.close()
     }
