@@ -3,16 +3,16 @@ package com.philkes.notallyx.presentation.activity.main.fragment
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import androidx.fragment.app.viewModels
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.DisplayLabelViewModel
 import kotlinx.coroutines.flow.Flow
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class DisplayLabelFragment : NotesFragment() {
 
-    private val displayLabelViewModel: DisplayLabelViewModel by viewModels()
+    private val displayLabelViewModel: DisplayLabelViewModel by viewModel()
     private lateinit var label: String
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

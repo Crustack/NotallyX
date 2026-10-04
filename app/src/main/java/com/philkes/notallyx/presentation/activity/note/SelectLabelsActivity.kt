@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.viewModels
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -23,10 +22,11 @@ import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.main.label.SelectableLabelAdapter
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.LabelsViewModel
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class SelectLabelsActivity : LockedActivity<ActivityLabelBinding>() {
 
-    private val labelsViewModel: LabelsViewModel by viewModels()
+    private val labelsViewModel: LabelsViewModel by viewModel()
     private lateinit var selectedLabels: ArrayList<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {

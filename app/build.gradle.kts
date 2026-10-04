@@ -18,6 +18,7 @@ plugins {
     alias(libs.plugins.translations.converter)
     alias(libs.plugins.auto.translation)
     alias(libs.plugins.roborazzi)
+    alias(libs.plugins.koin.compiler)
 }
 
 android {
@@ -378,6 +379,12 @@ dependencies {
     implementation(libs.bundles.commonmark)
     implementation("com.github.luben:zstd-jni:${libs.versions.zstd.get()}@aar")
 
+    // Koin
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.core)
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.workmanager)
+
     androidTestImplementation(libs.androidx.test.uiautomator)
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(libs.androidx.test.espresso.contrib)
@@ -406,4 +413,6 @@ dependencies {
     testImplementation(libs.zstd.jni.test)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.test.espresso.contrib)
+    testImplementation(libs.koin.test)
+    testImplementation(libs.koin.test.junit4)
 }

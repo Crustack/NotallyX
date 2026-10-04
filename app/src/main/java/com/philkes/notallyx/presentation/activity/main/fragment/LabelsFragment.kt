@@ -9,7 +9,6 @@ import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -31,6 +30,7 @@ import com.philkes.notallyx.presentation.view.main.label.LabelData
 import com.philkes.notallyx.presentation.view.main.label.LabelListener
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.LabelsViewModel
 import kotlinx.coroutines.flow.combine
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class LabelsFragment : Fragment(), LabelListener {
 
@@ -38,7 +38,7 @@ class LabelsFragment : Fragment(), LabelListener {
     private var binding: FragmentNotesBinding? = null
     private var itemTouchHelper: ItemTouchHelper? = null
 
-    private val model: LabelsViewModel by viewModels()
+    private val model: LabelsViewModel by viewModel()
 
     override fun onDestroyView() {
         super.onDestroyView()

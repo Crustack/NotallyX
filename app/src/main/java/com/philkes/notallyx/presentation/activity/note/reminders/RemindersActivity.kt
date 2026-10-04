@@ -11,7 +11,6 @@ import android.widget.RadioButton
 import android.widget.TimePicker
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -47,11 +46,12 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import kotlinx.coroutines.launch
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderListener {
 
     private lateinit var alarmPermissionActivityResultLauncher: ActivityResultLauncher<Intent>
-    private val model: NoteModel by viewModels()
+    private val model: NoteModel by viewModel()
     private lateinit var reminderAdapter: ReminderAdapter
     private var selectedReminder: Reminder? = null
 

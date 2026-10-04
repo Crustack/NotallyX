@@ -4,17 +4,17 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.View
-import androidx.fragment.app.viewModels
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.presentation.add
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.DeletedViewModel
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class DeletedFragment : NotesFragment() {
 
-    private val deletedViewModel: DeletedViewModel by viewModels()
+    private val deletedViewModel: DeletedViewModel by viewModel()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)

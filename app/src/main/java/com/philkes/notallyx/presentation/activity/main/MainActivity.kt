@@ -13,7 +13,6 @@ import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -60,11 +59,12 @@ import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.runMigrations
 import com.philkes.notallyx.utils.showErrorDialog
 import kotlinx.coroutines.launch
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : LockedActivity<ActivityMainBinding>() {
 
-    private val notallyFragmentModel: NotesFragmentViewModel by viewModels()
-    private val mainActivityViewModel: MainActivityViewModel by viewModels()
+    private val notallyFragmentModel: NotesFragmentViewModel by viewModel()
+    private val mainActivityViewModel: MainActivityViewModel by viewModel()
 
     private lateinit var navController: NavController
     private lateinit var configuration: AppBarConfiguration

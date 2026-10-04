@@ -19,7 +19,6 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.VISIBLE
 import android.view.inputmethod.InputMethodManager
-import androidx.activity.viewModels
 import androidx.annotation.ColorInt
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -96,13 +95,14 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEditBinding>() {
     private lateinit var audioAdapter: AudioAdapter
     private lateinit var fileAdapter: PreviewFileAdapter
     protected var search = Search()
 
-    internal val notallyModel: EditActivityViewModel by viewModels()
+    internal val notallyModel: EditActivityViewModel by viewModel()
     protected val actionHandler: NoteActionHandler by lazy { NoteActionHandler(this, notallyModel) }
 
     internal lateinit var changeHistory: ChangeHistory

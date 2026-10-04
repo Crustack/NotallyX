@@ -2,7 +2,6 @@ package com.philkes.notallyx.presentation.activity.main.fragment
 
 import android.os.Bundle
 import android.view.View
-import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.SortedListAdapterCallback
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.BaseNote
@@ -19,9 +18,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class RemindersFragment : NotesFragment() {
-    private val remindersViewModel: RemindersViewModel by viewModels()
+    private val remindersViewModel: RemindersViewModel by viewModel()
     private val currentReminderNotes = MutableStateFlow<List<Item>>(emptyList())
     private val allReminderNotes: StateFlow<List<Item>> by lazy { remindersViewModel.reminderNotes }
     private var filterMode = FilterOptions.UPCOMING

@@ -18,6 +18,7 @@ import com.google.android.material.color.DynamicColors
 import com.philkes.notallyx.NotallyXApplication.Companion.AUTO_REMOVE_DELETED_NOTES
 import com.philkes.notallyx.NotallyXApplication.Companion.TAG
 import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.di.appModules
 import com.philkes.notallyx.presentation.setEnabledSecureFlag
 import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
@@ -50,6 +51,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.android.ext.koin.androidContext
+import org.koin.android.ext.koin.androidLogger
+import org.koin.androidx.workmanager.koin.workManagerFactory
+import org.koin.core.context.GlobalContext
+import org.koin.core.context.startKoin
+import org.koin.core.logger.Level
 
 class NotallyXApplication : Application(), Application.ActivityLifecycleCallbacks {
 
@@ -61,6 +68,14 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
 
     override fun onCreate() {
         super.onCreate()
+        if (GlobalContext.getOrNull() == null) {
+            startKoin {
+                androidLogger(Level.DEBUG)
+                androidContext(this@NotallyXApplication)
+                workManagerFactory()
+                modules(appModules)
+            }
+        }
         CaocConfig.Builder.create().customCrashDataCollector(PidCrashDataCollector()).apply()
         registerActivityLifecycleCallbacks(this)
         preferences = NotallyXPreferences.getInstance(this)
