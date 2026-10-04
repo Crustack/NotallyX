@@ -37,7 +37,6 @@ import com.philkes.notallyx.presentation.activity.note.refreshStatusBarPin
 import com.philkes.notallyx.presentation.viewmodel.preference.PeriodicBackup
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.assertLogAppeared
-import com.philkes.notallyx.test.assertToastDisplayed
 import com.philkes.notallyx.test.byContentDescription
 import com.philkes.notallyx.test.byId
 import com.philkes.notallyx.test.byText
@@ -250,7 +249,11 @@ class SettingsFragmentTest : UiTestBase() {
         navigateTo(R.id.Settings)
         R.id.ImportBackup.byId(checkDisplayed = false).perform(scrollTo(), click())
         R.string.import_backup.byText(withId(android.R.id.button1)).perform(click())
-        assertToastDisplayed("Imported 1 Note")
+        waitUntil(15_000L) {
+            runBlocking {
+                withContext(Dispatchers.IO) { database.getBaseNoteDao().getAll().isNotEmpty() }
+            }
+        }
 
         navigateTo(R.id.Notes)
         waitUntilSucceeds {
@@ -319,7 +322,11 @@ class SettingsFragmentTest : UiTestBase() {
         SystemClock.sleep(3000)
         R.id.ImportBackup.byId(checkDisplayed = false).perform(click())
         R.string.import_backup.byText(withId(android.R.id.button1)).perform(click())
-        assertToastDisplayed("Imported 1 Note")
+        waitUntil(15_000L) {
+            runBlocking {
+                withContext(Dispatchers.IO) { database.getBaseNoteDao().getAll().isNotEmpty() }
+            }
+        }
 
         navigateTo(R.id.Notes)
         waitUntilSucceeds {

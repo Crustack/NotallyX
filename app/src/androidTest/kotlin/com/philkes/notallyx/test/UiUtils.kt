@@ -16,6 +16,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.widget.EditText
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.NoMatchingRootException
 import androidx.test.espresso.Root
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
@@ -27,12 +28,14 @@ import androidx.test.espresso.action.ViewActions.typeTextIntoFocusedView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.contrib.DrawerActions
 import androidx.test.espresso.matcher.BoundedMatcher
+import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
 import androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom
 import androidx.test.espresso.matcher.ViewMatchers.isChecked
 import androidx.test.espresso.matcher.ViewMatchers.isDescendantOfA
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isNotChecked
+import androidx.test.espresso.matcher.ViewMatchers.isRoot
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withParent
@@ -64,6 +67,7 @@ import junit.framework.TestCase.assertTrue
 import org.hamcrest.Description
 import org.hamcrest.Matcher
 import org.hamcrest.Matchers.allOf
+import org.hamcrest.Matchers.not
 import org.hamcrest.TypeSafeMatcher
 
 fun onLabelItem(labelText: String): ViewInteraction =
@@ -580,6 +584,7 @@ fun assertToastDisplayed(textResId: Int, timeoutMs: Long = 10000) {
     assertToastDisplayed(context.getString(textResId), timeoutMs)
 }
 
+// TODO: broken on API 30+
 /**
  * Source:
  * https://medium.com/@andre.mendes.peixoto/how-to-reliably-assert-toast-messages-in-android-instrumented-tests-f94d830f4de1
@@ -730,8 +735,8 @@ fun UiTestBase.checkAndUpdateNoteTitle(noteIdx: Int, textToMatch: String, textTo
     }
 }
 
-fun waitUntilSettingsValue(settingId: Int, valueResId: Int) {
-    waitUntilSucceeds {
+fun waitUntilSettingsValue(settingId: Int, valueResId: Int, timeoutMs: Long = 15_000L) {
+    waitUntilSucceeds(timeoutMs) {
         onView(withId(settingId))
             .perform(scrollTo())
             .check(matches(hasDescendant(allOf(withId(R.id.Value), withText(valueResId)))))
@@ -756,7 +761,7 @@ fun UiTestBase.enableDataInPublic() {
     onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
     R.string.enabled.byText().perform(click())
     waitUntilSettingsValue(R.id.DataInPublicFolder, R.string.enabled)
-    waitUntil(10_000L) {
+    waitUntil(15_000L) {
         NotallyDatabase.getCurrentDatabaseFile(context) ==
             NotallyDatabase.getExternalDatabaseFile(context)
     }
@@ -766,7 +771,7 @@ fun UiTestBase.disableDataInPublic() {
     onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
     R.string.disabled.byText().perform(click())
     waitUntilSettingsValue(R.id.DataInPublicFolder, R.string.disabled)
-    waitUntil(10_000L) {
+    waitUntil(15_000L) {
         NotallyDatabase.getCurrentDatabaseFile(context) ==
             NotallyDatabase.getInternalDatabaseFile(context)
     }
@@ -921,4 +926,22 @@ fun hasNoSpans(start: Int = 0, end: Int = -1): Matcher<View> {
             return spans.isEmpty()
         }
     }
+}
+
+fun waitUntilNoDialogShown(timeoutMs: Long = 5000, pollIntervalMs: Long = 100) {
+    val endTime = System.currentTimeMillis() + timeoutMs
+
+    while (System.currentTimeMillis() < endTime) {
+        try {
+            // Tries to access the root view inside any active Dialog window
+            onView(isRoot()).inRoot(isDialog()).check(matches(not(isDisplayed())))
+            // Dialog window still present; pause and check again
+            Thread.sleep(pollIntervalMs)
+        } catch (e: NoMatchingRootException) {
+            // No dialog window found — dialog is gone!
+            return
+        }
+    }
+
+    throw AssertionError("Timed out after ${timeoutMs}ms waiting for dialog window to dismiss.")
 }

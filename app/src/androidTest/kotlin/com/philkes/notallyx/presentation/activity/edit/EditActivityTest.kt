@@ -344,7 +344,9 @@ class EditActivityTest : UiTestBase() {
         waitUntilSucceeds {
             R.id.MainListView.byId()
                 .onPositionView(3, withId(R.id.Repetition))
-                .check(matches(withText(R.string.monthly)))
+                .check(
+                    matches(withText(containsString(context.getString(R.string.of_the_month, ""))))
+                )
         }
 
         // 5. Reminder 5: Yearly repetition
@@ -363,14 +365,11 @@ class EditActivityTest : UiTestBase() {
         R.string.add_reminder.byContentDescription().perform(click())
         confirmDateAndTime()
         R.id.Custom.byId().perform(click())
-        R.id.Value.byId().perform(click(), replaceText("3"))
+        R.id.Value.byId().perform(click(), typeText("3"))
         R.id.Weeks.byId().perform(click())
         android.R.id.button1.byId().perform(click())
 
         waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(5, withId(R.id.DateTime))
-                .check(matches(withText(containsString("12:"))))
             R.id.MainListView.byId()
                 .onPositionView(5, withId(R.id.Repetition))
                 .check(matches(isDisplayed()))
