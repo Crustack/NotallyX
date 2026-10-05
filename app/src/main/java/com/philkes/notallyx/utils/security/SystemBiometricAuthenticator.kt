@@ -15,7 +15,7 @@ class SystemBiometricAuthenticator(
         activity: FragmentActivity,
         cipherIv: ByteArray?,
         isForDecrypt: Boolean,
-        onSuccess: (Cipher) -> Unit,
+        onSuccess: (Cipher?) -> Unit,
         onError: (String) -> Unit,
     ) {
         showBiometricOrPinPrompt(

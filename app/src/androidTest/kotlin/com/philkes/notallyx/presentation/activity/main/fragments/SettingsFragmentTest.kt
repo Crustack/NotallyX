@@ -369,13 +369,17 @@ class SettingsFragmentTest : UiTestBase() {
 
         checkAndUpdateNoteTitle(0, "Test Foo", " Bar")
 
-        assertEquals(1, fakeBiometricAuthenticator.getEncryptionCounter())
-        assertEquals(1, fakeBiometricAuthenticator.getDecryptionCounter())
+        val expectedEncrypt = if (preferences.biometricLockEncryptsDb.value) 1 else 0
+        val expectedDecrypt1 = if (preferences.biometricLockEncryptsDb.value) 1 else 0
+        val expectedDecrypt2 = if (preferences.biometricLockEncryptsDb.value) 2 else 0
+
+        assertEquals(expectedEncrypt, fakeBiometricAuthenticator.getEncryptionCounter())
+        assertEquals(expectedDecrypt1, fakeBiometricAuthenticator.getDecryptionCounter())
 
         navigateTo(R.id.Settings)
         disableBiometricLock()
-        assertEquals(1, fakeBiometricAuthenticator.getEncryptionCounter())
-        assertEquals(2, fakeBiometricAuthenticator.getDecryptionCounter())
+        assertEquals(expectedEncrypt, fakeBiometricAuthenticator.getEncryptionCounter())
+        assertEquals(expectedDecrypt2, fakeBiometricAuthenticator.getDecryptionCounter())
 
         navigateTo(R.id.Notes)
 
@@ -391,8 +395,8 @@ class SettingsFragmentTest : UiTestBase() {
                 .onPositionView(0, withId(R.id.Title))
                 .check(matches(withText("Test Foo Bar 123")))
         }
-        assertEquals(1, fakeBiometricAuthenticator.getEncryptionCounter())
-        assertEquals(2, fakeBiometricAuthenticator.getDecryptionCounter())
+        assertEquals(expectedEncrypt, fakeBiometricAuthenticator.getEncryptionCounter())
+        assertEquals(expectedDecrypt2, fakeBiometricAuthenticator.getDecryptionCounter())
 
         scenario.close()
     }

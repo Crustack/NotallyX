@@ -81,13 +81,22 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                     DatabaseAction.DISABLE_DATA_IN_PUBLIC ->
                         disableDataInPublic(notallyXApplication, preferences)
                     DatabaseAction.ENABLE_BIOMETRIC_LOCK -> {
-                        requireNotNull(cipher) { "Missing cipher for biometric encryption" }
-                        enableBiometricLock(notallyXApplication, preferences, cipher)
+                        if (preferences.biometricLockEncryptsDb.value) {
+                            requireNotNull(cipher) { "Missing cipher for biometric encryption" }
+                            enableBiometricLock(notallyXApplication, preferences, cipher)
+                        } else {
+                            preferences.biometricLock.save(BiometricLock.ENABLED)
+                        }
                         notallyXApplication.locked.value = false
                         showToast(R.string.biometrics_setup_success)
                     }
                     DatabaseAction.DISABLE_BIOMETRIC_LOCK -> {
-                        disableBiometricLock(notallyXApplication, preferences, cipher)
+                        if (preferences.biometricLockEncryptsDb.value) {
+                            disableBiometricLock(notallyXApplication, preferences, cipher)
+                        } else {
+                            preferences.biometricLock.save(BiometricLock.DISABLED)
+                            preferences.biometricLockEncryptsDb.save(false)
+                        }
                         showToast(R.string.biometrics_disable_success)
                     }
                 }
@@ -328,6 +337,15 @@ class DatabaseTransitionActivity : AppCompatActivity() {
             cipher: Cipher? = null,
             callback: (() -> Unit)? = null,
         ) {
+            if (!preferences.biometricLockEncryptsDb.value) {
+                withContext(Dispatchers.Main.immediate) {
+                    NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.DISABLED)
+                    preferences.biometricLock.save(BiometricLock.DISABLED)
+                    preferences.biometricLockEncryptsDb.save(false)
+                }
+                callback?.invoke()
+                return
+            }
             val encryptedPassphrase = preferences.databaseEncryptionKey.value
             val passphrase =
                 cipher?.doFinal(encryptedPassphrase)
@@ -376,6 +394,7 @@ class DatabaseTransitionActivity : AppCompatActivity() {
             withContext(Dispatchers.Main.immediate) {
                 NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.DISABLED)
                 preferences.biometricLock.save(BiometricLock.DISABLED)
+                preferences.biometricLockEncryptsDb.save(false)
             }
             callback?.invoke()
         }

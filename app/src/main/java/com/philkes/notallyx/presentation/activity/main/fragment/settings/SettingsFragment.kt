@@ -17,6 +17,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity.RESULT_OK
@@ -25,8 +26,10 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.work.WorkManager
+import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
+import com.google.android.material.textview.MaterialTextView
 import com.philkes.notallyx.R
 import com.philkes.notallyx.cancelAutoRemoveOldDeletedNotes
 import com.philkes.notallyx.data.imports.Display
@@ -38,6 +41,7 @@ import com.philkes.notallyx.databinding.FragmentSettingsBinding
 import com.philkes.notallyx.presentation.activity.DatabaseAction
 import com.philkes.notallyx.presentation.activity.DatabaseTransitionActivity
 import com.philkes.notallyx.presentation.activity.main.MainActivity
+import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.format
 import com.philkes.notallyx.presentation.getQuantityStringPlain
 import com.philkes.notallyx.presentation.repeatOnLifecycleScope
@@ -49,6 +53,7 @@ import com.philkes.notallyx.presentation.showDialog
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.TextWithIconAdapter
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.SettingsViewModel
+import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
 import com.philkes.notallyx.presentation.viewmodel.preference.Constants.PASSWORD_EMPTY
 import com.philkes.notallyx.presentation.viewmodel.preference.LongPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
@@ -1057,37 +1062,76 @@ class SettingsFragment : Fragment() {
     private var pendingBiometricContinuation: (() -> Unit)? = null
 
     private fun showEnableBiometricLock() {
-        showBiometricBackupAdvice {
-            AuthenticatorProvider.instance.authenticate(
-                requireActivity(),
-                isForDecrypt = false,
-                onSuccess = { cipher ->
-                    DatabaseTransitionActivity.start(
-                        requireActivity(),
-                        DatabaseAction.ENABLE_BIOMETRIC_LOCK,
-                        cipher,
-                    )
-                },
-            ) {
-                showBiometricsNotSetupDialog()
+        showBiometricBackupAdvice { showEncryptDatabaseDialog() }
+    }
+
+    private fun showEncryptDatabaseDialog() {
+        val padding = 20.dp
+        val layout =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(padding, padding / 2, padding, 0)
             }
-        }
+        val messageView =
+            MaterialTextView(requireContext()).apply { setText(R.string.encrypt_database_advice) }
+        val checkBox =
+            MaterialCheckBox(requireContext()).apply {
+                setText(R.string.encrypt_database_via_biometric)
+                isChecked = false
+            }
+        layout.addView(messageView)
+        layout.addView(checkBox)
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.biometric_lock)
+            .setView(layout)
+            .setPositiveButton(R.string.continue_) { _, _ ->
+                val shouldEncrypt = checkBox.isChecked
+                model.preferences.biometricLockEncryptsDb.save(shouldEncrypt)
+                if (shouldEncrypt) {
+                    AuthenticatorProvider.instance.authenticate(
+                        requireActivity(),
+                        isForDecrypt = false,
+                        onSuccess = { cipher ->
+                            requireNotNull(cipher) { "Missing cipher for biometric encryption" }
+                            DatabaseTransitionActivity.start(
+                                requireActivity(),
+                                DatabaseAction.ENABLE_BIOMETRIC_LOCK,
+                                cipher,
+                            )
+                        },
+                    ) {
+                        showBiometricsNotSetupDialog()
+                    }
+                } else {
+                    model.preferences.biometricLock.save(BiometricLock.ENABLED)
+                    showToast(R.string.biometrics_setup_success)
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     private fun showDisableBiometricLock() {
         showBiometricBackupAdvice {
-            AuthenticatorProvider.instance.authenticate(
-                requireActivity(),
-                model.preferences.iv.value!!,
-                isForDecrypt = true,
-                onSuccess = { cipher ->
-                    DatabaseTransitionActivity.start(
-                        requireActivity(),
-                        DatabaseAction.DISABLE_BIOMETRIC_LOCK,
-                        cipher,
-                    )
-                },
-            ) {}
+            if (model.preferences.biometricLockEncryptsDb.value) {
+                AuthenticatorProvider.instance.authenticate(
+                    requireActivity(),
+                    model.preferences.iv.value,
+                    isForDecrypt = true,
+                    onSuccess = { cipher ->
+                        DatabaseTransitionActivity.start(
+                            requireActivity(),
+                            DatabaseAction.DISABLE_BIOMETRIC_LOCK,
+                            cipher,
+                        )
+                    },
+                ) {}
+            } else {
+                model.preferences.biometricLock.save(BiometricLock.DISABLED)
+                model.preferences.biometricLockEncryptsDb.save(false)
+                showToast(R.string.biometrics_disable_success)
+            }
         }
     }
 

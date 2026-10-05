@@ -206,6 +206,8 @@ class NotallyXPreferences private constructor(private val context: ContextWrappe
             R.string.biometric_lock,
         )
 
+    val biometricLockEncryptsDb = BooleanPreference("biometricLockEncryptsDb", preferences, false)
+
     val iv = ByteArrayPreference("encryption_iv", preferences, null)
     val databaseEncryptionKey =
         EncryptedPassphrasePreference("database_encryption_key", preferences, ByteArray(0))
@@ -303,7 +305,14 @@ class NotallyXPreferences private constructor(private val context: ContextWrappe
     }
 
     private val importExportIgnored
-        get() = setOf(biometricLock.key, iv.key, databaseEncryptionKey.key, dataInPublicFolder.key)
+        get() =
+            setOf(
+                biometricLock.key,
+                biometricLockEncryptsDb.key,
+                iv.key,
+                databaseEncryptionKey.key,
+                dataInPublicFolder.key,
+            )
 
     fun toJsonString(): String {
         val jsonObject = JSONObject()
@@ -372,6 +381,7 @@ class NotallyXPreferences private constructor(private val context: ContextWrappe
                 defaultListNoteViewMode,
                 alwaysShowSearchBar,
                 biometricLock,
+                biometricLockEncryptsDb,
             )
             .forEach { it.refresh() }
     }

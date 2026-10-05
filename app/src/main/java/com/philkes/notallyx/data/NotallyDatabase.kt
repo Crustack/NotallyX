@@ -231,6 +231,9 @@ abstract class NotallyDatabase : RoomDatabase() {
             biometricLock: BiometricLock = preferences.biometricLock.value,
         ): Builder<NotallyDatabase> {
             return this.apply {
+                if (!preferences.biometricLockEncryptsDb.value) {
+                    return@apply
+                }
                 if (biometricLock == BiometricLock.ENABLED) {
                     if (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
                         initializeDecryption(context, preferences, this)

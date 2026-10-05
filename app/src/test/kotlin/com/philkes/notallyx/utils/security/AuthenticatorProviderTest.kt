@@ -67,7 +67,7 @@ class AuthenticatorProviderTest {
     @Test
     fun fakeBiometricAuthenticator_whenShouldSucceedFalse_invokesOnError() {
         val fake = FakeBiometricAuthenticator()
-        fake.cipher = null
+        fake.shouldSucceed = false
 
         var successCalled = false
         var errorMessage: String? = null
