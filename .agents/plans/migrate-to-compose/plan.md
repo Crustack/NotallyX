@@ -233,8 +233,8 @@ Convert legacy Android RemoteViews widgets to **AndroidX Glance**:
 - [x] Migrate `RecordAudioActivity` to `RecordAudioScreen.kt` (`activity_record_audio.xml`).
 
 ### Phase 4: Label & Reminder Management
-- [ ] Migrate `SelectLabelsActivity` & `LabelsFragment` to Compose (`activity_label.xml`).
-- [ ] Migrate `RemindersActivity` & `RemindersFragment` to Compose (`activity_reminders.xml`).
+- [x] Migrate `SelectLabelsActivity` & `LabelsFragment` to Compose (`activity_label.xml`).
+- [x] Migrate `RemindersActivity` & `RemindersFragment` to Compose (`activity_reminders.xml`).
 
 ### Phase 5: Preference & Settings UI
 - [ ] Implement `PreferenceRow.kt`, `SeekBarPreferenceRow.kt`, `StepperPreferenceRow.kt` (`preference.xml`, `preference_seekbar.xml`, `preference_stepper.xml`).

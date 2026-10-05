@@ -2,38 +2,35 @@ package com.philkes.notallyx.presentation.activity.note
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
-import android.view.ViewGroup
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.recyclerview.widget.DividerItemDecoration
-import androidx.recyclerview.widget.RecyclerView
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.ComposeView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
-import com.philkes.notallyx.databinding.ActivityLabelBinding
 import com.philkes.notallyx.databinding.DialogInputBinding
+import com.philkes.notallyx.presentation.activity.ComposeBinding
 import com.philkes.notallyx.presentation.activity.LockedActivity
 import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EXTRA_SELECTED_LABELS
-import com.philkes.notallyx.presentation.add
-import com.philkes.notallyx.presentation.repeatOnLifecycleScope
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.showToast
-import com.philkes.notallyx.presentation.view.main.label.SelectableLabelAdapter
+import com.philkes.notallyx.presentation.theme.NotallyXTheme
+import com.philkes.notallyx.presentation.view.screens.SelectLabelsScreen
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.LabelsViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-class SelectLabelsActivity : LockedActivity<ActivityLabelBinding>() {
+class SelectLabelsActivity : LockedActivity<ComposeBinding>() {
 
     private val labelsViewModel: LabelsViewModel by viewModel()
     private lateinit var selectedLabels: ArrayList<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityLabelBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        configureEdgeToEdgeInsets()
+
+        val composeView = ComposeView(this)
+        binding = ComposeBinding(composeView)
+        setContentView(composeView)
 
         val savedList = savedInstanceState?.getStringArrayList(EXTRA_SELECTED_LABELS)
         val passedList =
@@ -47,58 +44,37 @@ class SelectLabelsActivity : LockedActivity<ActivityLabelBinding>() {
         result.putExtra(EXTRA_SELECTED_LABELS, selectedLabels)
         setResult(RESULT_OK, result)
 
-        setupToolbar()
-        setupRecyclerView()
-    }
+        composeView.setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                val labelsState = labelsViewModel.labels.collectAsStateWithLifecycle(emptyList())
+                val selectedLabelsState = remember {
+                    mutableStateListOf(*selectedLabels.toTypedArray())
+                }
 
-    private fun configureEdgeToEdgeInsets() {
-        // 1. Enable edge-to-edge display for the activity window.
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
-        // 3. Apply window insets to specific views to prevent content from being obscured.
-        // Set an OnApplyWindowInsetsListener on the root layout.
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
-            val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
-
-            // Adjust the top margin of the Toolbar to account for the status bar.
-            binding.Toolbar.apply {
-                (layoutParams as ViewGroup.MarginLayoutParams).topMargin = systemBarsInsets.top
-                requestLayout() // Request a layout pass to apply the new margin
-            }
-            // Apply padding to the RecyclerView and EmptyState TextView to account for the
-            // navigation bar and keyboard.
-            // Preserve existing padding.
-            binding.MainListView.apply {
-                setPadding(
-                    paddingLeft,
-                    paddingTop,
-                    paddingRight,
-                    systemBarsInsets.bottom + imeInsets.bottom,
+                SelectLabelsScreen(
+                    labels = labelsState.value,
+                    selectedLabels = selectedLabelsState,
+                    onLabelToggle = { value, checked ->
+                        if (checked) {
+                            if (!selectedLabels.contains(value)) {
+                                selectedLabels.add(value)
+                                selectedLabelsState.add(value)
+                            }
+                        } else {
+                            selectedLabels.remove(value)
+                            selectedLabelsState.remove(value)
+                        }
+                    },
+                    onAddLabelClick = { addLabel() },
+                    onBackClick = { finish() },
                 )
             }
-            binding.EmptyState.apply {
-                setPadding(
-                    paddingLeft,
-                    paddingTop,
-                    paddingRight,
-                    systemBarsInsets.bottom + imeInsets.bottom,
-                )
-            }
-            insets
         }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putStringArrayList(EXTRA_SELECTED_LABELS, selectedLabels)
-    }
-
-    private fun setupToolbar() {
-        binding.Toolbar.apply {
-            setNavigationOnClickListener { finish() }
-            menu.add(R.string.add_label, R.drawable.add) { addLabel() }
-        }
     }
 
     private fun addLabel() {
@@ -119,36 +95,6 @@ class SelectLabelsActivity : LockedActivity<ActivityLabelBinding>() {
                 }
             }
             .showAndFocus(binding.EditText, allowFullSize = true)
-    }
-
-    private fun setupRecyclerView() {
-        val labelAdapter = SelectableLabelAdapter(selectedLabels)
-        labelAdapter.onChecked = { position, checked ->
-            if (position != -1) {
-                val label = labelAdapter.currentList[position]
-                if (checked) {
-                    if (!selectedLabels.contains(label.value)) {
-                        selectedLabels.add(label.value)
-                    }
-                } else selectedLabels.remove(label.value)
-            }
-        }
-
-        binding.MainListView.apply {
-            setHasFixedSize(true)
-            adapter = labelAdapter
-            addItemDecoration(
-                DividerItemDecoration(this@SelectLabelsActivity, RecyclerView.VERTICAL)
-            )
-        }
-        repeatOnLifecycleScope {
-            labelsViewModel.labels.collect { labels ->
-                labelAdapter.submitList(labels)
-                if (labels.isEmpty()) {
-                    binding.EmptyState.visibility = View.VISIBLE
-                } else binding.EmptyState.visibility = View.INVISIBLE
-            }
-        }
     }
 
     companion object {

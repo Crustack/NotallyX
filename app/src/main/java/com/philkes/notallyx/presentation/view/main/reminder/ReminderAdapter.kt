@@ -1,11 +1,9 @@
 package com.philkes.notallyx.presentation.view.main.reminder
 
-import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import com.philkes.notallyx.data.model.Reminder
-import com.philkes.notallyx.databinding.RecyclerReminderBinding
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.TimeFormat
 
@@ -21,9 +19,7 @@ class ReminderAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ReminderVH {
-        val inflater = LayoutInflater.from(parent.context)
-        val binding = RecyclerReminderBinding.inflate(inflater, parent, false)
-        return ReminderVH(binding, dateFormat, timeFormat, listener)
+        return ReminderVH.create(parent, dateFormat, timeFormat, listener)
     }
 }
 

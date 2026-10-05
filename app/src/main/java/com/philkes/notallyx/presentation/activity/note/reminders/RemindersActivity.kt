@@ -5,17 +5,15 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.text.Editable
 import android.view.View
-import android.view.ViewGroup
 import android.widget.Button
 import android.widget.RadioButton
 import android.widget.TimePicker
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.compose.ui.platform.ComposeView
 import androidx.core.widget.doAfterTextChanged
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
@@ -24,21 +22,19 @@ import com.philkes.notallyx.data.model.Repetition
 import com.philkes.notallyx.data.model.RepetitionTimeUnit
 import com.philkes.notallyx.data.model.toCalendar
 import com.philkes.notallyx.data.model.toText
-import com.philkes.notallyx.databinding.ActivityRemindersBinding
 import com.philkes.notallyx.databinding.DialogReminderCustomRepetitionBinding
 import com.philkes.notallyx.databinding.DialogReminderRepetitionBinding
+import com.philkes.notallyx.presentation.activity.ComposeBinding
 import com.philkes.notallyx.presentation.activity.LockedActivity
-import com.philkes.notallyx.presentation.add
 import com.philkes.notallyx.presentation.checkAlarmPermission
 import com.philkes.notallyx.presentation.checkNotificationPermission
 import com.philkes.notallyx.presentation.format
 import com.philkes.notallyx.presentation.getQuantityStringPlain
-import com.philkes.notallyx.presentation.initListView
-import com.philkes.notallyx.presentation.repeatOnLifecycleScope
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showAndFocus
-import com.philkes.notallyx.presentation.view.main.reminder.ReminderAdapter
+import com.philkes.notallyx.presentation.theme.NotallyXTheme
 import com.philkes.notallyx.presentation.view.main.reminder.ReminderListener
+import com.philkes.notallyx.presentation.view.screens.RemindersScreen
 import com.philkes.notallyx.presentation.viewmodel.edit.NoteModel
 import com.philkes.notallyx.utils.canScheduleAlarms
 import com.philkes.notallyx.utils.now
@@ -48,20 +44,34 @@ import java.util.Locale
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderListener {
+class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
 
     private lateinit var alarmPermissionActivityResultLauncher: ActivityResultLauncher<Intent>
     private val model: NoteModel by viewModel()
-    private lateinit var reminderAdapter: ReminderAdapter
     private var selectedReminder: Reminder? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityRemindersBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        configureEdgeToEdgeInsets()
-        setupToolbar()
-        setupRecyclerView()
+
+        val composeView = ComposeView(this)
+        binding = ComposeBinding(composeView)
+        setContentView(composeView)
+
+        composeView.setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                val remindersState = model.reminders.collectAsStateWithLifecycle(emptyList())
+
+                RemindersScreen(
+                    reminders = remindersState.value,
+                    dateFormat = preferences.dateFormatNoteView.value,
+                    timeFormat = preferences.timeFormatNoteView.value,
+                    onAddReminderClick = { showDatePickerDialog() },
+                    onEditReminder = { reminder -> edit(reminder) },
+                    onDeleteReminder = { reminder -> delete(reminder) },
+                    onBackClick = { finish() },
+                )
+            }
+        }
 
         alarmPermissionActivityResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -83,59 +93,6 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
         }
     }
 
-    /**
-     * Configures the activity for edge-to-edge display, handling status bar and navigation bar
-     * colors, and applying appropriate insets to layout elements.
-     */
-    private fun configureEdgeToEdgeInsets() {
-        // 1. Enable edge-to-edge display for the activity window.
-        // This makes the content draw behind the system bars (status bar and navigation bar).
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
-        // 4. Apply window insets to specific views to prevent content from being obscured.
-
-        // Set an OnApplyWindowInsetsListener on the root layout.
-        // This listener will be called whenever the system insets change (e.g., status bar, nav
-        // bar, keyboard).
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
-            // Get the system bars insets (status bar and navigation bar).
-            val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            // Get the IME (Input Method Editor - keyboard) insets.
-            val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
-
-            // Adjust the top margin of the Toolbar to account for the status bar.
-            // This pushes the toolbar down so it's not hidden behind the status bar.
-            binding.Toolbar.apply {
-                (layoutParams as ViewGroup.MarginLayoutParams).topMargin = systemBarsInsets.top
-                requestLayout() // Request a layout pass to apply the new margin
-            }
-            // Apply padding to the RecyclerView and EmptyState TextView to account for
-            // the navigation bar and the software keyboard.
-            // This ensures that the content within these views is not obscured at the bottom.
-            // We use padding here because these views are below the toolbar and extend to
-            // match_parent height.
-            binding.MainListView.apply {
-                setPadding(
-                    paddingLeft,
-                    paddingTop,
-                    paddingRight,
-                    systemBarsInsets.bottom + imeInsets.bottom,
-                )
-            }
-            binding.EmptyState.apply {
-                setPadding(
-                    paddingLeft,
-                    paddingTop,
-                    paddingRight,
-                    systemBarsInsets.bottom + imeInsets.bottom,
-                )
-            }
-
-            // Return the insets to allow them to be dispatched to child views if necessary.
-            insets
-        }
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -151,36 +108,6 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
                     checkAlarmPermission(alarmPermissionActivityResultLauncher) {
                         showDatePickerDialog(selectedReminder)
                     }
-                }
-            }
-        }
-    }
-
-    private fun setupToolbar() {
-        binding.Toolbar.apply {
-            setNavigationOnClickListener { finish() }
-            menu.add(R.string.add_reminder, R.drawable.add) { showDatePickerDialog() }
-        }
-    }
-
-    private fun setupRecyclerView() {
-        reminderAdapter =
-            ReminderAdapter(
-                preferences.dateFormatNoteView.value,
-                preferences.timeFormatNoteView.value,
-                this,
-            )
-        binding.MainListView.apply {
-            initListView(this@RemindersActivity)
-            adapter = reminderAdapter
-        }
-        repeatOnLifecycleScope {
-            launch {
-                model.reminders.collect { reminders ->
-                    reminderAdapter.submitList(reminders)
-                    if (reminders.isEmpty()) {
-                        binding.EmptyState.visibility = View.VISIBLE
-                    } else binding.EmptyState.visibility = View.INVISIBLE
                 }
             }
         }
@@ -269,7 +196,11 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
 
                             fromCustomRepetitionDialog -> Custom.isChecked = true
                             else -> {
-                                showCustomRepetitionDialog(reminder, calendar, onRepetitionSelected)
+                                showCustomRepetitionDialog(
+                                    reminder,
+                                    calendar,
+                                    onRepetitionSelected,
+                                )
                                 return
                             }
                         }
