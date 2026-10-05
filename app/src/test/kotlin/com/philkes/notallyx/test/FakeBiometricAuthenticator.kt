@@ -8,16 +8,17 @@ import javax.crypto.Cipher
 
 class FakeBiometricAuthenticator : BiometricAuthenticator {
     var cipher: Cipher? = null
+    var shouldSucceed: Boolean = true
 
     override fun authenticate(
         activity: FragmentActivity,
         cipherIv: ByteArray?,
         isForDecrypt: Boolean,
-        onSuccess: (Cipher) -> Unit,
+        onSuccess: (Cipher?) -> Unit,
         onError: (String) -> Unit,
     ) {
-        if (cipher != null) {
-            onSuccess(cipher!!)
+        if (shouldSucceed) {
+            onSuccess(cipher)
         } else {
             onError("Authentication failed")
         }

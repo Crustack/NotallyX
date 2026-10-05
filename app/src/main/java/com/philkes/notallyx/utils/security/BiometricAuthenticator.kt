@@ -10,7 +10,7 @@ interface BiometricAuthenticator {
         activity: FragmentActivity,
         cipherIv: ByteArray? = null,
         isForDecrypt: Boolean = false,
-        onSuccess: (Cipher) -> Unit,
+        onSuccess: (Cipher?) -> Unit,
         onError: (String) -> Unit,
     )
 

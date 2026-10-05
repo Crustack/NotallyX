@@ -6,6 +6,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.philkes.notallyx.R
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import javax.crypto.Cipher
 
 fun showBiometricOrPinPrompt(
@@ -14,7 +15,7 @@ fun showBiometricOrPinPrompt(
     titleResId: Int,
     descriptionResId: Int? = null,
     cipherIv: ByteArray? = null,
-    onSuccess: (cipher: Cipher) -> Unit,
+    onSuccess: (cipher: Cipher?) -> Unit,
     onFailure: (errorCode: Int?) -> Unit,
 ) {
     val promptInfo =
@@ -33,17 +34,22 @@ fun showBiometricOrPinPrompt(
                 }
             }
             .build()
+    val preferences = NotallyXPreferences.getInstance(context)
     val cipher =
-        if (isForDecrypt) {
-            getInitializedCipherForDecryption(iv = cipherIv!!)
+        if (preferences.biometricLockEncryptsDb.value) {
+            if (isForDecrypt) {
+                getInitializedCipherForDecryption(iv = cipherIv!!)
+            } else {
+                getInitializedCipherForEncryption()
+            }
         } else {
-            getInitializedCipherForEncryption()
+            null
         }
     val authCallback =
         object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                 super.onAuthenticationSucceeded(result)
-                onSuccess.invoke(result.cryptoObject!!.cipher!!)
+                onSuccess.invoke(result.cryptoObject?.cipher)
             }
 
             override fun onAuthenticationFailed() {
@@ -57,5 +63,9 @@ fun showBiometricOrPinPrompt(
             }
         }
     val prompt = BiometricPrompt(context, ContextCompat.getMainExecutor(context), authCallback)
-    prompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher))
+    if (cipher != null) {
+        prompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher))
+    } else {
+        prompt.authenticate(promptInfo)
+    }
 }

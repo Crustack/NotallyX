@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="about">About</string>
     <string name="add_images">Add images</string>
     <string name="add_item">Add Item</string>
@@ -59,6 +59,8 @@
     <string name="biometrics_setup_failure_decrypt">Decryption of the database failed.\nPlease use \'%1$s\' to report the error</string>
     <string name="biometrics_setup_failure_encrypt">Encryption of the database failed.\nPlease use \'%1$s\' to report the error</string>
     <string name="biometrics_setup_success">Biometric/PIN lock has been enabled</string>
+    <string name="encrypt_database_advice" tools:ignore="MissingTranslation">EXPERIMENTAL: By default, enabling the lock does not encrypt the database. You can optionally enable encryption of the database, which can be used in conjunction with the \'data in public\' option to have the database in a public folder, but encrypted. Be aware, that database encryption is not stable as of yet.</string>
+    <string name="encrypt_database_via_biometric" tools:ignore="MissingTranslation">Encrypt Database via Biometric</string>
     <string name="bold">Bold</string>
     <string name="calculating">Calculating…</string>
     <string name="cancel">Cancel</string>

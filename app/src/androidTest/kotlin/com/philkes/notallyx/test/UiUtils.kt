@@ -747,6 +747,7 @@ fun enableBiometricLock() {
     onView(withId(R.id.BiometricLock)).perform(scrollTo(), click())
     R.string.enabled.byText().perform(click())
     R.string.continue_.byText().perform(scrollTo(), click())
+    R.string.continue_.byText().perform(scrollTo(), click())
     waitUntilSettingsValue(R.id.BiometricLock, R.string.enabled)
 }
 
