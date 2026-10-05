@@ -1,12 +1,10 @@
 package com.philkes.notallyx.presentation.view.note.audio
 
-import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.annotation.ColorInt
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import com.philkes.notallyx.data.model.Audio
-import com.philkes.notallyx.databinding.RecyclerAudioBinding
 import java.text.DateFormat
 
 class AudioAdapter(private val onClick: (position: Int) -> Unit) :
@@ -27,9 +25,7 @@ class AudioAdapter(private val onClick: (position: Int) -> Unit) :
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AudioVH {
-        val inflater = LayoutInflater.from(parent.context)
-        val binding = RecyclerAudioBinding.inflate(inflater, parent, false)
-        return AudioVH(binding, onClick, formatter)
+        return AudioVH.create(parent, onClick, formatter)
     }
 
     private object DiffCallback : DiffUtil.ItemCallback<Audio>() {

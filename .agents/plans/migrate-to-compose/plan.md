@@ -3,7 +3,7 @@
 This document outlines the step-by-step strategy for incrementally migrating **NotallyX** from Android XML Views (ViewBinding / DataBinding) to **Jetpack Compose**.
 
 The migration is structured into **phased, ordered modules**, starting with the smallest reusable UI views and sub-components, progressing through screens and complex editors, and concluding with custom dialogs, `AlertDialog`s, and AppWidgets.
-
+FOR EVERY MIGRATION USE THE `migrate-xml-views-to-jetpack-compose` SKILL.
 ---
 
 ## Architecture & Migration Principles
@@ -229,8 +229,8 @@ Convert legacy Android RemoteViews widgets to **AndroidX Glance**:
 - [x] Migrate `ErrorActivity` to `ErrorScreen.kt` (`activity_error.xml`).
 
 ### Phase 3: Audio Recording & Playback
-- [ ] Migrate `PlayAudioActivity` to `PlayAudioScreen.kt` (`activity_play_audio.xml`, `recycler_audio.xml`).
-- [ ] Migrate `RecordAudioActivity` to `RecordAudioScreen.kt` (`activity_record_audio.xml`).
+- [x] Migrate `PlayAudioActivity` to `PlayAudioScreen.kt` (`activity_play_audio.xml`, `recycler_audio.xml`).
+- [x] Migrate `RecordAudioActivity` to `RecordAudioScreen.kt` (`activity_record_audio.xml`).
 
 ### Phase 4: Label & Reminder Management
 - [ ] Migrate `SelectLabelsActivity` & `LabelsFragment` to Compose (`activity_label.xml`).
