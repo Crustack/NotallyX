@@ -226,4 +226,5 @@ class MainActivityTest : UiTestBase() {
 
         scenario.close()
     }
+    // TODO: add test for search
 }

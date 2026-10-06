@@ -52,6 +52,7 @@
     <string name="biometric_backup_advice">It is advised to export a full backup of all notes before dis-/enabling biometric lock, in case the encryption via biometric lock fails</string>
     <string name="biometric_lock">Lock app with device biometric or PIN</string>
     <string name="biometrics_disable_success">Biometric/PIN lock has been disabled</string>
+    <string name="biometrics_decrypted_success" tools:ignore="MissingTranslation">Database encryption disabled</string>
     <string name="biometrics_failure">Failed to authenticate via Biometric/PIN</string>
     <string name="biometrics_no_support">No biometric features available on this device</string>
     <string name="biometrics_not_setup">Biometrics/PIN are not setup for your device yet</string>
@@ -61,6 +62,9 @@
     <string name="biometrics_setup_success">Biometric/PIN lock has been enabled</string>
     <string name="encrypt_database_advice" tools:ignore="MissingTranslation">EXPERIMENTAL: By default, enabling the lock does not encrypt the database. You can optionally enable encryption of the database, which can be used in conjunction with the \'data in public\' option to have the database in a public folder, but encrypted. Be aware, that database encryption is not stable as of yet.</string>
     <string name="encrypt_database_via_biometric" tools:ignore="MissingTranslation">Encrypt Database via Biometric</string>
+    <string name="biometric_encryption_experimental_warning" tools:ignore="MissingTranslation">You have enabled biometric lock which up until now also encrypted the database. Due to users experiencing issues, the database encryption has been marked EXPERIMENTAL and should be used at your own risk.\n\nYou can disable database encryption by clicking \"Decrypt\", or simply disable and re-enable biometric lock in the settings without encryption.</string>
+    <string name="biometric_lock_enabled_with_encryption" tools:ignore="MissingTranslation">Enabled (with EXPERIMENTAL database encryption)</string>
+    <string name="decrypt" tools:ignore="MissingTranslation">Decrypt</string>
     <string name="bold">Bold</string>
     <string name="calculating">Calculating…</string>
     <string name="cancel">Cancel</string>

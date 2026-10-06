@@ -61,6 +61,21 @@ class DatabaseTransitionActivity : AppCompatActivity() {
         val actionName = intent.getStringExtra(EXTRA_ACTION)
         val action =
             actionName?.let { DatabaseAction.valueOf(it) } ?: DatabaseAction.ENABLE_DATA_IN_PUBLIC
+
+        val enableBiometricLock =
+            if (intent.hasExtra(EXTRA_ENABLE_BIOMETRIC_LOCK)) {
+                intent.getBooleanExtra(EXTRA_ENABLE_BIOMETRIC_LOCK, false)
+            } else {
+                action == DatabaseAction.ENABLE_BIOMETRIC_LOCK
+            }
+
+        val encryptDatabase =
+            if (intent.hasExtra(EXTRA_ENCRYPT_DATABASE)) {
+                intent.getBooleanExtra(EXTRA_ENCRYPT_DATABASE, false)
+            } else {
+                action == DatabaseAction.ENABLE_BIOMETRIC_LOCK
+            }
+
         val cipher = pendingCipher
         pendingCipher = null
 
@@ -68,8 +83,11 @@ class DatabaseTransitionActivity : AppCompatActivity() {
             when (action) {
                 DatabaseAction.ENABLE_DATA_IN_PUBLIC -> R.string.moving_database_to_external
                 DatabaseAction.DISABLE_DATA_IN_PUBLIC -> R.string.moving_database_to_internal
-                DatabaseAction.ENABLE_BIOMETRIC_LOCK -> R.string.encrypting_database_biometric
-                DatabaseAction.DISABLE_BIOMETRIC_LOCK -> R.string.decrypting_database_biometric
+                DatabaseAction.ENABLE_BIOMETRIC_LOCK,
+                DatabaseAction.DISABLE_BIOMETRIC_LOCK -> {
+                    if (encryptDatabase) R.string.encrypting_database_biometric
+                    else R.string.decrypting_database_biometric
+                }
             }
         binding.TransitionText.setText(messageResId)
 
@@ -80,24 +98,34 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                         enableDataInPublic(notallyXApplication, preferences)
                     DatabaseAction.DISABLE_DATA_IN_PUBLIC ->
                         disableDataInPublic(notallyXApplication, preferences)
-                    DatabaseAction.ENABLE_BIOMETRIC_LOCK -> {
-                        if (preferences.biometricLockEncryptsDb.value) {
+                    DatabaseAction.ENABLE_BIOMETRIC_LOCK,
+                    DatabaseAction.DISABLE_BIOMETRIC_LOCK -> {
+                        if (encryptDatabase) {
                             requireNotNull(cipher) { "Missing cipher for biometric encryption" }
-                            enableBiometricLock(notallyXApplication, preferences, cipher)
+                            enableBiometricsEncryption(notallyXApplication, preferences, cipher)
                         } else {
-                            preferences.biometricLock.save(BiometricLock.ENABLED)
+                            if (preferences.biometricLockEncryptsDb.value) {
+                                disableBiometricsEncryption(
+                                    notallyXApplication,
+                                    preferences,
+                                    cipher,
+                                    keepBiometricLockEnabled = enableBiometricLock,
+                                )
+                            } else {
+                                preferences.biometricLockEncryptsDb.save(false)
+                                preferences.biometricLock.save(
+                                    if (enableBiometricLock) BiometricLock.ENABLED
+                                    else BiometricLock.DISABLED
+                                )
+                            }
                         }
                         notallyXApplication.locked.value = false
-                        showToast(R.string.biometrics_setup_success)
-                    }
-                    DatabaseAction.DISABLE_BIOMETRIC_LOCK -> {
-                        if (preferences.biometricLockEncryptsDb.value) {
-                            disableBiometricLock(notallyXApplication, preferences, cipher)
-                        } else {
-                            preferences.biometricLock.save(BiometricLock.DISABLED)
-                            preferences.biometricLockEncryptsDb.save(false)
-                        }
-                        showToast(R.string.biometrics_disable_success)
+                        showToast(
+                            if (enableBiometricLock && !encryptDatabase)
+                                R.string.biometrics_decrypted_success
+                            else if (enableBiometricLock) R.string.biometrics_setup_success
+                            else R.string.biometrics_disable_success
+                        )
                     }
                 }
                 launchMainActivity()
@@ -146,7 +174,7 @@ class DatabaseTransitionActivity : AppCompatActivity() {
         val intent =
             Intent(this, MainActivity::class.java).apply {
                 putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, R.id.Settings)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         startActivity(intent)
         finish()
@@ -155,13 +183,42 @@ class DatabaseTransitionActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "DatabaseTransitionActivity"
         const val EXTRA_ACTION = "notallyx.intent.extra.DATABASE_ACTION"
+        const val EXTRA_ENABLE_BIOMETRIC_LOCK = "notallyx.intent.extra.ENABLE_BIOMETRIC_LOCK"
+        const val EXTRA_ENCRYPT_DATABASE = "notallyx.intent.extra.ENCRYPT_DATABASE"
         private var pendingCipher: Cipher? = null
+
+        fun start(
+            context: Context,
+            enableBiometricLock: Boolean,
+            encryptDatabase: Boolean,
+            cipher: Cipher? = null,
+        ) {
+            pendingCipher = cipher
+            val action =
+                if (enableBiometricLock) DatabaseAction.ENABLE_BIOMETRIC_LOCK
+                else DatabaseAction.DISABLE_BIOMETRIC_LOCK
+            val intent =
+                Intent(context, DatabaseTransitionActivity::class.java).apply {
+                    putExtra(EXTRA_ACTION, action.name)
+                    putExtra(EXTRA_ENABLE_BIOMETRIC_LOCK, enableBiometricLock)
+                    putExtra(EXTRA_ENCRYPT_DATABASE, encryptDatabase)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                }
+            context.startActivity(intent)
+        }
 
         fun start(context: Context, action: DatabaseAction, cipher: Cipher? = null) {
             pendingCipher = cipher
             val intent =
                 Intent(context, DatabaseTransitionActivity::class.java).apply {
                     putExtra(EXTRA_ACTION, action.name)
+                    if (action == DatabaseAction.ENABLE_BIOMETRIC_LOCK) {
+                        putExtra(EXTRA_ENABLE_BIOMETRIC_LOCK, true)
+                        putExtra(EXTRA_ENCRYPT_DATABASE, true)
+                    } else if (action == DatabaseAction.DISABLE_BIOMETRIC_LOCK) {
+                        putExtra(EXTRA_ENABLE_BIOMETRIC_LOCK, false)
+                        putExtra(EXTRA_ENCRYPT_DATABASE, false)
+                    }
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 }
             context.startActivity(intent)
@@ -277,7 +334,7 @@ class DatabaseTransitionActivity : AppCompatActivity() {
             callback?.invoke()
         }
 
-        suspend fun enableBiometricLock(
+        suspend fun enableBiometricsEncryption(
             app: Application,
             preferences: NotallyXPreferences,
             cipher: Cipher,
@@ -331,16 +388,19 @@ class DatabaseTransitionActivity : AppCompatActivity() {
             }
         }
 
-        suspend fun disableBiometricLock(
+        suspend fun disableBiometricsEncryption(
             app: Application,
             preferences: NotallyXPreferences,
             cipher: Cipher? = null,
+            keepBiometricLockEnabled: Boolean = false,
             callback: (() -> Unit)? = null,
         ) {
+            val targetLockState =
+                if (keepBiometricLockEnabled) BiometricLock.ENABLED else BiometricLock.DISABLED
             if (!preferences.biometricLockEncryptsDb.value) {
                 withContext(Dispatchers.Main.immediate) {
-                    NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.DISABLED)
-                    preferences.biometricLock.save(BiometricLock.DISABLED)
+                    NotallyDatabase.postNewInstance(app, biometricLock = targetLockState)
+                    preferences.biometricLock.save(targetLockState)
                     preferences.biometricLockEncryptsDb.save(false)
                 }
                 callback?.invoke()
@@ -392,8 +452,8 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                 }
             }
             withContext(Dispatchers.Main.immediate) {
-                NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.DISABLED)
-                preferences.biometricLock.save(BiometricLock.DISABLED)
+                NotallyDatabase.postNewInstance(app, biometricLock = targetLockState)
+                preferences.biometricLock.save(targetLockState)
                 preferences.biometricLockEncryptsDb.save(false)
             }
             callback?.invoke()

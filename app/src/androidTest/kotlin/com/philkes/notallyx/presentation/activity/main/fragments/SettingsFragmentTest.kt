@@ -340,7 +340,7 @@ class SettingsFragmentTest : UiTestBase() {
     }
 
     @Test
-    fun biometricLock() {
+    fun biometricLock_no_encryption() {
         val fakeBiometricAuthenticator = initFakeBiometric()
         val pinnedToStatusNote = createBaseNote(title = "Pinned", isPinnedToStatus = true)
         runBlocking {
@@ -355,6 +355,68 @@ class SettingsFragmentTest : UiTestBase() {
 
         navigateTo(R.id.Settings)
         enableBiometricLock()
+
+        navigateTo(R.id.Notes)
+
+        checkAndUpdateNoteTitle(0, "Test", " Foo")
+
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+
+        device.sleep()
+        SystemClock.sleep(2000)
+        device.wakeUp()
+        device.pressMenu()
+
+        checkAndUpdateNoteTitle(0, "Test Foo", " Bar")
+
+        val expectedEncrypt = if (preferences.biometricLockEncryptsDb.value) 1 else 0
+        val expectedDecrypt1 = if (preferences.biometricLockEncryptsDb.value) 1 else 0
+        val expectedDecrypt2 = if (preferences.biometricLockEncryptsDb.value) 2 else 0
+
+        assertEquals(expectedEncrypt, fakeBiometricAuthenticator.getEncryptionCounter())
+        assertEquals(expectedDecrypt1, fakeBiometricAuthenticator.getDecryptionCounter())
+
+        navigateTo(R.id.Settings)
+        disableBiometricLock()
+        assertEquals(expectedEncrypt, fakeBiometricAuthenticator.getEncryptionCounter())
+        assertEquals(expectedDecrypt2, fakeBiometricAuthenticator.getDecryptionCounter())
+
+        navigateTo(R.id.Notes)
+
+        checkAndUpdateNoteTitle(0, "Test Foo Bar", " 123")
+
+        device.sleep()
+        SystemClock.sleep(2000)
+        device.wakeUp()
+        device.pressMenu()
+
+        waitUntilSucceeds {
+            R.id.MainListView.byId()
+                .onPositionView(0, withId(R.id.Title))
+                .check(matches(withText("Test Foo Bar 123")))
+        }
+        assertEquals(expectedEncrypt, fakeBiometricAuthenticator.getEncryptionCounter())
+        assertEquals(expectedDecrypt2, fakeBiometricAuthenticator.getDecryptionCounter())
+
+        scenario.close()
+    }
+
+    @Test
+    fun biometricLock_with_encryption() {
+        val fakeBiometricAuthenticator = initFakeBiometric()
+        val pinnedToStatusNote = createBaseNote(title = "Pinned", isPinnedToStatus = true)
+        runBlocking {
+            withContext(Dispatchers.Main) {
+                database.getBaseNoteDao().apply {
+                    insert(createBaseNote(title = "Test", body = "Body", labels = listOf("label")))
+                    insert(pinnedToStatusNote)
+                }
+            }
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        navigateTo(R.id.Settings)
+        enableBiometricLock(encryptDb = true)
 
         navigateTo(R.id.Notes)
 

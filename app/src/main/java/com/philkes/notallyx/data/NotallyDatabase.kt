@@ -231,11 +231,13 @@ abstract class NotallyDatabase : RoomDatabase() {
             biometricLock: BiometricLock = preferences.biometricLock.value,
         ): Builder<NotallyDatabase> {
             return this.apply {
-                if (!preferences.biometricLockEncryptsDb.value) {
-                    return@apply
-                }
-                if (biometricLock == BiometricLock.ENABLED) {
-                    if (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
+                val dbFile = getCurrentDatabaseFile(context)
+                if (
+                    preferences.biometricLockEncryptsDb.value ||
+                        (biometricLock == BiometricLock.ENABLED &&
+                            dbFile.isEncryptedDatabase(context))
+                ) {
+                    if (dbFile.isEncryptedDatabase(context)) {
                         initializeDecryption(context, preferences, this)
                     } else {
                         context.log(
@@ -244,16 +246,6 @@ abstract class NotallyDatabase : RoomDatabase() {
                         )
 
                         preferences.biometricLock.save(BiometricLock.DISABLED)
-                    }
-                } else {
-                    if (getCurrentDatabaseFile(context).isEncryptedDatabase(context)) {
-                        context.log(
-                            DATABASE_NAME,
-                            "Database is encrypted even though biometric lock is disabled, enabling biometric lock",
-                        )
-
-                        preferences.biometricLock.save(BiometricLock.ENABLED)
-                        initializeDecryption(context, preferences, this)
                     }
                 }
             }

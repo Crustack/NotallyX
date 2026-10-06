@@ -249,7 +249,7 @@ class SettingsViewModel(private val app: Application) : AndroidViewModel(app) {
             DatabaseTransitionActivity.disableDataInPublic(app, preferences)
         }
         if (preferences.isLockEnabled) {
-            DatabaseTransitionActivity.disableBiometricLock(app, preferences)
+            DatabaseTransitionActivity.disableBiometricsEncryption(app, preferences)
         }
         preferences.reset()
         if (!preferences.isDefaultOrEmptyBackupFolder(backupsFolder)) {

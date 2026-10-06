@@ -26,12 +26,14 @@ import androidx.navigation.navOptions
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.transition.platform.MaterialFade
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.ConverterErrorReporter
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.databinding.ActivityMainBinding
+import com.philkes.notallyx.presentation.activity.DatabaseTransitionActivity
 import com.philkes.notallyx.presentation.activity.LockedActivity
 import com.philkes.notallyx.presentation.activity.main.fragment.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
 import com.philkes.notallyx.presentation.activity.main.fragment.NotesFragment
@@ -57,6 +59,7 @@ import com.philkes.notallyx.utils.LATEST_DATA_SCHEMA
 import com.philkes.notallyx.utils.backup.exportNotes
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.runMigrations
+import com.philkes.notallyx.utils.security.AuthenticatorProvider
 import com.philkes.notallyx.utils.showErrorDialog
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -153,7 +156,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     }
 
     override fun initViewModel() {
-        mainActivityViewModel.startObserving()
+        // Observers are started in checkForMigrations -> proceed()
     }
 
     override fun onRequestPermissionsResult(
@@ -196,16 +199,42 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 setMigrationProgress(
                     MigrationProgress(R.string.migrating_data, indeterminate = true)
                 )
-                application.runMigrations { titleId ->
+                val migrationResult = application.runMigrations { titleId ->
                     setMigrationProgress(MigrationProgress(titleId, indeterminate = true))
                 }
                 // Dismiss
                 setMigrationProgress(MigrationProgress(R.string.migrating_data, inProgress = false))
+                if (migrationResult.showBiometricWarning) {
+                    showBiometricEncryptionWarningDialog()
+                }
                 proceed()
             }
         } else {
             proceed()
         }
+    }
+
+    private fun showBiometricEncryptionWarningDialog() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.biometric_lock)
+            .setMessage(R.string.biometric_encryption_experimental_warning)
+            .setPositiveButton(R.string.decrypt) { _, _ ->
+                AuthenticatorProvider.instance.authenticate(
+                    this,
+                    preferences.iv.value,
+                    isForDecrypt = true,
+                    onSuccess = { cipher ->
+                        DatabaseTransitionActivity.start(
+                            this,
+                            enableBiometricLock = true,
+                            encryptDatabase = false,
+                            cipher = cipher,
+                        )
+                    },
+                ) {}
+            }
+            .setNegativeButton(android.R.string.ok, null)
+            .show()
     }
 
     private fun configureEdgeToEdgeInsets() {

@@ -9,22 +9,27 @@ import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.utils.NoteRepairUtils.truncateBodyAndFixSpans
 import com.philkes.notallyx.utils.NoteSplitUtils.splitOversizedExistingNoteForMigration
+import com.philkes.notallyx.utils.security.isEncryptedDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private const val TAG = "DataSchemaMigrations"
 
-const val LATEST_DATA_SCHEMA = 2
+const val LATEST_DATA_SCHEMA = 3
+
+class MigrationResult(val didWork: Boolean, val showBiometricWarning: Boolean = false)
 
 /**
  * Runs pending data schema migrations synchronously and reports progress via [onProgressTitle].
- * Returns true if any migration work was executed.
+ * Returns [MigrationResult] indicating if any migration work was executed and if a biometric
+ * warning should be shown.
  */
-suspend fun Application.runMigrations(onProgressTitle: (Int) -> Unit = {}): Boolean {
+suspend fun Application.runMigrations(onProgressTitle: (Int) -> Unit = {}): MigrationResult {
     val preferences = NotallyXPreferences.getInstance(this)
     val dataSchemaId = preferences.dataSchemaId.value
     var newDataSchemaId = dataSchemaId
     var didWork = false
+    var showBiometricWarning = false
 
     withContext(Dispatchers.IO) {
         if (dataSchemaId < 1) {
@@ -39,11 +44,20 @@ suspend fun Application.runMigrations(onProgressTitle: (Int) -> Unit = {}): Bool
             newDataSchemaId = 2
             didWork = true
         }
+        if (newDataSchemaId < 3) {
+            val dbFile = NotallyDatabase.getCurrentDatabaseFile(this@runMigrations)
+            if (preferences.isLockEnabled && dbFile.isEncryptedDatabase(this@runMigrations)) {
+                preferences.biometricLockEncryptsDb.save(true)
+                showBiometricWarning = true
+            }
+            newDataSchemaId = 3
+            didWork = true
+        }
         if (didWork) {
             preferences.setDataSchemaId(newDataSchemaId)
         }
     }
-    return didWork
+    return MigrationResult(didWork, showBiometricWarning)
 }
 
 private fun Application.moveAttachments(preferences: NotallyXPreferences) {
