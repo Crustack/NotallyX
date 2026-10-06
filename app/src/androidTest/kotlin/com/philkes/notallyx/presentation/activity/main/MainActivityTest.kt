@@ -6,10 +6,15 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.longClick
+import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.action.ViewActions.scrollTo
+import androidx.test.espresso.action.ViewActions.typeText
+import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.contrib.RecyclerViewActions.actionOnItemAtPosition
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withClassName
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withParent
@@ -18,6 +23,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.presentation.activity.note.refreshStatusBarPin
 import com.philkes.notallyx.test.UiTestBase
@@ -29,6 +35,7 @@ import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.createListItem
 import com.philkes.notallyx.test.onDisplayView
 import com.philkes.notallyx.test.waitUntil
+import com.philkes.notallyx.test.waitUntilSucceeds
 import com.philkes.notallyx.utils.PinnedNotificationManager
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
@@ -226,5 +233,80 @@ class MainActivityTest : UiTestBase() {
 
         scenario.close()
     }
-    // TODO: add test for search
+
+    @Test
+    fun searchNotes() {
+        // 1. Insert test data for normal, archived, and deleted notes
+        runBlocking {
+            database
+                .getBaseNoteDao()
+                .insert(
+                    listOf(
+                        createBaseNote(
+                            title = "Normal Note",
+                            body = "Grocery list",
+                            folder = Folder.NOTES,
+                        ),
+                        createBaseNote(
+                            title = "Archived Note",
+                            body = "Grocery history",
+                            folder = Folder.ARCHIVED,
+                        ),
+                        createBaseNote(
+                            title = "Deleted Note",
+                            body = "Grocery trash",
+                            folder = Folder.DELETED,
+                        ),
+                        createBaseNote(
+                            title = "Work Meeting",
+                            body = "Project status",
+                            folder = Folder.NOTES,
+                        ),
+                    )
+                )
+        }
+
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        // 2. Open Search fragment
+        R.string.search.byContentDescription().perform(click())
+
+        // 3. Type search keyword matching "Grocery"
+        R.id.EnterSearchKeyword.byId().perform(typeText("Grocery"), closeSoftKeyboard())
+
+        // 4. Verify default "Notes" folder chip only shows normal notes
+        waitUntilSucceeds { "Normal Note".byText().check(matches(isDisplayed())) }
+        "Work Meeting".byText(checkDisplayed = false).check(doesNotExist())
+        "Archived Note".byText(checkDisplayed = false).check(doesNotExist())
+        "Deleted Note".byText(checkDisplayed = false).check(doesNotExist())
+
+        // 5. Switch filter to "Archived" folder chip
+        R.id.Archived.byId().perform(click())
+        waitUntilSucceeds { "Archived Note".byText().check(matches(isDisplayed())) }
+        "Normal Note".byText(checkDisplayed = false).check(doesNotExist())
+        "Deleted Note".byText(checkDisplayed = false).check(doesNotExist())
+
+        // 6. Switch filter to "Deleted" folder chip
+        R.id.Deleted.byId().perform(click())
+        waitUntilSucceeds { "Deleted Note".byText().check(matches(isDisplayed())) }
+        "Normal Note".byText(checkDisplayed = false).check(doesNotExist())
+        "Archived Note".byText(checkDisplayed = false).check(doesNotExist())
+
+        // 7. Switch filter back to "Notes" folder chip
+        R.id.Notes.byId().perform(click())
+        waitUntilSucceeds { "Normal Note".byText().check(matches(isDisplayed())) }
+
+        // 8. Search for keyword with no matches
+        R.id.EnterSearchKeyword.byId()
+            .perform(replaceText("NonExistentKeyword"), closeSoftKeyboard())
+        waitUntilSucceeds { "Normal Note".byText(checkDisplayed = false).check(doesNotExist()) }
+        "Archived Note".byText(checkDisplayed = false).check(doesNotExist())
+        "Deleted Note".byText(checkDisplayed = false).check(doesNotExist())
+
+        // 9. Cancel search to return to main notes list
+        R.string.cancel.byContentDescription().perform(click())
+        waitUntilSucceeds { "Work Meeting".byText().check(matches(isDisplayed())) }
+
+        scenario.close()
+    }
 }
