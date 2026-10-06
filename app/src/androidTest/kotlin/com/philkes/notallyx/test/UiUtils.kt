@@ -743,12 +743,17 @@ fun waitUntilSettingsValue(settingId: Int, valueResId: Int, timeoutMs: Long = 15
     }
 }
 
-fun enableBiometricLock() {
+fun enableBiometricLock(encryptDb: Boolean = false) {
     onView(withId(R.id.BiometricLock)).perform(scrollTo(), click())
     R.string.enabled.byText().perform(click())
     R.string.continue_.byText().perform(scrollTo(), click())
+    if (encryptDb) {
+        R.string.encrypt_database_via_biometric.byText().perform(click())
+    }
     R.string.continue_.byText().perform(scrollTo(), click())
-    waitUntilSettingsValue(R.id.BiometricLock, R.string.enabled)
+    val expectedValueResId =
+        if (encryptDb) R.string.biometric_lock_enabled_with_encryption else R.string.enabled
+    waitUntilSettingsValue(R.id.BiometricLock, expectedValueResId)
 }
 
 fun disableBiometricLock() {

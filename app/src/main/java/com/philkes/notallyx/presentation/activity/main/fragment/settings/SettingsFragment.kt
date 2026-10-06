@@ -816,17 +816,18 @@ class SettingsFragment : Fragment() {
     private fun NotallyXPreferences.setupSecurity(binding: FragmentSettingsBinding) {
         viewLifecycleOwner.repeatOnLifecycleScope {
             launch {
-                biometricLock.flow.collect { value ->
-                    binding.BiometricLock.setup(
-                        biometricLock,
-                        value,
-                        requireContext(),
-                        model,
-                        ::showEnableBiometricLock,
-                        ::showDisableBiometricLock,
-                        ::showBiometricsNotSetupDialog,
-                    )
-                }
+                combine(biometricLock.flow, biometricLockEncryptsDb.flow) { lock, _ -> lock }
+                    .collect { value ->
+                        binding.BiometricLock.setup(
+                            biometricLock,
+                            value,
+                            requireContext(),
+                            model,
+                            ::showEnableBiometricLock,
+                            ::showDisableBiometricLock,
+                            ::showBiometricsNotSetupDialog,
+                        )
+                    }
             }
             launch {
                 backupPassword.flow.collect { value ->
@@ -1096,8 +1097,9 @@ class SettingsFragment : Fragment() {
                             requireNotNull(cipher) { "Missing cipher for biometric encryption" }
                             DatabaseTransitionActivity.start(
                                 requireActivity(),
-                                DatabaseAction.ENABLE_BIOMETRIC_LOCK,
-                                cipher,
+                                enableBiometricLock = true,
+                                encryptDatabase = true,
+                                cipher = cipher,
                             )
                         },
                     ) {
@@ -1122,8 +1124,9 @@ class SettingsFragment : Fragment() {
                     onSuccess = { cipher ->
                         DatabaseTransitionActivity.start(
                             requireActivity(),
-                            DatabaseAction.DISABLE_BIOMETRIC_LOCK,
-                            cipher,
+                            enableBiometricLock = false,
+                            encryptDatabase = false,
+                            cipher = cipher,
                         )
                     },
                 ) {}

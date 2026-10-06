@@ -96,7 +96,12 @@ fun PreferenceBinding.setup(
 ) {
     Title.setText(preference.titleResId!!)
 
-    Value.text = value.getText(context)
+    Value.text =
+        if (value == BiometricLock.ENABLED && model.preferences.biometricLockEncryptsDb.value) {
+            context.getString(R.string.biometric_lock_enabled_with_encryption)
+        } else {
+            value.getText(context)
+        }
     val enumEntries = BiometricLock.entries
     val entries = enumEntries.map { context.getString(it.textResId) }.toTypedArray()
     val checked = enumEntries.indexOfFirst { it == value }
