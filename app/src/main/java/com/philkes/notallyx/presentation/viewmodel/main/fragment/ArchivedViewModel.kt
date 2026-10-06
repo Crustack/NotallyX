@@ -6,6 +6,7 @@ import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.presentation.createItemsFromNotes
 import com.philkes.notallyx.presentation.viewmodel.BaseViewModel
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +15,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
-class ArchivedViewModel(app: Application) : BaseViewModel(app) {
+class ArchivedViewModel(app: Application, preferences: NotallyXPreferences) :
+    BaseViewModel(app, preferences) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val archivedNotes: StateFlow<List<Item>> =

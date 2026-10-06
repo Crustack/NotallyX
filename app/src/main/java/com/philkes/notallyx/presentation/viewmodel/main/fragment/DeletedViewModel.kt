@@ -10,6 +10,7 @@ import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.presentation.createItemsFromNotes
 import com.philkes.notallyx.presentation.viewmodel.BaseViewModel
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.utils.deleteAttachments
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,7 +23,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class DeletedViewModel(app: Application) : BaseViewModel(app) {
+class DeletedViewModel(app: Application, preferences: NotallyXPreferences) :
+    BaseViewModel(app, preferences) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val deletedNotes: StateFlow<List<Item>> =

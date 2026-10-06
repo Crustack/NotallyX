@@ -21,13 +21,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
+class MainActivityViewModel(app: Application, val preferences: NotallyXPreferences) :
+    AndroidViewModel(app) {
 
     private var database: NotallyDatabase? = null
     private lateinit var baseNoteDao: BaseNoteDao
     private lateinit var labelDao: LabelDao
 
-    val preferences = NotallyXPreferences.getInstance(app)
     val progress: StateFlow<Progress?>
         field = MutableStateFlow<Progress?>(null)
 

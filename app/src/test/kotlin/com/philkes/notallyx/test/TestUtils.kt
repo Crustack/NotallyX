@@ -38,6 +38,7 @@ import kotlin.random.Random
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.koin.core.context.GlobalContext
 import org.mockito.Mockito
 
 val context
@@ -55,7 +56,9 @@ val database: NotallyDatabase
         )
 
 val preferences: NotallyXPreferences
-    get() = NotallyXPreferences.getInstance(ContextWrapper(context))
+    get() =
+        GlobalContext.getOrNull()?.get<NotallyXPreferences>()
+            ?: NotallyXPreferences.getInstance(ContextWrapper(context))
 
 fun createListItem(
     body: String,

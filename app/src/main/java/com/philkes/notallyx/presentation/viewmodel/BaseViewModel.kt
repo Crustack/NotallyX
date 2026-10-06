@@ -8,7 +8,10 @@ import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreference
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-abstract class BaseViewModel(protected val app: Application) : AndroidViewModel(app) {
+abstract class BaseViewModel(
+    protected val app: Application,
+    val preferences: NotallyXPreferences,
+) : AndroidViewModel(app) {
 
     protected val databaseStateFlow: StateFlow<NotallyDatabase?> = NotallyDatabase.getDatabase(app)
 
@@ -20,9 +23,6 @@ abstract class BaseViewModel(protected val app: Application) : AndroidViewModel(
 
     protected val labelDao
         get() = database?.getLabelDao()
-
-    val preferences: NotallyXPreferences
-        get() = NotallyXPreferences.getInstance(app)
 
     init {
         viewModelScope.launch { databaseStateFlow.collect { db -> initDatabase(db) } }

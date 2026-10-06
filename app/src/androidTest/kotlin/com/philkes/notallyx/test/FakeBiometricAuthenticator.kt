@@ -10,12 +10,15 @@ import com.philkes.notallyx.utils.security.getOrCreateSecretKey
 import javax.crypto.Cipher
 import javax.crypto.SecretKey
 import javax.crypto.spec.IvParameterSpec
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class FakeBiometricAuthenticator : BiometricAuthenticator {
+class FakeBiometricAuthenticator : BiometricAuthenticator, KoinComponent {
     var iv: ByteArray? = null
     private var encryptCounter = 0
     private var decryptCounter = 0
     private val secretKey: SecretKey
+    private val preferences: NotallyXPreferences by inject()
 
     constructor() {
         secretKey = getOrCreateSecretKey()
@@ -29,7 +32,6 @@ class FakeBiometricAuthenticator : BiometricAuthenticator {
         onError: (String) -> Unit,
     ) {
         if (iv != null) {
-            val preferences = NotallyXPreferences.getInstance(activity)
             if (isForDecrypt) {
                 if (preferences.biometricLockEncryptsDb.value && cipherIv != null) {
                     val cipher = getCipher()

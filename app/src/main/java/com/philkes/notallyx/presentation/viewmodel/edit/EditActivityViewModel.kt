@@ -17,6 +17,7 @@ import com.philkes.notallyx.presentation.showSnackbar
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
 import com.philkes.notallyx.presentation.viewmodel.executeAsyncWithCallback
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.utils.backup.exportPdfFile
 import com.philkes.notallyx.utils.backup.exportPlainTextFile
 import com.philkes.notallyx.utils.log
@@ -30,7 +31,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class EditActivityViewModel(app: Application) : NoteModel(app) {
+class EditActivityViewModel(app: Application, preferences: NotallyXPreferences) :
+    NoteModel(app, preferences) {
 
     private val labelDao: LabelDao by lazy { database.value!!.getLabelDao() }
     private val commonDao: CommonDao by lazy { database.value!!.getCommonDao() }

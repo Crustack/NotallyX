@@ -15,7 +15,9 @@ import com.philkes.notallyx.presentation.viewmodel.main.fragment.RemindersViewMo
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.SettingsViewModel
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.UnlabeledViewModel
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
+import com.philkes.notallyx.utils.AutoRemoveDeletedNotesWorker
 import org.koin.android.ext.koin.androidContext
+import org.koin.androidx.workmanager.dsl.workerOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
@@ -23,6 +25,8 @@ val storageModule = module {
     single { NotallyXPreferences.getInstance(androidContext() as ContextWrapper) }
     single { NotallyDatabase.getDatabase(androidContext() as ContextWrapper) }
 }
+
+val workerModule = module { workerOf(::AutoRemoveDeletedNotesWorker) }
 
 val viewModelModule = module {
     viewModelOf(::MainActivityViewModel)
@@ -39,4 +43,4 @@ val viewModelModule = module {
     viewModelOf(::EditActivityViewModel)
 }
 
-val appModules = listOf(storageModule, viewModelModule)
+val appModules = listOf(storageModule, workerModule, viewModelModule)

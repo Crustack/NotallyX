@@ -12,6 +12,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.koin.core.context.GlobalContext
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowEnvironment
@@ -30,8 +31,10 @@ class SettingsViewModelTest {
         application = ApplicationProvider.getApplicationContext()
         PreferenceManager.getDefaultSharedPreferences(application).edit().clear().commit()
         NotallyXPreferences.clearInstance()
-        preferences = NotallyXPreferences.getInstance(application)
-        viewModel = SettingsViewModel(application)
+        preferences =
+            GlobalContext.getOrNull()?.get<NotallyXPreferences>()
+                ?: NotallyXPreferences.getInstance(application)
+        viewModel = SettingsViewModel(application, preferences)
         ShadowEnvironment.setExternalStorageState(Environment.MEDIA_MOUNTED)
     }
 

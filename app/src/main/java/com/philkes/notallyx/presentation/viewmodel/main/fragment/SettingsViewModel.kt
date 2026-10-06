@@ -52,14 +52,15 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class SettingsViewModel(private val app: Application) : AndroidViewModel(app) {
+class SettingsViewModel(
+    private val app: Application,
+    val preferences: NotallyXPreferences,
+) : AndroidViewModel(app) {
 
     private var database: NotallyDatabase? = null
     private lateinit var baseNoteDao: BaseNoteDao
     private lateinit var labelDao: LabelDao
     private lateinit var commonDao: CommonDao
-
-    val preferences = NotallyXPreferences.getInstance(app)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val labels: StateFlow<List<Label>> =

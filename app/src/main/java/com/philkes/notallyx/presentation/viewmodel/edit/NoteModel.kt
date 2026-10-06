@@ -65,12 +65,13 @@ import kotlinx.coroutines.withContext
 data class BackupFile(val targetPath: String, val file: File)
 
 /** Core ViewModel for note content editing, attachments, reminders, and auto-save logic. */
-open class NoteModel(protected val app: Application) : AndroidViewModel(app) {
+open class NoteModel(
+    protected val app: Application,
+    val preferences: NotallyXPreferences,
+) : AndroidViewModel(app) {
 
     protected val database = NotallyDatabase.getDatabase(app)
     protected var baseNoteDao: BaseNoteDao? = null
-
-    val preferences = NotallyXPreferences.getInstance(app)
     val textSize: TextSizeSp = preferences.textSizeNoteEditor.value
 
     var isNewNote = true

@@ -20,13 +20,12 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class LabelsViewModel(app: Application) : AndroidViewModel(app) {
+class LabelsViewModel(app: Application, val preferences: NotallyXPreferences) :
+    AndroidViewModel(app) {
 
     private var database: NotallyDatabase? = null
     private lateinit var labelDao: LabelDao
     private lateinit var commonDao: CommonDao
-
-    val preferences = NotallyXPreferences.getInstance(app)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val labels: StateFlow<List<Label>> =

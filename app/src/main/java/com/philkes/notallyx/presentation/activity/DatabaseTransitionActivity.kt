@@ -36,13 +36,15 @@ import javax.crypto.Cipher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.android.ext.android.inject
 
 class DatabaseTransitionActivity : AppCompatActivity() {
+
+    private val preferences: NotallyXPreferences by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val notallyXApplication = application as NotallyXApplication
-        val preferences = NotallyXPreferences.getInstance(notallyXApplication)
         if (preferences.useDynamicColors.value) {
             if (DynamicColors.isDynamicColorAvailable()) {
                 DynamicColors.applyToActivitiesIfAvailable(notallyXApplication)
