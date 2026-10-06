@@ -53,7 +53,10 @@
     <string name="backup_periodic_hint">Po włączeniu tej opcji kopie zapasowe są automatycznie tworzone w skonfigurowanym folderze kopii zapasowych.\nMoże to nie działać, jeśli włączony jest tryb oszczędzania energii</string>
     <string name="behaviour">Zachowanie</string>
     <string name="biometric_backup_advice">Zaleca się wykonanie pełnej kopii zapasowej wszystkich notatek przed wyłączeniem/włączeniem blokady biometrycznej, na wypadek gdyby szyfrowanie za pomocą blokady nie powiodło się </string>
+    <string name="biometric_encryption_experimental_warning">Włączyłeś blokadę biometryczną, która do tej pory służyła również do szyfrowania bazy danych. Ze względu na problemy zgłaszane przez użytkowników szyfrowanie bazy danych zostało oznaczone jako EKSPERYMENTALNE i należy z niego korzystać na własne ryzyko.\n\nMożesz wyłączyć szyfrowanie bazy danych, klikając „Odszyfruj”, lub po prostu wyłączyć i ponownie włączyć blokadę biometryczną w ustawieniach bez szyfrowania.</string>
     <string name="biometric_lock">Zablokuj aplikację za pomocą danych biometrycznych lub PIN-u urządzenia</string>
+    <string name="biometric_lock_enabled_with_encryption">Włączone (z eksperymentalnym szyfrowaniem bazy danych)</string>
+    <string name="biometrics_decrypted_success">Szyfrowanie bazy danych jest wyłączone</string>
     <string name="biometrics_disable_success">Blokada biometryczna/PIN została wyłączona</string>
     <string name="biometrics_failure">Nie udało się uwierzytelnić za pomocą biometrii/PIN-u</string>
     <string name="biometrics_no_support">Brak dostępnych funkcji biometrycznych dla tego urządzenia</string>
@@ -132,6 +135,7 @@
         <item quantity="many">Dni</item>
         <item quantity="other">Dni</item>
     </plurals>
+    <string name="decrypt">Odszyfruj</string>
     <string name="decrypting_database_biometric">Odszyfrowywanie bazy danych za pomocą danych biometrycznych</string>
     <string name="default_color_hint">To jest domyślny kolor nowych notatek. Aby go zmienić, ustaw inny kolor jako domyślny</string>
     <string name="default_list_note_view_mode">Domyślny tryb widoku list i notatek</string>
@@ -187,6 +191,8 @@
     <string name="enable_lock_description">Spowoduje to również zaszyfrowanie bazy danych</string>
     <string name="enable_lock_title">Włącz blokadę za pomocą biometrii/PIN-u</string>
     <string name="enabled">Włączono</string>
+    <string name="encrypt_database_advice">UWAGA: Domyślnie włączenie blokady nie powoduje szyfrowania bazy danych. Opcjonalnie można włączyć szyfrowanie bazy danych, co można połączyć z opcją „data in public”, aby baza danych znajdowała się w folderze publicznym, ale była zaszyfrowana. Należy pamiętać, że szyfrowanie bazy danych nie jest jeszcze w pełni stabilne.</string>
+    <string name="encrypt_database_via_biometric">Szyfrowanie bazy danych za pomocą danych biometrycznych</string>
     <string name="encrypting_database_biometric">Szyfrowanie bazy danych za pomocą danych biometrycznych</string>
     <string name="error">Błąd</string>
     <string name="error_loading_data">Wystąpił błąd podczas wczytywania niektórych danych z bazy danych. Uszkodzone notatki nie będą wyświetlane.\nMożesz oczyścić bazę danych (usuwając uszkodzone notatki) za pomocą \'%1$s\'</string>

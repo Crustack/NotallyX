@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">Prin activarea acestei opțiuni, copiile de rezervă sunt create automat în dosarul configurat.\n\nEste posibil ca acest lucru să nu funcționeze dacă ai activat modul de economisire a energiei.</string>
     <string name="behaviour">Comportament</string>
     <string name="biometric_backup_advice">Se recomandă exportarea unei copii de rezervă complete a tuturor notelor înainte de dezactivarea/activarea blocării biometrice, în cazul în care criptarea prin intermediul blocării biometrice eșuează</string>
+    <string name="biometric_encryption_experimental_warning">Ați activat blocarea biometrică, care până acum cripta și baza de date. Din cauza problemelor întâmpinate de utilizatori, criptarea bazei de date a fost marcată ca EXPERIMENTALĂ și ar trebui utilizată pe propria răspundere.\n\nPuteți dezactiva criptarea bazei de date făcând clic pe „Decriptează” sau pur și simplu dezactivați și reactivați blocarea biometrică în setări fără criptare.</string>
     <string name="biometric_lock">Blochează aplicația cu datele biometrice sau codul PIN al dispozitivului</string>
+    <string name="biometric_lock_enabled_with_encryption">Activat (cu criptarea bazei de date EXPERIMENTAL)</string>
+    <string name="biometrics_decrypted_success">Criptarea bazei de date este dezactivată</string>
     <string name="biometrics_disable_success">Blocarea biometrică/cod PIN a fost dezactivată</string>
     <string name="biometrics_failure">Autentificarea prin cod biometric/PIN nu a reușit</string>
     <string name="biometrics_no_support">Nu sunt disponibile funcții biometrice pe acest dispozitiv</string>
@@ -122,6 +125,7 @@
         <item quantity="one">Zi</item>
         <item quantity="other">Zile</item>
     </plurals>
+    <string name="decrypt">Decriptează</string>
     <string name="decrypting_database_biometric">Decriptarea bazei de date prin intermediul datelor biometrice</string>
     <string name="default_color_hint">Aceasta este culoarea implicită pentru notele noi. Pentru a o schimba, alege o altă culoare ca implicită</string>
     <string name="default_list_note_view_mode">Modul implicit de afișare a listelor și notelor</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">Aceasta va cripta și baza de date</string>
     <string name="enable_lock_title">Activează blocarea prin biometrie/PIN</string>
     <string name="enabled">Activat</string>
+    <string name="encrypt_database_advice">EXPERIMENTAL: În mod implicit, activarea blocării nu criptează baza de date. Opțional, puteți activa criptarea bazei de date, care poate fi utilizată împreună cu opțiunea „date în public” pentru a păstra baza de date într-un folder public, dar criptată. Rețineți că criptarea bazei de date nu este încă stabilă.</string>
+    <string name="encrypt_database_via_biometric">Criptarea bazei de date prin mijloace biometrice</string>
     <string name="encrypting_database_biometric">Criptarea bazei de date prin intermediul datelor biometrice</string>
     <string name="error">Eroare</string>
     <string name="error_loading_data">A apărut o eroare la încărcarea unor date din baza de date. Notițele corupte nu vor fi afișate.\nPuteți curăța baza de date (ștergând notițele corupte) folosind „\'%1$s\'”</string>

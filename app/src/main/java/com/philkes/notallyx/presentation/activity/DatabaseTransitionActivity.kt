@@ -385,6 +385,7 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                 NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.ENABLED)
                 preferences.fallbackDatabaseEncryptionKey.save(passphrase)
                 preferences.biometricLock.save(BiometricLock.ENABLED)
+                preferences.biometricLockEncryptsDb.save(true)
             }
         }
 

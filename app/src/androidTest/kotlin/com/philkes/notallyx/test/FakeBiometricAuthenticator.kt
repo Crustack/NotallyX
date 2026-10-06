@@ -30,18 +30,20 @@ class FakeBiometricAuthenticator : BiometricAuthenticator {
     ) {
         if (iv != null) {
             val preferences = NotallyXPreferences.getInstance(activity)
-            if (preferences.biometricLockEncryptsDb.value) {
-                val cipher = getCipher()
-                if (isForDecrypt) {
+            if (isForDecrypt) {
+                if (preferences.biometricLockEncryptsDb.value && cipherIv != null) {
+                    val cipher = getCipher()
                     decryptCounter++
                     cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(cipherIv))
+                    onSuccess(cipher)
                 } else {
-                    encryptCounter++
-                    cipher.init(Cipher.ENCRYPT_MODE, secretKey)
+                    onSuccess(null)
                 }
-                onSuccess(cipher)
             } else {
-                onSuccess(null)
+                val cipher = getCipher()
+                encryptCounter++
+                cipher.init(Cipher.ENCRYPT_MODE, secretKey)
+                onSuccess(cipher)
             }
         } else {
             onError("Authentication failed")

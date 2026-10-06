@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">En activant cette option, des sauvegardes sont automatiquement créées dans le Dossier de sauvegardes configuré.\nCela peut ne pas fonctionner si le mode économie d\'énergie est activé. </string>
     <string name="behaviour">Comportement</string>
     <string name="biometric_backup_advice">Il est conseillé d\'exporter une sauvegarde complète de toutes vos notes avant d\'activer ou de désactiver le verrouillage biométrique, au cas où le chiffrement via ce dernier échouerait</string>
+    <string name="biometric_encryption_experimental_warning">Vous avez activé le verrouillage biométrique qui, jusqu\'à présent, cryptait également la base de données. En raison de problèmes rencontrés par certains utilisateurs, le chiffrement de la base de données a été classé comme EXPÉRIMENTAL et son utilisation se fait à vos propres risques.\n\nVous pouvez désactiver le chiffrement de la base de données en cliquant sur « Déchiffrer », ou simplement désactiver puis réactiver le verrouillage biométrique dans les paramètres sans chiffrement.</string>
     <string name="biometric_lock">Verrouiller l\'application avec la biométrie ou le code PIN de l\'appareil</string>
+    <string name="biometric_lock_enabled_with_encryption">Activé (avec le chiffrement expérimental de la base de données)</string>
+    <string name="biometrics_decrypted_success">Chiffrement de la base de données désactivé</string>
     <string name="biometrics_disable_success">Le verrouillage biométrique/code PIN a été désactivé</string>
     <string name="biometrics_failure">Échec de l\'authentification biométrique/code PIN</string>
     <string name="biometrics_no_support">Aucune fonction biométrique n\'est disponible sur cet appareil</string>
@@ -122,6 +125,7 @@
         <item quantity="one">Jour</item>
         <item quantity="other">Jours</item>
     </plurals>
+    <string name="decrypt">Décrypter</string>
     <string name="decrypting_database_biometric">Décryptage d\'une base de données par des moyens biométriques</string>
     <string name="default_color_hint">Il s\'agit de la couleur par défaut des nouvelles notes. Pour la modifier, définissez une autre couleur comme couleur par défaut.</string>
     <string name="default_list_note_view_mode">Mode d\'affichage par défaut « Liste-Note »</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">La base de donnée sera aussi chiffrée</string>
     <string name="enable_lock_title">Activer le verrouillage biométrique/code PIN</string>
     <string name="enabled">Activé</string>
+    <string name="encrypt_database_advice">EXPÉRIMENTAL : Par défaut, l\'activation du verrouillage n\'entraîne pas le chiffrement de la base de données. Vous pouvez, si vous le souhaitez, activer le chiffrement de la base de données, ce qui peut être utilisé conjointement avec l\'option « data in public » pour que la base de données se trouve dans un dossier public, tout en restant chiffrée. Sachez toutefois que le chiffrement de la base de données n\'est pas encore stable.</string>
+    <string name="encrypt_database_via_biometric">Chiffrer une base de données à l\'aide de données biométriques</string>
     <string name="encrypting_database_biometric">Chiffrement d\'une base de données à l\'aide de données biométriques</string>
     <string name="error">Erreur</string>
     <string name="error_loading_data">Une erreur s\'est produite lors du chargement de certaines données depuis la base de données. Les notes endommagées ne s\'afficheront pas.\nVous pouvez nettoyer la base de données (en supprimant les notes endommagées) à l\'aide de «%1$s »</string>

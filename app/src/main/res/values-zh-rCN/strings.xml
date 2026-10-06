@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">启用此选项后将自动在配置的备份文件夹中创建备份文件。如果你启用了节能模式，这可能无法正常工作</string>
     <string name="behaviour">行为</string>
     <string name="biometric_backup_advice">建议在禁用/开启生物特征锁前导出所有笔记的完整备份，以防通过生物特征锁的加密失败</string>
+    <string name="biometric_encryption_experimental_warning">您已启用生物识别锁定功能，该功能此前还会对数据库进行加密。 由于部分用户遇到了问题，数据库加密功能已被标记为“实验性”功能，使用时请自行承担风险。\n\n您可以通过点击“解密”来禁用数据库加密，或者直接在设置中禁用并重新启用生物识别锁（此时不会进行加密）。</string>
     <string name="biometric_lock">使用生物识别或PIN解锁应用</string>
+    <string name="biometric_lock_enabled_with_encryption">已启用（启用了实验性数据库加密功能）</string>
+    <string name="biometrics_decrypted_success">数据库加密已禁用</string>
     <string name="biometrics_disable_success">已停用生物特征/Pin 锁</string>
     <string name="biometrics_failure">未能通过生物特征/PIN验证身份</string>
     <string name="biometrics_no_support">本设备上没有生物特征功能可用</string>
@@ -122,6 +125,7 @@
         <item quantity="one">天</item>
         <item quantity="other">天</item>
     </plurals>
+    <string name="decrypt">解密</string>
     <string name="decrypting_database_biometric">通过生物识别技术解密数据库</string>
     <string name="default_color_hint">这是新笔记的默认颜色。要更改它，请让另一个颜色成为默认颜色</string>
     <string name="default_list_note_view_mode">默认清单笔记视图模式</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">这也会加密数据库</string>
     <string name="enable_lock_title">启用生物特征/PIN锁</string>
     <string name="enabled">启用</string>
+    <string name="encrypt_database_advice">实验性功能：默认情况下，启用锁定功能不会对数据库进行加密。您可以选择启用数据库加密功能，该功能可与“data in public”选项结合使用，使数据库位于公共文件夹中但保持加密状态。请注意，数据库加密功能目前尚不稳定。</string>
+    <string name="encrypt_database_via_biometric">通过生物识别技术加密数据库</string>
     <string name="encrypting_database_biometric">通过生物识别技术对数据库进行加密</string>
     <string name="error">出错</string>
     <string name="error_loading_data">从数据库加载一些数据时出错。无法显示损坏的笔记。可用“%1$s”清理（删除损坏的笔记）数据库</string>

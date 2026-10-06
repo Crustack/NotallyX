@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">عند تفعيل هذا الخيار، سيتم إنشاء نسخ احتياطية تلقائيًا في مجلد النسخ الاحتياطية المحدد.\nقد لا يعمل إذا كان الجها مفعلا في وضع توفير الطاقة</string>
     <string name="behaviour">السلوك</string>
     <string name="biometric_backup_advice">يُنصح بتصدير نسخة احتياطية كاملة لجميع الملاحظات قبل تعطيل/تفعيل قفل القياسات الحيوية، في حال فشل التشفير عبر القياس الحيوي</string>
+    <string name="biometric_encryption_experimental_warning">لقد قمتُ بتفعيل قفل المقاييس الحيوية الذي كان حتى الآن يقوم أيضًا بتشفير قاعدة البيانات. نظرًا للمشكلات التي واجهها المستخدمون، تم تصنيف تشفير قاعدة البيانات على أنه «تجريبي» ويجب استخدامه على مسؤوليتك الخاصة.\n\nيمكنك تعطيل تشفير قاعدة البيانات بالنقر على «إلغاء التشفير»، أو ببساطة تعطيل القفل البيومتري وإعادة تمكينه في الإعدادات دون تشفير.</string>
     <string name="biometric_lock">قفل التطبيق باستخدام القياسات الحيوية أو رمز PIN</string>
+    <string name="biometric_lock_enabled_with_encryption">ممكّن (مع تشفير قاعدة البيانات التجريبي)</string>
+    <string name="biometrics_decrypted_success">تم تعطيل تشفير قاعدة البيانات</string>
     <string name="biometrics_disable_success">تم تعطيل قفل القياسات الحيوية/‏PIN</string>
     <string name="biometrics_failure">فشل التحقق عبر القياسات الحيوية/‏PIN</string>
     <string name="biometrics_no_support">لا تتوفر ميزات القياسات الحيوية على هذا الجهاز</string>
@@ -122,6 +125,7 @@
         <item quantity="one">يوم</item>
         <item quantity="other">أيام</item>
     </plurals>
+    <string name="decrypt">فك التشفير</string>
     <string name="decrypting_database_biometric">فك تشفير قاعدة البيانات باستخدام تقنية القياسات الحيوية</string>
     <string name="default_color_hint">هذا هو اللون الافتراضي للملاحظات الجديدة. لتغييره، عيّن لونًا آخر كافتراضي</string>
     <string name="default_list_note_view_mode">وضع عرض الملاحظات (قائمة) الافتراضي</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">سيؤدي ذلك أيضًا إلى تشفير قاعدة البيانات</string>
     <string name="enable_lock_title">تفعيل القفل باستخدام البصمة/رمز PIN</string>
     <string name="enabled">مفعّل</string>
+    <string name="encrypt_database_advice">تجريبي: بشكل افتراضي، لا يؤدي تمكين القفل إلى تشفير قاعدة البيانات. يمكنك اختيارياً تمكين تشفير قاعدة البيانات، وهو ما يمكن استخدامه بالاقتران مع الخيار «البيانات في المجلد العام» لوضع قاعدة البيانات في مجلد عام، ولكن بشكل مشفر. يرجى العلم بأن تشفير قاعدة البيانات ليس مستقراً بعد.</string>
+    <string name="encrypt_database_via_biometric">تشفير قاعدة البيانات باستخدام تقنية القياسات الحيوية</string>
     <string name="encrypting_database_biometric">تشفير قاعدة البيانات باستخدام تقنية القياسات الحيوية</string>
     <string name="error">خطأ</string>
     <string name="error_loading_data">حدث خطأ أثناء تحميل بعض البيانات من قاعدة البيانات. لن يتم عرض الملاحظات التالفة.\nيمكنك تنظيف قاعدة البيانات (حذف الملاحظات التالفة) باستخدام \'%1$s\'</string>

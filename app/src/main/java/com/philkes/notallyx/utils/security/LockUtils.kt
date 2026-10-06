@@ -36,14 +36,14 @@ fun showBiometricOrPinPrompt(
             .build()
     val preferences = NotallyXPreferences.getInstance(context)
     val cipher =
-        if (preferences.biometricLockEncryptsDb.value) {
-            if (isForDecrypt) {
-                getInitializedCipherForDecryption(iv = cipherIv!!)
+        if (isForDecrypt) {
+            if (preferences.biometricLockEncryptsDb.value && cipherIv != null) {
+                getInitializedCipherForDecryption(iv = cipherIv)
             } else {
-                getInitializedCipherForEncryption()
+                null
             }
         } else {
-            null
+            getInitializedCipherForEncryption()
         }
     val authCallback =
         object : BiometricPrompt.AuthenticationCallback() {

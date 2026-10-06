@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">Ist dies aktiviert, werden autom. Backups im eingestellten Backups Ordner erstellt. \nDies könnte fehlschlagen wenn Energiesparmodus aktiviert ist</string>
     <string name="behaviour">Funktionsweise</string>
     <string name="biometric_backup_advice">Es wird empfohlen ein komplettes Backup zu erstellen bevor die Biometrische/PIN Sperre de-/aktiviert wird, für den Fall dass die Verschlüsselung fehlschlägt</string>
+    <string name="biometric_encryption_experimental_warning">Sie haben die biometrische Sperre aktiviert, die bisher auch die Datenbank verschlüsselt hat. Da bei einigen Benutzern Probleme aufgetreten sind, wurde die Datenbankverschlüsselung als EXPERIMENTELL gekennzeichnet und sollte auf eigene Gefahr verwendet werden.\n\nSie können die Datenbankverschlüsselung deaktivieren, indem Sie auf „Entschlüsseln“ klicken, oder einfach die biometrische Sperre in den Einstellungen ohne Verschlüsselung deaktivieren und erneut aktivieren.</string>
     <string name="biometric_lock">App per Biometrie/PIN sperren</string>
+    <string name="biometric_lock_enabled_with_encryption">Aktiviert (mit EXPERIMENTELLER Datenbankverschlüsselung)</string>
+    <string name="biometrics_decrypted_success">Datenbankverschlüsselung deaktiviert</string>
     <string name="biometrics_disable_success">Biometrische/PIN Sperre deaktiviert</string>
     <string name="biometrics_failure">Fehler bei Authentifizierung per Biometrie/PIN</string>
     <string name="biometrics_no_support">Dein Geräte verfügt über keine biometrischen Features</string>
@@ -122,6 +125,7 @@
         <item quantity="one">Tag</item>
         <item quantity="other">Tage</item>
     </plurals>
+    <string name="decrypt">Entschlüsseln</string>
     <string name="decrypting_database_biometric">Entschlüsselung der Datenbank mittels biometrischer Daten</string>
     <string name="default_color_hint">Das ist die Standardfarbe für neue Notizen. Um sie zu ändern, wähle eine andere Farbe als Standard</string>
     <string name="default_list_note_view_mode">Standard Listen Ansichtsmodus</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">Dies verschlüsselt außerdem die Datenbank</string>
     <string name="enable_lock_title">Aktiviere Biometrie/PIN Sperre</string>
     <string name="enabled">Aktiviert</string>
+    <string name="encrypt_database_advice">EXPERIMENTELL: Standardmäßig wird die Datenbank durch das Aktivieren der Sperre nicht verschlüsselt. Optional können Sie die Verschlüsselung der Datenbank aktivieren. Diese Funktion lässt sich in Verbindung mit der Option „data in public“ nutzen, um die Datenbank in einem öffentlichen Ordner abzulegen, wobei sie jedoch verschlüsselt bleibt. Bitte beachten Sie, dass die Datenbankverschlüsselung noch nicht stabil ist.</string>
+    <string name="encrypt_database_via_biometric">Datenbank mittels biometrischer Daten verschlüsseln</string>
     <string name="encrypting_database_biometric">Verschlüsselung der Datenbank mittels biometrischer Daten</string>
     <string name="error">Fehler</string>
     <string name="error_loading_data">Fehler während dem Auslesen der Datenbank. Beschädigte Notizen werden nicht angezeigt. Du kannst über \'%1$s\' die Datenbank aufräumen (beschädigte Notizen löschen)</string>

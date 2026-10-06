@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">Ak túto funkciu povolíte, zálohy sa budú automaticky vytvárať v nakonfigurovanom priečinku „Backups“.\nTáto funkcia nemusí fungovať, ak máte zapnutý režim úspory energie</string>
     <string name="behaviour">Správanie</string>
     <string name="biometric_backup_advice">Odporúča sa pred deaktiváciou alebo aktiváciou biometrického zámku exportovať úplnú zálohu všetkých poznámok pre prípad, že by šifrovanie prostredníctvom biometrického zámku zlyhalo.</string>
+    <string name="biometric_encryption_experimental_warning">Aktivovali ste biometrické uzamknutie, ktoré doteraz zároveň šifrovalo databázu. Vzhľadom na problémy, s ktorými sa používatelia stretávali, bolo šifrovanie databázy označené ako EXPERIMENTÁLNE a jeho používanie je na vlastné riziko.\n\nŠifrovanie databázy môžete deaktivovať kliknutím na „Dešifrovať“ alebo jednoducho deaktivovať a opäť aktivovať biometrické zamykanie v nastaveniach bez šifrovania.</string>
     <string name="biometric_lock">Zamknúť aplikáciu pomocou biometrických údajov zariadenia alebo PIN kódu</string>
+    <string name="biometric_lock_enabled_with_encryption">Zapnuté (s EXPERIMENTÁLNYM šifrovaním databázy)</string>
+    <string name="biometrics_decrypted_success">Šifrovanie databázy je vypnuté</string>
     <string name="biometrics_disable_success">Biometrické/PIN uzamknutie bolo deaktivované</string>
     <string name="biometrics_failure">Nepodarilo sa overiť identitu prostredníctvom biometrických údajov/PIN kódu</string>
     <string name="biometrics_no_support">Toto zariadenie neponúka žiadne biometrické funkcie</string>
@@ -122,6 +125,7 @@
         <item quantity="one">Deň</item>
         <item quantity="other">Dni</item>
     </plurals>
+    <string name="decrypt">Dešifrovať</string>
     <string name="decrypting_database_biometric">Dešifrovanie databázy pomocou biometrických údajov</string>
     <string name="default_color_hint">Toto je predvolená farba pre nové poznámky. Ak ju chcete zmeniť, nastavte ako predvolenú inú farbu.</string>
     <string name="default_list_note_view_mode">Predvolený režim zobrazenia zoznamu a poznámok</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">Týmto sa zároveň zašifruje databáza</string>
     <string name="enable_lock_title">Aktivovať uzamknutie pomocou biometrických údajov alebo PIN kódu</string>
     <string name="enabled">Zapnuté</string>
+    <string name="encrypt_database_advice">EXPERIMENTÁLNE: V predvolenom nastavení sa aktiváciou zámku databáza nešifruje. Šifrovanie databázy môžete voliteľne aktivovať; túto funkciu je možné použiť v kombinácii s voľbou „data in public“, aby bola databáza umiestnená vo verejnej zložke, ale zároveň šifrovaná. Upozorňujeme, že šifrovanie databázy zatiaľ nie je stabilné.</string>
+    <string name="encrypt_database_via_biometric">Šifrovanie databázy pomocou biometrických údajov</string>
     <string name="encrypting_database_biometric">Šifrovanie databázy pomocou biometrických údajov</string>
     <string name="error">Chyba</string>
     <string name="error_loading_data">Pri načítavaní niektorých údajov z databázy došlo k chybe. Poškodené poznámky sa nezobrazia.\nDatabázu môžete vyčistiť (vymazať poškodené poznámky) pomocou \'%1$s\'</string>

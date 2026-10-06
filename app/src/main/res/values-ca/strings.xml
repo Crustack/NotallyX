@@ -50,7 +50,10 @@
     <string name="backup_periodic_hint">En habilitar això, les còpies de seguretat es creen automàticament a la carpeta de còpies de seguretat configurada. Això pot no funcionar si teniu el mode d\'estalvi d\'energia activat.</string>
     <string name="behaviour">Comportament</string>
     <string name="biometric_backup_advice">Es recomana exportar una còpia de seguretat completa de totes les notes abans de desactivar o reactivar el bloqueig biomètric, per si la xifrada mitjançant el bloqueig biomètric falla.</string>
+    <string name="biometric_encryption_experimental_warning">Heu habilitat el bloqueig biomètric que fins ara també xiflava la base de dades. A causa de problemes experimentats pels usuaris, el xifratge de la base de dades s\'ha marcat com a EXPERIMENTAL i s\'ha d\'utilitzar sota la vostra responsabilitat. Podeu desactivar el xifratge de la base de dades fent clic a «Desxifra», o simplement desactivar i tornar a activar el bloqueig biomètric a la configuració sense xifratge.</string>
     <string name="biometric_lock">Bloqueja l\'aplicació amb la biometria del dispositiu o un PIN</string>
+    <string name="biometric_lock_enabled_with_encryption">Activat (amb xifratge de base de dades experimental)</string>
+    <string name="biometrics_decrypted_success">Xifratge de la base de dades desactivat</string>
     <string name="biometrics_disable_success">El bloqueig biomètric/PIN s\'ha desactivat</string>
     <string name="biometrics_failure">Autenticació fallida mitjançant biomètrica/PIN</string>
     <string name="biometrics_no_support">No hi ha cap característica biomètrica disponible en aquest dispositiu.</string>
@@ -125,6 +128,7 @@
         <item quantity="one">Dia</item>
         <item quantity="other">Dies</item>
     </plurals>
+    <string name="decrypt">Desxifrar</string>
     <string name="decrypting_database_biometric">Desxifratge de la base de dades mitjançant biometria</string>
     <string name="default_color_hint">Aquest és el color predeterminat per a les notes noves. Per canviar-lo, estableix un altre color com a predeterminat.</string>
     <string name="default_list_note_view_mode">Modo de visualització predeterminat de llista-nota</string>
@@ -178,6 +182,8 @@
     <string name="enable_lock_description">Això també xifrarà la base de dades.</string>
     <string name="enable_lock_title">Activar el bloqueig mitjançant biometria/PIN</string>
     <string name="enabled">Activat</string>
+    <string name="encrypt_database_advice">EXPERIMENTAL: Per defecte, activar el bloqueig no xifra la base de dades. Opcionalment, podeu habilitar el xifratge de la base de dades, que es pot utilitzar conjuntament amb l\'opció «dades en públic» per tenir la base de dades en una carpeta pública però xifrada. Tingueu en compte que el xifratge de la base de dades encara no és estable.</string>
+    <string name="encrypt_database_via_biometric">Xifrar la base de dades mitjançant biometria</string>
     <string name="encrypting_database_biometric">Xifrar una base de dades mitjançant la biometria</string>
     <string name="error">Error</string>
     <string name="error_loading_data">Error en carregar alguns dades de la base de dades. Les notes corruptes no es mostraran. Pots netejar (eliminant les notes corruptes) la base de dades utilitzant \'%1$s\'.</string>

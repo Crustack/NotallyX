@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">Når denne indstilling er aktiveret, oprettes der automatisk sikkerhedskopier i den konfigurerede sikkerhedskopimappe.\nDette fungerer muligvis ikke, hvis du har aktiveret strømbesparelsestilstand</string>
     <string name="behaviour">Adfærd</string>
     <string name="biometric_backup_advice">Det anbefales at eksportere en fuld sikkerhedskopi af alle noter, inden den biometriske lås deaktiveres eller aktiveres, i tilfælde af at krypteringen via den biometriske lås mislykkes</string>
+    <string name="biometric_encryption_experimental_warning">Du har aktiveret den biometriske lås, som indtil nu også har krypteret databasen. Da nogle brugere har oplevet problemer, er databasekrypteringen blevet markeret som EKSPERIMENTEL og bør kun bruges på eget ansvar.\n\nDu kan deaktivere databasekrypteringen ved at klikke på \"Dekrypter\", eller blot deaktivere og genaktivere den biometriske lås i indstillingerne uden kryptering.</string>
     <string name="biometric_lock">Lås appen med enhedens biometriske funktion eller PIN-kode</string>
+    <string name="biometric_lock_enabled_with_encryption">Aktiveret (med EXPERIMENTAL-databasekryptering)</string>
+    <string name="biometrics_decrypted_success">Databasekryptering er deaktiveret</string>
     <string name="biometrics_disable_success">Den biometriske lås/PIN-lås er blevet deaktiveret</string>
     <string name="biometrics_failure">Det lykkedes ikke at godkende via biometri/PIN-kode</string>
     <string name="biometrics_no_support">Denne enhed har ingen biometriske funktioner</string>
@@ -122,6 +125,7 @@
         <item quantity="one">Dag</item>
         <item quantity="other">Dage</item>
     </plurals>
+    <string name="decrypt">Dekrypter</string>
     <string name="decrypting_database_biometric">Dekryptering af database ved hjælp af biometri</string>
     <string name="default_color_hint">Dette er standardfarven for nye noter. Hvis du vil ændre den, skal du vælge en anden farve som standardfarve</string>
     <string name="default_list_note_view_mode">Standardvisningstilstand for liste-noter</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">Dette vil også kryptere databasen</string>
     <string name="enable_lock_title">Aktivér lås via biometri/PIN-kode</string>
     <string name="enabled">Aktiveret</string>
+    <string name="encrypt_database_advice">EKSPERIMENTELT: Som standard medfører aktivering af låsen ikke, at databasen krypteres. Du kan eventuelt aktivere kryptering af databasen, hvilket kan bruges sammen med indstillingen »data in public« for at placere databasen i en offentlig mappe, men i krypteret form. Vær opmærksom på, at databasekryptering endnu ikke er stabil.</string>
+    <string name="encrypt_database_via_biometric">Kryptering af database via biometri</string>
     <string name="encrypting_database_biometric">Kryptering af database ved hjælp af biometri</string>
     <string name="error">Fejl</string>
     <string name="error_loading_data">Der opstod en fejl under indlæsning af visse data fra databasen. Beskadigede noter vises ikke.\nDu kan rydde op i databasen (slette beskadigede noter) ved at bruge \'%1$s\'</string>

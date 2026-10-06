@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">Ao ativar esta opção, são criadas automaticamente cópias de segurança na pasta de cópias de segurança configurada.\nIsto poderá não funcionar se tiver o modo de poupança de energia ativado</string>
     <string name="behaviour">Comportamento</string>
     <string name="biometric_backup_advice">Recomenda-se exportar uma cópia de segurança completa de todas as notas antes de desativar ou ativar o bloqueio biométrico, para o caso de a encriptação através do bloqueio biométrico falhar</string>
+    <string name="biometric_encryption_experimental_warning">Ativou o bloqueio biométrico, que até agora também encriptava a base de dados. Devido a problemas enfrentados pelos utilizadores, a encriptação da base de dados foi marcada como EXPERIMENTAL e deve ser utilizada por sua conta e risco.\n\nPode desativar a encriptação da base de dados clicando em «Desencriptar» ou, simplesmente, desativar e reativar o bloqueio biométrico nas definições sem encriptação.</string>
     <string name="biometric_lock">Bloquear a aplicação com os dados biométricos do dispositivo ou com o PIN</string>
+    <string name="biometric_lock_enabled_with_encryption">Ativado (com encriptação da base de dados EXPERIMENTAL)</string>
+    <string name="biometrics_decrypted_success">Encriptação da base de dados desativada</string>
     <string name="biometrics_disable_success">O bloqueio biométrico/por PIN foi desativado</string>
     <string name="biometrics_failure">Falha na autenticação através de dados biométricos/PIN</string>
     <string name="biometrics_no_support">Este dispositivo não dispõe de funcionalidades biométricas</string>
@@ -122,6 +125,7 @@
         <item quantity="one">Dia</item>
         <item quantity="other">Dias</item>
     </plurals>
+    <string name="decrypt">Desencriptar</string>
     <string name="decrypting_database_biometric">Descriptografia da base de dados através de dados biométricos</string>
     <string name="default_color_hint">Esta é a cor predefinida para as novas notas. Para a alterar, defina outra cor como predefinida</string>
     <string name="default_list_note_view_mode">Modo de visualização predefinido «Lista-Nota»</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">Isto também irá encriptar a base de dados</string>
     <string name="enable_lock_title">Ativar o bloqueio através de dados biométricos/PIN</string>
     <string name="enabled">Ativado</string>
+    <string name="encrypt_database_advice">EXPERIMENTAL: Por predefinição, ativar o bloqueio não encripta a base de dados. É possível, opcionalmente, ativar a encriptação da base de dados, que pode ser utilizada em conjunto com a opção «dados em público» para que a base de dados fique numa pasta pública, mas encriptada. Tenha em atenção que a encriptação da base de dados ainda não é estável.</string>
+    <string name="encrypt_database_via_biometric">Encriptar a base de dados através de dados biométricos</string>
     <string name="encrypting_database_biometric">Encriptação da base de dados através de dados biométricos</string>
     <string name="error">Erro</string>
     <string name="error_loading_data">Ocorreu um erro ao carregar alguns dados da base de dados. As notas danificadas não serão apresentadas.\nPode limpar a base de dados (eliminando as notas danificadas) utilizando \'%1$s\'</string>
