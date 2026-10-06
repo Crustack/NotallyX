@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">Якщо ввімкнути цей параметр, резервні копії автоматично створюватимуться у вибраній папці.\nЦе може не працювати, якщо ввімкнено режим енергозбереження</string>
     <string name="behaviour">Поведінка</string>
     <string name="biometric_backup_advice">Рекомендовано створити повну резервну копію всіх нотаток перед тим, як вмикати або вимикати біометричне блокування, на випадок збою шифрування через біометрію</string>
+    <string name="biometric_encryption_experimental_warning">Ви увімкнули біометричний замок, який до цього моменту також шифрував базу даних. Через проблеми, що виникали у користувачів, шифрування бази даних було позначено як ЕКСПЕРИМЕНТАЛЬНЕ, і його слід використовувати на власний ризик.\n\nВи можете вимкнути шифрування бази даних, натиснувши «Розшифрувати», або просто вимкнути та знову увімкнути біометричний замок у налаштуваннях без шифрування.</string>
     <string name="biometric_lock">Блокувати додаток біометрією або PIN-кодом</string>
+    <string name="biometric_lock_enabled_with_encryption">Увімкнено (з ЕКСПЕРИМЕНТАЛЬНИМ шифруванням бази даних)</string>
+    <string name="biometrics_decrypted_success">Шифрування бази даних вимкнено</string>
     <string name="biometrics_disable_success">Блокування за біометрією або PIN-кодом вимкнено</string>
     <string name="biometrics_failure">Помилка автентифікації за біометрією або PIN-кодом</string>
     <string name="biometrics_no_support">На цьому пристрої немає біометричних функцій</string>
@@ -126,6 +129,7 @@
         <item quantity="many">Днів</item>
         <item quantity="other">Дня</item>
     </plurals>
+    <string name="decrypt">Розшифрувати</string>
     <string name="decrypting_database_biometric">Розшифрування бази даних за допомогою біометричних даних</string>
     <string name="default_color_hint">Це колір за замовчуванням для нових нотаток. Щоб змінити його, зробіть інший колір стандартним.</string>
     <string name="default_list_note_view_mode">Режим перегляду списку за замовчуванням</string>
@@ -179,6 +183,8 @@
     <string name="enable_lock_description">Це також зашифрує базу даних</string>
     <string name="enable_lock_title">Увімкнути блокування за допомогою біометрії або PIN-коду</string>
     <string name="enabled">Увімкнено</string>
+    <string name="encrypt_database_advice">ЕКСПЕРИМЕНТАЛЬНА ФУНКЦІЯ: За замовчуванням увімкнення блокування не призводить до шифрування бази даних. За бажанням можна увімкнути шифрування бази даних, яке можна використовувати разом з опцією «data in public», щоб база даних зберігалася у загальнодоступній папці, але була зашифрована. Зверніть увагу, що шифрування бази даних поки що не є стабільним.</string>
+    <string name="encrypt_database_via_biometric">Шифрування бази даних за допомогою біометричних даних</string>
     <string name="encrypting_database_biometric">Шифрування бази даних за допомогою біометричних даних</string>
     <string name="error">Помилка</string>
     <string name="error_loading_data">Помилка під час завантаження деяких даних із бази даних. Пошкоджені нотатки не відображатимуться. Ви можете очистити базу даних (видаливши пошкоджені нотатки) за допомогою \'%1$s\'</string>

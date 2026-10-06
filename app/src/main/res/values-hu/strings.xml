@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">Ha ezt engedélyezi, a biztonsági másolatok automatikusan a beállított „Backups” mappába kerülnek.\nEz esetleg nem fog működni, ha az energiatakarékos mód be van kapcsolva</string>
     <string name="behaviour">Viselkedés</string>
     <string name="biometric_backup_advice">Javasolt az összes jegyzet teljes biztonsági másolatát exportálni a biometrikus zár ki- vagy bekapcsolása előtt, arra az esetre, ha a biometrikus zárral történő titkosítás nem sikerülne</string>
+    <string name="biometric_encryption_experimental_warning">Engedélyezte a biometrikus zárat, amely eddig az adatbázis titkosítását is elvégezte. Mivel a felhasználók problémákat tapasztaltak, az adatbázis titkosítását KÍSÉRLETI státusszal láttuk el, ezért használata a saját felelősségére történik.\n\nAz adatbázis titkosítását a „Titkosítás feloldása” gombra kattintva kapcsolhatja ki, vagy egyszerűen kikapcsolhatja, majd újra bekapcsolhatja a biometrikus zárat a beállításokban titkosítás nélkül.</string>
     <string name="biometric_lock">Az alkalmazás zárolása az eszköz biometrikus azonosítójával vagy PIN-kóddal</string>
+    <string name="biometric_lock_enabled_with_encryption">Engedélyezve (KÍSÉRLETI adatbázis-titkosítással)</string>
+    <string name="biometrics_decrypted_success">Az adatbázis titkosítása le van tiltva</string>
     <string name="biometrics_disable_success">A biometrikus/PIN-zár le van tiltva</string>
     <string name="biometrics_failure">A biometrikus azonosítás/PIN-kód használatával történő hitelesítés nem sikerült</string>
     <string name="biometrics_no_support">Ezen a készüléken nincsenek biometrikus azonosító jellemzők</string>
@@ -122,6 +125,7 @@
         <item quantity="one">Nap</item>
         <item quantity="other">Napok</item>
     </plurals>
+    <string name="decrypt">Visszafejtés</string>
     <string name="decrypting_database_biometric">Az adatbázis visszafejtése biometrikus azonosítás segítségével</string>
     <string name="default_color_hint">Ez az új jegyzetek alapértelmezett színe. Ha meg akarod változtatni, állíts be egy másik színt alapértelmezettként.</string>
     <string name="default_list_note_view_mode">Alapértelmezett lista-jegyzet nézetmód</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">Ezzel az adatbázis is titkosítva lesz</string>
     <string name="enable_lock_title">A zár biometrikus azonosítással vagy PIN-kóddal történő engedélyezése</string>
     <string name="enabled">Engedélyezve</string>
+    <string name="encrypt_database_advice">KÍSÉRLETI: Alapértelmezés szerint a zár engedélyezése nem titkosítja az adatbázist. Opcionálisan engedélyezheted az adatbázis titkosítását, amely a „data in public” opcióval együtt használva lehetővé teszi, hogy az adatbázis egy nyilvános mappában legyen, de titkosítva. Ne feledd, hogy az adatbázis-titkosítás még nem működik stabilan.</string>
+    <string name="encrypt_database_via_biometric">Adatbázis titkosítása biometrikus azonosítással</string>
     <string name="encrypting_database_biometric">Az adatbázis titkosítása biometrikus adatok segítségével</string>
     <string name="error">Hiba</string>
     <string name="error_loading_data">Hiba történt az adatbázisból való adatbetöltés során. A sérült jegyzetek nem kerülnek megjelenítésre.\nAz adatbázist a \'%1$s\' parancs segítségével tisztíthatja meg (a sérült jegyzetek törlésével).</string>

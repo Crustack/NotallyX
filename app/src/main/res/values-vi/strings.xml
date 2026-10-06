@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">Bật chế độ này, các bản sao lưu sẽ được tự động tạo ra trong phần \"Thư mục sao lưu\" đã cài đặt.\nNó có thể không hoạt động nếu chế độ tiết kiệm năng lượng đang bật</string>
     <string name="behaviour">Hoạt động</string>
     <string name="biometric_backup_advice">Khuyến nghị tạo một bản sao lưu đầy đủ các ghi chú trước khi bật/tắt khóa sinh trắc học, đề phòng trường hợp mã hóa sinh trắc học thất bại</string>
+    <string name="biometric_encryption_experimental_warning">Bạn đã kích hoạt tính năng khóa sinh trắc học, tính năng này cho đến nay cũng đã mã hóa cơ sở dữ liệu. Do người dùng gặp phải một số vấn đề, tính năng mã hóa cơ sở dữ liệu hiện đã được đánh dấu là THỬ NGHIỆM và việc sử dụng tính năng này là do bạn tự chịu rủi ro.\n\nBạn có thể tắt tính năng mã hóa cơ sở dữ liệu bằng cách nhấp vào \"Giải mã\", hoặc đơn giản là tắt và bật lại tính năng khóa sinh trắc học trong phần cài đặt mà không cần mã hóa.</string>
     <string name="biometric_lock">Khóa ứng dụng bằng sinh trắc học hoặc mã số thiết bị</string>
+    <string name="biometric_lock_enabled_with_encryption">Đã bật (với tính năng mã hóa cơ sở dữ liệu THỬ NGHIỆM)</string>
+    <string name="biometrics_decrypted_success">Tính năng mã hóa cơ sở dữ liệu đã bị tắt</string>
     <string name="biometrics_disable_success">Khóa sinh trắc học/mã số đã tắt</string>
     <string name="biometrics_failure">Xác thực sinh trắc học/mã số thất bại</string>
     <string name="biometrics_no_support">Tính năng sinh trắc học không khả dụng trên thiết bị này</string>
@@ -122,6 +125,7 @@
         <item quantity="one">Ngày</item>
         <item quantity="other">Ngày</item>
     </plurals>
+    <string name="decrypt">Giải mã</string>
     <string name="decrypting_database_biometric">Giải mã cơ sở dữ liệu thông qua sinh trắc học</string>
     <string name="default_color_hint">Đây là màu mặc định của ghi chú. Để thay đổi, chọn một màu mặc định khác.</string>
     <string name="default_list_note_view_mode">Chế độ xem các mục liệt kê mặc định</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">Điều này sẽ mã hóa cơ sở dữ liệu</string>
     <string name="enable_lock_title">Bật khóa sinh trắc học/mã số</string>
     <string name="enabled">Đã bật</string>
+    <string name="encrypt_database_advice">THỬ NGHIỆM: Theo mặc định, việc kích hoạt tính năng khóa sẽ không mã hóa cơ sở dữ liệu. Bạn có thể tùy chọn kích hoạt tính năng mã hóa cơ sở dữ liệu; tính năng này có thể được sử dụng kết hợp với tùy chọn “data in public” để lưu trữ cơ sở dữ liệu trong một thư mục công khai nhưng vẫn được mã hóa. Xin lưu ý rằng tính năng mã hóa cơ sở dữ liệu hiện vẫn chưa ổn định.</string>
+    <string name="encrypt_database_via_biometric">Mã hóa cơ sở dữ liệu bằng sinh trắc học</string>
     <string name="encrypting_database_biometric">Mã hóa cơ sở dữ liệu thông qua sinh trắc học</string>
     <string name="error">Lỗi</string>
     <string name="error_loading_data">Xảy ra lỗi trong khi tải một số dữ liệu từ cơ sở dữ liệu. Các ghi chú bị hỏng sẽ không được hiển thị.\nBạn có thể dọn dẹp (xóa các ghi chú bị hỏng) cơ sở dữ liệu bằng cách sử dụng \'%1$s\'</string>

@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">Als je deze optie inschakelt, worden er automatisch back-ups gemaakt in de geconfigureerde map ‘Back-ups’.\nDit werkt mogelijk niet als de energiebesparingsmodus is ingeschakeld</string>
     <string name="behaviour">Gedrag</string>
     <string name="biometric_backup_advice">Het wordt aangeraden om een volledige back-up van alle notities te maken voordat je de biometrische vergrendeling in- of uitschakelt, voor het geval de versleuteling via de biometrische vergrendeling mislukt</string>
+    <string name="biometric_encryption_experimental_warning">U hebt de biometrische vergrendeling ingeschakeld, die tot nu toe ook de database versleutelde. Omdat gebruikers problemen ondervonden, is de databasecodering gemarkeerd als EXPERIMENTEEL en dient u deze op eigen risico te gebruiken.\n\nU kunt de databasecodering uitschakelen door op \"Decoderen\" te klikken, of u kunt de biometrische vergrendeling in de instellingen uitschakelen en vervolgens opnieuw inschakelen zonder codering.</string>
     <string name="biometric_lock">Vergrendel app met biometrische of PIN</string>
+    <string name="biometric_lock_enabled_with_encryption">Ingeschakeld (met EXPERIMENTELE databaseversleuteling)</string>
+    <string name="biometrics_decrypted_success">Databaseversleuteling is uitgeschakeld</string>
     <string name="biometrics_disable_success">Biometrische/PIN-vergrendeling is uitgeschakeld</string>
     <string name="biometrics_failure">Authenticatie via Biometrisch/PIN is mislukt</string>
     <string name="biometrics_no_support">Geen biometrische functies beschikbaar op dit apparaat</string>
@@ -122,6 +125,7 @@
         <item quantity="one">Dag</item>
         <item quantity="other">Dagen</item>
     </plurals>
+    <string name="decrypt">Ontcijferen</string>
     <string name="decrypting_database_biometric">Database ontcijferen via biometrische gegevens</string>
     <string name="default_color_hint">Dit is de standaardkleur voor nieuwe notities. Om dit te wijzigen, stel je een andere kleur in als standaard.</string>
     <string name="default_list_note_view_mode">Standaardweergavemodus voor lijsten en notities</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">Dit versleutelt ook de database</string>
     <string name="enable_lock_title">Vergrendeling inschakelen via Biometrisch/PIN</string>
     <string name="enabled">Ingeschakeld</string>
+    <string name="encrypt_database_advice">EXPERIMENTEEL: Standaard wordt de database niet versleuteld wanneer de vergrendeling wordt ingeschakeld. Je kunt desgewenst de versleuteling van de database inschakelen. Dit kan worden gecombineerd met de optie \'data in public\' om de database in een openbare map te plaatsen, maar dan wel versleuteld. Houd er rekening mee dat de versleuteling van de database nog niet stabiel is.</string>
+    <string name="encrypt_database_via_biometric">Database versleutelen via biometrische gegevens</string>
     <string name="encrypting_database_biometric">Database versleutelen via biometrische gegevens</string>
     <string name="error">Fout</string>
     <string name="error_loading_data">Er is een fout opgetreden bij het laden van bepaalde gegevens uit de database. Beschadigde notities worden niet weergegeven.\nJe kunt de database opschonen (door beschadigde notities te verwijderen) met behulp van \'%1$s\'</string>

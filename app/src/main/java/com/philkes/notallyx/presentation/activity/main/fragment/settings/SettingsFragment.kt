@@ -206,6 +206,13 @@ class SettingsFragment : Fragment() {
                             }
                         }
                     }
+                } else {
+                    if (
+                        model.showRefreshBackupsFolderAfterThemeChange ||
+                            model.previousBackupsFolder != null
+                    ) {
+                        model.cancelFolderSelection()
+                    }
                 }
             }
         setupLockActivityResultLauncher =
@@ -1088,7 +1095,6 @@ class SettingsFragment : Fragment() {
             .setView(layout)
             .setPositiveButton(R.string.continue_) { _, _ ->
                 val shouldEncrypt = checkBox.isChecked
-                model.preferences.biometricLockEncryptsDb.save(shouldEncrypt)
                 if (shouldEncrypt) {
                     AuthenticatorProvider.instance.authenticate(
                         requireActivity(),
@@ -1106,6 +1112,7 @@ class SettingsFragment : Fragment() {
                         showBiometricsNotSetupDialog()
                     }
                 } else {
+                    model.preferences.biometricLockEncryptsDb.save(false)
                     model.preferences.biometricLock.save(BiometricLock.ENABLED)
                     showToast(R.string.biometrics_setup_success)
                 }

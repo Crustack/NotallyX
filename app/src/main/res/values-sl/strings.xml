@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">Če to omogočite, se varnostne kopije samodejno ustvarjajo v nastavljeni mapi za varnostne kopije.\nTo morda ne bo delovalo, če imate vklopljen način varčevanja z energijo</string>
     <string name="behaviour">Vedenje</string>
     <string name="biometric_backup_advice">Priporočljivo je, da pred onemogočanjem oziroma omogočanjem biometrične zapore izvozite popolno varnostno kopijo vseh zapiskov, za primer, da šifriranje prek biometrične zapore ne bi uspelo</string>
+    <string name="biometric_encryption_experimental_warning">Omogočili ste biometrično zaklepanje, ki je do sedaj šifriralo tudi bazo podatkov. Ker so uporabniki naleteli na težave, je bilo šifriranje baze podatkov označeno kot EKSPERIMENTALNO in ga uporabljate na lastno odgovornost.\n\nŠifriranje baze podatkov lahko onemogočite s klikom na »Dešifriraj« ali pa preprosto onemogočite in ponovno omogočite biometrično zaklepanje v nastavitvah brez šifriranja.</string>
     <string name="biometric_lock">Zaklenite aplikacijo z biometričnimi podatki naprave ali s PIN-kodo</string>
+    <string name="biometric_lock_enabled_with_encryption">Omogočeno (z EKSPERIMENTALNIM šifriranjem baze podatkov)</string>
+    <string name="biometrics_decrypted_success">Šifriranje baze podatkov je onemogočeno</string>
     <string name="biometrics_disable_success">Biometrična/PIN-zaščita je bila onemogočena</string>
     <string name="biometrics_failure">Preverjanje pristnosti prek biometričnih podatkov/PIN-a ni uspelo</string>
     <string name="biometrics_no_support">Na tej napravi ni na voljo nobenih biometričnih značilnosti</string>
@@ -124,6 +127,7 @@
         <item quantity="one">Dan</item>
         <item quantity="other">Dnevi</item>
     </plurals>
+    <string name="decrypt">Dešifriraj</string>
     <string name="decrypting_database_biometric">Dešifriranje baze podatkov s pomočjo biometričnih podatkov</string>
     <string name="default_color_hint">To je privzeta barva za nove opombe. Če jo želite spremeniti, kot privzeto nastavite drugo barvo.</string>
     <string name="default_list_note_view_mode">Privzeti način prikaza seznama in opomb</string>
@@ -177,6 +181,8 @@
     <string name="enable_lock_description">S tem se bo šifrirala tudi baza podatkov</string>
     <string name="enable_lock_title">Omogoči zaklepanje z biometričnim podatkom/PIN-om</string>
     <string name="enabled">Omogočeno</string>
+    <string name="encrypt_database_advice">POSKUSNO: Privzeto vklop zaklepa ne šifrira baze podatkov. Po želji lahko vklopite šifriranje baze podatkov, kar lahko uporabite v kombinaciji z možnostjo »podatki v javni mapi«, da bo baza podatkov shranjena v javni mapi, vendar šifrirana. Upoštevajte, da šifriranje baze podatkov še ni stabilno.</string>
+    <string name="encrypt_database_via_biometric">Šifriranje baze podatkov z biometričnimi podatki</string>
     <string name="encrypting_database_biometric">Šifriranje baze podatkov s pomočjo biometričnih podatkov</string>
     <string name="error">Napaka</string>
     <string name="error_loading_data">Pri nalaganju nekaterih podatkov iz baze podatkov je prišlo do napake. Poškodovane opombe se ne bodo prikazale.\nBazo podatkov lahko počistite (izbrišete poškodovane opombe) z uporabo \'%1$s\'</string>

@@ -1,6 +1,7 @@
 package com.philkes.notallyx.presentation.activity.main
 
 import android.content.Intent
+import android.os.SystemClock
 import android.view.View
 import androidx.annotation.IdRes
 import androidx.core.view.GravityCompat
@@ -205,6 +206,11 @@ class ScreenshotTests {
                 .byText(withId(android.R.id.button1))
                 .inRoot(isDialog())
                 .perform(scrollTo(), click())
+            waitUntilSucceeds {
+                R.id.MainListView.byId()
+                    .onPositionView(1, withId(R.id.LabelText))
+                    .check(matches(withText("Label Foo")))
+            }
             onView(isRoot())
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/labels/02_edit_label_saved.png"
@@ -271,9 +277,10 @@ class ScreenshotTests {
 
     @Test
     fun reminders() {
+        SystemClock.setCurrentTimeMillis(fixedTime.time)
         // 1. Insert notes with reminders: one elapsed (past, no repetition), one upcoming (future)
         runBlocking {
-            val now = System.currentTimeMillis()
+            val now = fixedTime.time
             database
                 .getBaseNoteDao()
                 .insert(

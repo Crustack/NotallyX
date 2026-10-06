@@ -70,6 +70,8 @@ import org.hamcrest.Matchers.allOf
 import org.hamcrest.Matchers.anything
 import org.hamcrest.Matchers.`is`
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.FixMethodOrder
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -369,9 +371,10 @@ class SettingsFragmentTest : UiTestBase() {
 
         checkAndUpdateNoteTitle(0, "Test Foo", " Bar")
 
-        val expectedEncrypt = if (preferences.biometricLockEncryptsDb.value) 1 else 0
-        val expectedDecrypt1 = if (preferences.biometricLockEncryptsDb.value) 1 else 0
-        val expectedDecrypt2 = if (preferences.biometricLockEncryptsDb.value) 2 else 0
+        assertFalse(preferences.biometricLockEncryptsDb.value)
+        val expectedEncrypt = 0
+        val expectedDecrypt1 = 0
+        val expectedDecrypt2 = 0
 
         assertEquals(expectedEncrypt, fakeBiometricAuthenticator.getEncryptionCounter())
         assertEquals(expectedDecrypt1, fakeBiometricAuthenticator.getDecryptionCounter())
@@ -431,9 +434,10 @@ class SettingsFragmentTest : UiTestBase() {
 
         checkAndUpdateNoteTitle(0, "Test Foo", " Bar")
 
-        val expectedEncrypt = if (preferences.biometricLockEncryptsDb.value) 1 else 0
-        val expectedDecrypt1 = if (preferences.biometricLockEncryptsDb.value) 1 else 0
-        val expectedDecrypt2 = if (preferences.biometricLockEncryptsDb.value) 2 else 0
+        assertTrue(preferences.biometricLockEncryptsDb.value)
+        val expectedEncrypt = 1
+        val expectedDecrypt1 = 1
+        val expectedDecrypt2 = 2
 
         assertEquals(expectedEncrypt, fakeBiometricAuthenticator.getEncryptionCounter())
         assertEquals(expectedDecrypt1, fakeBiometricAuthenticator.getDecryptionCounter())

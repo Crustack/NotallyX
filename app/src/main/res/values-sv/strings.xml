@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">Om du aktiverar den här inställningen skapas säkerhetskopior automatiskt i den konfigurerade mappen för säkerhetskopior.\nDetta kanske inte fungerar om du har energisparläget aktiverat</string>
     <string name="behaviour">Beteende</string>
     <string name="biometric_backup_advice">Det rekommenderas att man exporterar en fullständig säkerhetskopia av alla anteckningar innan man in- eller avaktiverar den biometriska låsfunktionen, för det fall att krypteringen via den biometriska låsfunktionen skulle misslyckas.</string>
+    <string name="biometric_encryption_experimental_warning">Du har aktiverat biometrisk låsning, vilket hittills även har krypterat databasen. Eftersom användare har upplevt problem har databaskrypteringen markerats som EXPERIMENTELL och bör användas på egen risk.\n\nDu kan inaktivera databaskrypteringen genom att klicka på \"Dekryptera\", eller helt enkelt inaktivera och återaktivera det biometriska låset i inställningarna utan kryptering.</string>
     <string name="biometric_lock">Lås appen med enhetens biometriska funktioner eller en PIN-kod</string>
+    <string name="biometric_lock_enabled_with_encryption">Aktiverat (med EXPERIMENTELL databaskryptering)</string>
+    <string name="biometrics_decrypted_success">Databasens kryptering är inaktiverad</string>
     <string name="biometrics_disable_success">Det biometriska låset/PIN-låset har inaktiverats</string>
     <string name="biometrics_failure">Det gick inte att autentisera via biometrisk identifiering/PIN-kod</string>
     <string name="biometrics_no_support">Det finns inga biometriska funktioner på den här enheten</string>
@@ -122,6 +125,7 @@
         <item quantity="one">Dag</item>
         <item quantity="other">Dagar</item>
     </plurals>
+    <string name="decrypt">Dekryptera</string>
     <string name="decrypting_database_biometric">Dekryptering av databas med hjälp av biometri</string>
     <string name="default_color_hint">Det här är standardfärgen för nya anteckningar. Om du vill ändra den kan du ställa in en annan färg som standard</string>
     <string name="default_list_note_view_mode">Standardvisningsläge för list- och anteckningsvyn</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">Detta kommer också att kryptera databasen</string>
     <string name="enable_lock_title">Aktivera låsning via biometrisk autentisering/PIN-kod</string>
     <string name="enabled">Aktiverad</string>
+    <string name="encrypt_database_advice">EXPERIMENTELLT: Som standard krypteras inte databasen när låset aktiveras. Du kan valfritt aktivera kryptering av databasen, vilket kan användas tillsammans med alternativet ”data in public” för att placera databasen i en offentlig mapp, men i krypterad form. Tänk på att databaskryptering ännu inte är stabil.</string>
+    <string name="encrypt_database_via_biometric">Kryptera databasen med biometrisk autentisering</string>
     <string name="encrypting_database_biometric">Kryptering av databasen med hjälp av biometri</string>
     <string name="error">Fel</string>
     <string name="error_loading_data">Ett fel uppstod vid inläsning av vissa data från databasen. Skadade anteckningar visas inte.\nDu kan rensa databasen (ta bort skadade anteckningar) genom att använda \'%1$s\'</string>

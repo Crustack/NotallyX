@@ -77,6 +77,7 @@ class SettingsViewModel(private val app: Application) : AndroidViewModel(app) {
         field = MutableStateFlow<Progress?>(null)
 
     internal var showRefreshBackupsFolderAfterThemeChange = false
+    internal var previousBackupsFolder: String? = null
 
     init {
         viewModelScope.launch { NotallyDatabase.getDatabase(app).collect { init(it) } }
@@ -109,16 +110,20 @@ class SettingsViewModel(private val app: Application) : AndroidViewModel(app) {
     fun setupBackupsFolder(uri: Uri) {
         val oldBackupsFolder = preferences.backupsFolder.value
         val newBackupsFolder = uri.toString()
-        if (newBackupsFolder != oldBackupsFolder) {
-            val flags =
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        try {
             app.contentResolver.takePersistableUriPermission(uri, flags)
+        } catch (e: Exception) {
+            app.log(TAG, throwable = e)
+        }
+        if (newBackupsFolder != oldBackupsFolder) {
             if (!preferences.isDefaultOrEmptyBackupFolder(oldBackupsFolder)) {
                 clearPersistedUriPermissions(oldBackupsFolder)
             }
             savePreference(preferences.backupsFolder, newBackupsFolder)
         }
         showRefreshBackupsFolderAfterThemeChange = false
+        previousBackupsFolder = null
     }
 
     private fun clearPersistedUriPermissions(folderPath: String) {
@@ -301,11 +306,18 @@ class SettingsViewModel(private val app: Application) : AndroidViewModel(app) {
             useDynamicColorsBefore != preferences.useDynamicColors.getFreshValue()
         if (oldBackupsFolder != backupFolder) {
             showRefreshBackupsFolderAfterThemeChange = true
+            previousBackupsFolder = oldBackupsFolder
             if (themeBefore == preferences.theme.getFreshValue() && !hasUseDynamicColorsChange) {
-                refreshBackupsFolder(context, backupFolder, askForUriPermissions)
+                refreshBackupsFolder(
+                    context,
+                    backupFolder,
+                    oldBackupsFolder,
+                    askForUriPermissions,
+                )
             }
         } else {
             showRefreshBackupsFolderAfterThemeChange = false
+            previousBackupsFolder = null
         }
         val startView = preferences.startView.getFreshValue()
         if (oldStartView != startView) {
@@ -321,24 +333,66 @@ class SettingsViewModel(private val app: Application) : AndroidViewModel(app) {
     fun refreshBackupsFolder(
         context: Context,
         backupFolder: String = preferences.backupsFolder.value,
+        oldBackupsFolder: String? = previousBackupsFolder,
         askForUriPermissions: (uri: Uri) -> Unit,
     ) {
+        if (oldBackupsFolder != null) {
+            previousBackupsFolder = oldBackupsFolder
+        }
         if (preferences.isDefaultOrEmptyBackupFolder(backupFolder)) {
             return
         }
         try {
             val backupFolderUri = backupFolder.toUri()
+            var isPositiveButtonClicked = false
             MaterialAlertDialogBuilder(context)
                 .setMessage(R.string.auto_backups_folder_rechoose)
-                .setCancelButton { _, _ -> showRefreshBackupsFolderAfterThemeChange = false }
-                .setOnDismissListener { showRefreshBackupsFolderAfterThemeChange = false }
+                .setCancelButton { _, _ -> cancelFolderSelection(oldBackupsFolder) }
+                .setOnDismissListener {
+                    if (!isPositiveButtonClicked) {
+                        cancelFolderSelection(oldBackupsFolder)
+                    }
+                }
                 .setPositiveButton(R.string.choose_folder) { _, _ ->
+                    isPositiveButtonClicked = true
                     askForUriPermissions(backupFolderUri)
                 }
                 .show()
         } catch (_: Exception) {
-            showRefreshBackupsFolderAfterThemeChange = false
+            cancelFolderSelection(oldBackupsFolder)
+        }
+    }
+
+    fun cancelFolderSelection(oldBackupsFolder: String? = previousBackupsFolder) {
+        if (!showRefreshBackupsFolderAfterThemeChange && previousBackupsFolder == null) {
+            return
+        }
+        showRefreshBackupsFolderAfterThemeChange = false
+        val previousFolder = oldBackupsFolder ?: previousBackupsFolder
+        previousBackupsFolder = null
+        if (previousFolder != null && hasPersistedUriPermission(previousFolder)) {
+            savePreference(preferences.backupsFolder, previousFolder)
+        } else {
             disableBackups()
+        }
+    }
+
+    fun hasPersistedUriPermission(folderPath: String): Boolean {
+        if (preferences.isDefaultOrEmptyBackupFolder(folderPath)) {
+            return true
+        }
+        val uri =
+            try {
+                folderPath.toUri()
+            } catch (_: Exception) {
+                return false
+            }
+        return app.contentResolver.persistedUriPermissions.any { permission ->
+            permission.isReadPermission &&
+                permission.isWritePermission &&
+                (permission.uri == uri ||
+                    permission.uri.toString() == folderPath ||
+                    permission.uri.path?.contains(folderPath) == true)
         }
     }
 

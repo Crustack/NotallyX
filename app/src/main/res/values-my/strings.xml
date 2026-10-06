@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">ဤကို ဖွင့်ထားခြင်းဖြင့် သတ်မှတ်ထားသော Backups ဖိုလ်ဒါတွင် အလိုအလျောက် မိတ္တူကူးယူမှုများ ဖန်တီးပေးပါသည်။ စွမ်းအင်သက်သာစေမည့် မုဒ် ဖွင့်ထားပါက ဤအရာ မအလုပ်ဖြစ်နိုင်ပါ။</string>
     <string name="behaviour">အပြုအမူ</string>
     <string name="biometric_backup_advice">Biometric lock ကို ဖွင့်/ပိတ်မပြုမီ မှတ်စုအားလုံးအတွက် ပြည့်စုံသော မိတ္တူကူးယူထားရန် အကြံပြုပါသည်။ Biometric lock ဖြင့် ကုဒ်ဝှက်ခြင်း မအောင်မြင်ပါက အသုံးဝင်ပါလိမ့်မည်။</string>
+    <string name="biometric_encryption_experimental_warning">သင်သည် biometric lock ကို ဖွင့်ထားပြီး ယခုအထိ ဒေတာဘေ့စ်ကိုလည်း ကုဒ်ဖြင့် ဖုံးကွယ်ထားခဲ့သည်။ အသုံးပြုသူများတွင် ပြဿနာများတွေ့ရှိရသဖြင့် ဒေတာဘေ့စ်ကွပ်ကဲမှုကို စမ်းသပ်အဆင့် (EXPERIMENTAL) အဖြစ် သတ်မှတ်ထားပြီး သင့်ကိုယ်ပိုင်အန္တရာယ်ဖြင့်သာ အသုံးပြုသင့်ပါသည်။\n\nဒေတာဘေ့စ်ကွပ်ကဲမှုကို ဖျက်ရန် \"Decrypt\" ကို နှိပ်၍ ဖျက်နိုင်ပြီး၊ သို့မဟုတ် ဆက်တင်များတွင် ကွပ်ကဲမှုကို ပိတ်၍ ပြန်လည်ဖွင့်ခြင်းဖြင့် ကွပ်ကဲမှုမပါဘဲ အသုံးပြုနိုင်ပါသည်။</string>
     <string name="biometric_lock">စက်၏ ဘိုင်ယိုမက်ထရစ် သို့မဟုတ် PIN ဖြင့် အက်ပ်ကို သော့ခတ်ပါ။</string>
+    <string name="biometric_lock_enabled_with_encryption">ဖွင့်ထားသည် (စမ်းသပ်အဆင့် ဒေတာဘေ့စ် လုံခြုံရေးဖြင့်)</string>
+    <string name="biometrics_decrypted_success">ဒေတာဘေ့စ် ကုဒ်ဝှက်ခြင်း ပိတ်ထားသည်</string>
     <string name="biometrics_disable_success">ဘိုင်ယိုမက်ထရစ်/PIN သော့ခတ်ကို ပိတ်ထားသည်။</string>
     <string name="biometrics_failure">လက်ဗွေ/PIN ဖြင့် အတည်ပြုခြင်း မအောင်မြင်ပါ။</string>
     <string name="biometrics_no_support">ဤကိရိယာတွင် ဇီဝအချက်အလက် လုပ်ဆောင်ချက်များ မရရှိနိုင်ပါ။</string>
@@ -122,6 +125,7 @@
         <item quantity="one">နေ့</item>
         <item quantity="other">ရက်များ</item>
     </plurals>
+    <string name="decrypt">ဖော်ထုတ်</string>
     <string name="decrypting_database_biometric">ဘိုင်ယိုမက်ထရစ်ဖြင့် ဒေတာဘေ့စ်ကို ဖွင့်ခြင်း</string>
     <string name="default_color_hint">ဤသည်မှာ မှတ်စုအသစ်များအတွက် မူလအရောင်ဖြစ်သည်။ ပြောင်းရန်အတွက် အခြားအရောင်တစ်ခုကို မူလအရောင်အဖြစ် သတ်မှတ်ပါ။</string>
     <string name="default_list_note_view_mode">စံစာရင်းမှတ်စု ကြည့်ရှုပုံစံ</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">ဤသည်လည်း ဒေတာဘေ့စ်ကို ကုဒ်ပြောင်းမည်။</string>
     <string name="enable_lock_title">လက်ဗွေ/PIN ဖြင့် ဖွင့်လှစ်ခြင်းကို ဖွင့်ပါ။</string>
     <string name="enabled">ဖွင့်ထားသည်</string>
+    <string name="encrypt_database_advice">စမ်းသပ်အဆင့်: ပုံမှန်အားဖြင့် lock ကို ဖွင့်ထားခြင်းဖြင့် ဒေတာဘေ့စ်ကို ကုဒ်မထည့်ပါ။ သင်လိုအပ်ပါက ဒေတာဘေ့စ်ကို ကုဒ်ထည့်ရန်လည်း ဖွင့်နိုင်ပြီး၊ ၎င်းကို \'data in public\' ရွေးချယ်စရာနှင့် တွဲဖက်အသုံးပြု၍ ဒေတာဘေ့စ်ကို အများပြည်သူ ဖိုလ်ဒါတွင် ထားရှိသော်လည်း ကုဒ်ဖြင့် ကာကွယ်ထားနိုင်ပါသည်။ သို့သော် ဒေတာဘေ့စ်ကုဒ်ထည့်ခြင်းသည် မတည်ငြိမ်သေးကြောင်း သတိပြုပါ။</string>
+    <string name="encrypt_database_via_biometric">ဘိုင်ယိုမက်ထရစ်ဖြင့် ဒေတာဘေ့စ်ကို ကုဒ်ပြုခြင်း</string>
     <string name="encrypting_database_biometric">ဘိုင်ယိုမက်ထရစ်ဖြင့် ဒေတာဘေ့စ်ကို ကုဒ်ဝှက်ခြင်း</string>
     <string name="error">အမှား</string>
     <string name="error_loading_data">ဒေတာဘေ့စ်မှ အချို့ဒေတာများကို တင်နေစဉ် အမှားဖြစ်ပေါ်ခဲ့သည်။ ပျက်စီးနေသော မှတ်စုများကို မပြသမည်။\nသင်သည် \'\'\'%1$s ကို အသုံးပြု၍ ဒေတာဘေ့စ်ကို သန့်ရှင်းနိုင်သည် (ပျက်စီးနေသော မှတ်စုများကို ဖျက်ခြင်းဖြင့်)။</string>

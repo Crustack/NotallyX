@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">Ao ativar essa opção, backups serão automaticamente criados na pasta de backups.\nIsso pode não funcionar se você estiver com a otimização de bateria ativa</string>
     <string name="behaviour">Comportamento</string>
     <string name="biometric_backup_advice">É recomendado exportar um backup completo de todas as notas antes de desativar/ativar o bloqueio biométrico, caso a criptografia via bloqueio biométrico falhe.</string>
+    <string name="biometric_encryption_experimental_warning">Você ativou o bloqueio biométrico, que até agora também criptografava o banco de dados. Devido a problemas enfrentados pelos usuários, a criptografia do banco de dados foi marcada como EXPERIMENTAL e deve ser usada por sua própria conta e risco.\n\nVocê pode desativar a criptografia do banco de dados clicando em “Descriptografar” ou simplesmente desativar e reativar o bloqueio biométrico nas configurações sem criptografia.</string>
     <string name="biometric_lock">Bloqueie o aplicativo com biometria ou PIN</string>
+    <string name="biometric_lock_enabled_with_encryption">Ativado (com criptografia de banco de dados EXPERIMENTAL)</string>
+    <string name="biometrics_decrypted_success">Criptografia do banco de dados desativada</string>
     <string name="biometrics_disable_success">Bloqueio biométrico/PIN desativado</string>
     <string name="biometrics_failure">Falha na autenticação via Biometria/PIN</string>
     <string name="biometrics_no_support">Biometria não está disponível para esse dispositivo</string>
@@ -122,6 +125,7 @@
         <item quantity="one">Dia</item>
         <item quantity="other">Dias</item>
     </plurals>
+    <string name="decrypt">Descriptografar</string>
     <string name="decrypting_database_biometric">Descriptografia do banco de dados por meio de dados biométricos</string>
     <string name="default_color_hint">Essa é a cor padrão para novas anotações. Para alterá-la, defina outra cor como padrão</string>
     <string name="default_list_note_view_mode">Modo padrão de visualização da lista de notas</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">Isso também vai criptografar o banco de dados</string>
     <string name="enable_lock_title">Ativar bloqueio via Biometria/PIN</string>
     <string name="enabled">Ativado</string>
+    <string name="encrypt_database_advice">EXPERIMENTAL: Por padrão, ativar o bloqueio não criptografa o banco de dados. Opcionalmente, você pode ativar a criptografia do banco de dados, que pode ser usada em conjunto com a opção “dados em público” para manter o banco de dados em uma pasta pública, mas criptografado. Esteja ciente de que a criptografia do banco de dados ainda não é estável.</string>
+    <string name="encrypt_database_via_biometric">Criptografar banco de dados por meio de dados biométricos</string>
     <string name="encrypting_database_biometric">Criptografia do banco de dados por meio de biometria</string>
     <string name="error">Erro</string>
     <string name="error_loading_data">Ocorreu um erro ao carregar alguns dados do banco de dados. As anotações corrompidas não serão exibidas.\nVocê pode limpar (excluir as anotações corrompidas) o banco de dados usando \'%1$s\'</string>

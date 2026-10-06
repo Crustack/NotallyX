@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">Bu seçeneği etkinleştirdiğinizde, yedeklemeler yapılandırılan Yedekleme Klasörüne otomatik olarak kaydedilir.\nGüç tasarrufu modu etkinse bu işlem çalışmayabilir</string>
     <string name="behaviour">Davranış</string>
     <string name="biometric_backup_advice">Biyometrik kilidin etkinleştirilmesi veya devre dışı bırakılması öncesinde, biyometrik kilit yoluyla şifreleme işleminin başarısız olması ihtimaline karşı, tüm notların tam bir yedeğinin alınması tavsiye edilir</string>
+    <string name="biometric_encryption_experimental_warning">Şimdiye kadar veritabanını da şifreleyen biyometrik kilidi etkinleştirdiniz. Kullanıcıların yaşadığı sorunlar nedeniyle, veritabanı şifreleme özelliği DENEME amaçlı olarak işaretlenmiştir ve bu özelliği kullanmanızın riski size aittir.\n\n\"Şifreyi Çöz\" seçeneğine tıklayarak veritabanı şifrelemesini devre dışı bırakabilir veya ayarlardan biyometrik kilidi şifreleme olmadan devre dışı bırakıp yeniden etkinleştirebilirsiniz.</string>
     <string name="biometric_lock">Uygulamayı cihazın biyometrik özellikleriyle veya PIN koduyla kilitle</string>
+    <string name="biometric_lock_enabled_with_encryption">Etkin (DENEME amaçlı veritabanı şifreleme ile)</string>
+    <string name="biometrics_decrypted_success">Veritabanı şifreleme devre dışı bırakıldı</string>
     <string name="biometrics_disable_success">Biyometrik/PIN kilidi devre dışı bırakıldı</string>
     <string name="biometrics_failure">Biyometrik/PIN yoluyla kimlik doğrulaması yapılamadı</string>
     <string name="biometrics_no_support">Bu cihazda biyometrik özellik bulunmamaktadır</string>
@@ -122,6 +125,7 @@
         <item quantity="one">Gün</item>
         <item quantity="other">Günler</item>
     </plurals>
+    <string name="decrypt">Şifreyi çöz</string>
     <string name="decrypting_database_biometric">Biyometrik yöntemle veritabanının şifresinin çözülmesi</string>
     <string name="default_color_hint">Bu, yeni notlar için varsayılan renktir. Bunu değiştirmek için başka bir rengi varsayılan olarak ayarlayın.</string>
     <string name="default_list_note_view_mode">Varsayılan Liste-Not Görüntüleme Modu</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">Bu işlem aynı zamanda veritabanını da şifreleyecektir</string>
     <string name="enable_lock_title">Biyometrik/PIN yoluyla kilitlemeyi etkinleştir</string>
     <string name="enabled">Etkinleştirildi</string>
+    <string name="encrypt_database_advice">DENEME AMAÇLI: Varsayılan olarak, kilidi etkinleştirmek veritabanını şifrelemez. İsteğe bağlı olarak veritabanının şifrelenmesini etkinleştirebilirsiniz; bu, veritabanını genel bir klasörde tutmak, ancak şifreli hale getirmek için \'data in public\' seçeneğiyle birlikte kullanılabilir. Veritabanı şifrelemesinin henüz kararlı bir durumda olmadığını lütfen unutmayın.</string>
+    <string name="encrypt_database_via_biometric">Veritabanını Biyometrik Yöntemle Şifreleme</string>
     <string name="encrypting_database_biometric">Biyometrik Yöntemle Veritabanını Şifreleme</string>
     <string name="error">Hata</string>
     <string name="error_loading_data">Veritabanından bazı veriler yüklenirken hata oluştu. Bozuk notlar görüntülenmeyecektir.\n\'%1$s\' komutunu kullanarak veritabanını temizleyebilirsiniz (bozuk notları silerek).</string>

@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">Dengan mengaktifkan fitur ini, cadangan akan dibuat secara otomatis di Folder Cadangan yang telah dikonfigurasi.\nFitur ini mungkin tidak berfungsi jika mode hemat daya diaktifkan</string>
     <string name="behaviour">Perilaku</string>
     <string name="biometric_backup_advice">Disarankan untuk mengekspor cadangan lengkap dari semua catatan sebelum menonaktifkan atau mengaktifkan kunci biometrik, untuk berjaga-jaga jika enkripsi melalui kunci biometrik gagal</string>
+    <string name="biometric_encryption_experimental_warning">Anda telah mengaktifkan kunci biometrik yang hingga saat ini juga mengenkripsi basis data. Karena adanya masalah yang dialami pengguna, enkripsi basis data telah ditandai sebagai EKSPERIMENTAL dan penggunaannya menjadi risiko Anda sendiri.\n\nAnda dapat menonaktifkan enkripsi basis data dengan mengklik \"Decrypt\", atau cukup menonaktifkan dan mengaktifkan kembali kunci biometrik di pengaturan tanpa enkripsi.</string>
     <string name="biometric_lock">Kunci aplikasi menggunakan data biometrik perangkat atau PIN</string>
+    <string name="biometric_lock_enabled_with_encryption">Diaktifkan (dengan enkripsi basis data EXPERIMENTAL)</string>
+    <string name="biometrics_decrypted_success">Enkripsi basis data dinonaktifkan</string>
     <string name="biometrics_disable_success">Kunci biometrik/PIN telah dinonaktifkan</string>
     <string name="biometrics_failure">Gagal melakukan otentikasi melalui biometrik/PIN</string>
     <string name="biometrics_no_support">Tidak ada fitur biometrik yang tersedia pada perangkat ini</string>
@@ -122,6 +125,7 @@
         <item quantity="one">Hari</item>
         <item quantity="other">Hari</item>
     </plurals>
+    <string name="decrypt">Mendekripsi</string>
     <string name="decrypting_database_biometric">Mendekripsi basis data melalui biometrik</string>
     <string name="default_color_hint">Ini adalah warna default untuk catatan baru. Untuk mengubahnya, tentukan warna lain sebagai warna default</string>
     <string name="default_list_note_view_mode">Mode Tampilan Daftar-Catatan Default</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">Hal ini juga akan mengenkripsi basis data</string>
     <string name="enable_lock_title">Aktifkan penguncian melalui biometrik/PIN</string>
     <string name="enabled">Diaktifkan</string>
+    <string name="encrypt_database_advice">EKSPERIMENTAL: Secara default, mengaktifkan kunci tidak akan mengenkripsi basis data. Anda dapat memilih untuk mengaktifkan enkripsi basis data, yang dapat digunakan bersamaan dengan opsi \'data in public\' agar basis data disimpan di folder publik, namun tetap terenkripsi. Perlu diperhatikan bahwa enkripsi basis data belum stabil.</string>
+    <string name="encrypt_database_via_biometric">Mengenkripsi Basis Data Menggunakan Biometrik</string>
     <string name="encrypting_database_biometric">Mengenkripsi basis data melalui biometrik</string>
     <string name="error">Kesalahan</string>
     <string name="error_loading_data">Terjadi kesalahan saat memuat beberapa data dari basis data. Catatan yang rusak tidak akan ditampilkan.\nAnda dapat membersihkan (menghapus catatan yang rusak) basis data dengan menggunakan \'%1$s\'</string>

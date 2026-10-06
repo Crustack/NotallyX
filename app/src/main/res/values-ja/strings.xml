@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">これを有効にすると、設定された「バックアップ」フォルダにバックアップが自動的に作成されます。\n省電力モードが有効になっている場合、この機能は動作しない可能性があります。</string>
     <string name="behaviour">行動</string>
     <string name="biometric_backup_advice">生体認証ロックを無効化または有効化する前に、生体認証ロックによる暗号化が失敗した場合に備えて、すべてのメモの完全バックアップをエクスポートしておくことをお勧めします。</string>
+    <string name="biometric_encryption_experimental_warning">生体認証ロックを有効にしましたが、これまではデータベースの暗号化も同時に行われていました。 ユーザーから不具合の報告があったため、データベースの暗号化機能は「実験的機能」としてマークされており、ご利用の際は自己責任で行ってください。\n\n「復号」をクリックしてデータベースの暗号化を無効にするか、設定で生体認証ロックを一度無効にしてから、暗号化なしで再度有効にすることで、データベースの暗号化を無効にすることができます。</string>
     <string name="biometric_lock">デバイスの生体認証またはPINでアプリをロックする</string>
+    <string name="biometric_lock_enabled_with_encryption">有効（実験的なデータベース暗号化機能付き）</string>
+    <string name="biometrics_decrypted_success">データベースの暗号化が無効になっています</string>
     <string name="biometrics_disable_success">生体認証／PINロックが無効化されました</string>
     <string name="biometrics_failure">生体認証／PINによる認証に失敗しました</string>
     <string name="biometrics_no_support">このデバイスには生体認証機能がありません</string>
@@ -122,6 +125,7 @@
         <item quantity="one">日</item>
         <item quantity="other">日</item>
     </plurals>
+    <string name="decrypt">復号</string>
     <string name="decrypting_database_biometric">生体認証によるデータベースの復号化</string>
     <string name="default_color_hint">これは新しいメモのデフォルトの色です。変更するには、別の色をデフォルトに設定してください。</string>
     <string name="default_list_note_view_mode">デフォルトのリスト・ノート表示モード</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">これにより、データベースも暗号化されます</string>
     <string name="enable_lock_title">生体認証／PINによるロックを有効にする</string>
     <string name="enabled">有効</string>
+    <string name="encrypt_database_advice">実験的機能：デフォルトでは、ロックを有効にしてもデータベースは暗号化されません。必要に応じてデータベースの暗号化を有効にすることができます。これは「data in public」オプションと組み合わせて使用することで、データベースをパブリックフォルダに配置しつつ暗号化することが可能です。ただし、データベースの暗号化機能はまだ安定していない点にご注意ください。</string>
+    <string name="encrypt_database_via_biometric">生体認証によるデータベースの暗号化</string>
     <string name="encrypting_database_biometric">生体認証によるデータベースの暗号化</string>
     <string name="error">エラー</string>
     <string name="error_loading_data">データベースから一部のデータを読み込む際にエラーが発生しました。破損したノートは表示されません。\n「%1$s」を使用して、データベースのクリーンアップ（破損したノートの削除）を行うことができます。</string>

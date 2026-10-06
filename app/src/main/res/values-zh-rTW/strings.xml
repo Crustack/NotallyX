@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">透過啟用此功能，將在選擇的備份資料夾中自動建立備份。\n如果啟用了省電模式，則可能不起作用</string>
     <string name="behaviour">行為</string>
     <string name="biometric_backup_advice">建議在啟用／停用生物辨識鎖之前，先將所有筆記的完整備份匯出，以防透過生物辨識鎖進行加密時發生失敗的情況</string>
+    <string name="biometric_encryption_experimental_warning">您已啟用生物辨識鎖定功能，此功能迄今為止也會對資料庫進行加密。 由於部分使用者遇到問題，資料庫加密功能現已標記為「實驗性」，使用時請自行承擔風險。\n\n您可以點擊「解密」來停用資料庫加密，或者直接在設定中停用並重新啟用生物辨識鎖定功能（此時將不進行加密）。</string>
     <string name="biometric_lock">使用生物辨識/密碼鎖定應用</string>
+    <string name="biometric_lock_enabled_with_encryption">已啟用（搭配「實驗性」資料庫加密功能）</string>
+    <string name="biometrics_decrypted_success">資料庫加密已停用</string>
     <string name="biometrics_disable_success">生物辨識/PIN 鎖已禁用</string>
     <string name="biometrics_failure">生物辨識/PIN碼授權失敗</string>
     <string name="biometrics_no_support">不支援生物辨識的設備</string>
@@ -122,6 +125,7 @@
         <item quantity="one">天</item>
         <item quantity="other">天</item>
     </plurals>
+    <string name="decrypt">解密</string>
     <string name="decrypting_database_biometric">透過生物辨識解密資料庫</string>
     <string name="default_color_hint">這是新筆記的預設顏色。若要變更此顏色，請將另一種顏色設為預設色</string>
     <string name="default_list_note_view_mode">預設的清單-筆記檢視模式</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">這也會加密資料庫</string>
     <string name="enable_lock_title">啟用生物辨識/PIN</string>
     <string name="enabled">啟用</string>
+    <string name="encrypt_database_advice">實驗性功能：預設情況下，啟用鎖定功能並不會對資料庫進行加密。您可以選擇性地啟用資料庫加密功能，並可與「data in public」選項搭配使用，使資料庫存放於公共資料夾中，同時保持加密狀態。請注意，資料庫加密功能目前尚未穩定。</string>
+    <string name="encrypt_database_via_biometric">透過生物辨識加密資料庫</string>
     <string name="encrypting_database_biometric">透過生物辨識技術加密資料庫</string>
     <string name="error">錯誤</string>
     <string name="error_loading_data">從資料庫載入部分資料時發生錯誤。損壞的筆記將不會顯示。\n您可以使用 \'%1$s\' 來清理（刪除損壞的筆記）資料庫。</string>

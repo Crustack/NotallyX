@@ -49,7 +49,10 @@
     <string name="backup_periodic_hint">Abilitando questa opzione, i backup verranno creati automaticamente nella cartella di backup configurata.\nQuesto potrebbe non funzionare se la modalità di risparmio energetico è attivata.</string>
     <string name="behaviour">Comportamento</string>
     <string name="biometric_backup_advice">Si consiglia di esportare un backup completo di tutte le note prima di attivare o disattivare il blocco biometrico, nel caso in cui la crittografia tramite blocco biometrico non riesca</string>
+    <string name="biometric_encryption_experimental_warning">Hai abilitato il blocco biometrico che, fino ad ora, crittografava anche il database. A causa dei problemi riscontrati dagli utenti, la crittografia del database è stata contrassegnata come SPERIMENTALE e il suo utilizzo è a proprio rischio.\n\nÈ possibile disattivare la crittografia del database facendo clic su «Decrittografa», oppure semplicemente disattivando e riattivando il blocco biometrico nelle impostazioni senza crittografia.</string>
     <string name="biometric_lock">Usa l’accesso biometrico del dispositivo o il PIN per bloccare l’app</string>
+    <string name="biometric_lock_enabled_with_encryption">Abilitato (con crittografia del database in modalità SPERIMENTALE)</string>
+    <string name="biometrics_decrypted_success">Crittografia del database disabilitata</string>
     <string name="biometrics_disable_success">Il blocco Biometrico/PIN è stato disattivato</string>
     <string name="biometrics_failure">Sblocco Biometrico/PIN non riuscito</string>
     <string name="biometrics_no_support">Biometria non disponibile su questo dispositivo</string>
@@ -122,6 +125,7 @@
         <item quantity="one">Giorno</item>
         <item quantity="other">Giorni</item>
     </plurals>
+    <string name="decrypt">Decifra</string>
     <string name="decrypting_database_biometric">Decrittografia del database tramite dati biometrici</string>
     <string name="default_color_hint">Questo è il colore predefinito per le nuove note. Per cambiarlo, imposta un altro colore come predefinito</string>
     <string name="default_list_note_view_mode">Modalità di visualizzazione predefinita per le note-lista</string>
@@ -175,6 +179,8 @@
     <string name="enable_lock_description">Questo inoltre crittograferà il database</string>
     <string name="enable_lock_title">Attiva blocco con Biometria/PIN</string>
     <string name="enabled">Attivato</string>
+    <string name="encrypt_database_advice">SPERIMENTALE: Per impostazione predefinita, l\'attivazione del blocco non comporta la crittografia del database. È possibile, se lo si desidera, abilitare la crittografia del database, che può essere utilizzata insieme all\'opzione \"data in public\" per collocare il database in una cartella pubblica, ma in forma crittografata. Si tenga presente che la crittografia del database non è ancora stabile.</string>
+    <string name="encrypt_database_via_biometric">Crittografare il database tramite dati biometrici</string>
     <string name="encrypting_database_biometric">Crittografia del database tramite dati biometrici</string>
     <string name="error">Errore</string>
     <string name="error_loading_data">Errore durante il caricamento di alcuni dati dal database. Le note corrotte non verranno visualizzate.\nPuoi ripulire il database (eliminando le note corrotte) usando \'%1$s\'</string>

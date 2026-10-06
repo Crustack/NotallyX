@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <string name="about">About</string>
     <string name="add_images">Add images</string>
     <string name="add_item">Add Item</string>
@@ -50,9 +50,11 @@
     <string name="backup_periodic_hint">By enabling this, backups are automatically created in the configured Backups Folder.\nThis may not work if you have power saving mode enabled</string>
     <string name="behaviour">Behaviour</string>
     <string name="biometric_backup_advice">It is advised to export a full backup of all notes before dis-/enabling biometric lock, in case the encryption via biometric lock fails</string>
+    <string name="biometric_encryption_experimental_warning">You have enabled biometric lock which up until now also encrypted the database. Due to users experiencing issues, the database encryption has been marked EXPERIMENTAL and should be used at your own risk.\n\nYou can disable database encryption by clicking \"Decrypt\", or simply disable and re-enable biometric lock in the settings without encryption.</string>
     <string name="biometric_lock">Lock app with device biometric or PIN</string>
+    <string name="biometric_lock_enabled_with_encryption">Enabled (with EXPERIMENTAL database encryption)</string>
+    <string name="biometrics_decrypted_success">Database encryption disabled</string>
     <string name="biometrics_disable_success">Biometric/PIN lock has been disabled</string>
-    <string name="biometrics_decrypted_success" tools:ignore="MissingTranslation">Database encryption disabled</string>
     <string name="biometrics_failure">Failed to authenticate via Biometric/PIN</string>
     <string name="biometrics_no_support">No biometric features available on this device</string>
     <string name="biometrics_not_setup">Biometrics/PIN are not setup for your device yet</string>
@@ -60,11 +62,6 @@
     <string name="biometrics_setup_failure_decrypt">Decryption of the database failed.\nPlease use \'%1$s\' to report the error</string>
     <string name="biometrics_setup_failure_encrypt">Encryption of the database failed.\nPlease use \'%1$s\' to report the error</string>
     <string name="biometrics_setup_success">Biometric/PIN lock has been enabled</string>
-    <string name="encrypt_database_advice" tools:ignore="MissingTranslation">EXPERIMENTAL: By default, enabling the lock does not encrypt the database. You can optionally enable encryption of the database, which can be used in conjunction with the \'data in public\' option to have the database in a public folder, but encrypted. Be aware, that database encryption is not stable as of yet.</string>
-    <string name="encrypt_database_via_biometric" tools:ignore="MissingTranslation">Encrypt Database via Biometric</string>
-    <string name="biometric_encryption_experimental_warning" tools:ignore="MissingTranslation">You have enabled biometric lock which up until now also encrypted the database. Due to users experiencing issues, the database encryption has been marked EXPERIMENTAL and should be used at your own risk.\n\nYou can disable database encryption by clicking \"Decrypt\", or simply disable and re-enable biometric lock in the settings without encryption.</string>
-    <string name="biometric_lock_enabled_with_encryption" tools:ignore="MissingTranslation">Enabled (with EXPERIMENTAL database encryption)</string>
-    <string name="decrypt" tools:ignore="MissingTranslation">Decrypt</string>
     <string name="bold">Bold</string>
     <string name="calculating">Calculating…</string>
     <string name="cancel">Cancel</string>
@@ -130,6 +127,7 @@
         <item quantity="one">Day</item>
         <item quantity="other">Days</item>
     </plurals>
+    <string name="decrypt">Decrypt</string>
     <string name="decrypting_database_biometric">Decrypting database via Biometric</string>
     <string name="default_color_hint">This is the default color for new notes. To change it, make another color the default</string>
     <string name="default_list_note_view_mode">Default List-Note View Mode</string>
@@ -183,6 +181,8 @@
     <string name="enable_lock_description">This will also encrypt the database</string>
     <string name="enable_lock_title">Enable lock via Biometric/PIN</string>
     <string name="enabled">Enabled</string>
+    <string name="encrypt_database_advice">EXPERIMENTAL: By default, enabling the lock does not encrypt the database. You can optionally enable encryption of the database, which can be used in conjunction with the \'data in public\' option to have the database in a public folder, but encrypted. Be aware that database encryption is not yet stable.</string>
+    <string name="encrypt_database_via_biometric">Encrypt Database via Biometric</string>
     <string name="encrypting_database_biometric">Encrypting database via Biometric</string>
     <string name="error">Error</string>
     <string name="error_loading_data">Error while loading some data from the database. Corrupted notes will not be displayed.\nYou can cleanup (deleting corrupted notes) the database by using \'%1$s\'</string>
