@@ -20,16 +20,18 @@ import com.philkes.notallyx.presentation.widget.WidgetProvider.Companion.extract
 import com.philkes.notallyx.presentation.widget.WidgetProvider.Companion.getWidgetCheckedChangeIntent
 import com.philkes.notallyx.presentation.widget.WidgetProvider.Companion.getWidgetOpenNoteIntent
 import com.philkes.notallyx.presentation.widget.WidgetProvider.Companion.getWidgetSelectNoteIntent
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 class WidgetFactory(
     private val app: NotallyXApplication,
     private val id: Long,
     private val widgetId: Int,
-) : RemoteViewsService.RemoteViewsFactory {
+) : RemoteViewsService.RemoteViewsFactory, KoinComponent {
 
     private var baseNote: BaseNote? = null
     private var database: NotallyDatabase? = null
-    private val preferences = NotallyXPreferences.getInstance(app)
+    private val preferences: NotallyXPreferences by inject()
 
     init {
         database = NotallyDatabase.getDatabase(app).value

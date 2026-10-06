@@ -23,6 +23,7 @@ import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.viewmodel.BaseViewModel
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
 import com.philkes.notallyx.presentation.viewmodel.preference.BasePreference
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.progress.ExportNotesProgress
 import com.philkes.notallyx.utils.ActionMode
 import com.philkes.notallyx.utils.backup.exportPdfFile
@@ -42,7 +43,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class NotesFragmentViewModel(app: Application) : BaseViewModel(app) {
+class NotesFragmentViewModel(app: Application, preferences: NotallyXPreferences) :
+    BaseViewModel(app, preferences) {
 
     lateinit var selectedExportMimeType: ExportMimeType
 

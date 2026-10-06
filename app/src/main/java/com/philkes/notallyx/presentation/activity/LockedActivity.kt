@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.koin.android.ext.android.inject
 
 abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
 
@@ -47,14 +48,13 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
     }
 
     internal lateinit var binding: T
-    internal lateinit var preferences: NotallyXPreferences
+    internal val preferences: NotallyXPreferences by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setupGlobalExceptionHandler()
         initViewModel()
         notallyXApplication = (application as NotallyXApplication)
-        preferences = NotallyXPreferences.getInstance(notallyXApplication)
         if (preferences.useDynamicColors.value) {
             if (DynamicColors.isDynamicColorAvailable()) {
                 DynamicColors.applyToActivitiesIfAvailable(notallyXApplication)

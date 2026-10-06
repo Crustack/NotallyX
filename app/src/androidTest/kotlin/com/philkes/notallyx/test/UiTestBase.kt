@@ -14,8 +14,10 @@ import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.PeriodicBackup
 import org.hamcrest.Matchers.allOf
 import org.junit.Before
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
 
-abstract class UiTestBase {
+abstract class UiTestBase : KoinComponent {
 
     val context
         get() = ContextWrapper(InstrumentationRegistry.getInstrumentation().targetContext)
@@ -24,7 +26,7 @@ abstract class UiTestBase {
         get() = NotallyDatabase.getDatabase(context).value!!
 
     val preferences: NotallyXPreferences
-        get() = NotallyXPreferences.getInstance(ContextWrapper(context))
+        get() = get()
 
     val toolbarBackButton: ViewInteraction
         get() =

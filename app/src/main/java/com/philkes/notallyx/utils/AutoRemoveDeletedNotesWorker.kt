@@ -1,6 +1,5 @@
 package com.philkes.notallyx.utils
 
-import android.app.Application
 import android.content.Context
 import android.content.ContextWrapper
 import android.util.Log
@@ -16,11 +15,14 @@ import kotlin.collections.isNotEmpty
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class AutoRemoveDeletedNotesWorker(private val context: Context, params: WorkerParameters) :
-    CoroutineWorker(context, params) {
+class AutoRemoveDeletedNotesWorker(
+    private val context: Context,
+    params: WorkerParameters,
+    private val preferences: NotallyXPreferences,
+) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        return (context.applicationContext as ContextWrapper).removeOldDeletedNotes()
+        return (context.applicationContext as ContextWrapper).removeOldDeletedNotes(preferences)
     }
 
     companion object {
@@ -30,9 +32,9 @@ class AutoRemoveDeletedNotesWorker(private val context: Context, params: WorkerP
 
 private const val ONE_DAY_MILLIS = 24 * 60 * 60 * 1000L
 
-suspend fun ContextWrapper.removeOldDeletedNotes(): ListenableWorker.Result {
-    val app = applicationContext as Application
-    val preferences = NotallyXPreferences.getInstance(app)
+suspend fun ContextWrapper.removeOldDeletedNotes(
+    preferences: NotallyXPreferences
+): ListenableWorker.Result {
     val days = preferences.autoRemoveDeletedNotesAfterDays.value
     if (days <= 0) return ListenableWorker.Result.success()
 

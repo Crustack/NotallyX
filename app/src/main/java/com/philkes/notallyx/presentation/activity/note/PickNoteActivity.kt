@@ -20,7 +20,6 @@ import com.philkes.notallyx.presentation.view.main.BaseNoteAdapter
 import com.philkes.notallyx.presentation.view.main.BaseNoteVHPreferences
 import com.philkes.notallyx.presentation.view.main.createCallback
 import com.philkes.notallyx.presentation.view.misc.ItemListener
-import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesView
 import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import java.util.Collections
@@ -41,8 +40,6 @@ open class PickNoteActivity : LockedActivity<ActivityPickNoteBinding>(), ItemLis
 
         val result = Intent()
         setResult(RESULT_CANCELED, result)
-
-        val preferences = NotallyXPreferences.getInstance(application)
 
         adapter =
             with(preferences) {

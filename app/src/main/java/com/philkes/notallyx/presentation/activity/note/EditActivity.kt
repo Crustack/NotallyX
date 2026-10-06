@@ -620,9 +620,8 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     }
 
     protected open fun openMoreOptionsBottomSheet() {
-        val prefs = NotallyXPreferences.getInstance(this@EditActivity)
-        val topActions = prefs.getSafeEditNoteActivityTopActions()
-        val bottomAction = prefs.editNoteActivityBottomAction.value
+        val topActions = preferences.getSafeEditNoteActivityTopActions()
+        val bottomAction = preferences.editNoteActivityBottomAction.value
 
         MoreNoteBottomSheet(notallyModel, colorInt, actionHandler, topActions, bottomAction)
             .show(supportFragmentManager, MoreNoteBottomSheet.TAG)
