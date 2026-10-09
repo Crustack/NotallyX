@@ -8,6 +8,7 @@ import androidx.test.espresso.Espresso.onData
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
+import androidx.test.espresso.action.ViewActions.longClick
 import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.action.ViewActions.typeText
@@ -16,6 +17,7 @@ import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.contrib.RecyclerViewActions.actionOnItemAtPosition
 import androidx.test.espresso.contrib.RecyclerViewActions.scrollToPosition
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.isEnabled
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withParent
@@ -49,10 +51,12 @@ import com.philkes.notallyx.test.onDisplayView
 import com.philkes.notallyx.test.onPositionView
 import com.philkes.notallyx.test.setSelection
 import com.philkes.notallyx.test.swipeItem
+import com.philkes.notallyx.test.typeTextAtEnd
 import com.philkes.notallyx.test.waitUntilSucceeds
 import org.hamcrest.Matchers.allOf
 import org.hamcrest.Matchers.anything
 import org.hamcrest.Matchers.containsString
+import org.hamcrest.Matchers.not
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -380,6 +384,58 @@ class EditActivityTest : UiTestBase() {
 
         // Verify reminder chip is visible and displays reminder time
         waitUntilSucceeds { R.id.EditNoteReminderChip.byId().check(matches(isDisplayed())) }
+
+        scenario.close()
+    }
+
+    @Test
+    fun undoAndRedo() {
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        R.id.TakeNote.byId().perform(click())
+
+        // Initially undo and redo should be disabled
+        R.string.undo.byContentDescription().check(matches(not(isEnabled())))
+        R.string.redo.byContentDescription().check(matches(not(isEnabled())))
+
+        // Step 1: Perform first edit
+        R.id.EnterBody.byId().typeTextAtEnd("A")
+        R.id.EnterBody.byId().check(matches(withText("A")))
+        R.string.undo.byContentDescription().check(matches(isEnabled()))
+        R.string.redo.byContentDescription().check(matches(not(isEnabled())))
+
+        // Step 2: Perform second edit
+        R.id.EnterBody.byId().typeTextAtEnd("B")
+        R.id.EnterBody.byId().check(matches(withText("AB")))
+
+        // Step 3: Perform third edit
+        R.id.EnterBody.byId().typeTextAtEnd("C")
+        R.id.EnterBody.byId().check(matches(withText("ABC")))
+
+        // 1. Single tap undo (reverts 3rd edit -> "AB")
+        R.string.undo.byContentDescription().perform(click())
+        R.id.EnterBody.byId().check(matches(withText("AB")))
+        R.string.redo.byContentDescription().check(matches(isEnabled()))
+
+        // Single tap undo again (reverts 2nd edit -> "A")
+        R.string.undo.byContentDescription().perform(click())
+        R.id.EnterBody.byId().check(matches(withText("A")))
+
+        // 2. Single tap redo (restores 2nd edit -> "AB")
+        R.string.redo.byContentDescription().perform(click())
+        R.id.EnterBody.byId().check(matches(withText("AB")))
+
+        // 3. Long tap undo (undo all -> reverts back to initial state "")
+        R.string.undo.byContentDescription().perform(longClick())
+        R.id.EnterBody.byId().check(matches(withText("")))
+        R.string.undo.byContentDescription().check(matches(not(isEnabled())))
+        R.string.redo.byContentDescription().check(matches(isEnabled()))
+
+        // 4. Long tap redo (redo all -> restores back to latest state "ABC")
+        R.string.redo.byContentDescription().perform(longClick())
+        R.id.EnterBody.byId().check(matches(withText("ABC")))
+        R.string.undo.byContentDescription().check(matches(isEnabled()))
+        R.string.redo.byContentDescription().check(matches(not(isEnabled())))
 
         scenario.close()
     }
