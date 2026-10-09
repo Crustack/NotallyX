@@ -171,6 +171,11 @@ navigateTo(R.id.Reminders)
 
 ---
 
+### 4. EditText Interactivity
+
+* **Editing text**:
+  Since `replaceText` does not properly trigger `TextWatcher` use `typeText` where applicable. There is also `UiUtils.typeTextAtEnd` to move focus and move the cursor to the end of the EditText text's and append text
+
 ## Synchronization & Asynchronous Verification
 
 ### 1. Waiting for View State (`waitUntilSucceeds`)

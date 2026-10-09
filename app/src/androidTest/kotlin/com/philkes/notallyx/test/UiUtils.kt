@@ -24,6 +24,7 @@ import androidx.test.espresso.ViewInteraction
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.scrollTo
+import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.action.ViewActions.typeTextIntoFocusedView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.contrib.DrawerActions
@@ -806,6 +807,10 @@ fun moveCursorToEnd(): ViewAction {
             editText.setSelection(editText.text.length)
         }
     }
+}
+
+fun ViewInteraction.typeTextAtEnd(text: String): ViewInteraction {
+    return perform(click(), moveCursorToEnd(), typeText(text), closeSoftKeyboard())
 }
 
 fun setSelection(start: Int, end: Int): ViewAction {
