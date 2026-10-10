@@ -5,7 +5,7 @@
 **NotallyX** is an open-source, minimalistic, yet feature-rich note-taking Android application built with Kotlin. It provides users with a distraction-free experience for creating text notes, task lists, rich-text formatting, media attachments (images, audio, files), labels, reminders, and encrypted backups.
 
 - **Target Platform**: Android (Min SDK: 24, Compile/Target SDK: 36, JVM Target: 17).
-- **Core Architecture**: MVVM (Model-View-ViewModel) architecture backed by Android Jetpack components (Room, Kotlin Coroutines Flow/StateFlow, ViewModel, Navigation Component, WorkManager) with ViewBinding and DataBinding.
+- **Core Architecture**: MVVM (Model-View-ViewModel) architecture backed by Android Jetpack components (Room, Kotlin Coroutines Flow/StateFlow, ViewModel, Navigation Component, WorkManager), Koin Dependency Injection, with ViewBinding and DataBinding.
 - **Key Tenets**: User privacy, offline-first reliability, non-destructive data handling, robust backup/restore mechanisms, and clean Kotlin idioms.
 
 ---
@@ -15,6 +15,7 @@
 ### Language & Tooling
 - **Language**: Kotlin 2.4.20 (Standard Kotlin Idioms, Coroutines, Serialization).
 - **Build System**: Gradle Kotlin DSL (`build.gradle.kts`), Android Gradle Plugin 9.4.1, KSP (`com.google.devtools.ksp`) for Room compiler.
+- **Dependency Injection**: Koin 4.x (`io.insert-koin`) with Koin Compiler Plugin (`io.insert-koin.compiler.plugin`).
 - **Code Formatter**: `ktfmt` with Kotlin standard style (`kotlinLangStyle`).
 
 ### UI Framework & Conventions
@@ -24,7 +25,7 @@
 - **Lists**: `RecyclerView` using custom ViewHolders (`*VH`), ListAdapters / custom Adapters (`*Adapter`), and `ItemTouchHelper` for drag-and-drop / swipe interactions.
 
 ### State Management & Concurrency
-- **State Holders**: `AndroidViewModel` subclasses handling business logic and exposing observable state.
+- **State Holders**: `AndroidViewModel` / `ViewModel` subclasses handling business logic and exposing observable state (injected via Koin `viewModelOf` / `viewModel`).
 - **Observables**: Kotlin Coroutines `StateFlow` and `MutableStateFlow` (`asStateFlow()`).
 - **Async & Concurrency**: Kotlin Coroutines (`viewModelScope`, `CoroutineScope`).
 - **Dispatchers**:
@@ -38,8 +39,11 @@
 - **Storage Strategy**:
   - Internal storage for private app data and default SQLite database.
   - Optional external storage mode (`dataInPublicFolder`).
-  - Strict WAL checkpointing (`pragma wal_checkpoint(FULL)`) before any database export, backup, or replacement.
+  - Strict WAL checkpointing (`pragma WAL_CHECKPOINT(FULL)`) before any database export, backup, or replacement.
 - **Type Converters**: `Converters.kt` converts complex models (spans, attachments, folders, reminders, labels) to/from JSON strings.
+
+### App Documentation
+- **Docusaurus Website**: App user and developer documentation is located in `@documentation` (`/documentation`). It is a Docusaurus website containing feature guides, setup instructions, FAQs, settings, security & privacy details, and contribution docs.
 
 ---
 
@@ -53,11 +57,12 @@ NotallyX/
 │   │   ├── main/
 │   │   │   ├── AndroidManifest.xml                    # Manifest, permissions, activities
 │   │   │   ├── java/com/philkes/notallyx/
-│   │   │   │   ├── NotallyXApplication.kt             # Application entry point
+│   │   │   │   ├── NotallyXApplication.kt             # Application entry point & Koin initialization
 │   │   │   │   ├── data/                              # Data layer: Room DB, DAOs, entities, importers
 │   │   │   │   │   ├── dao/                           # Room DAOs (BaseNoteDao, LabelDao, CommonDao)
 │   │   │   │   │   ├── imports/                       # Importers (Google Keep, Evernote, Quillpad, JSON, TXT)
 │   │   │   │   │   └── model/                         # Entities & data models (BaseNote, Label, Attachment)
+│   │   │   │   ├── di/                                # Dependency Injection: Koin modules (AppModule.kt)
 │   │   │   │   ├── presentation/                      # Presentation layer: UI & ViewModels
 │   │   │   │   │   ├── activity/                      # Activities & Fragments (MainActivity, EditNoteActivity)
 │   │   │   │   │   ├── view/                          # ViewHolders, Adapters, custom UI components
@@ -67,6 +72,7 @@ NotallyX/
 │   │   ├── test/                                      # Unit & Robolectric test suite and resources
 │   │   └── androidTest/                               # Instrumented & UI tests
 │   └── build.gradle.kts                               # App-level build configurations & dependencies
+├── documentation/                                     # Docusaurus website for app documentation (@documentation)
 ├── build.gradle.kts                                   # Root build configuration
 └── settings.gradle.kts                                # Project & repository settings
 ```
