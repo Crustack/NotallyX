@@ -356,3 +356,8 @@ class SampleEditActivityTest : UiTestBase() {
 - [ ] Used `navigateTo(R.id.FragmentId)` for navigation drawer interactions.
 - [ ] Used `waitUntilSucceeds { ... }` when asserting asynchronous flow updates or UI transitions.
 - [ ] Explicitly called `scenario.close()` at the end of each test method.
+- [ ] `assertToastDisplayed` is currently broken, so at places where you would want to use it, add it but commented and use other means of asserting
+- [ ] Validate the added/changed test by running them (only run tests which are affected by your changes) via gradlew, e.g.:
+  ```shell
+  ./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.philkes.notallyx.presentation.activity.edit.EditActivityTest#createAndEditTextNote
+  ```

@@ -129,9 +129,19 @@ class SettingsViewModel(
 
     private fun clearPersistedUriPermissions(folderPath: String) {
         val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        val folderUri =
+            try {
+                folderPath.toUri()
+            } catch (_: Exception) {
+                null
+            }
         app.contentResolver.persistedUriPermissions.forEach { permission ->
             val uriPath = permission.uri.path
-            if (uriPath?.contains(folderPath) == true) {
+            if (
+                (permission.uri == folderUri) ||
+                    (permission.uri.toString() == folderPath) ||
+                    (uriPath != null && folderUri?.path?.let { uriPath.contains(it) } == true)
+            ) {
                 app.contentResolver.releasePersistableUriPermission(permission.uri, flags)
             }
         }
@@ -393,7 +403,8 @@ class SettingsViewModel(
                 permission.isWritePermission &&
                 (permission.uri == uri ||
                     permission.uri.toString() == folderPath ||
-                    permission.uri.path?.contains(folderPath) == true)
+                    (permission.uri.path != null &&
+                        uri.path?.let { permission.uri.path?.contains(it) } == true))
         }
     }
 

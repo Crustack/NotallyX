@@ -34,6 +34,7 @@ class SettingsViewModelTest {
         preferences =
             GlobalContext.getOrNull()?.get<NotallyXPreferences>()
                 ?: NotallyXPreferences.getInstance(application)
+        preferences.reset()
         viewModel = SettingsViewModel(application, preferences)
         ShadowEnvironment.setExternalStorageState(Environment.MEDIA_MOUNTED)
     }
@@ -81,7 +82,10 @@ class SettingsViewModelTest {
         )
 
         viewModel.cancelFolderSelection()
-        waitUntil { preferences.backupsFolder.value == EMPTY_PATH }
+        waitUntil {
+            preferences.backupsFolder.value == EMPTY_PATH &&
+                preferences.periodicBackups.value.periodInDays == 0
+        }
 
         assertThat(preferences.backupsFolder.value).isEqualTo(EMPTY_PATH)
         assertThat(preferences.periodicBackups.value.periodInDays).isEqualTo(0)

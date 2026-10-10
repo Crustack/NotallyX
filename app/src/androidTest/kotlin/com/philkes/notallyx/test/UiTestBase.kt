@@ -1,12 +1,9 @@
 package com.philkes.notallyx.test
 
-import android.Manifest
 import android.content.ContextWrapper
-import android.os.Build
 import androidx.test.espresso.ViewInteraction
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.UiDevice
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
@@ -42,16 +39,19 @@ abstract class UiTestBase : KoinComponent {
 
     @Before
     fun setup() {
-        val packageName = context.packageName
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
-            uiAutomation.grantRuntimePermission(packageName, Manifest.permission.POST_NOTIFICATIONS)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-            // Allows your app to set exact alarms without forcing the user to Settings
-            device.executeShellCommand("appops set $packageName SCHEDULE_EXACT_ALARM allow")
-        }
+        //        val packageName = context.packageName
+        //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        //            val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        //            uiAutomation.grantRuntimePermission(packageName,
+        // Manifest.permission.POST_NOTIFICATIONS)
+        //        }
+        //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        //            val device =
+        // UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        //            // Allows your app to set exact alarms without forcing the user to Settings
+        //            device.executeShellCommand("appops set $packageName SCHEDULE_EXACT_ALARM
+        // allow")
+        //        }
         preferences.backupsFolder.save(EMPTY_PATH)
         preferences.periodicBackups.save(PeriodicBackup(0, 0))
         preferences.backupOnSave.save(false)
