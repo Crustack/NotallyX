@@ -12,8 +12,6 @@ import com.philkes.notallyx.presentation.format
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import java.util.Date
 import kotlin.collections.isNotEmpty
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 class AutoRemoveDeletedNotesWorker(
     private val context: Context,
@@ -47,9 +45,8 @@ suspend fun ContextWrapper.removeOldDeletedNotes(
     )
 
     val database =
-        withContext(Dispatchers.Main.immediate) {
-            NotallyDatabase.getDatabase(this@removeOldDeletedNotes).value
-        } ?: return ListenableWorker.Result.failure()
+        NotallyDatabase.getDatabase(this@removeOldDeletedNotes).value
+            ?: return ListenableWorker.Result.failure()
     val baseNoteDao = database.getBaseNoteDao()
 
     return try {

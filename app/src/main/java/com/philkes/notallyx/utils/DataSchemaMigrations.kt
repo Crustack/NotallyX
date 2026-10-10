@@ -84,11 +84,7 @@ suspend fun Application.splitOversizedNotes() {
     )
 
     // Obtain a direct DB instance matching current storage location
-    val db =
-        withContext(Dispatchers.Main.immediate) {
-                NotallyDatabase.getDatabase(this@splitOversizedNotes as ContextWrapper)
-            }
-            .value!!
+    val db = NotallyDatabase.getDatabase(this@splitOversizedNotes as ContextWrapper).value!!
     val dao = db.getBaseNoteDao()
 
     // ID-first to avoid loading huge rows into a single cursor; repair per-row if needed
