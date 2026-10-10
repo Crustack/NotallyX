@@ -60,6 +60,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 data class BackupFile(val targetPath: String, val file: File)
@@ -72,6 +74,7 @@ open class NoteModel(
 
     protected val database = NotallyDatabase.getDatabase(app)
     protected var baseNoteDao: BaseNoteDao? = null
+    private val attachmentMutex = Mutex()
     val textSize: TextSizeSp = preferences.textSizeNoteEditor.value
 
     var isNewNote = true
@@ -138,19 +141,23 @@ open class NoteModel(
     fun addAudio() {
         viewModelScope.launch(Dispatchers.IO) {
             val audio = app.importAudio(app.getTempAudioFile(), true)
-            val copy = ArrayList(audios.value)
-            copy.add(audio)
-            audios.value = copy
-            updateAudios()
+            attachmentMutex.withLock {
+                val copy = ArrayList(audios.value)
+                copy.add(audio)
+                audios.value = copy
+                updateAudios()
+            }
         }
     }
 
     fun deleteAudio(audio: Audio) {
         viewModelScope.launch(Dispatchers.IO) {
-            val copy = ArrayList(audios.value)
-            copy.remove(audio)
-            audios.value = copy
-            updateAudios()
+            attachmentMutex.withLock {
+                val copy = ArrayList(audios.value)
+                copy.remove(audio)
+                audios.value = copy
+                updateAudios()
+            }
             app.deleteAttachments(arrayListOf(audio))
         }
     }
@@ -199,21 +206,23 @@ open class NoteModel(
             addingFiles.value = AddFilesProgress(inProgress = false)
 
             if (successes.isNotEmpty()) {
-                val copy =
+                attachmentMutex.withLock {
+                    val copy =
+                        when (fileType) {
+                            FileType.IMAGE -> ArrayList(images.value)
+                            FileType.ANY -> ArrayList(files.value)
+                        }
+                    copy.addAll(successes)
                     when (fileType) {
-                        FileType.IMAGE -> ArrayList(images.value)
-                        FileType.ANY -> ArrayList(files.value)
-                    }
-                copy.addAll(successes)
-                when (fileType) {
-                    FileType.IMAGE -> {
-                        images.value = copy
-                        updateImages()
-                    }
+                        FileType.IMAGE -> {
+                            images.value = copy
+                            updateImages()
+                        }
 
-                    FileType.ANY -> {
-                        files.value = copy
-                        updateFiles()
+                        FileType.ANY -> {
+                            files.value = copy
+                            updateFiles()
+                        }
                     }
                 }
             }
@@ -226,20 +235,24 @@ open class NoteModel(
 
     fun deleteImages(list: ArrayList<FileAttachment>) {
         viewModelScope.launch(Dispatchers.IO) {
-            val copy = ArrayList(images.value)
-            copy.removeAll(list)
-            images.value = copy
-            updateImages()
+            attachmentMutex.withLock {
+                val copy = ArrayList(images.value)
+                copy.removeAll(list)
+                images.value = copy
+                updateImages()
+            }
             app.deleteAttachments(list)
         }
     }
 
     fun deleteFiles(list: ArrayList<FileAttachment>) {
         viewModelScope.launch(Dispatchers.IO) {
-            val copy = ArrayList(files.value)
-            copy.removeAll(list)
-            files.value = copy
-            updateFiles()
+            attachmentMutex.withLock {
+                val copy = ArrayList(files.value)
+                copy.removeAll(list)
+                files.value = copy
+                updateFiles()
+            }
             app.deleteAttachments(list)
         }
     }
