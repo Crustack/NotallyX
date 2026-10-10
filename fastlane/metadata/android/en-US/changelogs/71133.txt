@@ -1,3 +1,4 @@
 - Fix database encryption check without SQLConnection
 - Fix database recreations
 - Add detailed crashes folder containing instance logs and database dumps
+- Drop Android 5&6 supports for libraries compatibilities

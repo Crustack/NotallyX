@@ -34,8 +34,8 @@ For more details see ✏️ [Rich Text Formatting](features/rich-text.mdx)
 4. Tap Enter to add a new item
 5. Check the checkbox to mark an item as complete
 6. To create a subtask:
-   - Long press on an item
-   - Tap "Make subtask"
+   - Swipe right on an item (swipe left to undo)
+   - Or long press on an item and tap "Make subtask"
 7. Tap the back arrow to save and return to the notes list
 
 For more details see ✅ [Task Lists and Subtasks](features/task-lists.mdx)

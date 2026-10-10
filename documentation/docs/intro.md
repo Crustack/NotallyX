@@ -27,11 +27,11 @@ Whether you need to jot down quick thoughts, create detailed task lists, or orga
 - **Widgets**: Access important notes directly from your home screen
 - **Audio Notes**: Create quick audio recordings
 - **Customization**: Extensive preferences to adjust the app to your liking
-- **Import from Other Apps**: Import notes from Google Keep, Evernote, Quillpad, and plain text files
+- **Import from Other Apps**: Import notes from Google Keep, Evernote, Quillpad, Markdown, JSON, and plain text files
 
 ## Getting Started
 
-Ready to start using NotallyX? Check out our [Quick Start Guide](quick-start.md) to learn the basics.
+Ready to start using NotallyX? Check out our [Quick Start Guide](./quick-start.md) to learn the basics.
 
 
 ## Features Overview
@@ -98,6 +98,7 @@ Currently you can import notes from:
 - Evernote
 - Quillpad
 - Plain Text files
+- Markdown files
 - JSON Files
 
 ## Interface Features
@@ -147,6 +148,7 @@ For more detailed information about specific features, check out the following p
 - 📋 [Task Lists and Subtasks](features/task-lists.mdx)
 - 🏷️ [Labels and Organization](features/labels.mdx)
 - 🔔 [Reminders](features/reminders.mdx)
+- 💾 [Backups](features/backups.mdx)
 - 🛡️ [Security and Privacy](security-privacy.mdx)
 - ⚙️ [Settings](settings.mdx)
 - 🛠️ [Customizing Edit Actions](features/edit-actions.mdx)
