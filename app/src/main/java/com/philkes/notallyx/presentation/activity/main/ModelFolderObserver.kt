@@ -28,6 +28,7 @@ import com.philkes.notallyx.utils.showColorSelectDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ModelFolderObserver(
     private val activity: MainActivity,
@@ -108,9 +109,10 @@ class ModelFolderObserver(
 
     private fun Menu.addChangeColor(showAsAction: Int = MenuItem.SHOW_AS_ACTION_IF_ROOM): MenuItem {
         return add(R.string.change_color, R.drawable.change_color, showAsAction) {
-            activity.lifecycleScope.launch(Dispatchers.IO) {
+            activity.lifecycleScope.launch {
                 val database = NotallyDatabase.getDatabase(activity).value ?: return@launch
-                val colors = database.getBaseNoteDao().getAllColors().toSet()
+                val colors =
+                    withContext(Dispatchers.IO) { database.getBaseNoteDao().getAllColors().toSet() }
                 // Show color as selected only if all selected notes have the same color
                 val currentColor =
                     model.actionMode.selectedNotes.values
