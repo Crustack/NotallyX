@@ -1,5 +1,11 @@
 package com.philkes.notallyx.presentation.activity.edit
 
+import android.Manifest
+import android.app.Activity
+import android.app.Instrumentation
+import android.content.ClipData
+import android.content.Intent
+import android.net.Uri
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario
@@ -11,14 +17,24 @@ import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.longClick
 import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.action.ViewActions.scrollTo
+import androidx.test.espresso.action.ViewActions.swipeLeft
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.contrib.RecyclerViewActions.actionOnItemAtPosition
 import androidx.test.espresso.contrib.RecyclerViewActions.scrollToPosition
+import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.Intents.intended
+import androidx.test.espresso.intent.Intents.intending
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasType
+import androidx.test.espresso.matcher.ViewMatchers.Visibility
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isEnabled
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
+import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withParent
 import androidx.test.espresso.matcher.ViewMatchers.withText
@@ -35,6 +51,7 @@ import com.philkes.notallyx.data.model.Color
 import com.philkes.notallyx.data.model.toColorString
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.presentation.activity.note.EditListActivity
+import com.philkes.notallyx.presentation.activity.note.RecordAudioActivity
 import com.philkes.notallyx.presentation.view.note.listitem.adapter.ListItemAdapter
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.byContentDescription
@@ -52,7 +69,10 @@ import com.philkes.notallyx.test.onPositionView
 import com.philkes.notallyx.test.setSelection
 import com.philkes.notallyx.test.swipeItem
 import com.philkes.notallyx.test.typeTextAtEnd
+import com.philkes.notallyx.test.waitUntil
 import com.philkes.notallyx.test.waitUntilSucceeds
+import com.philkes.notallyx.utils.getTempAudioFile
+import java.io.File
 import org.hamcrest.Matchers.allOf
 import org.hamcrest.Matchers.anything
 import org.hamcrest.Matchers.containsString
@@ -438,5 +458,260 @@ class EditActivityTest : UiTestBase() {
         R.string.redo.byContentDescription().check(matches(not(isEnabled())))
 
         scenario.close()
+    }
+
+    @Test
+    fun addAttachments() {
+        val packageName = context.packageName
+        InstrumentationRegistry.getInstrumentation()
+            .uiAutomation
+            .grantRuntimePermission(
+                packageName,
+                Manifest.permission.RECORD_AUDIO,
+            )
+
+        val testContext = InstrumentationRegistry.getInstrumentation().context
+        val catFile = File(context.cacheDir, "cat.jpg")
+        val dogFile = File(context.cacheDir, "dog.jpg")
+        val textFile = File(context.cacheDir, "text.txt")
+
+        testContext.classLoader.getResourceAsStream("attachments/cat.jpg")!!.use { input ->
+            catFile.outputStream().use { output -> input.copyTo(output) }
+        }
+        testContext.classLoader.getResourceAsStream("attachments/dog.jpg")!!.use { input ->
+            dogFile.outputStream().use { output -> input.copyTo(output) }
+        }
+        testContext.classLoader.getResourceAsStream("attachments/text.txt")!!.use { input ->
+            textFile.outputStream().use { output -> input.copyTo(output) }
+        }
+
+        val tempAudioFile = context.getTempAudioFile()
+        createSampleAudioFile(tempAudioFile)
+
+        val catUri = Uri.fromFile(catFile)
+        val dogUri = Uri.fromFile(dogFile)
+        val textUri = Uri.fromFile(textFile)
+
+        val savedFile = File(context.cacheDir, "saved_cat.jpg").apply { if (exists()) delete() }
+        val savedUri = Uri.fromFile(savedFile)
+
+        Intents.init()
+        try {
+            val addImagesClipData =
+                ClipData.newUri(context.contentResolver, "image", catUri).apply {
+                    addItem(ClipData.Item(dogUri))
+                }
+            val addImagesResultIntent = Intent().apply { this.clipData = addImagesClipData }
+            val addImagesResult =
+                Instrumentation.ActivityResult(Activity.RESULT_OK, addImagesResultIntent)
+
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(
+                            Intent.EXTRA_INTENT,
+                            allOf(hasAction(Intent.ACTION_GET_CONTENT), hasType("image/*")),
+                        ),
+                    )
+                )
+                .respondWith(addImagesResult)
+
+            val attachFileResultIntent = Intent().apply { data = textUri }
+            val attachFileResult =
+                Instrumentation.ActivityResult(Activity.RESULT_OK, attachFileResultIntent)
+
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(
+                            Intent.EXTRA_INTENT,
+                            allOf(hasAction(Intent.ACTION_GET_CONTENT), hasType("*/*")),
+                        ),
+                    )
+                )
+                .respondWith(attachFileResult)
+
+            val saveImageResultIntent = Intent().apply { data = savedUri }
+            val saveImageResult =
+                Instrumentation.ActivityResult(Activity.RESULT_OK, saveImageResultIntent)
+
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(Intent.EXTRA_INTENT, hasAction(Intent.ACTION_CREATE_DOCUMENT)),
+                    )
+                )
+                .respondWith(saveImageResult)
+
+            val openFileResult = Instrumentation.ActivityResult(Activity.RESULT_OK, null)
+
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(Intent.EXTRA_INTENT, hasAction(Intent.ACTION_VIEW)),
+                    )
+                )
+                .respondWith(openFileResult)
+
+            val recordAudioResult = Instrumentation.ActivityResult(Activity.RESULT_OK, null)
+            intending(hasComponent(RecordAudioActivity::class.java.name))
+                .respondWith(recordAudioResult)
+
+            val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+            R.id.TakeNote.byId().perform(click())
+
+            R.string.add_item.byContentDescription().perform(click())
+            R.string.add_images.byText().perform(click())
+
+            waitUntilSucceeds {
+                R.id.ImagePreview.byId().check(matches(isDisplayed()))
+                R.id.ImagePreviewPosition.byId().check(matches(withText("1/2")))
+            }
+
+            // Scroll image preview list to position 1 and verify 2/2 is shown
+            R.id.ImagePreview.byId().perform(swipeLeft())
+
+            waitUntilSucceeds { R.id.ImagePreviewPosition.byId().check(matches(withText("2/2"))) }
+
+            // Click image to open ViewImageActivity
+            R.id.ImagePreview.byId().perform(actionOnItemAtPosition<ViewHolder>(1, click()))
+
+            waitUntilSucceeds {
+                R.id.Toolbar.byId().check(matches(isDisplayed()))
+                onDisplayView(withText("2 / 2")).check(matches(isDisplayed()))
+            }
+
+            // Test save image button in ViewImageActivity
+            R.string.save_to_device.byContentDescription().perform(click())
+            waitUntil { savedFile.exists() && (savedFile.length() > 0) }
+            assertTrue(
+                "Saved image file should exist and not be empty",
+                savedFile.exists() && (savedFile.length() > 0),
+            )
+
+            // Scroll to 1st image in ViewImageActivity and check 1 / 2
+            R.id.MainListView.byId().perform(scrollToPosition<ViewHolder>(0))
+
+            waitUntilSucceeds { onDisplayView(withText("1 / 2")).check(matches(isDisplayed())) }
+
+            Espresso.pressBack()
+
+            // Attach text file
+            R.string.add_item.byContentDescription().perform(click())
+            R.string.attach_file.byText().perform(click())
+
+            waitUntilSucceeds {
+                R.id.FilesPreview.byId().check(matches(isDisplayed()))
+                "text.txt".byText().check(matches(isDisplayed()))
+            }
+
+            // Click text file attachment to open it
+            "text.txt".byText().perform(click())
+
+            // Verify intent to open file was launched
+            intended(
+                allOf(
+                    hasAction(Intent.ACTION_CHOOSER),
+                    hasExtra(Intent.EXTRA_INTENT, hasAction(Intent.ACTION_VIEW)),
+                )
+            )
+
+            // Record audio
+            createSampleAudioFile(tempAudioFile)
+            R.string.add_item.byContentDescription().perform(click())
+            R.string.record_audio.byText().perform(click())
+
+            // Wait until AudioRecyclerView becomes VISIBLE in layout
+            waitUntilSucceeds {
+                onView(withId(R.id.AudioRecyclerView))
+                    .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+            }
+
+            // Scroll down to AudioRecyclerView in ScrollView
+            R.id.AudioRecyclerView.byId(checkDisplayed = false).perform(scrollTo())
+
+            // Verify AudioRecyclerView is now displayed
+            waitUntilSucceeds { R.id.AudioRecyclerView.byId().check(matches(isDisplayed())) }
+
+            // Click recorded audio to play it
+            R.id.AudioRecyclerView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, click()))
+
+            // Verify PlayAudioActivity opens and play button is visible
+            waitUntilSucceeds { R.id.Play.byId().check(matches(isDisplayed())) }
+
+            // Click play button
+            R.id.Play.byId().perform(click())
+
+            Espresso.pressBack()
+
+            scenario.close()
+        } finally {
+            Intents.release()
+            catFile.delete()
+            dogFile.delete()
+            textFile.delete()
+            tempAudioFile.delete()
+            if (savedFile.exists()) savedFile.delete()
+        }
+    }
+
+    private fun createSampleAudioFile(file: File) {
+        file.parentFile?.mkdirs()
+        val pcmDataSize = 1600
+        val totalDataLen = pcmDataSize + 36
+
+        val header =
+            byteArrayOf(
+                'R'.code.toByte(),
+                'I'.code.toByte(),
+                'F'.code.toByte(),
+                'F'.code.toByte(),
+                (totalDataLen and 0xff).toByte(),
+                ((totalDataLen ushr 8) and 0xff).toByte(),
+                0,
+                0,
+                'W'.code.toByte(),
+                'A'.code.toByte(),
+                'V'.code.toByte(),
+                'E'.code.toByte(),
+                'f'.code.toByte(),
+                'm'.code.toByte(),
+                't'.code.toByte(),
+                ' '.code.toByte(),
+                16,
+                0,
+                0,
+                0,
+                1,
+                0,
+                1,
+                0,
+                0x40,
+                0x1f,
+                0,
+                0,
+                0x80.toByte(),
+                0x3e,
+                0,
+                0,
+                2,
+                0,
+                16,
+                0,
+                'd'.code.toByte(),
+                'a'.code.toByte(),
+                't'.code.toByte(),
+                'a'.code.toByte(),
+                (pcmDataSize and 0xff).toByte(),
+                ((pcmDataSize ushr 8) and 0xff).toByte(),
+                0,
+                0,
+            )
+
+        file.outputStream().use { out ->
+            out.write(header)
+            out.write(ByteArray(pcmDataSize))
+        }
     }
 }
