@@ -59,10 +59,11 @@ class MainActivityViewModel(app: Application, val preferences: NotallyXPreferenc
     fun cleanupDatabase(onComplete: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             ConverterErrorReporter.enabled.set(false)
-            val allNotes = baseNoteDao.getAll()
-            baseNoteDao.updateAll(allNotes)
-            withContext(Dispatchers.Main) {
-                onComplete()
+            try {
+                val allNotes = baseNoteDao.getAll()
+                baseNoteDao.updateAll(allNotes)
+                withContext(Dispatchers.Main) { onComplete() }
+            } finally {
                 ConverterErrorReporter.enabled.set(true)
             }
         }
