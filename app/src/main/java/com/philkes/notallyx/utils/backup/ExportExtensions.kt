@@ -598,10 +598,7 @@ suspend fun ContextWrapper.copyDatabase(
     decrypt: Boolean = true,
     suffix: String = "",
 ): Pair<NotallyDatabase, File> {
-    val database =
-        withContext(Dispatchers.Main.immediate) {
-            NotallyDatabase.getDatabase(this@copyDatabase).value
-        }
+    val database = NotallyDatabase.getDatabase(this@copyDatabase).value
     database!!.checkpoint()
     val preferences = NotallyXPreferences.getInstance(this)
     val databaseFile = NotallyDatabase.getCurrentDatabaseFile(this)

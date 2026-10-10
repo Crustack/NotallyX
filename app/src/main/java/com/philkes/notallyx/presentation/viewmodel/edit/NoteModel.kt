@@ -136,7 +136,7 @@ open class NoteModel(
     }
 
     fun addAudio() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val audio = app.importAudio(app.getTempAudioFile(), true)
             val copy = ArrayList(audios.value)
             copy.add(audio)
@@ -146,12 +146,12 @@ open class NoteModel(
     }
 
     fun deleteAudio(audio: Audio) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val copy = ArrayList(audios.value)
             copy.remove(audio)
             audios.value = copy
             updateAudios()
-            withContext(Dispatchers.IO) { app.deleteAttachments(arrayListOf(audio)) }
+            app.deleteAttachments(arrayListOf(audio))
         }
     }
 
@@ -182,7 +182,7 @@ open class NoteModel(
             } else {
                 R.string.error_while_renaming_file
             }
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             addingFiles.value = AddFilesProgress(0, uris.size)
 
             val successes = ArrayList<FileAttachment>()
@@ -225,22 +225,22 @@ open class NoteModel(
     }
 
     fun deleteImages(list: ArrayList<FileAttachment>) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val copy = ArrayList(images.value)
             copy.removeAll(list)
             images.value = copy
             updateImages()
-            withContext(Dispatchers.IO) { app.deleteAttachments(list) }
+            app.deleteAttachments(list)
         }
     }
 
     fun deleteFiles(list: ArrayList<FileAttachment>) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val copy = ArrayList(files.value)
             copy.removeAll(list)
             files.value = copy
             updateFiles()
-            withContext(Dispatchers.IO) { app.deleteAttachments(list) }
+            app.deleteAttachments(list)
         }
     }
 

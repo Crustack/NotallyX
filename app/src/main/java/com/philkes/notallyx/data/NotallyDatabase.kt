@@ -3,7 +3,6 @@ package com.philkes.notallyx.data
 import android.content.Context
 import android.content.ContextWrapper
 import android.util.Log
-import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
 import androidx.room.Database
 import androidx.room.Room
@@ -113,7 +112,6 @@ abstract class NotallyDatabase : RoomDatabase() {
             }
         }
 
-        @MainThread
         fun getDatabase(context: ContextWrapper): StateFlow<NotallyDatabase?> {
             if (instance.value == null && !replacementInProgress) {
                 synchronized(this) {
@@ -130,7 +128,6 @@ abstract class NotallyDatabase : RoomDatabase() {
             return instance
         }
 
-        @MainThread
         fun clearInstance() {
             synchronized(this) {
                 instance.value?.let { database ->
@@ -165,7 +162,6 @@ abstract class NotallyDatabase : RoomDatabase() {
                 }
         }
 
-        @MainThread
         fun getFreshDatabase(
             context: ContextWrapper,
             dataInPublic: Boolean,
@@ -183,7 +179,6 @@ abstract class NotallyDatabase : RoomDatabase() {
             }
         }
 
-        @MainThread
         private fun createInstance(
             context: ContextWrapper,
             preferences: NotallyXPreferences,
@@ -268,7 +263,6 @@ abstract class NotallyDatabase : RoomDatabase() {
             instanceBuilder.openHelperFactory(factory)
         }
 
-        @MainThread
         fun postNewInstance(
             context: ContextWrapper,
             dataInPublic: Boolean? = null,
@@ -284,7 +278,6 @@ abstract class NotallyDatabase : RoomDatabase() {
             postInstance(notallyDatabase)
         }
 
-        @MainThread
         fun postInstance(notallyDatabase: NotallyDatabase) {
             synchronized(this) {
                 instance.value = notallyDatabase

@@ -31,7 +31,6 @@ import java.util.Date
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * [BroadcastReceiver] for sending notifications via [NotificationManager] for [Reminder]s.
@@ -307,11 +306,8 @@ class ReminderReceiver : BroadcastReceiver() {
             }
     }
 
-    private suspend fun getDatabase(context: Context): NotallyDatabase? {
-        return withContext(Dispatchers.Main.immediate) {
-                NotallyDatabase.getDatabase(context.applicationContext as Application)
-            }
-            .value
+    private fun getDatabase(context: Context): NotallyDatabase? {
+        return NotallyDatabase.getDatabase(context.applicationContext as Application).value
     }
 
     private fun goAsyncScope(codeBlock: suspend CoroutineScope.() -> Unit) {

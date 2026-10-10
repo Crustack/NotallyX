@@ -231,13 +231,12 @@ class DatabaseTransitionActivity : AppCompatActivity() {
             preferences: NotallyXPreferences,
             callback: (() -> Unit)? = null,
         ) {
-            val database =
-                withContext(Dispatchers.Main.immediate) { NotallyDatabase.getDatabase(app) }
+            val database = NotallyDatabase.getDatabase(app)
             withContext(Dispatchers.IO) {
                 NotallyDatabase.startReplacement()
                 try {
                     database.value!!.checkpoint()
-                    withContext(Dispatchers.Main.immediate) { NotallyDatabase.clearInstance() }
+                    NotallyDatabase.clearInstance()
                     val targetDirectory = NotallyDatabase.getExternalDatabaseFile(app).parentFile
                     NotallyDatabase.getExternalDatabaseFiles(app).forEach { it.delete() }
                     val internalDatabaseFiles = NotallyDatabase.getInternalDatabaseFiles(app)
@@ -245,13 +244,11 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                         it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
                     }
                     val notallyDatabase =
-                        withContext(Dispatchers.Main.immediate) {
-                            NotallyDatabase.getFreshDatabase(
-                                app,
-                                true,
-                                preferences.biometricLock.value,
-                            )
-                        }
+                        NotallyDatabase.getFreshDatabase(
+                            app,
+                            true,
+                            preferences.biometricLock.value,
+                        )
                     val ping =
                         try {
                             notallyDatabase.ping()
@@ -268,16 +265,12 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                     }
                     app.migrateAllAttachments(toPrivate = false)
                 } catch (e: Exception) {
-                    withContext(Dispatchers.Main.immediate) {
-                        NotallyDatabase.postNewInstance(app, dataInPublic = false)
-                    }
+                    NotallyDatabase.postNewInstance(app, dataInPublic = false)
                     throw e
                 }
             }
-            withContext(Dispatchers.Main.immediate) {
-                NotallyDatabase.postNewInstance(app, dataInPublic = true)
-                preferences.dataInPublicFolder.save(true)
-            }
+            NotallyDatabase.postNewInstance(app, dataInPublic = true)
+            preferences.dataInPublicFolder.save(true)
             callback?.invoke()
         }
 
@@ -286,13 +279,12 @@ class DatabaseTransitionActivity : AppCompatActivity() {
             preferences: NotallyXPreferences,
             callback: (() -> Unit)? = null,
         ) {
-            val database =
-                withContext(Dispatchers.Main.immediate) { NotallyDatabase.getDatabase(app) }
+            val database = NotallyDatabase.getDatabase(app)
             withContext(Dispatchers.IO) {
                 NotallyDatabase.startReplacement()
                 try {
                     database.value!!.checkpoint()
-                    withContext(Dispatchers.Main.immediate) { NotallyDatabase.clearInstance() }
+                    NotallyDatabase.clearInstance()
                     val targetDirectory = NotallyDatabase.getInternalDatabaseFile(app).parentFile
                     NotallyDatabase.getInternalDatabaseFiles(app).forEach { it.delete() }
                     val externalDatabaseFiles = NotallyDatabase.getExternalDatabaseFiles(app)
@@ -300,13 +292,11 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                         it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
                     }
                     val notallyDatabase =
-                        withContext(Dispatchers.Main.immediate) {
-                            NotallyDatabase.getFreshDatabase(
-                                app,
-                                false,
-                                preferences.biometricLock.value,
-                            )
-                        }
+                        NotallyDatabase.getFreshDatabase(
+                            app,
+                            false,
+                            preferences.biometricLock.value,
+                        )
                     val ping =
                         try {
                             notallyDatabase.ping()
@@ -323,16 +313,12 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                     }
                     app.migrateAllAttachments(toPrivate = true)
                 } catch (e: Exception) {
-                    withContext(Dispatchers.Main.immediate) {
-                        NotallyDatabase.postNewInstance(app, dataInPublic = true)
-                    }
+                    NotallyDatabase.postNewInstance(app, dataInPublic = true)
                     throw e
                 }
             }
-            withContext(Dispatchers.Main.immediate) {
-                NotallyDatabase.postNewInstance(app, dataInPublic = false)
-                preferences.dataInPublicFolder.save(false)
-            }
+            NotallyDatabase.postNewInstance(app, dataInPublic = false)
+            preferences.dataInPublicFolder.save(false)
             callback?.invoke()
         }
 
@@ -348,7 +334,7 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                 try {
                     val (_, dbFileCopy) = app.copyDatabase(suffix = "-encrypt")
                     val (_, dbFileBackup) = app.copyDatabase(suffix = "-encrypt-backup")
-                    withContext(Dispatchers.Main.immediate) { NotallyDatabase.clearInstance() }
+                    NotallyDatabase.clearInstance()
                     encryptDatabase(app, dbFileCopy, passphrase)
                     val originalDbFiles = NotallyDatabase.getCurrentDatabaseFiles(app)
                     originalDbFiles.forEach { it.delete() }
@@ -377,18 +363,14 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                         )
                     }
                 } catch (e: Exception) {
-                    withContext(Dispatchers.Main.immediate) {
-                        NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.DISABLED)
-                    }
+                    NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.DISABLED)
                     throw e
                 }
             }
-            withContext(Dispatchers.Main.immediate) {
-                NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.ENABLED)
-                preferences.fallbackDatabaseEncryptionKey.save(passphrase)
-                preferences.biometricLock.save(BiometricLock.ENABLED)
-                preferences.biometricLockEncryptsDb.save(true)
-            }
+            NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.ENABLED)
+            preferences.fallbackDatabaseEncryptionKey.save(passphrase)
+            preferences.biometricLock.save(BiometricLock.ENABLED)
+            preferences.biometricLockEncryptsDb.save(true)
         }
 
         suspend fun disableBiometricsEncryption(
@@ -401,11 +383,9 @@ class DatabaseTransitionActivity : AppCompatActivity() {
             val targetLockState =
                 if (keepBiometricLockEnabled) BiometricLock.ENABLED else BiometricLock.DISABLED
             if (!preferences.biometricLockEncryptsDb.value) {
-                withContext(Dispatchers.Main.immediate) {
-                    NotallyDatabase.postNewInstance(app, biometricLock = targetLockState)
-                    preferences.biometricLock.save(targetLockState)
-                    preferences.biometricLockEncryptsDb.save(false)
-                }
+                NotallyDatabase.postNewInstance(app, biometricLock = targetLockState)
+                preferences.biometricLock.save(targetLockState)
+                preferences.biometricLockEncryptsDb.save(false)
                 callback?.invoke()
                 return
             }
@@ -419,7 +399,7 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                     val (_, dbFileCopy) = app.copyDatabase(decrypt = false, suffix = "-decrypt")
                     val (_, dbFileBackup) =
                         app.copyDatabase(decrypt = false, suffix = "-decrypt-backup")
-                    withContext(Dispatchers.Main.immediate) { NotallyDatabase.clearInstance() }
+                    NotallyDatabase.clearInstance()
                     decryptDatabase(app, dbFileCopy, passphrase)
                     val originalDbFiles = NotallyDatabase.getCurrentDatabaseFiles(app)
                     originalDbFiles.forEach { it.delete() }
@@ -448,17 +428,13 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                         )
                     }
                 } catch (e: Exception) {
-                    withContext(Dispatchers.Main.immediate) {
-                        NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.ENABLED)
-                    }
+                    NotallyDatabase.postNewInstance(app, biometricLock = BiometricLock.ENABLED)
                     throw e
                 }
             }
-            withContext(Dispatchers.Main.immediate) {
-                NotallyDatabase.postNewInstance(app, biometricLock = targetLockState)
-                preferences.biometricLock.save(targetLockState)
-                preferences.biometricLockEncryptsDb.save(false)
-            }
+            NotallyDatabase.postNewInstance(app, biometricLock = targetLockState)
+            preferences.biometricLock.save(targetLockState)
+            preferences.biometricLockEncryptsDb.save(false)
             callback?.invoke()
         }
     }

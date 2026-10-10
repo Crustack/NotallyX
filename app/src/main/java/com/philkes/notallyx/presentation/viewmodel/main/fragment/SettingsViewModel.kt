@@ -224,8 +224,7 @@ class SettingsViewModel(
         }
 
         viewModelScope.launch(exceptionHandler) {
-            val database =
-                withContext(Dispatchers.Main.immediate) { NotallyDatabase.getDatabase(app).value }
+            val database = NotallyDatabase.getDatabase(app).value
             val result =
                 withContext(Dispatchers.IO) {
                     NotesImporter(app, database!!).import(uri, importSource, importProgress)
