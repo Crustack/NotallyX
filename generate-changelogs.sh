@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# See https://github.com/github-changelog-generator/github-changelog-generator
+
 VERSION_NAME=$1
 OUTPUT_FILE=$2
 GITHUB_TOKEN=${3:-$CHANGELOG_GITHUB_TOKEN}

@@ -309,7 +309,7 @@ tasks.register("generateChangelogs") {
             mutableListOf(
                 "bash",
                 rootProject.file("generate-changelogs.sh").absolutePath,
-                "v${project.findProperty("app.lastVersionName").toString()}",
+                "v${project.findProperty("app.lastVersionName")}",
                 rootProject.file("CHANGELOG.md").absolutePath,
             )
         if (!githubToken.isNullOrEmpty()) {
@@ -319,19 +319,28 @@ tasks.register("generateChangelogs") {
                 "CHANGELOG_GITHUB_TOKEN not found, which limits the allowed amount of Github API calls"
             )
         }
-        providers.exec {
-            commandLine(command)
-            standardOutput = System.out
-            errorOutput = System.err
+
+        // Execute and stream directly to the terminal console
+        val process =
+            ProcessBuilder(command)
+                .directory(rootProject.rootDir)
+                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+                .redirectError(ProcessBuilder.Redirect.INHERIT)
+                .start()
+
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            throw GradleException("Changelog generation script failed with exit code $exitCode")
         }
 
+        // Update gradle.properties
         val config = PropertiesConfiguration()
         val fileHandler =
             FileHandler(config).apply {
                 file = rootProject.file("gradle.properties")
                 load()
             }
-        val currentVersionName = config.getProperty("app.versionName")
+        val currentVersionName = config.getProperty("app.versionName")?.toString() ?: ""
         config.setProperty("app.lastVersionName", currentVersionName)
         fileHandler.save()
         println("Updated app.lastVersionName to $currentVersionName")
