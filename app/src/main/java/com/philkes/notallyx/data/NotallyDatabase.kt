@@ -257,7 +257,10 @@ abstract class NotallyDatabase : RoomDatabase() {
             instanceBuilder: Builder<NotallyDatabase>,
         ) {
             System.loadLibrary("sqlcipher")
-            val initializationVector = preferences.iv.value!!
+            val initializationVector =
+                requireNotNull(preferences.iv.value) {
+                    "IV cannot be null when initializing database decryption"
+                }
             val cipher = getInitializedCipherForDecryption(iv = initializationVector)
             val encryptedPassphrase = preferences.databaseEncryptionKey.value
             val passphrase = cipher.doFinal(encryptedPassphrase)

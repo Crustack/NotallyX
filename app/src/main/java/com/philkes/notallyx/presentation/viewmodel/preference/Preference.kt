@@ -42,14 +42,17 @@ abstract class BasePreference<T>(
     val titleResId: Int? = null,
 ) {
     private var dataFlow: MutableStateFlow<T>? = null
+    private var isCached = false
     private var cachedValue: T? = null
 
     val value: T
         get() {
-            if (cachedValue == null) {
+            if (!isCached) {
                 cachedValue = getValue(sharedPreferences)
+                isCached = true
             }
-            return cachedValue!!
+            @Suppress("UNCHECKED_CAST")
+            return cachedValue as T
         }
 
     protected abstract fun getValue(sharedPreferences: SharedPreferences): T
@@ -72,12 +75,14 @@ abstract class BasePreference<T>(
     internal fun save(value: T) {
         sharedPreferences.edit(true) { put(value) }
         cachedValue = value
+        isCached = true
         getData().value = value
     }
 
     protected abstract fun SharedPreferences.Editor.put(value: T)
 
     fun refresh() {
+        isCached = false
         cachedValue = null
         getData().value = value
     }
