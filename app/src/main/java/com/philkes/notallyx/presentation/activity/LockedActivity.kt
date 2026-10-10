@@ -139,7 +139,7 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
     open fun showLockScreen() {
         AuthenticatorProvider.instance.authenticate(
             this,
-            preferences.iv.value!!,
+            preferences.iv.value,
             isForDecrypt = true,
             onSuccess = { unlock() },
             onError = { finish() },

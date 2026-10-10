@@ -606,7 +606,11 @@ suspend fun ContextWrapper.copyDatabase(
     val preferences = NotallyXPreferences.getInstance(this)
     val databaseFile = NotallyDatabase.getCurrentDatabaseFile(this)
     return if (decrypt && preferences.biometricLockEncryptsDb.value && preferences.isLockEnabled) {
-        val cipher = getInitializedCipherForDecryption(iv = preferences.iv.value!!)
+        val initializationVector =
+            requireNotNull(preferences.iv.value) {
+                "IV cannot be null when decrypting database for backup export"
+            }
+        val cipher = getInitializedCipherForDecryption(iv = initializationVector)
         val passphrase = cipher.doFinal(preferences.databaseEncryptionKey.value)
         val decryptedFile =
             withContext(Dispatchers.IO) { createTempFile(DATABASE_NAME, suffix, cacheDir) }
