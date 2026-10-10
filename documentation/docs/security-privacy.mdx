@@ -5,92 +5,106 @@ sidebar_position: 8
 
 # Security and Privacy
 
-NotallyX provides several features to help keep your notes secure and private. This guide explains how to use note locking, biometric authentication to protect your data.
+NotallyX provides several features to help keep your notes secure and private. This guide explains how to use app locking, biometric authentication, database encryption, backup encryption, and secure flag options to protect your data.
 
-
-## Note Locking
+## Note & App Locking
 
 <img src={require('/img/phoneScreenshots/8.png').default} width="32%" alt="Security Features in NotallyX"/>
 
-You can lock the app to prevent unauthorized access. It require authentication (biometric or PIN) to view the contents of the app.
+You can lock the app to prevent unauthorized access. It requires authentication (biometric fingerprint/face or device PIN) to view the contents of the app.
 
 ### Setting Up App Lock
 
-To setup the app lock, you need to set up authentication:
+To set up the app lock:
 
 1. Open the app settings
-2. Navigate to "Security"
-3. Enable "Lock app with device biometric or PIN"
-4. If you haven't setup device security you will be prompted to do so (at least PIN setup is needed)
-5. Whenever your device was locked, NotallyX will be locked too and require authentication to see the notes
+2. Navigate to **Security**
+3. Enable **Lock app with device biometric or PIN**
+4. If you haven't set up device security, you will be prompted to do so (at least a PIN or screen lock is required)
+5. Whenever your device or app is locked, NotallyX will require authentication before granting access to your notes
 
-## Auto-Backup
+:::caution Experimental Database Encryption
+By default, enabling the app lock protects the user interface with authentication, but does not encrypt the underlying database file on disk.
+
+Optionally, you can enable **Encrypt Database via Biometric** (powered by SQLCipher). Please note that database encryption is an **optional EXPERIMENTAL feature** and should be used with caution, as it is not yet fully stable. It is particularly useful if you store your data in a public folder, but you should always maintain regular backups of your notes when using this feature.
+:::
+
+## Backup Encryption (Password Protection)
+
+You can set a password to encrypt your exported backup files:
+
+1. Open Settings > **Security**
+2. Tap **Backup password**
+3. Enter and confirm your desired encryption password
+4. Future exported backups will be encrypted with AES using this password
+5. When restoring from a password-protected backup, you will be prompted to enter the password
+
+## Secure Flag (Hide Screen Content)
+
+To prevent sensitive information from being exposed in screenshots or recent app task lists:
+
+1. Open Settings > **Security**
+2. Enable **Hide app content in recent apps / Prevent screenshots**
+3. Screen captures, screen recordings, and previews in Android's recent apps switcher will be blocked for NotallyX
+
+## Auto-Backup & Backups
 
 NotallyX can automatically back up your notes to prevent data loss.
 
 ### Configuring Auto-Backup
 
-1. Open the app settings
-2. Navigate to "Auto Backups"
-3. Tap "Backups Folder" and "Choose folder" to select a folder for backups
-4. After you've set your backups folder you can:
-    - Enable auto backups whenever a note changed ("Backup on exit Note automatically")
-    - Enable periodic backups
-    - Configure the amount of previous backups to keep
+1. Open Settings > **Auto Backups**
+2. Tap **Backups Folder** and **Choose folder** to select a folder for backups
+3. After setting your backups folder, you can:
+    - Enable auto backups whenever a note is modified (**Backup on exit Note automatically**)
+    - Enable periodic background backups at specified day intervals
+    - Configure the maximum number of previous backups to keep
 
 ### Manual Backup
 
 You can also create backups manually:
 
-1. Open the app settings
-2. Navigate to "Backup"
-3. Tap "Export backup"
-4. Choose a location and name for the backup
-5. Tap "Save"
+1. Open Settings > **Backup**
+2. Tap **Export backup**
+3. Choose a location and file name for the backup
+4. Tap **Save**
 
 ### Restoring from Backup
 
-If you need to restore your notes from a backup:
+To restore your notes from a backup file:
 
-1. Open the app settings
-2. Navigate to "Backup"
-3. Tap "Import backup"
-4. Select the backup file you want to restore from
-5. If your backup is password protected, provide the correct password
-6. Tap "Import Backup"
+1. Open Settings > **Backup**
+2. Tap **Import backup**
+3. Select the backup file you want to restore from
+4. If your backup is password protected, enter the correct password when prompted
+5. Tap **Import Backup**
 
-Note: Importing a backup does not delete any existing notes/labels
+*Note: Importing a backup merges data and does not delete existing notes or labels.*
 
-## Data Storage
+## Data Storage & Privacy
 
 ### Where Your Data is Stored
 
-NotallyX stores all your notes locally on your device. Your data is not uploaded to any cloud service unless you explicitly use a cloud storage service to back up your notes.
-
+NotallyX stores all your notes locally on your device. Your data is not uploaded to any cloud service unless you explicitly use a cloud storage service or WebDAV mount to back up your notes.
 
 ### Permissions
 
 NotallyX requires minimal permissions to function:
 
-- **Storage**: Required for saving notes and attachments
-- **Biometric**: Optional, only used if you enable biometric authentication
-- **Microphone**: Optional, only used for audio notes
-- **Alarms**: Optional, only used when setting reminders for notes
-- **Notifications**: Optional, only used for failed backups or reminders
+- **Storage**: Required for saving notes and attachments (or exporting/importing backups)
+- **Biometric**: Optional, used only if you enable biometric authentication
+- **Microphone**: Optional, used only when recording audio notes
+- **Alarms**: Optional, used only when setting time-based reminders
+- **Notifications**: Optional, used for reminder notifications and backup alerts
 
-You can review and manage these permissions in your device's settings.
+You can review and manage these permissions in your Android device's settings.
 
-## Privacy Considerations
+### Privacy Considerations
 
-### No Data Collection
-
-NotallyX does not collect any personal data or usage statistics. Your notes remain private on your device.
-For the up-to-date privacy policy, see [Privacy-Policy](https://github.com/Crustack/NotallyX/blob/main/Privacy-Policy.md)
-
-### Third-Party Services
-
-If you use features that interact with third-party services (such as sharing notes), be aware that those services may have different privacy policies.
+NotallyX does not collect any personal data, analytics, or usage statistics. Your notes remain entirely private on your device.
+For the up-to-date privacy policy, see [Privacy Policy](https://github.com/Crustack/NotallyX/blob/main/Privacy-Policy.md).
 
 ## Related Features
 
 - [Settings](./settings.mdx): Learn about ways to customize NotallyX
+- [Backups](./features/backups.mdx): Learn more about backup options and WebDAV setup

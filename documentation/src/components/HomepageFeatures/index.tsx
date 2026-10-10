@@ -18,27 +18,27 @@ const FeatureList: FeatureItem[] = [
     image: require('@site/static/img/phoneScreenshots/2.png').default,
   },
   {
-    title: 'Powered by React',
+    title: 'Rich Formatting',
     image: require('@site/static/img/phoneScreenshots/3.png').default,
   },
   {
-    title: 'Powered by React',
+    title: 'Labels & Organization',
     image: require('@site/static/img/phoneScreenshots/4.png').default,
   },
   {
-    title: 'Powered by React',
+    title: 'Search & Filters',
     image: require('@site/static/img/phoneScreenshots/5.png').default,
   },
   {
-    title: 'Powered by React',
+    title: 'Dark Mode & Custom Themes',
     image: require('@site/static/img/phoneScreenshots/6.png').default,
   },
   {
-    title: 'Powered by React',
+    title: 'Security & Backup',
     image: require('@site/static/img/phoneScreenshots/7.png').default,
   },
   {
-    title: 'Powered by React',
+    title: 'Extensive Settings',
     image: require('@site/static/img/phoneScreenshots/8.png').default,
   },
 ];
@@ -47,7 +47,7 @@ function Feature({title, image, description}: FeatureItem) {
   return (
     <div className={clsx('col col--3')}>
       <div className="text--center">
-        <img src={image} alt={title}  />  {/* Use <img> to display PNG */}
+        <img src={image} alt={title} />
       </div>
     </div>
   );

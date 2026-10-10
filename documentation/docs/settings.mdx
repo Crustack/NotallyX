@@ -11,43 +11,71 @@ NotallyX offers a wide range of customization options to help you tailor the app
 
 ## Appearance Settings
 
-Here you can find basic settings to change the overall appearance of the app.
-This includes arrangement of the notes, theme, date/time formats and more.
+Customize how NotallyX looks and displays content:
+
+- **View**: Toggle between Grid view and List view for your notes list.
+- **Theme**: Choose between System default, Light, Dark, or Pure Dark (AMOLED) mode.
+- **Date & Time Formats**: Customize date/time display formats separately for the Overview screen and inside Note views.
+- **Text Size**: Adjust font sizes for notes and the overview list.
+- **Show Search Bar in Top Bar**: Display a persistent search bar in the top app bar for quicker access.
 
 ## Behavior Settings
 
-Here you can tweak the app's behaviour regarding sort order of the notes and more.
+Tweak the app's behavior and default behaviors:
 
-### Sort List items
+### Notes Sort Order
+Choose how notes are ordered in the main view (by Creation Date, Modification Date, Title, or Color).
 
-Choose which order items in list notes should have.
+### Sort List Items
+Choose how checked items in list notes are sorted (e.g. automatically move checked items to the bottom).
 
 ### Start View
-
-Choose which view is shown when you start the app.
-This can be any label or all notes overview.
+Select which view or label is shown when you open the app (e.g. All Notes, Archive, Bin, or a specific Label).
 
 ### Default List-Note View Mode
+Select the default view mode when opening a list note (Read mode, Edit mode, or Last used mode).
 
-Choose which view mode list notes are initially opened with.
-Can either be read or write mode or the last view mode that was used inside the note.
+### Auto Save Note
+Enable automatic saving of notes after a specified idle time without needing to manually tap save or exit.
 
-Choose which view is shown when you start the app.
-This can be any label or all notes overview.
+### Auto Remove Deleted Notes
+Set after how many days notes in the `Deleted` folder (Bin/Trash) are automatically removed permanently.
 
-### Auto save Note
+## Content Density Settings
 
-You can enable auto saving the note after a specified idle time without having to exit the note to save
+Adjust how much information is previewed for each note in the overview:
 
-### Auto remove deleted Notes
+- **Max Title**: Set maximum lines/characters for titles in the overview.
+- **Max Items**: Set maximum items shown in task list previews.
+- **Max Lines**: Set maximum body text lines displayed in note cards.
+- **Max Labels**: Limit the number of label chips displayed on note cards.
+- **Hide Labels / Images in Overview**: Optionally hide labels or image attachments in the main overview for a cleaner view.
 
-You can set after how many days Notes in the `Deleted` Folder are automatically removed permanently.
+## Security & Privacy Settings
 
-You can enable auto saving the note after a specified idle time without having to exit the note to save
+Protect your notes and app data:
+
+- **Biometric / PIN Lock**: Require biometric authentication (fingerprint, face) or device PIN whenever opening NotallyX.
+- **Database Encryption (Experimental)**: Optionally encrypt the database file on disk via biometric credentials (using SQLCipher). *Note: This is an optional experimental feature and should be used with caution.*
+- **Backup Password**: Set a password to encrypt exported backups using AES encryption.
+- **Secure Flag**: Prevent screenshots, screen recordings, and hide app content previews in the Android recent apps switcher.
+
+For more details, see [🛡️ Security and Privacy](./security-privacy.mdx).
+
+## Backups & Auto-Backups
+
+Keep your notes safe with automatic and manual backup options:
+
+- **Backups Folder**: Select a local device folder or SAF WebDAV mount for storing backups.
+- **Backup on Exit**: Automatically create a backup whenever you edit and exit a note.
+- **Periodic Backups**: Schedule automatic background backups at regular day intervals and specify the maximum number of backup files to keep.
+- **Export & Import Backup**: Manually export or restore your notes and attachments.
+
+For more details, see [💾 Backups](./features/backups.mdx).
 
 ## Customizing Actions
 
-You can customize which actions are immediately available in the edit screen's toolbar and bottom bar. This helps you keep your most-used tools just a tap away.
+You can customize which actions are immediately available in the edit screen's toolbar and bottom bar. Keep your most-used tools just a tap away.
 For more details on how to use this feature, see [🛠️ Customizing Edit Actions](./features/edit-actions.mdx).
 
 ## Home Screen Widgets
@@ -59,31 +87,31 @@ NotallyX provides customizable widgets for your home screen:
 1. Long press on your home screen
 2. Select "Widgets"
 3. Find and select "NotallyX"
-5. Configure the widget settings
+4. Configure the widget settings (choose list view, individual note, or specific label)
 
 ## Exporting and Importing Settings
 
-If you want to use the same settings across multiple devices:
+To use the same app configuration across multiple devices:
 
 1. Open the app settings
-2. Navigate to "Settings" section
-3. Tap "Export settings" to save your current configuration
-4. On another device, tap "Import settings" to apply the same configuration
+2. Scroll to the **Settings** section
+3. Tap **Export settings** to save your current configuration to a JSON file
+4. On another device, tap **Import settings** to apply the configuration
 
-## Store data in public folder
+## Store Data in Public Folder
 
-By default, NotallyX uses its internal (app-private) storage to store it's database (containing your notes), attachments etc.
-You can optionally choose to instead store the app's internal data in the app's public folder ("Android/media/com.philkes.notallyx").
-This can be useful if want to use an external synchronisation app like FolderSync or similar to synchronize NotallyX data with other devices.
-To switch between public/private storage:
+By default, NotallyX uses internal (app-private) storage to store its database and media attachments.
+You can optionally choose to store app data in the public folder (`Android/media/com.philkes.notallyx`).
+This is useful if you use synchronization tools like FolderSync or Syncthing to sync NotallyX data across devices.
 
-1. Open the app settings
-2. Navigate to "Settings" section
-3. Tap "Store data in public folder"
-4. Select whether to en- or disable using the app's public folder for storage
+To switch storage location:
+1. Open Settings
+2. Under the **Settings** section, tap **Store data in public folder**
+3. Select whether to enable or disable public folder storage
 
 ## Related Features
 
 - [Labels and Organization](./features/labels.mdx): Learn more about organizing your notes
 - [Security and Privacy](./security-privacy.mdx): Discover security features in NotallyX
 - [Customizing Edit Actions](./features/edit-actions.mdx): Learn how to customize the edit screen
+- [Backups](./features/backups.mdx): Detailed guide on backups and WebDAV sync

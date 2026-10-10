@@ -20,7 +20,7 @@ If you still want to donate to support me as a developer, feel free to donate vi
 
 ### What devices does NotallyX support?
 
-NotallyX supports Android devices running Lollipop (Android 5.0) and above.
+NotallyX supports Android devices running Android 7.0 (Nougat, API level 24) and above.
 
 ### Where can I download NotallyX?
 
@@ -62,8 +62,8 @@ See [Settings](settings.mdx)
 
 ### Can I recover deleted notes?
 
-When you delete a note it first only moved into the "Deleted" notes. If you deleted notes from the "Deleted" notes they are permanently gone.
-If you've accidentally deleted a note, you can restore it from a backup if you have one. Otherwise, deleted notes cannot be recovered.
+When you delete a note, it is moved to the "Deleted" folder (Bin/Trash). If you delete notes from the "Deleted" folder, they are permanently removed.
+If you've accidentally deleted a note permanently, you can restore it from a backup if you have one. Otherwise, permanently deleted notes cannot be recovered.
 
 ### Why are my checked list items moving to the bottom?
 
