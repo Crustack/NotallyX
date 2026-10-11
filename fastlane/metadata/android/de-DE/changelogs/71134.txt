@@ -2,3 +2,4 @@
 - Fix unnötiges Neuanlegen der Datenbank
 - Auto. Erstellen von Absturzberichten inkl. Logs und Datenbank-Dumps
 - Kein Android 5&6 support mehr aufgrund Bibliotheken Updates
+- Encryption per Biometrie als experimental
