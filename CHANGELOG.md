@@ -1,5 +1,21 @@
 # Changelog
 
+## [v7.11.3](https://github.com/Crustack/NotallyX/tree/v7.11.3) (2026-10-11)
+
+[Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.11.2...v7.11.3)
+
+### Added Features
+
+- Create externally available crash logs (logcat) + database files dump automatically (in `Android/media/com.philkes.notallyx/Crashes`)  (#1113)
+- On database corruption, the database is only re-created after an externally available database dump was successfully created (in `Android/media/com.philkes.notallyx/Crashes`) (#1113)
+- Add quick navigation link to externally available crashes folder in Settings `About` section (#1113)
+- By default, daily backups are enabled (stored in`Android/media/com.philkes.notallyx/Backups`) ([49970db](https://github.com/Crustack/NotallyX/commit/49970db47d3c209ebea8fa77b30117280d8e1525))
+
+### Fixed Bugs
+
+- Auto Backup failed [\#1121](https://github.com/Crustack/NotallyX/issues/1121)
+- All notes deleted [\#1114](https://github.com/Crustack/NotallyX/issues/1114)
+
 ## [v7.11.2](https://github.com/Crustack/NotallyX/tree/v7.11.2) (2026-06-03)
 
 [Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.11.1...v7.11.2)
