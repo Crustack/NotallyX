@@ -187,7 +187,7 @@ abstract class NotallyDatabase : RoomDatabase() {
         ): NotallyDatabase {
             Log.d(
                 DATABASE_NAME,
-                "Creating database instance with dataInPublic: '$dataInPublic' and biometric lock: '$biometricLock'",
+                "Creating database instance with dataInPublic: '$dataInPublic' and biometric lock: '$biometricLock' (experimental encryption: ${preferences.biometricLockEncryptsDb.value})",
             )
             clearInstance()
             val instanceBuilder =
