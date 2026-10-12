@@ -1,42 +1,211 @@
 ---
 name: write-ui-tests
-description: Guide for creating and maintaining Android UI instrumented tests in NotallyX using Espresso, UiAutomator, and project-specific extensions in UiUtils.kt and UiTestBase. Standardizes test setup, database pre-filling via runBlocking, RecyclerView matching, navigation, and asynchronous assertions.
+description: Guide for creating and maintaining Android UI instrumented tests in NotallyX using Jetpack Compose UI testing best practices and Kaspresso (ComposeScreen, Kakao Screen, flakiness safety), Espresso, UiAutomator, and project extensions in UiUtils.kt and UiTestBase. Standardizes test setup, Page Object model, database pre-filling via runBlocking, and asynchronous assertions.
 metadata:
    author: NotallyX
    last-updated: '2026-10-03'
    keywords:
       - Android
       - UI Testing
+      - Jetpack Compose
+      - Kaspresso
+      - ComposeScreen
+      - KNode
+      - Kakao
       - Espresso
       - UiAutomator
       - AndroidJUnit4
       - UiTestBase
       - UiUtils
       - runBlocking
+      - Page Object Model
       - Room
-      - ActivityScenario
-      - RecyclerView
    scope: Android instrumented tests (app/src/androidTest/)
-   primary-goal: Ensure consistent, reliable, and readable Espresso/UiAutomator UI tests matching NotallyX patterns
+   primary-goal: Ensure consistent, flake-free Compose and hybrid UI tests using Kaspresso Page Objects and Jetpack Compose testing best practices matching NotallyX patterns.
 ---
 
 # NotallyX UI Testing Skill
 
 ## Purpose
 
-Use this skill to create, update, or maintain instrumented UI tests in `app/src/androidTest/kotlin/com/philkes/notallyx/`. This guide standardizes how tests are structured for Activities (`MainActivity`, `EditActivity`) and main drawer fragments (`DeletedFragment`, `ArchivedFragment`, `LabelsFragment`, `RemindersFragment`).
+Use this skill to create, update, or maintain instrumented UI tests in `app/src/androidTest/kotlin/com/philkes/notallyx/`. This guide standardizes how tests are structured for Jetpack Compose screens/components, Android Views (`MainActivity`, `EditActivity`), and main drawer fragments (`DeletedFragment`, `ArchivedFragment`, `LabelsFragment`, `RemindersFragment`, `SettingsFragment`).
 
 ---
 
-## Core Principles & Setup
+## Core Principles & Framework Architecture
 
-### 1. Prefer Espresso Over UiAutomator
+### 1. Leverage Kaspresso as the UI Testing Foundation
 
-Always prefer using **Espresso** for view matchers, actions, and assertions. Only use **UiAutomator** (e.g. `UiDevice`, `dragAndDrop`, `swipeItem`) if an interaction or assertion is not possible with Espresso (such as system-level interactions, device locking/waking, or complex gesture drag-and-drop).
+**Kaspresso** provides a high-level, declarative DSL built on top of Jetpack Compose Testing APIs, Kakao (for Android Views), Espresso, and UiAutomator.
 
-### 2. Inherit from `UiTestBase`
+* **Flakiness Protection**: All Kaspresso steps and assertions execute within `flakySafely` by default, automatically retrying transient failures up to a configurable timeout.
+* **Readable Steps**: Group interactions into `step("Step name") { ... }` blocks for clear console logs, test reporting, and debugging output.
+* **Page Object Pattern**: Enforce separation between test logic and UI elements using `ComposeScreen` (for Compose) and Kakao `Screen` (for Views).
 
-Every UI test class must extend `UiTestBase`.
+```kotlin
+@LargeTest
+@RunWith(AndroidJUnit4::class)
+class FeatureComposeTest : TestCase(
+    kaspressoBuilder = Kaspresso.Builder.withComposeSupport()
+) {
+
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<MainActivity>()
+
+    @Test
+    fun featureWorkflow() = run {
+        step("1. Seed database") {
+            runBlocking {
+                database.getBaseNoteDao().insert(...)
+            }
+        }
+
+        step("2. Verify Compose screen elements") {
+            MainComposeScreen(composeTestRule) {
+                titleText.assertIsDisplayed()
+                titleText.assertTextEquals("Expected Title")
+                addNoteButton.performClick()
+            }
+        }
+    }
+}
+```
+
+### 2. Framework Selection Rules
+
+| Screen Component | Preferred Testing Framework | Page Object Abstraction |
+|---|---|---|
+| **Pure Jetpack Compose** | Kaspresso Compose + `ComposeTestRule` | `ComposeScreen<T>(semanticsProvider)` |
+| **Android Views (XML)** | Kaspresso Kakao + Espresso | Kakao `Screen<T>` (`KView`, `KRecyclerView`, `KButton`) |
+| **Hybrid (Views + Compose)** | Kaspresso Kakao `Screen` + `ComposeScreen` | Combined Screen Objects |
+| **System/OS Interactions** | UiAutomator (`UiDevice`) | Only when Espresso/Compose APIs cannot interact (e.g. system permissions, notifications) |
+
+---
+
+## Jetpack Compose UI Testing Best Practices
+
+### 1. Page Object Pattern with `ComposeScreen`
+
+Define Page Objects extending `ComposeScreen<T>` for all Compose screens or reusable Composable sections. Use `KNode` properties defined with semantics matchers (`hasTestTag`, `hasText`, `hasContentDescription`).
+
+```kotlin
+object SettingsComposeScreen : ComposeScreen<SettingsComposeScreen>(
+    semanticsProvider = null // Injected when invoking screen
+) {
+    val screenTitle: KNode = child { hasTestTag("SettingsTitle") }
+    val backupSectionHeader: KNode = child { hasText("Backups") }
+    val autoBackupToggle: KNode = child { hasTestTag("AutoBackupToggle") }
+    val saveButton: KNode = child { hasContentDescription("Save Settings") }
+    val customItem: (String) -> KNode = { name ->
+        child { hasTestTag("SettingItem_$name") }
+    }
+}
+```
+
+> [!TIP]
+> Always pass `semanticsProvider` (the `ComposeTestRule`) when instantiating or referencing `ComposeScreen` inside tests:
+> ```kotlin
+> SettingsComposeScreen(composeTestRule) {
+>     screenTitle.assertIsDisplayed()
+>     autoBackupToggle.performClick()
+> }
+> ```
+
+### 2. Semantics & TestTags Convention
+
+* **Prefer `Modifier.testTag(...)`**: Assign explicit, unique test tags to interactive or assertable Composable nodes (e.g., `"NoteItem_123"`, `"AddNoteFAB"`, `"TitleInput"`).
+* **Use Semantics Matchers**: Match nodes using `hasTestTag(...)`, `hasText(...)`, `hasContentDescription(...)`, or `hasSetTextAction()`.
+* **Avoid Fragile Tree Traversal**: Do not rely on relative node hierarchy index or deep parent-child positioning unless testing structural layout specifics.
+
+```kotlin
+// Production Composable:
+Text(
+    text = note.title,
+    modifier = Modifier.testTag("NoteTitle_${note.id}")
+)
+
+// Test KNode:
+val noteTitle = child { hasTestTag("NoteTitle_123") }
+```
+
+### 3. KNode Actions and Assertions Cheat-Sheet
+
+| Category | Method | Description |
+|---|---|---|
+| **Actions** | `.performClick()` | Clicks on the node |
+| | `.performTextInput("text")` | Inputs text into a focused text field |
+| | `.performTextClear()` | Clears existing text |
+| | `.performScrollTo()` | Scrolls parent until node is visible |
+| | `.performTouchInput { swipeUp() }` | Performs custom touch gestures |
+| **Assertions** | `.assertIsDisplayed()` | Asserts node is visible on screen |
+| | `.assertDoesNotExist()` | Asserts node is not in the semantics tree |
+| | `.assertTextEquals("expected")` | Asserts exact text match |
+| | `.assertTextContains("substring")` | Asserts text contains substring |
+| | `.assertIsEnabled()` / `.assertIsNotEnabled()` | Asserts enabled state |
+| | `.assertIsSelected()` / `.assertIsToggleable()` | Asserts selection or toggle state |
+
+---
+
+## Hybrid UI Testing (Android Views + Jetpack Compose)
+
+In NotallyX, screens often combine XML Views (`RecyclerView`, `Toolbar`) with `ComposeView` wrappers (`HeaderVH`, `ReminderVH`, `LabelsFragment`, `SettingsFragment`).
+
+### 1. Defining Kakao Screen for Views & Compose
+
+Kakao allows mixing `KView` / `KRecyclerView` with `KNode` or `ComposeScreen` blocks in a single screen object:
+
+```kotlin
+object LabelsScreen : Screen<LabelsScreen>() {
+    // Kakao XML View matchers
+    val recyclerView = KRecyclerView(
+        builder = { withId(R.id.MainListView) },
+        itemTypeBuilder = { itemType(::LabelItemVH) }
+    )
+    val addLabelFab = KView { withId(R.id.AddLabelFab) }
+
+    class LabelItemVH(parent: Matcher<View>) : KRecyclerItem<LabelItemVH>(parent) {
+        val labelText = KView { withId(R.id.LabelText) }
+        val editButton = KView { withId(R.id.EditButton) }
+        val deleteButton = KView { withId(R.id.DeleteButton) }
+    }
+}
+```
+
+### 2. Interacting across Views and Compose in a Single Test
+
+```kotlin
+@Test
+fun hybridViewAndComposeInteraction() = run {
+    step("1. Interact with Android View") {
+        LabelsScreen {
+            addLabelFab.click()
+        }
+    }
+
+    step("2. Interact with Compose dialog/view") {
+        LabelDialogComposeScreen(composeTestRule) {
+            inputField.performTextInput("New Label")
+            confirmButton.performClick()
+        }
+    }
+
+    step("3. Verify list update in View RecyclerView") {
+        LabelsScreen {
+            recyclerView {
+                firstChild<LabelsScreen.LabelItemVH> {
+                    labelText.hasText("New Label")
+                }
+            }
+        }
+    }
+}
+```
+
+---
+
+## Inheriting from `UiTestBase`
+
+For tests requiring common setup, database instance, preferences, and permissions handling, extend `UiTestBase`.
 
 ```kotlin
 @LargeTest
@@ -58,9 +227,9 @@ class FeatureFragmentTest : UiTestBase() {
 
 ## Data Pre-filling & State Preparation
 
-### 1. Use `runBlocking` for Pre-filling Database / Mocking State
+### 1. Pre-filling Database / Mocking State via `runBlocking`
 
-To seed the database with notes, labels, or preferences before launching an activity or fragment, execute DAO operations inside `runBlocking`.
+To seed the Room database with notes, labels, or preferences before launching an activity or rule, execute DAO operations inside `runBlocking` or within Kaspresso's `before { ... }` block.
 
 ```kotlin
 runBlocking {
@@ -79,11 +248,11 @@ runBlocking {
 ```
 
 > [!IMPORTANT]
-> Always seed database or preference state **before** calling `ActivityScenario.launch(...)`, so the Activity reads the newly populated data on startup.
+> Always seed database or preference state **before** calling `ActivityScenario.launch(...)` or `createAndroidComposeRule`, so the Activity/Compose content reads the newly populated data on initial render.
 
-### 2. Factory Helper Functions
+### 2. Domain Factory Helpers (`UiUtils.kt`)
 
-Use the test domain factories defined in `UiUtils.kt`:
+Use domain factories defined in `UiUtils.kt`:
 * **`createBaseNote(...)`**: Construct test notes with custom titles, bodies, labels, reminders, items, or folders.
 * **`createListItem(...)`**: Construct list item entities for list notes.
 
@@ -96,30 +265,16 @@ val note = createBaseNote(
 )
 ```
 
-### 3. Launching and Closing `ActivityScenario`
-
-Always manage `ActivityScenario` lifecycle explicitly and close it at the end of the test.
-
-```kotlin
-val scenario = ActivityScenario.launch(MainActivity::class.java)
-
-// Perform Espresso actions and assertions...
-
-scenario.close()
-```
-
-For main thread actions (e.g. status bar notification pinning), use `scenario.onActivity { activity -> ... }` or `withContext(Dispatchers.Main)` inside `runBlocking`.
-
 ---
 
 ## Custom Extension Functions (`UiUtils.kt`)
 
-Avoid raw `onView(withId(...))` or verbose matchers when standard `UiUtils.kt` extension functions are available.
+Avoid raw `onView(withId(...))` or verbose matchers when standard `UiUtils.kt` extension functions are available for legacy view matching.
 
 > [!TIP]
 > When writing new custom, reusable `ViewAction`s, `Matcher`s, or UI assertion helpers, place them directly into `UiUtils.kt` so they can be shared across all test files.
 
-### 1. View Locators & Matching Extensions
+### View Locators & Navigation Extensions
 
 | Extension | Usage | Description |
 |---|---|---|
@@ -127,60 +282,35 @@ Avoid raw `onView(withId(...))` or verbose matchers when standard `UiUtils.kt` e
 | `Int.byText(...)` | `R.string.save.byText()` | Locates a view matching string resource text. |
 | `Int.byContentDescription(...)` | `R.string.pin.byContentDescription()` | Locates a view matching string resource content description. |
 | `String.byText(...)` | `"Test".byText()` | Locates a view matching exact literal text. |
-| `String.byContentDescription(...)` | `"Unpin".byContentDescription()` | Locates a view matching exact literal content description. |
-| `onDisplayView(matcher)` | `onDisplayView(withText("label"))` | Equivalent to `onView(allOf(matcher, isDisplayed()))`. |
-
-Example:
-```kotlin
-// Locating and interacting with views
-R.id.TakeNote.byId().perform(click())
-R.id.EnterTitle.byId().perform(typeText("Title"), closeSoftKeyboard())
-R.string.save.byText(withId(android.R.id.button1)).perform(scrollTo(), click())
-```
-
-### 2. Navigation Helper (`navigateTo`)
-
-Use `navigateTo(fragmentId)` to open the navigation drawer and select a main drawer destination.
-
-```kotlin
-navigateTo(R.id.Archived)
-navigateTo(R.id.Deleted)
-navigateTo(R.id.Labels)
-navigateTo(R.id.Reminders)
-```
-
-### 3. RecyclerView & List Position Interactivity
-
-* **Performing actions at a position**:
-  ```kotlin
-  R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, click()))
-  R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, longClick()))
-  ```
-
-* **Asserting child views at a position (`onPositionView`)**:
-  ```kotlin
-  R.id.MainListView.byId()
-      .onPositionView(0, withId(R.id.Title))
-      .check(matches(withText("Expected Title")))
-  ```
-
-* **Label items locator**:
-  ```kotlin
-  onLabelItem("label1").check(matches(withText("label1")))
-  ```
+| `navigateTo(fragmentId)` | `navigateTo(R.id.Archived)` | Opens the navigation drawer and selects a destination. |
 
 ---
 
-### 4. EditText Interactivity
+## Synchronization & Flakiness Management
 
-* **Editing text**:
-  Since `replaceText` does not properly trigger `TextWatcher` use `typeText` where applicable. There is also `UiUtils.typeTextAtEnd` to move focus and move the cursor to the end of the EditText text's and append text
+### 1. Kaspresso Automatic Retry (`flakySafely`)
 
-## Synchronization & Asynchronous Verification
+Kaspresso automatically wraps actions and assertions inside `flakySafely { ... }` during `step` calls, eliminating manual thread sleeps or custom polling loops for transient UI changes.
 
-### 1. Waiting for View State (`waitUntilSucceeds`)
+### 2. Compose Idle & Waiting Helpers
 
-When UI updates occur asynchronously (e.g. Room database flow emissions or navigation transitions), wrap assertions inside `waitUntilSucceeds`:
+When waiting for coroutine emissions, animations, or Room flow updates in Compose:
+
+```kotlin
+// Wait for Compose recomposition & idle state
+composeTestRule.waitForIdle()
+
+// Wait until custom condition evaluates to true
+composeTestRule.waitUntil(timeoutMillis = 5000L) {
+    composeTestRule
+        .onAllNodes(hasTestTag("SyncCompletedBanner"))
+        .fetchSemanticsNodes().isNotEmpty()
+}
+```
+
+### 3. Legacy Waiting Helpers (`waitUntilSucceeds`)
+
+For legacy View flows, wrap assertions inside `waitUntilSucceeds`:
 
 ```kotlin
 waitUntilSucceeds {
@@ -190,114 +320,83 @@ waitUntilSucceeds {
 }
 ```
 
-### 2. Waiting for Condition (`waitUntil`)
-
-When waiting for background state or file operations:
-
-```kotlin
-waitUntil(10_000L) {
-    NotallyDatabase.getCurrentDatabaseFile(context) == NotallyDatabase.getExternalDatabaseFile(context)
-}
-```
-
-### 3. Asserting Toast / Work / Log Output
-
-* **Toasts**: `assertToastDisplayed(R.string.note_deleted)` or `assertToastDisplayed("Text")`
-* **WorkManager**: `assertWorkExecuted(workUniqueName)`
-* **Logcat**: `assertLogAppeared(tag, expectedPrefix)`
-
 ---
 
 ## Complete Test Templates
 
-### Template 1: Fragment UI Test (`DeletedFragmentTest` style)
+### Template 1: Pure Compose UI Test (`Kaspresso` + `ComposeTestRule`)
 
 ```kotlin
 package com.philkes.notallyx.presentation.activity.main.fragments
 
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import androidx.test.core.app.ActivityScenario
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.action.ViewActions.longClick
-import androidx.test.espresso.action.ViewActions.scrollTo
-import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.contrib.RecyclerViewActions.actionOnItemAtPosition
-import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import com.philkes.notallyx.R
+import com.kaspersky.components.composesupport.config.withComposeSupport
+import com.kaspersky.kaspresso.kaspresso.Kaspresso
+import com.kaspersky.kaspresso.screens.ComposeScreen
+import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.test.UiTestBase
-import com.philkes.notallyx.test.byContentDescription
-import com.philkes.notallyx.test.byId
-import com.philkes.notallyx.test.byText
 import com.philkes.notallyx.test.createBaseNote
-import com.philkes.notallyx.test.navigateTo
-import com.philkes.notallyx.test.onDisplayView
-import com.philkes.notallyx.test.onPositionView
-import com.philkes.notallyx.test.waitUntilSucceeds
 import kotlinx.coroutines.runBlocking
-import org.hamcrest.Matchers.allOf
-import org.junit.FixMethodOrder
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+// 1. Define Page Object using ComposeScreen
+object NotesComposeScreen : ComposeScreen<NotesComposeScreen>(
+    semanticsProvider = null
+) {
+    val searchInput: KNode = child { hasTestTag("SearchInput") }
+    val noteTitle: (String) -> KNode = { title -> child { hasText(title) } }
+}
+
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@FixMethodOrder
-class SampleFragmentTest : UiTestBase() {
+class NotesComposeTest : TestCase(
+    kaspressoBuilder = Kaspresso.Builder.withComposeSupport()
+) {
+
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun sampleFragmentWorkflow() {
-        // 1. Seed database via runBlocking
-        runBlocking {
-            database.getBaseNoteDao().insert(
-                listOf(createBaseNote(title = "Sample Note", body = "Body Content"))
-            )
+    fun searchNotesWorkflow() = run {
+        step("1. Seed test data") {
+            runBlocking {
+                database.getBaseNoteDao().insert(
+                    listOf(createBaseNote(title = "Shopping List", body = "Milk, Eggs"))
+                )
+            }
         }
 
-        // 2. Launch ActivityScenario
-        val scenario = ActivityScenario.launch(MainActivity::class.java)
-
-        // 3. Interact with main list
-        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, longClick()))
-        R.string.delete.byContentDescription().perform(click())
-
-        // 4. Verify item removed from main list
-        "Sample Note".byText(checkDisplayed = false).check(doesNotExist())
-
-        // 5. Navigate to target fragment
-        navigateTo(R.id.Deleted)
-
-        // 6. Assert item appears in fragment list
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Sample Note")))
+        step("2. Perform search in Compose UI") {
+            NotesComposeScreen(composeTestRule) {
+                searchInput.performTextInput("Shopping")
+                noteTitle("Shopping List").assertIsDisplayed()
+            }
         }
-
-        // 7. Close scenario
-        scenario.close()
     }
 }
 ```
 
-### Template 2: Activity UI Test (`EditActivityTest` style)
+### Template 2: Hybrid Activity UI Test (`Kakao` + `ComposeScreen`)
 
 ```kotlin
 package com.philkes.notallyx.presentation.activity.edit
 
-import androidx.test.core.app.ActivityScenario
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
-import androidx.test.espresso.action.ViewActions.typeText
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import com.kaspersky.components.composesupport.config.withComposeSupport
+import com.kaspersky.kaspresso.kaspresso.Kaspresso
+import com.kaspersky.kaspresso.screens.ComposeScreen
+import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import com.philkes.notallyx.R
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.test.UiTestBase
@@ -305,40 +404,50 @@ import com.philkes.notallyx.test.byContentDescription
 import com.philkes.notallyx.test.byId
 import com.philkes.notallyx.test.onPositionView
 import com.philkes.notallyx.test.waitUntilSucceeds
-import org.junit.FixMethodOrder
+import kotlinx.coroutines.runBlocking
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+object EditNoteComposeBar : ComposeScreen<EditNoteComposeBar>(semanticsProvider = null) {
+    val pinButton: KNode = child { hasContentDescription("Pin Note") }
+}
+
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@FixMethodOrder
-class SampleEditActivityTest : UiTestBase() {
+class EditNoteHybridTest : TestCase(
+    kaspressoBuilder = Kaspresso.Builder.withComposeSupport()
+) {
+
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun createAndSaveNote() {
-        val scenario = ActivityScenario.launch(MainActivity::class.java)
-
-        // Create new note
-        R.id.TakeNote.byId().perform(click())
-
-        // Enter title & body
-        R.id.EnterTitle.byId().perform(typeText("New Note"), closeSoftKeyboard())
-        R.id.EnterBody.byId().perform(typeText("New Body"), closeSoftKeyboard())
-
-        // Pin note
-        R.string.pin.byContentDescription().perform(click())
-
-        // Navigate back to main screen
-        toolbarBackButton.perform(click())
-
-        // Verify note displays on main list
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("New Note")))
+    fun createAndSaveNoteWorkflow() = run {
+        step("1. Create new note") {
+            R.id.TakeNote.byId().perform(click())
         }
 
-        scenario.close()
+        step("2. Enter title and body") {
+            R.id.EnterTitle.byId().perform(typeText("New Note"), closeSoftKeyboard())
+            R.id.EnterBody.byId().perform(typeText("New Body"), closeSoftKeyboard())
+        }
+
+        step("3. Interact with Compose bottom bar / menu") {
+            EditNoteComposeBar(composeTestRule) {
+                pinButton.performClick()
+            }
+        }
+
+        step("4. Return to main list and verify") {
+            toolbarBackButton.performClick()
+
+            waitUntilSucceeds {
+                R.id.MainListView.byId()
+                    .onPositionView(0, withId(R.id.Title))
+                    .check(matches(withText("New Note")))
+            }
+        }
     }
 }
 ```
@@ -347,17 +456,16 @@ class SampleEditActivityTest : UiTestBase() {
 
 ## Best Practices Checklist
 
-- [ ] Preferred Espresso over UiAutomator, reserving UiAutomator strictly for operations not possible with Espresso.
-- [ ] Extended `UiTestBase` for common context, DB, preferences, and permissions handling.
-- [ ] Added `@LargeTest`, `@RunWith(AndroidJUnit4::class)`, and `@FixMethodOrder`.
-- [ ] Wrapped database/preference seeding in `runBlocking { ... }` prior to `ActivityScenario.launch(...)`.
-- [ ] Used `Int.byId()`, `Int.byText()`, `Int.byContentDescription()`, `String.byText()`, or `String.byContentDescription()` extensions instead of raw matchers.
-- [ ] Placed any new reusable custom ViewActions or Matchers in `UiUtils.kt`.
-- [ ] Used `navigateTo(R.id.FragmentId)` for navigation drawer interactions.
-- [ ] Used `waitUntilSucceeds { ... }` when asserting asynchronous flow updates or UI transitions.
-- [ ] Explicitly called `scenario.close()` at the end of each test method.
-- [ ] `assertToastDisplayed` is currently broken, so at places where you would want to use it, add it but commented and use other means of asserting
-- [ ] Validate the added/changed test by running them (only run tests which are affected by your changes) via gradlew, e.g.:
+- [ ] Used Kaspresso (`TestCase`, `ComposeScreen`, Kakao `Screen`) as the primary UI testing foundation.
+- [ ] Added `kaspressoBuilder = Kaspresso.Builder.withComposeSupport()` for Compose-enabled tests.
+- [ ] Structured UI elements using the Page Object pattern (`ComposeScreen` for Compose, `Screen` for Views).
+- [ ] Preferred explicit `Modifier.testTag(...)` or semantic properties (`hasText`, `hasContentDescription`) over fragile layout node hierarchies.
+- [ ] Wrapped database/preference seeding in `runBlocking { ... }` prior to `createAndroidComposeRule` or `ActivityScenario.launch(...)`.
+- [ ] Placed any new reusable custom ViewActions, Matchers, or Compose test helpers in `UiUtils.kt`.
+- [ ] Grouped test execution steps inside `step("Step description") { ... }` for clear logging and failure analysis.
+- [ ] Avoided manual `Thread.sleep()`; relied on Kaspresso's `flakySafely` and `composeTestRule.waitForIdle()` for synchronization.
+- [ ] Extended `UiTestBase` when tests require DB access, context, or permissions handling.
+- [ ] Validated the added/changed tests by running affected tests via gradlew:
   ```shell
   ./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.philkes.notallyx.presentation.activity.edit.EditActivityTest#createAndEditTextNote
   ```
