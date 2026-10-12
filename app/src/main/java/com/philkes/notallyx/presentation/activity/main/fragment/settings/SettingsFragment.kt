@@ -7,13 +7,13 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.content.Intent.ACTION_OPEN_DOCUMENT_TREE
 import android.content.pm.PackageManager
+import android.hardware.biometrics.BiometricManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.Settings
 import android.text.method.PasswordTransformationMethod
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,12 +21,16 @@ import android.widget.LinearLayout
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity.RESULT_OK
+import androidx.compose.foundation.ScrollState
+import androidx.compose.ui.platform.ComposeView
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.work.WorkManager
 import com.google.android.material.checkbox.MaterialCheckBox
+import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
 import com.google.android.material.textview.MaterialTextView
@@ -36,32 +40,48 @@ import com.philkes.notallyx.data.imports.Display
 import com.philkes.notallyx.data.imports.FOLDER_OR_FILE_MIMETYPE
 import com.philkes.notallyx.data.imports.ImportSource
 import com.philkes.notallyx.data.imports.txt.APPLICATION_TEXT_MIME_TYPES
+import com.philkes.notallyx.databinding.ChoiceItemBinding
+import com.philkes.notallyx.databinding.DialogDatetimeFormatBinding
 import com.philkes.notallyx.databinding.DialogImportBinding
-import com.philkes.notallyx.databinding.FragmentSettingsBinding
+import com.philkes.notallyx.databinding.DialogNotesSortBinding
+import com.philkes.notallyx.databinding.DialogPreferenceBooleanBinding
+import com.philkes.notallyx.databinding.DialogPreferenceEnumWithToggleBinding
+import com.philkes.notallyx.databinding.DialogSelectionBoxBinding
+import com.philkes.notallyx.databinding.DialogTextInputBinding
 import com.philkes.notallyx.presentation.activity.DatabaseAction
 import com.philkes.notallyx.presentation.activity.DatabaseTransitionActivity
 import com.philkes.notallyx.presentation.activity.main.MainActivity
+import com.philkes.notallyx.presentation.checkedTag
 import com.philkes.notallyx.presentation.dp
-import com.philkes.notallyx.presentation.format
-import com.philkes.notallyx.presentation.getQuantityStringPlain
-import com.philkes.notallyx.presentation.repeatOnLifecycleScope
+import com.philkes.notallyx.presentation.select
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.setEnabledSecureFlag
 import com.philkes.notallyx.presentation.setupImportProgressDialog
 import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.showDialog
 import com.philkes.notallyx.presentation.showToast
+import com.philkes.notallyx.presentation.theme.NotallyXTheme
+import com.philkes.notallyx.presentation.view.misc.MenuDialog
 import com.philkes.notallyx.presentation.view.misc.TextWithIconAdapter
+import com.philkes.notallyx.presentation.view.screens.SettingsScreen
+import com.philkes.notallyx.presentation.view.screens.createFromPreferences
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.SettingsViewModel
 import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
+import com.philkes.notallyx.presentation.viewmodel.preference.BooleanPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.Constants.PASSWORD_EMPTY
-import com.philkes.notallyx.presentation.viewmodel.preference.LongPreference
-import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
+import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
+import com.philkes.notallyx.presentation.viewmodel.preference.EnumPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.EMPTY_PATH
-import com.philkes.notallyx.presentation.viewmodel.preference.PeriodicBackup
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.START_VIEW_DEFAULT
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.START_VIEW_UNLABELED
+import com.philkes.notallyx.presentation.viewmodel.preference.NotesSort
+import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
 import com.philkes.notallyx.presentation.viewmodel.preference.PeriodicBackup.Companion.BACKUP_MAX_MIN
 import com.philkes.notallyx.presentation.viewmodel.preference.PeriodicBackup.Companion.BACKUP_PERIOD_DAYS_MIN
-import com.philkes.notallyx.presentation.viewmodel.preference.PeriodicBackupsPreference
+import com.philkes.notallyx.presentation.viewmodel.preference.SortDirection
+import com.philkes.notallyx.presentation.viewmodel.preference.TextProvider
+import com.philkes.notallyx.presentation.viewmodel.preference.Theme
+import com.philkes.notallyx.presentation.viewmodel.preference.TimeFormat
 import com.philkes.notallyx.scheduleAutoRemoveOldDeletedNotes
 import com.philkes.notallyx.utils.MIME_TYPE_JSON
 import com.philkes.notallyx.utils.MIME_TYPE_ZIP
@@ -81,13 +101,13 @@ import com.philkes.notallyx.utils.wrapWithChooser
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class SettingsFragment : Fragment() {
 
     private val model: SettingsViewModel by viewModel()
+    val scrollState = ScrollState(0)
 
     private lateinit var importBackupActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var importRawDatabaseActivityResultLauncher: ActivityResultLauncher<Intent>
@@ -106,17 +126,312 @@ class SettingsFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        val binding = FragmentSettingsBinding.inflate(inflater)
-        model.preferences.apply {
-            setupAppearance(binding)
-            setupContentDensity(binding)
-            setupBackup(binding)
-            setupAutoBackups(binding)
-            setupSecurity(binding)
-            setupSettings(binding)
-        }
-        setupAbout(binding)
-        return binding.root
+        val composeView =
+            ComposeView(requireContext()).apply {
+                setContent {
+                    val themeState =
+                        model.preferences.theme.flow.collectAsStateWithLifecycle(
+                            model.preferences.theme.value
+                        )
+                    val labelsState = model.labels.collectAsStateWithLifecycle(emptyList())
+                    NotallyXTheme(theme = themeState.value) {
+                        val uiState = requireContext().createFromPreferences(model.preferences)
+                        SettingsScreen(
+                            state = uiState,
+                            scrollState = scrollState,
+                            onNotesViewClick = {
+                                showEnumChoiceDialog(model.preferences.notesView) { newValue ->
+                                    model.savePreference(model.preferences.notesView, newValue)
+                                }
+                            },
+                            onThemeClick = { showThemeDialog() },
+                            onDateFormatOverviewClick = {
+                                showDateTimeFormatDialog(
+                                    R.string.date_format_overview,
+                                    model.preferences.dateFormatOverview,
+                                    model.preferences.timeFormatOverview,
+                                ) { newDate, newTime ->
+                                    model.savePreference(
+                                        model.preferences.dateFormatOverview,
+                                        newDate,
+                                    )
+                                    model.savePreference(
+                                        model.preferences.timeFormatOverview,
+                                        newTime,
+                                    )
+                                }
+                            },
+                            onDateFormatNoteViewClick = { showDateTimeFormatNoteViewDialog() },
+                            onTextSizeNoteEditorChange = { newValue ->
+                                model.savePreference(
+                                    model.preferences.textSizeNoteEditor,
+                                    newValue,
+                                )
+                            },
+                            onTextSizeOverviewChange = { newValue ->
+                                model.savePreference(model.preferences.textSizeOverview, newValue)
+                            },
+                            onAlwaysShowSearchBarClick = {
+                                showBooleanPreferenceDialog(
+                                    model.preferences.alwaysShowSearchBar,
+                                    R.string.always_show_search_bar_hint,
+                                ) { enabled ->
+                                    model.savePreference(
+                                        model.preferences.alwaysShowSearchBar,
+                                        enabled,
+                                    )
+                                }
+                            },
+                            onNotesSortOrderClick = { showNotesSortDialog() },
+                            onCheckedListItemSortingClick = {
+                                showEnumChoiceDialog(model.preferences.listItemSorting) { newValue
+                                    ->
+                                    model.savePreference(
+                                        model.preferences.listItemSorting,
+                                        newValue,
+                                    )
+                                }
+                            },
+                            onStartViewClick = {
+                                showStartViewDialog(labelsState.value.map { it.value })
+                            },
+                            onDefaultListNoteViewModeClick = {
+                                showEnumChoiceDialog(model.preferences.defaultListNoteViewMode) {
+                                    newValue ->
+                                    model.savePreference(
+                                        model.preferences.defaultListNoteViewMode,
+                                        newValue,
+                                    )
+                                }
+                            },
+                            onAutoSaveAfterIdleChange = { newValue ->
+                                model.savePreference(
+                                    model.preferences.autoSaveAfterIdleTime,
+                                    newValue,
+                                )
+                            },
+                            onAutoRemoveDeletedNotesChange = { newValue ->
+                                model.savePreference(
+                                    model.preferences.autoRemoveDeletedNotesAfterDays,
+                                    newValue,
+                                )
+                                val workManager = WorkManager.getInstance(requireContext())
+                                if (newValue > 0) {
+                                    workManager.scheduleAutoRemoveOldDeletedNotes(
+                                        requireContext() as ContextWrapper
+                                    )
+                                } else {
+                                    workManager.cancelAutoRemoveOldDeletedNotes()
+                                }
+                            },
+                            onMaxTitleChange = { newValue ->
+                                model.savePreference(model.preferences.maxTitle, newValue)
+                            },
+                            onMaxItemsChange = { newValue ->
+                                model.savePreference(model.preferences.maxItems, newValue)
+                            },
+                            onMaxLinesChange = { newValue ->
+                                model.savePreference(model.preferences.maxLines, newValue)
+                            },
+                            onMaxLabelsChange = { newValue ->
+                                model.savePreference(model.preferences.maxLabels, newValue)
+                            },
+                            onLabelTagsHiddenClick = {
+                                showBooleanPreferenceDialog(
+                                    model.preferences.labelTagsHiddenInOverview,
+                                    R.string.labels_hidden_in_overview_title,
+                                ) { enabled ->
+                                    model.savePreference(
+                                        model.preferences.labelTagsHiddenInOverview,
+                                        enabled,
+                                    )
+                                }
+                            },
+                            onImagesHiddenClick = {
+                                showBooleanPreferenceDialog(
+                                    model.preferences.imagesHiddenInOverview,
+                                    R.string.images_hidden_in_overview_title,
+                                ) { enabled ->
+                                    model.savePreference(
+                                        model.preferences.imagesHiddenInOverview,
+                                        enabled,
+                                    )
+                                }
+                            },
+                            onImportBackupClick = {
+                                val intent =
+                                    Intent(Intent.ACTION_OPEN_DOCUMENT)
+                                        .apply {
+                                            type = "*/*"
+                                            putExtra(
+                                                Intent.EXTRA_MIME_TYPES,
+                                                arrayOf(MIME_TYPE_ZIP, "text/xml"),
+                                            )
+                                            addCategory(Intent.CATEGORY_OPENABLE)
+                                        }
+                                        .wrapWithChooser(requireContext())
+                                importBackupActivityResultLauncher.launch(intent)
+                            },
+                            onImportOtherClick = { importFromOtherApp() },
+                            onExportBackupClick = {
+                                val intent =
+                                    Intent(Intent.ACTION_CREATE_DOCUMENT)
+                                        .apply {
+                                            type = MIME_TYPE_ZIP
+                                            addCategory(Intent.CATEGORY_OPENABLE)
+                                            putExtra(Intent.EXTRA_TITLE, buildBackupTitle())
+                                        }
+                                        .wrapWithChooser(requireContext())
+                                exportBackupActivityResultLauncher.launch(intent)
+                            },
+                            onBackupsFolderClick = {
+                                val folder = model.preferences.backupsFolder.value
+                                if (folder == EMPTY_PATH) {
+                                    displayChooseBackupFolderDialog()
+                                } else {
+                                    MenuDialog(requireContext())
+                                        .add(R.string.clear) { model.disableBackups() }
+                                        .add(R.string.choose_another_folder) {
+                                            displayChooseBackupFolderDialog()
+                                        }
+                                        .show()
+                                }
+                            },
+                            onBackupOnSaveClick = {
+                                showBooleanPreferenceDialog(
+                                    model.preferences.backupOnSave,
+                                    R.string.auto_backup_on_save,
+                                    enabled = model.preferences.backupsFolder.value != EMPTY_PATH,
+                                    disabledTextResId = R.string.auto_backups_folder_set,
+                                ) { enabled ->
+                                    model.savePreference(model.preferences.backupOnSave, enabled)
+                                }
+                            },
+                            onPeriodicBackupsClick = { showPeriodicBackupDialog() },
+                            onPeriodicBackupsPeriodInDaysChange = { newValue ->
+                                val current = model.preferences.periodicBackups.value
+                                model.savePreference(
+                                    model.preferences.periodicBackups,
+                                    current.copy(periodInDays = newValue),
+                                )
+                            },
+                            onPeriodicBackupsMaxChange = { newValue ->
+                                val current = model.preferences.periodicBackups.value
+                                model.savePreference(
+                                    model.preferences.periodicBackups,
+                                    current.copy(maxBackups = newValue),
+                                )
+                            },
+                            onBiometricLockClick = { showBiometricLockDialog() },
+                            onBackupPasswordClick = { showBackupPasswordDialog() },
+                            onSecureFlagClick = {
+                                showBooleanPreferenceDialog(model.preferences.secureFlag) { enabled
+                                    ->
+                                    model.savePreference(model.preferences.secureFlag, enabled)
+                                    activity?.setEnabledSecureFlag(enabled)
+                                }
+                            },
+                            onImportSettingsClick = {
+                                showDialog(
+                                    R.string.import_settings_message,
+                                    R.string.import_action,
+                                    { _, _ ->
+                                        val intent =
+                                            Intent(Intent.ACTION_OPEN_DOCUMENT)
+                                                .apply {
+                                                    type = MIME_TYPE_JSON
+                                                    addCategory(Intent.CATEGORY_OPENABLE)
+                                                    putExtra(
+                                                        Intent.EXTRA_TITLE,
+                                                        "NotallyX_Settings.json",
+                                                    )
+                                                }
+                                                .wrapWithChooser(requireContext())
+                                        importSettingsActivityResultLauncher.launch(intent)
+                                    },
+                                )
+                            },
+                            onExportSettingsClick = {
+                                showDialog(
+                                    R.string.export_settings_message,
+                                    R.string.export,
+                                    { _, _ ->
+                                        val intent =
+                                            Intent(Intent.ACTION_CREATE_DOCUMENT)
+                                                .apply {
+                                                    type = MIME_TYPE_JSON
+                                                    addCategory(Intent.CATEGORY_OPENABLE)
+                                                    putExtra(
+                                                        Intent.EXTRA_TITLE,
+                                                        "NotallyX_Settings.json",
+                                                    )
+                                                }
+                                                .wrapWithChooser(requireContext())
+                                        exportSettingsActivityResultLauncher.launch(intent)
+                                    },
+                                )
+                            },
+                            onResetSettingsClick = {
+                                showDialog(
+                                    R.string.reset_settings_message,
+                                    R.string.reset_settings,
+                                    { _, _ ->
+                                        lifecycleScope.launch {
+                                            model.resetPreferences { _ ->
+                                                showToast(R.string.reset_settings_success)
+                                            }
+                                        }
+                                    },
+                                )
+                            },
+                            onDataInPublicFolderClick = {
+                                showBooleanPreferenceDialog(
+                                    model.preferences.dataInPublicFolder,
+                                    R.string.data_in_public_message,
+                                ) { enabled ->
+                                    if (enabled) {
+                                        DatabaseTransitionActivity.start(
+                                            requireActivity(),
+                                            DatabaseAction.ENABLE_DATA_IN_PUBLIC,
+                                        )
+                                    } else {
+                                        DatabaseTransitionActivity.start(
+                                            requireActivity(),
+                                            DatabaseAction.DISABLE_DATA_IN_PUBLIC,
+                                        )
+                                    }
+                                }
+                            },
+                            onClearDataClick = {
+                                MaterialAlertDialogBuilder(requireContext())
+                                    .setMessage(R.string.clear_data_message)
+                                    .setPositiveButton(R.string.delete_all) { _, _ ->
+                                        model.deleteAll()
+                                    }
+                                    .setCancelButton()
+                                    .show()
+                            },
+                            onSendFeedbackClick = { showFeedbackDialog() },
+                            onRateClick = {
+                                openLink(
+                                    "https://play.google.com/store/apps/details?id=com.philkes.notallyx"
+                                )
+                            },
+                            onDonateClick = { openLink("https://ko-fi.com/crustack") },
+                            onViewLogsClick = { (requireContext() as ContextWrapper).viewLogs() },
+                            onViewCrashesClick = { showCrashesDialog() },
+                            onDocumentationClick = {
+                                openLink("https://crustack.github.io/NotallyX")
+                            },
+                            onSourceCodeClick = {
+                                openLink("https://github.com/Crustack/NotallyX")
+                            },
+                        )
+                    }
+                }
+            }
+        model.importProgress.setupImportProgressDialog(this@SettingsFragment)
+        return composeView
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -171,13 +486,11 @@ class SettingsFragment : Fragment() {
                 if (result.resultCode == RESULT_OK) {
                     result.data?.data?.let { uri ->
                         model.exportBackup(uri) {
-                            // Continue with pending biometric action (enable/disable) after export
                             pendingBiometricContinuation?.invoke()
                             pendingBiometricContinuation = null
                         }
                     }
                 } else {
-                    // User canceled export picker; do not keep a stale continuation around
                     pendingBiometricContinuation = null
                 }
             }
@@ -216,11 +529,11 @@ class SettingsFragment : Fragment() {
                 }
             }
         setupLockActivityResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                 showEnableBiometricLock()
             }
         disableLockActivityResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                 showDisableBiometricLock()
             }
         exportSettingsActivityResultLauncher =
@@ -287,321 +600,380 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    private fun NotallyXPreferences.setupAppearance(binding: FragmentSettingsBinding) {
-        viewLifecycleOwner.repeatOnLifecycleScope {
-            launch {
-                notesView.flow.collect { value ->
-                    binding.View.setup(notesView, value, requireContext()) { newValue ->
-                        model.savePreference(notesView, newValue)
-                    }
+    private inline fun <reified T> showEnumChoiceDialog(
+        enumPreference: EnumPreference<T>,
+        crossinline onSave: (newValue: T) -> Unit,
+    ) where T : Enum<T>, T : TextProvider {
+        val context = requireContext()
+        val enumEntries = T::class.java.enumConstants!!.toList()
+        val entries = enumEntries.map { it.getText(context) }.toTypedArray()
+        val checked = enumEntries.indexOfFirst { it == enumPreference.value }
+        MaterialAlertDialogBuilder(context)
+            .setTitle(enumPreference.titleResId!!)
+            .setSingleChoiceItems(entries, checked) { dialog, which ->
+                dialog.cancel()
+                val newValue = enumEntries[which]
+                onSave(newValue)
+            }
+            .setCancelButton()
+            .show()
+    }
+
+    private fun showThemeDialog() {
+        val context = requireContext()
+        val layout = DialogPreferenceEnumWithToggleBinding.inflate(layoutInflater, null, false)
+        val themeValue = model.preferences.theme.value
+        val useDynamicColorsValue = model.preferences.useDynamicColors.value
+
+        Theme.entries.forEachIndexed { idx, theme ->
+            ChoiceItemBinding.inflate(layoutInflater).root.apply {
+                id = idx
+                text = theme.getText(context)
+                tag = theme
+                layout.EnumRadioGroup.addView(this)
+                if (theme == themeValue) {
+                    layout.EnumRadioGroup.check(this.id)
                 }
             }
+        }
 
-            launch {
-                combine(theme.flow, useDynamicColors.flow) { themeValue, useDynamicColorsValue ->
-                        Pair(themeValue, useDynamicColorsValue)
+        layout.Toggle.apply {
+            isVisible = DynamicColors.isDynamicColorAvailable()
+            setText(R.string.theme_use_dynamic_colors)
+            isChecked = useDynamicColorsValue
+        }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle(model.preferences.theme.titleResId!!)
+            .setView(layout.root)
+            .setPositiveButton(R.string.save) { dialog, _ ->
+                dialog.cancel()
+                val theme = layout.EnumRadioGroup.checkedTag() as Theme
+                val useDynamicColors = layout.Toggle.isChecked
+                model.savePreference(model.preferences.theme, theme)
+                model.savePreference(model.preferences.useDynamicColors, useDynamicColors)
+                val packageManager = context.packageManager
+                val intent = packageManager.getLaunchIntentForPackage(context.packageName)
+                val componentName = intent!!.component
+                val mainIntent =
+                    Intent.makeRestartActivityTask(componentName).apply {
+                        putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, R.id.Settings)
                     }
-                    .collect { (themeValue, useDynamicColorsValue) ->
-                        binding.Theme.setup(
-                            theme,
-                            themeValue,
-                            useDynamicColorsValue,
-                            requireContext(),
-                            layoutInflater,
-                        ) { newThemeValue, newUseDynamicColorsValue ->
-                            model.savePreference(theme, newThemeValue)
-                            model.savePreference(useDynamicColors, newUseDynamicColorsValue)
-                            val packageManager = requireContext().packageManager
-                            val intent =
-                                packageManager.getLaunchIntentForPackage(
-                                    requireContext().packageName
-                                )
-                            val componentName = intent!!.component
-                            val mainIntent =
-                                Intent.makeRestartActivityTask(componentName).apply {
-                                    putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, R.id.Settings)
-                                }
-                            mainIntent.setPackage(requireContext().packageName)
-                            requireContext().startActivity(mainIntent)
-                            Runtime.getRuntime().exit(0)
+                mainIntent.setPackage(context.packageName)
+                context.startActivity(mainIntent)
+                Runtime.getRuntime().exit(0)
+            }
+            .setCancelButton()
+            .show()
+    }
+
+    private fun showDateTimeFormatDialog(
+        titleResId: Int,
+        datePreference: EnumPreference<DateFormat>,
+        timePreference: EnumPreference<TimeFormat>,
+        onSave: (dateFormat: DateFormat, timeFormat: TimeFormat) -> Unit,
+    ) {
+        val context = requireContext()
+        val layout = DialogDatetimeFormatBinding.inflate(layoutInflater, null, false)
+        var selectedDate = datePreference.value
+        var selectedTime = timePreference.value
+
+        val dateEntries = DateFormat.entries.map { it.getText(context) }.toTypedArray()
+        layout.DateSelectionBox.apply {
+            setSimpleItems(dateEntries)
+            select(selectedDate.getText(context))
+            setOnItemClickListener { _, _, position, _ ->
+                selectedDate = DateFormat.entries[position]
+            }
+        }
+
+        val timeEntries = TimeFormat.entries.map { it.getText(context) }.toTypedArray()
+        layout.TimeSelectionBox.apply {
+            setSimpleItems(timeEntries)
+            select(selectedTime.getText(context))
+            setOnItemClickListener { _, _, position, _ ->
+                selectedTime = TimeFormat.entries[position]
+            }
+        }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle(titleResId)
+            .setView(layout.root)
+            .setPositiveButton(R.string.save) { dialog, _ ->
+                dialog.cancel()
+                onSave(selectedDate, selectedTime)
+            }
+            .setCancelButton()
+            .showAndFocus(allowFullSize = true)
+    }
+
+    private fun showNotesSortDialog() {
+        val context = requireContext()
+        val value = model.preferences.notesSorting.value
+        val layout = DialogNotesSortBinding.inflate(layoutInflater, null, false)
+
+        NotesSortBy.entries.forEachIndexed { idx, notesSortBy ->
+            ChoiceItemBinding.inflate(layoutInflater).root.apply {
+                id = idx
+                text = context.getString(notesSortBy.textResId)
+                tag = notesSortBy
+                layout.NotesSortByRadioGroup.addView(this)
+                setCompoundDrawablesRelativeWithIntrinsicBounds(notesSortBy.iconResId, 0, 0, 0)
+                if (notesSortBy == value.sortedBy) {
+                    layout.NotesSortByRadioGroup.check(this.id)
+                }
+            }
+        }
+
+        SortDirection.entries.forEachIndexed { idx, sortDir ->
+            ChoiceItemBinding.inflate(layoutInflater).root.apply {
+                id = idx
+                text = context.getString(sortDir.textResId)
+                tag = sortDir
+                setCompoundDrawablesRelativeWithIntrinsicBounds(sortDir.iconResId, 0, 0, 0)
+                layout.NotesSortDirectionRadioGroup.addView(this)
+                if (sortDir == value.sortDirection) {
+                    layout.NotesSortDirectionRadioGroup.check(this.id)
+                }
+            }
+        }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle(model.preferences.notesSorting.titleResId!!)
+            .setView(layout.root)
+            .setPositiveButton(R.string.save) { dialog, _ ->
+                dialog.cancel()
+                val newSortBy = layout.NotesSortByRadioGroup.checkedTag() as NotesSortBy
+                val newSortDirection =
+                    layout.NotesSortDirectionRadioGroup.checkedTag() as SortDirection
+                model.savePreference(
+                    model.preferences.notesSorting,
+                    NotesSort(newSortBy, newSortDirection),
+                )
+            }
+            .setCancelButton()
+            .show()
+    }
+
+    fun showDateTimeFormatNoteViewDialog() {
+        showDateTimeFormatDialog(
+            R.string.date_format_note_view,
+            model.preferences.dateFormatNoteView,
+            model.preferences.timeFormatNoteView,
+        ) { newDate, newTime ->
+            model.savePreference(model.preferences.dateFormatNoteView, newDate)
+            model.savePreference(model.preferences.timeFormatNoteView, newTime)
+        }
+    }
+
+    private fun showBooleanPreferenceDialog(
+        preference: BooleanPreference,
+        messageResId: Int? = null,
+        enabled: Boolean = true,
+        disabledTextResId: Int? = null,
+        onSave: (newValue: Boolean) -> Unit,
+    ) {
+        val context = requireContext()
+        if (!enabled) return
+        val value = preference.value
+        val layout =
+            DialogPreferenceBooleanBinding.inflate(layoutInflater, null, false).apply {
+                Title.setText(preference.titleResId!!)
+                messageResId?.let { Message.setText(it) }
+                if (value) {
+                    EnabledButton.isChecked = true
+                } else {
+                    DisabledButton.isChecked = true
+                }
+            }
+        val dialog =
+            MaterialAlertDialogBuilder(context).setView(layout.root).setCancelButton().show()
+        layout.apply {
+            EnabledButton.setOnClickListener {
+                dialog.cancel()
+                if (!value) {
+                    onSave.invoke(true)
+                }
+            }
+            DisabledButton.setOnClickListener {
+                dialog.cancel()
+                if (value) {
+                    onSave.invoke(false)
+                }
+            }
+        }
+    }
+
+    private fun showStartViewDialog(labels: List<String>?) {
+        val context = requireContext()
+        val preference = model.preferences.startView
+        val value = preference.value
+        val notesText =
+            "${context.getText(R.string.notes)} (${context.getText(R.string.text_default)})"
+        val unlabeledText = context.getText(R.string.unlabeled).toString()
+        val textValue =
+            when (value) {
+                START_VIEW_DEFAULT -> notesText
+                START_VIEW_UNLABELED -> unlabeledText
+                else -> value
+            }
+
+        val layout = DialogSelectionBoxBinding.inflate(layoutInflater, null, false)
+        layout.Message.setText(R.string.start_view_hint)
+        val values =
+            mutableListOf(notesText to START_VIEW_DEFAULT, unlabeledText to START_VIEW_UNLABELED)
+                .apply { labels?.forEach { add(it to it) } }
+        var selected = values.indexOfFirst { it.first == textValue }
+        layout.SelectionBox.apply {
+            setSimpleItems(values.map { it.first }.toTypedArray())
+            select(textValue)
+            setOnItemClickListener { _, _, position, _ -> selected = position }
+        }
+        MaterialAlertDialogBuilder(context)
+            .setTitle(preference.titleResId!!)
+            .setView(layout.root)
+            .setPositiveButton(R.string.save) { dialog, _ ->
+                dialog.cancel()
+                if (selected >= 0 && selected < values.size) {
+                    val newValue = values[selected].second
+                    model.savePreference(preference, newValue)
+                }
+            }
+            .setCancelButton()
+            .showAndFocus(allowFullSize = true)
+    }
+
+    private fun showPeriodicBackupDialog() {
+        val context = requireContext()
+        val backupFolder = model.preferences.backupsFolder.value
+        if (backupFolder == EMPTY_PATH) return
+        val value = model.preferences.periodicBackups.value.periodInDays > 0
+        val layout =
+            DialogPreferenceBooleanBinding.inflate(layoutInflater, null, false).apply {
+                Title.setText(R.string.backup_periodic)
+                Message.setText(R.string.backup_periodic_hint)
+                if (value) {
+                    EnabledButton.isChecked = true
+                } else {
+                    DisabledButton.isChecked = true
+                }
+            }
+        val dialog =
+            MaterialAlertDialogBuilder(context).setView(layout.root).setCancelButton().show()
+        layout.apply {
+            EnabledButton.setOnClickListener {
+                dialog.cancel()
+                if (!value) {
+                    val periodInDays =
+                        model.preferences.periodicBackups.value.periodInDays.let {
+                            if (it >= BACKUP_PERIOD_DAYS_MIN) it else BACKUP_PERIOD_DAYS_MIN
                         }
-                    }
-            }
-
-            launch {
-                combine(dateFormatOverview.flow, timeFormatOverview.flow) { date, time ->
-                        Pair(date, time)
-                    }
-                    .collect { (date, time) ->
-                        binding.DateFormatOverview.setupDateTimeFormat(
-                            R.string.date_format_overview,
-                            dateFormatOverview,
-                            timeFormatOverview,
-                            requireContext(),
-                            layoutInflater,
-                        ) { newDate, newTime ->
-                            model.savePreference(dateFormatOverview, newDate)
-                            model.savePreference(timeFormatOverview, newTime)
+                    val maxBackups =
+                        model.preferences.periodicBackups.value.maxBackups.let {
+                            if (it >= BACKUP_MAX_MIN) it else BACKUP_MAX_MIN
                         }
-                    }
-            }
-
-            launch {
-                combine(dateFormatNoteView.flow, timeFormatNoteView.flow) { date, time ->
-                        Pair(date, time)
-                    }
-                    .collect { (date, time) ->
-                        binding.DateFormatNoteView.setupDateTimeFormat(
-                            R.string.date_format_note_view,
-                            dateFormatNoteView,
-                            timeFormatNoteView,
-                            requireContext(),
-                            layoutInflater,
-                        ) { newDate, newTime ->
-                            model.savePreference(dateFormatNoteView, newDate)
-                            model.savePreference(timeFormatNoteView, newTime)
-                        }
-                    }
-            }
-
-            launch {
-                textSizeNoteEditor.flow.collect { value ->
-                    binding.TextSize.setupTextSizePreference(
-                        textSizeNoteEditor,
-                        requireContext(),
-                        value = value,
-                    ) { newValue ->
-                        model.savePreference(textSizeNoteEditor, newValue)
-                    }
-                }
-            }
-
-            launch {
-                textSizeOverview.flow.collect { value ->
-                    binding.TextSizeOverview.setupTextSizePreference(
-                        textSizeOverview,
-                        requireContext(),
-                        value = value,
-                    ) { newValue ->
-                        model.savePreference(textSizeOverview, newValue)
-                    }
-                }
-            }
-
-            launch {
-                alwaysShowSearchBar.flow.collect { value ->
-                    binding.ShowSearchInTopBar.setup(
-                        alwaysShowSearchBar,
-                        value,
-                        requireContext(),
-                        layoutInflater,
-                        R.string.always_show_search_bar_hint,
-                    ) { enabled ->
-                        model.savePreference(alwaysShowSearchBar, enabled)
-                    }
-                }
-            }
-
-            launch {
-                notesSorting.flow.collect { notesSort ->
-                    binding.NotesSortOrder.setup(
-                        notesSorting,
-                        notesSort,
-                        requireContext(),
-                        layoutInflater,
-                        model,
+                    model.savePreference(
+                        model.preferences.periodicBackups,
+                        model.preferences.periodicBackups.value.copy(
+                            periodInDays = periodInDays,
+                            maxBackups = maxBackups,
+                        ),
                     )
                 }
             }
-
-            launch {
-                listItemSorting.flow.collect { value ->
-                    binding.CheckedListItemSorting.setup(
-                        listItemSorting,
-                        value,
-                        requireContext(),
-                    ) { newValue ->
-                        model.savePreference(listItemSorting, newValue)
-                    }
+            DisabledButton.setOnClickListener {
+                dialog.cancel()
+                if (value) {
+                    model.savePreference(
+                        model.preferences.periodicBackups,
+                        model.preferences.periodicBackups.value.copy(periodInDays = 0),
+                    )
                 }
             }
+        }
+    }
 
-            launch {
-                defaultListNoteViewMode.flow.collect { value ->
-                    binding.DefaultListNoteViewMode.setup(
-                        defaultListNoteViewMode,
-                        value,
-                        requireContext(),
-                    ) { newValue ->
-                        model.savePreference(defaultListNoteViewMode, newValue)
-                    }
-                }
+    private fun showBackupPasswordDialog() {
+        val context = requireContext()
+        val preference = model.preferences.backupPassword
+        val password = preference.value
+        val layout = DialogTextInputBinding.inflate(layoutInflater, null, false)
+        layout.InputText.apply {
+            if (password != PASSWORD_EMPTY) {
+                setText(password)
             }
+            transformationMethod = PasswordTransformationMethod.getInstance()
+        }
+        layout.InputTextLayout.endIconMode = END_ICON_PASSWORD_TOGGLE
+        layout.Message.apply {
+            setText(R.string.backup_password_hint)
+            visibility = View.VISIBLE
+        }
+        MaterialAlertDialogBuilder(context)
+            .setTitle(preference.titleResId!!)
+            .setView(layout.root)
+            .setPositiveButton(R.string.save) { dialog, _ ->
+                dialog.cancel()
+                val updatedPassword = layout.InputText.text.toString()
+                model.savePreference(preference, updatedPassword)
+            }
+            .setCancelButton()
+            .setNeutralButton(R.string.clear) { dialog, _ ->
+                dialog.cancel()
+                model.savePreference(preference, PASSWORD_EMPTY)
+            }
+            .showAndFocus(allowFullSize = true)
+    }
 
-            launch {
-                autoRemoveDeletedNotesAfterDays.flow.collect { value ->
-                    binding.AutoEmptyBin.setup(
-                        autoRemoveDeletedNotesAfterDays,
-                        requireContext(),
-                        labelFormatter = { v ->
-                            if (v == 0) requireContext().getString(R.string.off)
-                            else "$v ${requireContext().getQuantityStringPlain(R.plurals.days, v)}"
-                        },
-                    ) { newValue ->
-                        Log.d("Stepper", "save auto remove")
-                        model.savePreference(autoRemoveDeletedNotesAfterDays, newValue)
-                        val workManager = WorkManager.getInstance(requireContext())
-                        if (newValue > 0) {
-                            workManager.scheduleAutoRemoveOldDeletedNotes(
-                                requireContext() as ContextWrapper
+    private fun showBiometricLockDialog() {
+        val context = requireContext()
+        val preference = model.preferences.biometricLock
+        val value = preference.value
+        val enumEntries = BiometricLock.entries
+        val entries = enumEntries.map { context.getString(it.textResId) }.toTypedArray()
+        val checked = enumEntries.indexOfFirst { it == value }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle(preference.titleResId!!)
+            .setSingleChoiceItems(entries, checked) { dialog, which ->
+                dialog.cancel()
+                val newValue = enumEntries[which]
+                if (newValue == value) {
+                    return@setSingleChoiceItems
+                }
+                if (newValue == BiometricLock.ENABLED) {
+                    when (AuthenticatorProvider.instance.canAuthenticateWithBiometrics(context)) {
+                        BiometricManager.BIOMETRIC_SUCCESS -> showEnableBiometricLock()
+                        BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {
+                            context.showToast(R.string.biometrics_no_support)
+                        }
+
+                        BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED ->
+                            showBiometricsNotSetupDialog()
+                    }
+                } else {
+                    when (AuthenticatorProvider.instance.canAuthenticateWithBiometrics(context)) {
+                        BiometricManager.BIOMETRIC_SUCCESS -> showDisableBiometricLock()
+                        BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {
+                            context.showToast(R.string.biometrics_no_support)
+                            model.savePreference(
+                                model.preferences.biometricLock,
+                                BiometricLock.DISABLED,
                             )
-                        } else {
-                            workManager.cancelAutoRemoveOldDeletedNotes()
+                        }
+
+                        BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
+                            showBiometricsNotSetupDialog()
+                            model.savePreference(
+                                model.preferences.biometricLock,
+                                BiometricLock.DISABLED,
+                            )
                         }
                     }
                 }
             }
-
-            launch {
-                combine(startView.flow, model.labels) { startViewValue, labelsValue ->
-                        Pair(startViewValue, labelsValue)
-                    }
-                    .collect { (startViewValue, labelsValue) ->
-                        binding.StartView.setupStartView(
-                            startView,
-                            startViewValue,
-                            labelsValue.map { it.value },
-                            requireContext(),
-                            layoutInflater,
-                        ) { newValue ->
-                            model.savePreference(startView, newValue)
-                        }
-                    }
-            }
-        }
-    }
-
-    private fun NotallyXPreferences.setupContentDensity(binding: FragmentSettingsBinding) {
-        binding.apply {
-            MaxTitle.setup(maxTitle, requireContext()) { newValue ->
-                model.savePreference(maxTitle, newValue)
-            }
-            MaxItems.setup(maxItems, requireContext()) { newValue ->
-                model.savePreference(maxItems, newValue)
-            }
-
-            MaxLines.setup(maxLines, requireContext()) { newValue ->
-                model.savePreference(maxLines, newValue)
-            }
-            MaxLabels.setup(maxLabels, requireContext()) { newValue ->
-                model.savePreference(maxLabels, newValue)
-            }
-            viewLifecycleOwner.repeatOnLifecycleScope {
-                launch {
-                    labelTagsHiddenInOverview.flow.collect { value ->
-                        binding.LabelsHiddenInOverview.setup(
-                            labelTagsHiddenInOverview,
-                            value,
-                            requireContext(),
-                            layoutInflater,
-                            R.string.labels_hidden_in_overview,
-                        ) { enabled ->
-                            model.savePreference(labelTagsHiddenInOverview, enabled)
-                        }
-                    }
-                }
-                launch {
-                    imagesHiddenInOverview.flow.collect { value ->
-                        binding.ImagesHiddenInOverview.setup(
-                            imagesHiddenInOverview,
-                            value,
-                            requireContext(),
-                            layoutInflater,
-                            R.string.images_hidden_in_overview,
-                        ) { enabled ->
-                            model.savePreference(imagesHiddenInOverview, enabled)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun NotallyXPreferences.setupBackup(binding: FragmentSettingsBinding) {
-        binding.apply {
-            ImportBackup.setOnClickListener {
-                val intent =
-                    Intent(Intent.ACTION_OPEN_DOCUMENT)
-                        .apply {
-                            type = "*/*"
-                            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(MIME_TYPE_ZIP, "text/xml"))
-                            addCategory(Intent.CATEGORY_OPENABLE)
-                        }
-                        .wrapWithChooser(requireContext())
-                importBackupActivityResultLauncher.launch(intent)
-            }
-            ImportOther.setOnClickListener { importFromOtherApp() }
-            ExportBackup.setOnClickListener {
-                val intent =
-                    Intent(Intent.ACTION_CREATE_DOCUMENT)
-                        .apply {
-                            type = MIME_TYPE_ZIP
-                            addCategory(Intent.CATEGORY_OPENABLE)
-                            putExtra(Intent.EXTRA_TITLE, buildBackupTitle())
-                        }
-                        .wrapWithChooser(requireContext())
-                exportBackupActivityResultLauncher.launch(intent)
-            }
-        }
-        model.importProgress.setupImportProgressDialog(this@SettingsFragment)
-    }
-
-    private fun NotallyXPreferences.setupAutoBackups(binding: FragmentSettingsBinding) {
-        viewLifecycleOwner.repeatOnLifecycleScope {
-            launch {
-                backupsFolder.flow.collect { value ->
-                    binding.BackupsFolder.setupBackupsFolder(
-                        value,
-                        requireContext(),
-                        ::displayChooseBackupFolderDialog,
-                    ) {
-                        model.disableBackups()
-                    }
-                }
-            }
-            launch {
-                combine(backupOnSave.flow, backupsFolder.flow) { onSave, backupFolder ->
-                        Pair(onSave, backupFolder)
-                    }
-                    .collect { (onSave, backupFolder) ->
-                        binding.BackupOnSave.setup(
-                            backupOnSave,
-                            onSave,
-                            requireContext(),
-                            layoutInflater,
-                            messageResId = R.string.auto_backup_on_save,
-                            enabled = backupFolder != EMPTY_PATH,
-                            disabledTextResId = R.string.auto_backups_folder_set,
-                        ) { enabled ->
-                            model.savePreference(backupOnSave, enabled)
-                        }
-                    }
-            }
-            launch {
-                combine(periodicBackups.flow, backupsFolder.flow) { periodicBackup, backupFolder ->
-                        Pair(periodicBackup, backupFolder)
-                    }
-                    .collect { (periodicBackup, backupFolder) ->
-                        setupPeriodicBackup(
-                            binding,
-                            periodicBackup,
-                            backupFolder,
-                            periodicBackups,
-                            periodicBackupLastExecution,
-                        )
-                    }
-            }
-        }
+            .setCancelButton()
+            .show()
     }
 
     private fun importFromOtherApp() {
@@ -651,6 +1023,7 @@ class SettingsFragment : Fragment() {
                             .show()
                         return@setAdapter
                     }
+
                     1 -> {
                         importRawDatabaseActivityResultLauncher.launch(
                             Intent(Intent.ACTION_OPEN_DOCUMENT)
@@ -690,6 +1063,7 @@ class SettingsFragment : Fragment() {
                                                         }
                                                         .wrapWithChooser(requireContext())
                                                 )
+
                                             1 ->
                                                 importOtherActivityResultLauncher.launch(
                                                     Intent(Intent.ACTION_OPEN_DOCUMENT)
@@ -708,6 +1082,7 @@ class SettingsFragment : Fragment() {
                                     }
                                     .setCancelButton()
                                     .show()
+
                             else ->
                                 importOtherActivityResultLauncher.launch(
                                     Intent(Intent.ACTION_OPEN_DOCUMENT)
@@ -741,320 +1116,82 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
-    private fun setupPeriodicBackup(
-        binding: FragmentSettingsBinding,
-        value: PeriodicBackup,
-        backupFolder: String,
-        preference: PeriodicBackupsPreference,
-        lastExecutionPreference: LongPreference,
-    ) {
-        val periodicBackupsEnabled = value.periodInDays > 0 && backupFolder != EMPTY_PATH
-        binding.PeriodicBackups.setupPeriodicBackup(
-            periodicBackupsEnabled,
-            requireContext(),
-            layoutInflater,
-            enabled = backupFolder != EMPTY_PATH,
-        ) { enabled ->
-            if (enabled) {
-                val periodInDays =
-                    preference.value.periodInDays.let {
-                        if (it >= BACKUP_PERIOD_DAYS_MIN) it else BACKUP_PERIOD_DAYS_MIN
+    private fun showFeedbackDialog() {
+        val options =
+            arrayOf(
+                getString(R.string.report_bug),
+                getString(R.string.make_feature_request),
+                getString(R.string.send_feedback),
+            )
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.send_feedback)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> {
+                        val app = requireContext().applicationContext as Application
+                        val logs = app.getLastExceptionLog()
+                        reportBug(logs)
                     }
-                val maxBackups =
-                    preference.value.maxBackups.let {
-                        if (it >= BACKUP_MAX_MIN) it else BACKUP_MAX_MIN
-                    }
-                model.savePreference(
-                    preference,
-                    preference.value.copy(periodInDays = periodInDays, maxBackups = maxBackups),
-                )
-            } else {
-                model.savePreference(preference, preference.value.copy(periodInDays = 0))
-            }
-        }
-        viewLifecycleOwner.repeatOnLifecycleScope {
-            combine(
-                    lastExecutionPreference.flow,
-                    model.preferences.dateFormatOverview.flow,
-                    model.preferences.timeFormatOverview.flow,
-                ) { time, dateFormat, timeFormat ->
-                    Triple(time, dateFormat, timeFormat)
-                }
-                .collect { (time, dateFormat, timeFormat) ->
-                    binding.PeriodicBackupLastExecution.apply {
-                        if (time != -1L) {
-                            isVisible = true
-                            text =
-                                Date(time)
-                                    .format(
-                                        dateFormat,
-                                        timeFormat,
-                                        ensureFullFormat = true,
+
+                    1 ->
+                        requireContext().catchNoBrowserInstalled {
+                            startActivity(
+                                Intent(
+                                        Intent.ACTION_VIEW,
+                                        Uri.parse(
+                                            "https://github.com/Crustack/NotallyX/issues/new?labels=enhancement&template=feature_request.md"
+                                        ),
                                     )
-                                    .let { lastBackupFormatted ->
-                                        "${requireContext().getString(R.string.auto_backup_last)}: $lastBackupFormatted"
+                                    .wrapWithChooser(requireContext())
+                            )
+                        }
+
+                    2 -> {
+                        val intent =
+                            Intent(Intent.ACTION_SEND)
+                                .apply {
+                                    selector = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"))
+                                    putExtra(Intent.EXTRA_EMAIL, arrayOf("notallyx@yahoo.com"))
+                                    putExtra(Intent.EXTRA_SUBJECT, "NotallyX [Feedback]")
+                                    val app = requireContext().applicationContext as Application
+                                    val log = app.getLogFile()
+                                    if (log.exists()) {
+                                        val uri = app.getUriForFile(log)
+                                        putExtra(Intent.EXTRA_STREAM, uri)
                                     }
-                        } else isVisible = false
-                    }
-                }
-        }
-        binding.PeriodicBackupsPeriodInDays.setup(
-            value.periodInDays,
-            R.string.backup_period_days,
-            PeriodicBackup.BACKUP_PERIOD_DAYS_MIN,
-            PeriodicBackup.BACKUP_PERIOD_DAYS_MAX,
-            requireContext(),
-            enabled = periodicBackupsEnabled,
-        ) { newValue ->
-            model.savePreference(preference, preference.value.copy(periodInDays = newValue))
-        }
-        binding.PeriodicBackupsMax.setup(
-            value.maxBackups,
-            R.string.max_backups,
-            PeriodicBackup.BACKUP_MAX_MIN,
-            PeriodicBackup.BACKUP_MAX_MAX,
-            requireContext(),
-            enabled = periodicBackupsEnabled,
-        ) { newValue: Int ->
-            model.savePreference(preference, preference.value.copy(maxBackups = newValue))
-        }
-    }
-
-    private fun NotallyXPreferences.setupSecurity(binding: FragmentSettingsBinding) {
-        viewLifecycleOwner.repeatOnLifecycleScope {
-            launch {
-                combine(biometricLock.flow, biometricLockEncryptsDb.flow) { lock, _ -> lock }
-                    .collect { value ->
-                        binding.BiometricLock.setup(
-                            biometricLock,
-                            value,
-                            requireContext(),
-                            model,
-                            ::showEnableBiometricLock,
-                            ::showDisableBiometricLock,
-                            ::showBiometricsNotSetupDialog,
-                        )
-                    }
-            }
-            launch {
-                backupPassword.flow.collect { value ->
-                    binding.BackupPassword.setupBackupPassword(
-                        backupPassword,
-                        value,
-                        requireContext(),
-                        layoutInflater,
-                    ) { newValue ->
-                        model.savePreference(backupPassword, newValue)
-                    }
-                }
-            }
-            launch {
-                secureFlag.flow.collect { value ->
-                    binding.SecureFlag.setup(secureFlag, value, requireContext(), layoutInflater) {
-                        newValue ->
-                        model.savePreference(secureFlag, newValue)
-                        activity?.setEnabledSecureFlag(newValue)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun NotallyXPreferences.setupSettings(binding: FragmentSettingsBinding) {
-        binding.apply {
-            ImportSettings.setOnClickListener {
-                showDialog(
-                    R.string.import_settings_message,
-                    R.string.import_action,
-                    { _, _ ->
-                        val intent =
-                            Intent(Intent.ACTION_OPEN_DOCUMENT)
-                                .apply {
-                                    type = MIME_TYPE_JSON
-                                    addCategory(Intent.CATEGORY_OPENABLE)
-                                    putExtra(Intent.EXTRA_TITLE, "NotallyX_Settings.json")
                                 }
                                 .wrapWithChooser(requireContext())
-                        importSettingsActivityResultLauncher.launch(intent)
-                    },
-                )
-            }
-            ExportSettings.setOnClickListener {
-                showDialog(
-                    R.string.export_settings_message,
-                    R.string.export,
-                    { _, _ ->
-                        val intent =
-                            Intent(Intent.ACTION_CREATE_DOCUMENT)
-                                .apply {
-                                    type = MIME_TYPE_JSON
-                                    addCategory(Intent.CATEGORY_OPENABLE)
-                                    putExtra(Intent.EXTRA_TITLE, "NotallyX_Settings.json")
-                                }
-                                .wrapWithChooser(requireContext())
-                        exportSettingsActivityResultLauncher.launch(intent)
-                    },
-                )
-            }
-            ResetSettings.setOnClickListener {
-                showDialog(
-                    R.string.reset_settings_message,
-                    R.string.reset_settings,
-                    { _, _ ->
-                        lifecycleScope.launch {
-                            model.resetPreferences { _ ->
-                                showToast(R.string.reset_settings_success)
-                            }
-                        }
-                    },
-                )
-            }
-            viewLifecycleOwner.repeatOnLifecycleScope {
-                dataInPublicFolder.flow.collect { value ->
-                    binding.DataInPublicFolder.setup(
-                        dataInPublicFolder,
-                        value,
-                        requireContext(),
-                        layoutInflater,
-                        R.string.data_in_public_message,
-                    ) { enabled ->
-                        if (enabled) {
-                            DatabaseTransitionActivity.start(
-                                requireActivity(),
-                                DatabaseAction.ENABLE_DATA_IN_PUBLIC,
-                            )
-                        } else {
-                            DatabaseTransitionActivity.start(
-                                requireActivity(),
-                                DatabaseAction.DISABLE_DATA_IN_PUBLIC,
-                            )
+                        try {
+                            startActivity(intent)
+                        } catch (exception: ActivityNotFoundException) {
+                            showToast(R.string.install_an_email)
                         }
                     }
                 }
             }
-            AutoSaveAfterIdle.setup(
-                autoSaveAfterIdleTime,
-                requireContext(),
-                labelFormatter = { v ->
-                    if (v == -1) requireContext().getString(R.string.off) else "${v}s"
-                },
-            ) { newValue ->
-                model.savePreference(autoSaveAfterIdleTime, newValue)
-            }
-
-            ClearData.setOnClickListener {
-                MaterialAlertDialogBuilder(requireContext())
-                    .setMessage(R.string.clear_data_message)
-                    .setPositiveButton(R.string.delete_all) { _, _ -> model.deleteAll() }
-                    .setCancelButton()
-                    .show()
-            }
-        }
+            .setCancelButton()
+            .show()
     }
 
-    private fun setupAbout(binding: FragmentSettingsBinding) {
-        binding.apply {
-            SendFeedback.setOnClickListener {
-                val options =
-                    arrayOf(
-                        getString(R.string.report_bug),
-                        getString(R.string.make_feature_request),
-                        getString(R.string.send_feedback),
-                    )
-                MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(R.string.send_feedback)
-                    .setItems(options) { _, which ->
-                        when (which) {
-                            0 -> {
-                                val app = requireContext().applicationContext as Application
-                                val logs = app.getLastExceptionLog()
-                                reportBug(logs)
-                            }
-
-                            1 ->
-                                requireContext().catchNoBrowserInstalled {
-                                    startActivity(
-                                        Intent(
-                                                Intent.ACTION_VIEW,
-                                                Uri.parse(
-                                                    "https://github.com/Crustack/NotallyX/issues/new?labels=enhancement&template=feature_request.md"
-                                                ),
-                                            )
-                                            .wrapWithChooser(requireContext())
-                                    )
-                                }
-                            2 -> {
-                                val intent =
-                                    Intent(Intent.ACTION_SEND)
-                                        .apply {
-                                            selector =
-                                                Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"))
-                                            putExtra(
-                                                Intent.EXTRA_EMAIL,
-                                                arrayOf("notallyx@yahoo.com"),
-                                            )
-                                            putExtra(Intent.EXTRA_SUBJECT, "NotallyX [Feedback]")
-                                            val app =
-                                                requireContext().applicationContext as Application
-                                            val log = app.getLogFile()
-                                            if (log.exists()) {
-                                                val uri = app.getUriForFile(log)
-                                                putExtra(Intent.EXTRA_STREAM, uri)
-                                            }
-                                        }
-                                        .wrapWithChooser(requireContext())
-                                try {
-                                    startActivity(intent)
-                                } catch (exception: ActivityNotFoundException) {
-                                    showToast(R.string.install_an_email)
-                                }
-                            }
-                        }
-                    }
-                    .setCancelButton()
-                    .show()
-            }
-            Rate.setOnClickListener {
-                openLink("https://play.google.com/store/apps/details?id=com.philkes.notallyx")
-            }
-            Documentation.setOnClickListener { openLink("https://crustack.github.io/NotallyX") }
-            SourceCode.setOnClickListener { openLink("https://github.com/Crustack/NotallyX") }
-            Donate.setOnClickListener { openLink("https://ko-fi.com/crustack") }
-            ViewLogs.setOnClickListener { (requireContext() as ContextWrapper).viewLogs() }
-            ViewCrashes.setOnClickListener {
-                (requireContext() as ContextWrapper).let { context ->
-                    val externalCrashesDirectory = context.getExternalCrashesDirectory()
-                    MaterialAlertDialogBuilder(context)
-                        .setMessage(
-                            "${getString(R.string.view_crash_logs)}: ${externalCrashesDirectory.absolutePath}"
-                        )
-                        .setPositiveButton(android.R.string.ok, null)
-                        .setNeutralButton(R.string.copy) { _, _ ->
-                            context.copyToClipBoard(externalCrashesDirectory.absolutePath)
-                        }
-                        .show()
-                    context.openExternalMediaFolder(externalCrashesDirectory)
+    private fun showCrashesDialog() {
+        (requireContext() as ContextWrapper).let { context ->
+            val externalCrashesDirectory = context.getExternalCrashesDirectory()
+            MaterialAlertDialogBuilder(context)
+                .setMessage(
+                    "${getString(R.string.view_crash_logs)}: ${externalCrashesDirectory.absolutePath}"
+                )
+                .setPositiveButton(android.R.string.ok, null)
+                .setNeutralButton(R.string.copy) { _, _ ->
+                    context.copyToClipBoard(externalCrashesDirectory.absolutePath)
                 }
-            }
-
-            try {
-                val pInfo =
-                    requireContext().packageManager.getPackageInfo(requireContext().packageName, 0)
-                val version = pInfo.versionName
-                VersionText.text = "v$version"
-            } catch (_: PackageManager.NameNotFoundException) {}
+                .show()
+            context.openExternalMediaFolder(externalCrashesDirectory)
         }
     }
 
     private fun displayChooseBackupFolderDialog() {
-        val hintText =
-            try {
-                getString(R.string.auto_backups_folder_hint, getString(R.string.documentation))
-            } catch (_: Exception) {
-                getString(R.string.auto_backups_folder_hint)
-            }
         showDialog(
-            hintText,
+            getString(R.string.auto_backups_folder_hint),
             R.string.choose_folder,
             { _, _ ->
                 val intent = Intent(ACTION_OPEN_DOCUMENT_TREE).wrapWithChooser(requireContext())
@@ -1066,7 +1203,6 @@ class SettingsFragment : Fragment() {
         )
     }
 
-    // Holds a continuation to run (enable/disable biometric) after user-triggered export completes
     private var pendingBiometricContinuation: (() -> Unit)? = null
 
     private fun showEnableBiometricLock() {
@@ -1149,7 +1285,6 @@ class SettingsFragment : Fragment() {
         MaterialAlertDialogBuilder(requireContext())
             .setMessage(R.string.biometric_backup_advice)
             .setPositiveButton(R.string.export) { _, _ ->
-                // After export finishes, continue with biometric action
                 pendingBiometricContinuation = onContinue
                 val intent =
                     Intent(Intent.ACTION_CREATE_DOCUMENT)

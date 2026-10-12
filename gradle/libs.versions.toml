@@ -51,6 +51,7 @@ zstd = "1.5.7-6"
 commonsConfiguration = "2.15.1"
 
 # Test
+kaspresso = "1.6.1"
 espresso = "3.7.0"
 androidxTest = "1.7.0"
 uiautomator = "2.4.0"
@@ -115,6 +116,8 @@ commonmark-gfm-strikethrough = { group = "org.commonmark", name = "commonmark-ex
 commons-configuration = { group = "org.apache.commons", name = "commons-configuration2", version.ref = "commonsConfiguration" }
 
 # Test
+kaspresso-core = { group = "com.kaspersky.android-components", name = "kaspresso", version.ref = "kaspresso" }
+kaspresso-compose-support = { group = "com.kaspersky.android-components", name = "kaspresso-compose-support", version.ref = "kaspresso" }
 androidx-test-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
 androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
 androidx-test-espresso-contrib = { group = "androidx.test.espresso", name = "espresso-contrib", version.ref = "espresso" }

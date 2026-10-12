@@ -5,6 +5,8 @@ import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
 import androidx.annotation.IdRes
+import androidx.compose.foundation.ScrollState
+import androidx.compose.ui.platform.ComposeView
 import androidx.core.view.GravityCompat
 import androidx.core.widget.NestedScrollView
 import androidx.drawerlayout.widget.DrawerLayout
@@ -14,7 +16,6 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.matcher.ViewMatchers.isRoot
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -30,6 +31,7 @@ import com.philkes.notallyx.data.imports.google.GoogleKeepImporterTest.Companion
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.presentation.activity.main.MainActivity.Companion.EXTRA_FRAGMENT_TO_OPEN
+import com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment
 import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
 import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
 import com.philkes.notallyx.test.FakeAndroidKeyStore
@@ -145,7 +147,15 @@ class ScreenshotTests {
                 )
 
             // 1. Click Date Time Format Note View setting and capture dialog screenshot
-            onView(withId(R.id.DateFormatNoteView)).perform(scrollTo(), click())
+            scenario.onActivity { activity ->
+                val navHost =
+                    (activity as? androidx.appcompat.app.AppCompatActivity)
+                        ?.supportFragmentManager
+                        ?.findFragmentById(R.id.NavHostFragment)
+                val settingsFragment =
+                    navHost?.childFragmentManager?.fragments?.firstOrNull() as? SettingsFragment
+                settingsFragment?.showDateTimeFormatNoteViewDialog()
+            }
             ShadowLooper.idleMainLooper()
             onView(isRoot())
                 .inRoot(androidx.test.espresso.matcher.RootMatchers.isDialog())
@@ -155,17 +165,21 @@ class ScreenshotTests {
             onView(withId(android.R.id.button2))
                 .inRoot(androidx.test.espresso.matcher.RootMatchers.isDialog())
                 .perform(click())
-            ShadowLooper.idleMainLooper()
 
             // 2. Scroll to top and touch down on Text Size slider to capture screenshot while
             // dragging
             scenario.onActivity { activity ->
-                activity.findViewById<View>(R.id.NestedScrollView)?.scrollTo(0, 0)
-                val slider =
-                    activity.findViewById<View>(R.id.TextSize)?.findViewById<View>(R.id.Slider)
-                if (slider != null) {
-                    val x = slider.width / 2f
-                    val y = slider.height / 2f
+                val navHost =
+                    (activity as? androidx.appcompat.app.AppCompatActivity)
+                        ?.supportFragmentManager
+                        ?.findFragmentById(R.id.NavHostFragment)
+                val settingsFragment =
+                    navHost?.childFragmentManager?.fragments?.firstOrNull() as? SettingsFragment
+                runBlocking { settingsFragment?.scrollState?.scrollTo(0) }
+                val composeView = settingsFragment?.view as? ComposeView
+                if (composeView != null) {
+                    val x = composeView.width / 2f
+                    val y = 380f // Position of TextSize slider in top section
                     val downTime = SystemClock.uptimeMillis()
                     val event =
                         MotionEvent.obtain(
@@ -176,7 +190,7 @@ class ScreenshotTests {
                             y,
                             0,
                         )
-                    slider.dispatchTouchEvent(event)
+                    composeView.dispatchTouchEvent(event)
                 }
             }
             ShadowLooper.idleMainLooper()
@@ -185,11 +199,16 @@ class ScreenshotTests {
                     "${ScreenshotTests::class.java.simpleName}/settings/${"%02d".format(scrollCount + 1)}_slider_dragging.png"
                 )
             scenario.onActivity { activity ->
-                val slider =
-                    activity.findViewById<View>(R.id.TextSize)?.findViewById<View>(R.id.Slider)
-                if (slider != null) {
-                    val x = slider.width / 2f
-                    val y = slider.height / 2f
+                val navHost =
+                    (activity as? androidx.appcompat.app.AppCompatActivity)
+                        ?.supportFragmentManager
+                        ?.findFragmentById(R.id.NavHostFragment)
+                val settingsFragment =
+                    navHost?.childFragmentManager?.fragments?.firstOrNull() as? SettingsFragment
+                val composeView = settingsFragment?.view as? ComposeView
+                if (composeView != null) {
+                    val x = composeView.width / 2f
+                    val y = 380f
                     val downTime = SystemClock.uptimeMillis()
                     val event =
                         MotionEvent.obtain(
@@ -200,7 +219,7 @@ class ScreenshotTests {
                             y,
                             0,
                         )
-                    slider.dispatchTouchEvent(event)
+                    composeView.dispatchTouchEvent(event)
                 }
             }
             ShadowLooper.idleMainLooper()
@@ -440,24 +459,73 @@ class ScreenshotTests {
     ): Int {
         var totalHeight = 0
         var viewportHeight = 0
+        var composeScrollState: ScrollState? = null
 
         // Measure view dimensions on the main thread
         onActivity { activity ->
+            val navHost =
+                (activity as? androidx.appcompat.app.AppCompatActivity)
+                    ?.supportFragmentManager
+                    ?.findFragmentById(R.id.NavHostFragment)
+            val activeFragment = navHost?.childFragmentManager?.fragments?.firstOrNull()
+            if (activeFragment is SettingsFragment) {
+                composeScrollState = activeFragment.scrollState
+            }
+
             val scrollView =
                 activity.findViewById<View>(scrollViewId)
                     ?: activity.findViewById<View>(android.R.id.content)
 
-            val child =
-                when (scrollView) {
-                    is NestedScrollView -> scrollView.getChildAt(0)
-                    is android.widget.ScrollView -> scrollView.getChildAt(0)
-                    is android.view.ViewGroup ->
-                        if (scrollView.childCount > 0) scrollView.getChildAt(0) else null
-                    else -> null
-                }
+            val state = composeScrollState
+            if (state != null) {
+                viewportHeight = scrollView?.height ?: 0
+                totalHeight = viewportHeight + state.maxValue
+            } else {
+                val child =
+                    when (scrollView) {
+                        is NestedScrollView -> scrollView.getChildAt(0)
+                        is android.widget.ScrollView -> scrollView.getChildAt(0)
+                        is android.view.ViewGroup ->
+                            if (scrollView.childCount > 0) scrollView.getChildAt(0) else null
+                        else -> null
+                    }
 
-            totalHeight = child?.height ?: 0
-            viewportHeight = scrollView?.height ?: 0
+                totalHeight = child?.height ?: 0
+                viewportHeight = scrollView?.height ?: 0
+            }
+        }
+
+        val scrollState = composeScrollState
+        if (scrollState != null) {
+            val maxScrollY = scrollState.maxValue
+            if (viewportHeight <= 0 || maxScrollY <= 0) {
+                onView(isRoot()).captureRoboImage(screenshotNameFunction(0))
+                return 1
+            }
+
+            val stepPixels = (viewportHeight * stepRatio).toInt().coerceAtLeast(1)
+            var currentY = 0
+            var stepIndex = 0
+
+            while (currentY < maxScrollY) {
+                val scrollY = currentY
+                onActivity { runBlocking { scrollState.scrollTo(scrollY) } }
+                ShadowLooper.idleMainLooper()
+
+                onView(isRoot()).captureRoboImage(screenshotNameFunction(stepIndex))
+
+                currentY += stepPixels
+                stepIndex++
+            }
+
+            if ((currentY - stepPixels) < maxScrollY) {
+                onActivity { runBlocking { scrollState.scrollTo(maxScrollY) } }
+                ShadowLooper.idleMainLooper()
+                onView(isRoot()).captureRoboImage(screenshotNameFunction(stepIndex))
+                stepIndex++
+            }
+
+            return stepIndex
         }
 
         // Handle empty or zero-height views
@@ -477,6 +545,7 @@ class ScreenshotTests {
             onActivity { activity ->
                 activity.findViewById<View>(scrollViewId)?.scrollTo(0, scrollY)
             }
+            ShadowLooper.idleMainLooper()
 
             onView(isRoot()).captureRoboImage(screenshotNameFunction(stepIndex))
 
@@ -489,6 +558,7 @@ class ScreenshotTests {
             onActivity { activity ->
                 activity.findViewById<View>(scrollViewId)?.scrollTo(0, maxScrollY)
             }
+            ShadowLooper.idleMainLooper()
             onView(isRoot()).captureRoboImage(screenshotNameFunction(stepIndex))
             stepIndex++
         }

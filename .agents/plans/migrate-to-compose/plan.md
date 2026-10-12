@@ -237,8 +237,8 @@ Convert legacy Android RemoteViews widgets to **AndroidX Glance**:
 - [x] Migrate `RemindersActivity` & `RemindersFragment` to Compose (`activity_reminders.xml`).
 
 ### Phase 5: Preference & Settings UI
-- [ ] Implement `PreferenceRow.kt`, `SeekBarPreferenceRow.kt`, `StepperPreferenceRow.kt` (`preference.xml`, `preference_seekbar.xml`, `preference_stepper.xml`).
-- [ ] Migrate `SettingsFragment` to `SettingsScreen.kt` (`fragment_settings.xml`).
+- [x] Implement `PreferenceRow.kt`, `SeekBarPreferenceRow.kt`, `StepperPreferenceRow.kt` (`preference.xml`, `preference_seekbar.xml`, `preference_stepper.xml`).
+- [x] Migrate `SettingsFragment` to `SettingsScreen.kt` (`fragment_settings.xml`).
 
 ### Phase 6: Main Navigation & Overview Fragments
 - [ ] Migrate `NotesFragment` and overview fragments to `NotesGridScreen.kt` (`fragment_notes.xml`).
@@ -275,3 +275,5 @@ Convert legacy Android RemoteViews widgets to **AndroidX Glance**:
    - Run existing instrumented and unit tests (`./gradlew test`) to ensure interaction callbacks, ViewModel state flows, and navigation behave identically.
 3. **Code Formatting**:
    - Run `./gradlew ktfmtFormat` to ensure all new Composable functions adhere to project formatting standards.
+4. **Remove migrated XML View**:
+   - Remove the obsolete XML View files
