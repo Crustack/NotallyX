@@ -500,6 +500,106 @@ class ListManagerCheckedTest : ListManagerTestBase() {
         items.assertChecked(false, false, false, false, false, false)
     }
 
+    @Test
+    fun `autocomplete applies delete and uncheck atomically without auto-sort`() {
+        setSorting(ListItemSort.NO_AUTO_SORT)
+        listManager.changeChecked(1, true)
+        changeHistory.reset()
+
+        listManager.completeWithCheckedItem(currentItemId = 0, checkedItemId = 1)
+
+        items.assertOrder("B", "C", "D", "E", "F")
+        "B".assertIsNotChecked()
+        changeHistory.undo()
+        items.assertOrder("A", "B", "C", "D", "E", "F")
+        "B".assertIsChecked()
+    }
+
+    @Test
+    fun `autocomplete applies delete and uncheck atomically with auto-sort`() {
+        setSorting(ListItemSort.AUTO_SORT_BY_CHECKED)
+        listManager.changeChecked(1, true)
+        changeHistory.reset()
+
+        listManager.completeWithCheckedItem(currentItemId = 0, checkedItemId = 1)
+
+        itemsChecked!!.assertSize(0)
+        items.assertOrder("B", "C", "D", "E", "F")
+        "B".assertIsNotChecked()
+        changeHistory.undo()
+        items.assertOrder("A", "C", "D", "E", "F")
+        itemsChecked!!.assertOrder("B")
+        "B".assertIsChecked()
+    }
+
+    @Test
+    fun `autocomplete replaces parent text and removes its checked child`() {
+        setSorting(ListItemSort.NO_AUTO_SORT)
+        listManager.changeIsChild(1, true)
+        listManager.changeIsChild(2, true)
+        listManager.changeChecked(1, true)
+        changeHistory.reset()
+
+        listManager.completeWithCheckedItem(currentItemId = 0, checkedItemId = 1)
+
+        items.assertOrder("B", "C", "D", "E", "F")
+        items.assertSize(5)
+        "B".assertChildren("C")
+        "B".assertIsNotChecked()
+        changeHistory.undo()
+        items.assertOrder("A", "B", "C", "D", "E", "F")
+        "A".assertChildren("B", "C")
+        "B".assertIsChecked()
+    }
+
+    @Test
+    fun `autocomplete replaces parent text and removes its checked child with auto-sort`() {
+        setSorting(ListItemSort.AUTO_SORT_BY_CHECKED)
+        listManager.changeIsChild(1, true)
+        listManager.changeIsChild(2, true)
+        listManager.changeChecked(1, true)
+
+        listManager.completeWithCheckedItem(currentItemId = 0, checkedItemId = 1)
+
+        items.assertOrder("B", "C", "D", "E", "F")
+        itemsChecked!!.assertSize(0)
+        "B".assertChildren("C")
+        "B".assertIsNotChecked()
+    }
+
+    @Test
+    fun `autocomplete keeps current children and promotes selected parent children`() {
+        setSorting(ListItemSort.NO_AUTO_SORT)
+        listManager.changeIsChild(1, true)
+        listManager.changeIsChild(3, true)
+        listManager.changeChecked(2, true)
+
+        listManager.completeWithCheckedItem(currentItemId = 0, checkedItemId = 2)
+
+        items.assertOrder("C", "B", "D", "E", "F")
+        "C".assertChildren("B")
+        "D".assertIsParent()
+        "C".assertIsNotChecked()
+        "B".assertIsNotChecked()
+        "D".assertIsChecked()
+    }
+
+    @Test
+    fun `autocomplete promotes children from auto-sorted parent`() {
+        setSorting(ListItemSort.AUTO_SORT_BY_CHECKED)
+        listManager.changeIsChild(1, true)
+        listManager.changeIsChild(3, true)
+        listManager.changeChecked(2, true)
+
+        listManager.completeWithCheckedItem(currentItemId = 0, checkedItemId = 2)
+
+        items.assertOrder("C", "B", "E", "F")
+        itemsChecked!!.assertOrder("D")
+        "C".assertChildren("B")
+        "D".assertIsParent()
+        "C".assertIsNotChecked()
+    }
+
     // endregion
 
 }
