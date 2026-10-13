@@ -241,8 +241,8 @@ Convert legacy Android RemoteViews widgets to **AndroidX Glance**:
 - [x] Migrate `SettingsFragment` to `SettingsScreen.kt` (`fragment_settings.xml`).
 
 ### Phase 6: Main Navigation & Overview Fragments
-- [ ] Migrate `NotesFragment` and overview fragments to `NotesGridScreen.kt` (`fragment_notes.xml`).
-- [ ] Migrate `MainActivity` to `MainScreen.kt` (`activity_main.xml`).
+- [x] Migrate `NotesFragment` and overview fragments to `NotesGridScreen.kt` (`fragment_notes.xml`).
+- [x] Migrate `MainActivity` to `MainScreen.kt` (`activity_main.xml`).
 
 ### Phase 7: Note Editor Screens
 - [ ] Implement `TextFormattingBar.kt` (`bottom_text_formatting_menu.xml`).

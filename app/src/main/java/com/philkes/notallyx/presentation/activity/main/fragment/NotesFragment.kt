@@ -8,24 +8,19 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.view.isVisible
-import androidx.core.widget.doAfterTextChanged
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.findNavController
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SortedListAdapterCallback
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.databinding.FragmentNotesBinding
 import com.philkes.notallyx.presentation.activity.main.MainActivity
-import com.philkes.notallyx.presentation.activity.main.fragment.SearchFragment.Companion.EXTRA_INITIAL_FOLDER
-import com.philkes.notallyx.presentation.activity.main.fragment.SearchFragment.Companion.EXTRA_INITIAL_LABEL
 import com.philkes.notallyx.presentation.activity.note.EditActivity
 import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EXTRA_FOLDER_FROM
 import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EXTRA_FOLDER_TO
@@ -35,14 +30,14 @@ import com.philkes.notallyx.presentation.activity.note.EditListActivity
 import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
 import com.philkes.notallyx.presentation.activity.note.reminders.RemindersActivity
 import com.philkes.notallyx.presentation.getQuantityString
-import com.philkes.notallyx.presentation.hideKeyboard
 import com.philkes.notallyx.presentation.movedToResId
 import com.philkes.notallyx.presentation.repeatOnLifecycleScope
-import com.philkes.notallyx.presentation.showKeyboard
+import com.philkes.notallyx.presentation.theme.NotallyXTheme
 import com.philkes.notallyx.presentation.view.main.BaseNoteAdapter
 import com.philkes.notallyx.presentation.view.main.BaseNoteVHPreferences
 import com.philkes.notallyx.presentation.view.main.createCallback
 import com.philkes.notallyx.presentation.view.misc.ItemListener
+import com.philkes.notallyx.presentation.view.screens.NotesGridScreen
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.NotesFragmentViewModel
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesView
 import kotlinx.coroutines.flow.Flow
@@ -55,74 +50,42 @@ abstract class NotesFragment : Fragment(), ItemListener {
     private lateinit var openNoteActivityResultLauncher: ActivityResultLauncher<Intent>
     private var lastSelectedNotePosition = -1
 
-    internal var binding: FragmentNotesBinding? = null
-
     internal val model: NotesFragmentViewModel by activityViewModel()
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
         notesAdapter = null
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        val layoutManager = binding?.MainListView?.layoutManager as? LinearLayoutManager
-        if (layoutManager != null) {
-            val firstVisiblePosition = layoutManager.findFirstVisibleItemPosition()
-            if (firstVisiblePosition != RecyclerView.NO_POSITION) {
-                val firstVisibleView = layoutManager.findViewByPosition(firstVisiblePosition)
-                val offset = firstVisibleView?.top ?: 0
-                outState.putInt(EXTRA_SCROLL_POS, firstVisiblePosition)
-                outState.putInt(EXTRA_SCROLL_OFFSET, offset)
-            }
-        }
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        binding?.ImageView?.setImageResource(getBackground())
-
+        super.onViewCreated(view, savedInstanceState)
         setupAdapter()
-        setupRecyclerView()
         setupObserver()
-        setupSearch()
-
         setupActivityResultLaunchers()
-
-        savedInstanceState?.let { bundle ->
-            val scrollPosition = bundle.getInt(EXTRA_SCROLL_POS, -1)
-            val scrollOffset = bundle.getInt(EXTRA_SCROLL_OFFSET, 0)
-            if (scrollPosition > -1) {
-                binding?.MainListView?.post {
-                    val layoutManager = binding?.MainListView?.layoutManager as? LinearLayoutManager
-                    layoutManager?.scrollToPositionWithOffset(scrollPosition, scrollOffset)
-                }
-            }
-        }
     }
 
     private fun setupActivityResultLaunchers() {
         openNoteActivityResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
-                    // If a note has been moved inside of EditActivity
-                    // present snackbar to undo it
                     val data = result.data
                     val id = data?.getLongExtra(EXTRA_NOTE_ID, -1)
                     if (id != null) {
                         val folderFrom = Folder.valueOf(data.getStringExtra(EXTRA_FOLDER_FROM)!!)
                         val folderTo = Folder.valueOf(data.getStringExtra(EXTRA_FOLDER_TO)!!)
-                        Snackbar.make(
-                                binding!!.root,
-                                requireContext().getQuantityString(folderTo.movedToResId(), 1),
-                                Snackbar.LENGTH_SHORT,
-                            )
-                            .apply {
-                                setAction(R.string.undo) {
-                                    model.moveBaseNotes(longArrayOf(id), folderFrom)
+                        view?.let { currentView ->
+                            Snackbar.make(
+                                    currentView,
+                                    requireContext().getQuantityString(folderTo.movedToResId(), 1),
+                                    Snackbar.LENGTH_SHORT,
+                                )
+                                .apply {
+                                    setAction(R.string.undo) {
+                                        model.moveBaseNotes(longArrayOf(id), folderFrom)
+                                    }
                                 }
-                            }
-                            .show()
+                                .show()
+                        }
                     }
                 }
             }
@@ -132,13 +95,86 @@ abstract class NotesFragment : Fragment(), ItemListener {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View? {
+    ): View {
         setHasOptionsMenu(true)
-        binding = FragmentNotesBinding.inflate(inflater)
-        return binding?.root
+        val composeView =
+            ComposeView(requireContext()).apply {
+                setContent {
+                    NotallyXTheme(theme = model.preferences.theme.value) {
+                        val itemsState =
+                            getFlow().collectAsStateWithLifecycle(initialValue = emptyList())
+                        val isGrid = model.preferences.notesView.value == NotesView.GRID
+                        val selectedFolder by
+                            model.folder.collectAsStateWithLifecycle(initialValue = Folder.NOTES)
+                        val folderForGrid =
+                            if (this@NotesFragment is SearchFragment) selectedFolder else null
+                        val isLoading =
+                            if (this@NotesFragment is SearchFragment) {
+                                model.searchResults
+                                    ?.isLoading
+                                    ?.collectAsStateWithLifecycle(initialValue = false)
+                                    ?.value == true
+                            } else false
+
+                        val selectedFilterOption by
+                            if (this@NotesFragment is RemindersFragment) {
+                                (this@NotesFragment as RemindersFragment)
+                                    .filterModeFlow
+                                    .collectAsStateWithLifecycle()
+                            } else
+                                androidx.compose.runtime.remember {
+                                    androidx.compose.runtime.mutableStateOf(null)
+                                }
+
+                        val selectedNoteIds by
+                            model.actionMode.selectedIdsFlow.collectAsStateWithLifecycle(emptySet())
+                        val searchKeyword by model.keywordFlow.collectAsStateWithLifecycle()
+
+                        NotesGridScreen(
+                            items = itemsState.value,
+                            isGrid = isGrid,
+                            imageRoot = model.imageRoot,
+                            searchKeyword = searchKeyword,
+                            onSearchKeywordChange = { newKeyword ->
+                                if (this@NotesFragment is SearchFragment) {
+                                    model.keyword = newKeyword
+                                }
+                            },
+                            showSearchBar =
+                                (this@NotesFragment is SearchFragment) ||
+                                    model.preferences.alwaysShowSearchBar.value,
+                            selectedFolder = folderForGrid,
+                            onFolderSelected = { folder -> model.setFolder(folder) },
+                            selectedFilterOption = selectedFilterOption,
+                            onFilterOptionSelected = { filterOption ->
+                                if (this@NotesFragment is RemindersFragment) {
+                                    (this@NotesFragment as RemindersFragment).applyFilter(
+                                        filterOption
+                                    )
+                                }
+                            },
+                            selectedNoteIds = selectedNoteIds,
+                            backgroundResId = getBackgroundResId(),
+                            isLoading = isLoading,
+                            dateFormat = model.preferences.dateFormatOverview.value,
+                            timeFormat = model.preferences.timeFormatOverview.value,
+                            sortBy = model.preferences.notesSorting.value.sortedBy,
+                            textSize = model.preferences.textSizeOverview.value,
+                            maxTitleLines = model.preferences.maxTitle.value,
+                            maxLines = model.preferences.maxLines.value,
+                            maxItems = model.preferences.maxItems.value,
+                            hideLabels = model.preferences.labelTagsHiddenInOverview.value,
+                            hideImages = model.preferences.imagesHiddenInOverview.value,
+                            onNoteClick = { _, position -> onClick(position) },
+                            onNoteLongClick = { _, position -> onLongClick(position) },
+                            onReminderClick = { _, position -> onReminderClick(position) },
+                        )
+                    }
+                }
+            }
+        return composeView
     }
 
-    // See [RecyclerView.ViewHolder.getAdapterPosition]
     override fun onClick(position: Int) {
         if (position != -1) {
             notesAdapter?.getItem(position)?.let { item ->
@@ -201,54 +237,6 @@ abstract class NotesFragment : Fragment(), ItemListener {
         }
     }
 
-    private fun setupSearch() {
-        binding?.EnterSearchKeyword?.apply {
-            setText(model.keyword)
-            val navController = findNavController()
-            navController.addOnDestinationChangedListener { controller, destination, arguments ->
-                if (destination.id == R.id.Search) {
-                    // Always show search bar in Search fragment
-                    binding?.EnterSearchKeywordLayout?.visibility = View.VISIBLE
-                    requestFocus()
-                    activity?.showKeyboard(this)
-                    notesAdapter?.setSearchKeyword(model.keyword)
-                } else {
-                    // In other fragments, respect the preference
-                    val alwaysShowSearchBar = model.preferences.alwaysShowSearchBar.value
-                    binding?.EnterSearchKeywordLayout?.visibility =
-                        if (alwaysShowSearchBar) View.VISIBLE else View.GONE
-                    setText("")
-                    clearFocus()
-                    activity?.hideKeyboard(this)
-                    notesAdapter?.setSearchKeyword("")
-                }
-            }
-            doAfterTextChanged { text ->
-                val isSearchFragment = navController.currentDestination?.id == R.id.Search
-                if (isSearchFragment) {
-                    val newKeyword = text?.toString().orEmpty()
-                    if (model.keyword != newKeyword) {
-                        model.keyword = newKeyword
-                    }
-                }
-                if (text?.isNotEmpty() == true && !isSearchFragment) {
-                    setText("")
-                    model.keyword = text.toString()
-                    navController.navigate(
-                        R.id.Search,
-                        Bundle().apply {
-                            putSerializable(EXTRA_INITIAL_FOLDER, model.folder.value)
-                            putSerializable(EXTRA_INITIAL_LABEL, model.currentLabel)
-                        },
-                    )
-                }
-                this@NotesFragment.binding?.MainListView?.apply {
-                    postOnAnimationDelayed({ scrollToPosition(0) }, 10)
-                }
-            }
-        }
-    }
-
     private fun handleNoteSelection(id: Long, position: Int, baseNote: BaseNote) {
         if (model.actionMode.selectedNotes.contains(id)) {
             model.actionMode.remove(id)
@@ -281,19 +269,6 @@ abstract class NotesFragment : Fragment(), ItemListener {
                 )
             }
 
-        notesAdapter?.registerAdapterDataObserver(
-            object : RecyclerView.AdapterDataObserver() {
-                override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                    if (itemCount > 0) {
-                        binding?.MainListView?.scrollToPosition(positionStart)
-                    }
-                }
-            }
-        )
-        binding?.MainListView?.apply {
-            adapter = notesAdapter
-            setHasFixedSize(false)
-        }
         model.actionMode.addListener = { notesAdapter?.notifyDataSetChanged() }
         if (activity is MainActivity) {
             (activity as MainActivity).getCurrentFragmentNotes = {
@@ -318,7 +293,6 @@ abstract class NotesFragment : Fragment(), ItemListener {
                         lastSubmittedList = list
                         notesAdapter?.submitList(list)
                     }
-                    binding?.ImageView?.isVisible = list.isEmpty()
                 }
             }
             launch {
@@ -343,18 +317,9 @@ abstract class NotesFragment : Fragment(), ItemListener {
         }
     }
 
-    private fun setupRecyclerView() {
-        binding?.MainListView?.layoutManager =
-            if (model.preferences.notesView.value == NotesView.GRID) {
-                StaggeredGridLayoutManager(2, RecyclerView.VERTICAL)
-            } else LinearLayoutManager(requireContext())
-    }
-
     private fun goToActivity(activity: Class<*>, baseNote: BaseNote) {
         val intent = Intent(requireContext(), activity)
         intent.putExtra(EXTRA_SELECTED_BASE_NOTE, baseNote.id)
-        // If launched from Search fragment with a non-empty keyword, pass it to the editor to
-        // auto-highlight
         val isInSearch = view?.findNavController()?.currentDestination?.id == R.id.Search
         if (isInSearch && model.keyword.isNotBlank()) {
             intent.putExtra(EditActivity.EXTRA_INITIAL_SEARCH_QUERY, model.keyword)
@@ -362,16 +327,11 @@ abstract class NotesFragment : Fragment(), ItemListener {
         openNoteActivityResultLauncher.launch(intent)
     }
 
-    abstract fun getBackground(): Int
+    abstract fun getBackgroundResId(): Int
 
     abstract fun getFlow(): Flow<List<Item>>
 
     open fun prepareNewNoteIntent(intent: Intent): Intent {
         return intent
-    }
-
-    companion object {
-        private const val EXTRA_SCROLL_POS = "notallyx.intent.extra.SCROLL_POS"
-        private const val EXTRA_SCROLL_OFFSET = "notallyx.intent.extra.SCROLL_OFFSET"
     }
 }

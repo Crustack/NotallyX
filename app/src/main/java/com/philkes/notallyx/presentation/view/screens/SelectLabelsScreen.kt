@@ -16,8 +16,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.Label
@@ -36,12 +39,15 @@ fun SelectLabelsScreen(
     onBackClick: () -> Unit = {},
 ) {
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().semantics { testTagsAsResourceId = true },
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(R.string.select_labels)) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier.testTag("Back"),
+                    ) {
                         Icon(
                             painter = painterResource(id = R.drawable.close),
                             contentDescription = stringResource(R.string.back),
@@ -49,7 +55,10 @@ fun SelectLabelsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onAddLabelClick) {
+                    IconButton(
+                        onClick = onAddLabelClick,
+                        modifier = Modifier.testTag("AddLabel"),
+                    ) {
                         Icon(
                             painter = painterResource(id = R.drawable.add),
                             contentDescription = stringResource(R.string.add_label),
@@ -77,6 +86,7 @@ fun SelectLabelsScreen(
                             label = label.value,
                             isChecked = isChecked,
                             onCheckedChange = { checked -> onLabelToggle(label.value, checked) },
+                            modifier = Modifier.testTag("LabelRow_${label.value}"),
                         )
                         HorizontalDivider()
                     }

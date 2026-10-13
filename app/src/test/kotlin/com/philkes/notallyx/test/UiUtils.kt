@@ -316,9 +316,25 @@ fun isDrawerClosed(): Matcher<View> {
 fun onDisplayView(viewMatcher: Matcher<View>) = onView(allOf(viewMatcher, isDisplayed()))
 
 fun navigateTo(fragmentId: Int) {
-    onView(withId(R.id.DrawerLayout)).perform(DrawerActions.open())
-    onDisplayView(allOf(withId(fragmentId), isDescendantOfA(withId(R.id.NavigationView))))
-        .perform(click())
+    try {
+        onView(withId(R.id.DrawerLayout)).perform(DrawerActions.open())
+        onDisplayView(allOf(withId(fragmentId), isDescendantOfA(withId(R.id.NavigationView))))
+            .perform(click())
+    } catch (_: Exception) {
+        R.string.app_name.byContentDescription().perform(click())
+        val textRes =
+            when (fragmentId) {
+                R.id.Notes -> R.string.notes
+                R.id.Unlabeled -> R.string.unlabeled
+                R.id.Labels -> R.string.labels
+                R.id.Deleted -> R.string.deleted
+                R.id.Archived -> R.string.archived
+                R.id.Reminders -> R.string.reminders
+                R.id.Settings -> R.string.settings
+                else -> null
+            }
+        textRes?.byText()?.perform(click())
+    }
 }
 
 fun Int.byId(viewMatcher: Matcher<View>? = null, checkDisplayed: Boolean = true): ViewInteraction {

@@ -40,6 +40,8 @@ import androidx.test.espresso.matcher.ViewMatchers.isRoot
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withParent
+import androidx.test.espresso.matcher.ViewMatchers.withResourceName
+import androidx.test.espresso.matcher.ViewMatchers.withTagValue
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -68,6 +70,8 @@ import junit.framework.TestCase.assertTrue
 import org.hamcrest.Description
 import org.hamcrest.Matcher
 import org.hamcrest.Matchers.allOf
+import org.hamcrest.Matchers.anyOf
+import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.not
 import org.hamcrest.TypeSafeMatcher
 
@@ -556,6 +560,15 @@ fun String.byContentDescription(
 ): ViewInteraction {
     val matcher =
         viewMatcher?.let { allOf(withContentDescription(this), it) } ?: withContentDescription(this)
+    return if (checkDisplayed) onDisplayView(matcher) else onView(matcher)
+}
+
+fun String.byTag(
+    viewMatcher: Matcher<View>? = null,
+    checkDisplayed: Boolean = true,
+): ViewInteraction {
+    val tagMatcher = anyOf(withResourceName(this), withTagValue(equalTo(this as Any)))
+    val matcher = viewMatcher?.let { allOf(tagMatcher, it) } ?: tagMatcher
     return if (checkDisplayed) onDisplayView(matcher) else onView(matcher)
 }
 

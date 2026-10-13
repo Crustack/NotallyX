@@ -24,31 +24,19 @@ class RemindersFragment : NotesFragment() {
     private val remindersViewModel: RemindersViewModel by viewModel()
     private val currentReminderNotes = MutableStateFlow<List<Item>>(emptyList())
     private val allReminderNotes: StateFlow<List<Item>> by lazy { remindersViewModel.reminderNotes }
-    private var filterMode = FilterOptions.UPCOMING
+    val filterModeFlow = MutableStateFlow(FilterOptions.UPCOMING)
+    val filterMode: FilterOptions
+        get() = filterModeFlow.value
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         currentReminderNotes.value = allReminderNotes.value
-        binding?.ReminderFilter?.visibility = View.VISIBLE
         viewLifecycleOwner.repeatOnLifecycleScope {
-            launch { allReminderNotes.collect { _ -> applyFilter(filterMode) } }
-        }
-        binding?.ReminderFilter?.setOnCheckedStateChangeListener { _, checkedIds ->
-            if (checkedIds.isEmpty()) {
-                binding?.ReminderFilter?.check(R.id.upcoming)
-                return@setOnCheckedStateChangeListener
-            }
-            filterMode =
-                when (checkedIds.first()) {
-                    R.id.elapsed -> FilterOptions.ELAPSED
-                    R.id.upcoming -> FilterOptions.UPCOMING
-                    else -> FilterOptions.ALL
-                }
-            applyFilter(filterMode)
+            launch { allReminderNotes.collect { applyFilter(filterMode) } }
         }
     }
 
-    override fun getBackground(): Int = R.drawable.notifications
+    override fun getBackgroundResId(): Int = R.drawable.notifications
 
     override fun getFlow(): Flow<List<Item>> = currentReminderNotes
 
@@ -62,6 +50,7 @@ class RemindersFragment : NotesFragment() {
         }
 
     fun applyFilter(filterOptions: FilterOptions) {
+        filterModeFlow.value = filterOptions
         val items: List<Item> = allReminderNotes.value
         val filteredList: List<Item> =
             when (filterOptions) {

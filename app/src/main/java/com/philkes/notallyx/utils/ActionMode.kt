@@ -14,6 +14,8 @@ class ActionMode {
         field = MutableStateFlow(0)
     val selectedNotes = HashMap<Long, BaseNote>()
     val selectedIds = selectedNotes.keys
+    val selectedIdsFlow: StateFlow<Set<Long>>
+        field = MutableStateFlow(emptySet())
     val closeListener: StateFlow<Event<Set<Long>>?>
         field = MutableStateFlow<Event<Set<Long>>?>(null)
     var addListener: (() -> Unit)? = null
@@ -21,6 +23,7 @@ class ActionMode {
     private fun refresh() {
         count.value = selectedNotes.size
         enabled.value = selectedNotes.isNotEmpty()
+        selectedIdsFlow.value = HashSet(selectedNotes.keys)
     }
 
     fun add(id: Long, baseNote: BaseNote) {

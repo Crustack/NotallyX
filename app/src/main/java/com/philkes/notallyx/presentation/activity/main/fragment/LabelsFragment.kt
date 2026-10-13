@@ -102,7 +102,7 @@ class LabelsFragment : Fragment(), LabelListener {
 
     override fun onStartDrag(viewHolder: RecyclerView.ViewHolder) {}
 
-    private fun displayAddLabelDialog() {
+    internal fun displayAddLabelDialog() {
         val inflater = LayoutInflater.from(requireContext())
         val dialogBinding = DialogInputBinding.inflate(inflater)
 

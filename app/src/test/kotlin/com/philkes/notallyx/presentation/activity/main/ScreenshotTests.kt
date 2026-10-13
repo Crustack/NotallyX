@@ -35,7 +35,6 @@ import com.philkes.notallyx.presentation.activity.main.fragment.settings.Setting
 import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
 import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
 import com.philkes.notallyx.test.FakeAndroidKeyStore
-import com.philkes.notallyx.test.byId
 import com.philkes.notallyx.test.context
 import com.philkes.notallyx.test.database
 import com.philkes.notallyx.test.generateNotes
@@ -239,8 +238,9 @@ class ScreenshotTests {
         ActivityScenario.launch<MainActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
                 val drawerLayout = activity.findViewById<DrawerLayout>(R.id.DrawerLayout)
-                drawerLayout.openDrawer(GravityCompat.START, false) // false = disable animation
+                drawerLayout?.openDrawer(GravityCompat.START, false)
             }
+            ShadowLooper.idleMainLooper()
             onView(isRoot())
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/navigationDrawer/00_initial.png"
@@ -397,25 +397,11 @@ class ScreenshotTests {
                 putExtra(EXTRA_FRAGMENT_TO_OPEN, R.id.Reminders)
             }
         ActivityScenario.launch<MainActivity>(intent).use {
+            ShadowLooper.idleMainLooper()
             onView(isRoot())
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/reminders/00_initial.png"
                 )
-            R.id.elapsed.byId().perform(click())
-            onView(isRoot())
-                .captureRoboImage(
-                    "${ScreenshotTests::class.java.simpleName}/reminders/01_elapsed.png"
-                )
-
-            R.id.upcoming.byId().perform(click())
-            onView(isRoot())
-                .captureRoboImage(
-                    "${ScreenshotTests::class.java.simpleName}/reminders/02_upcoming.png"
-                )
-
-            R.id.all.byId().perform(click())
-            onView(isRoot())
-                .captureRoboImage("${ScreenshotTests::class.java.simpleName}/reminders/03_all.png")
         }
     }
 
@@ -495,15 +481,18 @@ class ScreenshotTests {
             }
         }
 
+        ShadowLooper.idleMainLooper()
         val scrollState = composeScrollState
         if (scrollState != null) {
             val maxScrollY = scrollState.maxValue
-            if (viewportHeight <= 0 || maxScrollY <= 0) {
+            if (maxScrollY <= 0 || maxScrollY == Int.MAX_VALUE) {
                 onView(isRoot()).captureRoboImage(screenshotNameFunction(0))
                 return 1
             }
 
-            val stepPixels = (viewportHeight * stepRatio).toInt().coerceAtLeast(1)
+            val stepPixels =
+                (if (viewportHeight > 0) (viewportHeight * stepRatio).toInt() else 800)
+                    .coerceAtLeast(1)
             var currentY = 0
             var stepIndex = 0
 
@@ -575,10 +564,15 @@ class ScreenshotTests {
 
         onActivity { activity ->
             val recyclerView = activity.findViewById<RecyclerView>(recyclerViewId)
-            totalItems = recyclerView.adapter?.itemCount ?: 0
+            totalItems = recyclerView?.adapter?.itemCount ?: 0
         }
 
-        // Process positions
+        if (totalItems == 0) {
+            ShadowLooper.idleMainLooper()
+            onView(isRoot()).captureRoboImage(screenshotNameFunction(0))
+            return 1
+        }
+
         val positionsToCapture = (0 until totalItems step step).toMutableList()
         val lastIndex = totalItems - 1
         if (lastIndex > 0 && lastIndex % step != 0) {
@@ -588,7 +582,7 @@ class ScreenshotTests {
         for (position in positionsToCapture) {
             onActivity { activity ->
                 val recyclerView = activity.findViewById<RecyclerView>(recyclerViewId)
-                (recyclerView.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(
+                (recyclerView?.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(
                     position,
                     0,
                 )

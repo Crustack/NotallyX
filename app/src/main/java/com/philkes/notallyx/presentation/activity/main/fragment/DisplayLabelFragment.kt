@@ -20,7 +20,7 @@ class DisplayLabelFragment : NotesFragment() {
         model.setFolder(Folder.NOTES)
     }
 
-    override fun getBackground() = R.drawable.label
+    override fun getBackgroundResId() = R.drawable.label
 
     override fun getFlow(): Flow<List<Item>> {
         label =

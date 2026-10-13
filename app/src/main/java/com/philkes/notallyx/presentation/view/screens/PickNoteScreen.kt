@@ -70,8 +70,7 @@ fun PickNoteScreen(
                 ) {
                     itemsIndexed(notes) { _, note ->
                         BaseNoteCard(
-                            title = note.title,
-                            body = note.body,
+                            baseNote = note,
                             onClick = { onNoteClick(note) },
                         )
                     }
@@ -83,8 +82,7 @@ fun PickNoteScreen(
                 ) {
                     itemsIndexed(notes) { _, note ->
                         BaseNoteCard(
-                            title = note.title,
-                            body = note.body,
+                            baseNote = note,
                             onClick = { onNoteClick(note) },
                         )
                     }

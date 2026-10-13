@@ -16,7 +16,7 @@ class ArchivedFragment : NotesFragment() {
         model.setFolder(Folder.ARCHIVED)
     }
 
-    override fun getBackground() = R.drawable.archive
+    override fun getBackgroundResId() = R.drawable.archive
 
     override fun getFlow() = archivedViewModel.archivedNotes
 }
