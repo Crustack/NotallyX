@@ -7,6 +7,9 @@ import android.view.View
 import androidx.annotation.IdRes
 import androidx.compose.foundation.ScrollState
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.core.view.GravityCompat
 import androidx.core.widget.NestedScrollView
 import androidx.drawerlayout.widget.DrawerLayout
@@ -16,6 +19,7 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.matcher.ViewMatchers.isRoot
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -28,19 +32,23 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.ShadowContextImplMedia
 import com.philkes.notallyx.data.imports.google.GoogleKeepImporterTest.Companion.createBaseNote
+import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.presentation.activity.main.MainActivity.Companion.EXTRA_FRAGMENT_TO_OPEN
 import com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment
 import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
 import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
+import com.philkes.notallyx.presentation.view.components.SampleNotes
 import com.philkes.notallyx.test.FakeAndroidKeyStore
 import com.philkes.notallyx.test.context
 import com.philkes.notallyx.test.database
 import com.philkes.notallyx.test.generateNotes
 import com.philkes.notallyx.test.preferences
 import com.philkes.notallyx.test.toMillis
+import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import io.mockk.clearStaticMockk
+import java.io.File
 import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -85,6 +93,8 @@ class ScreenshotTests {
                 )
         )
 
+    @get:Rule val composeTestRule = createEmptyComposeRule()
+
     private val fixedTime = Date("2026-01-02 12:00".toMillis())
 
     companion object {
@@ -99,6 +109,11 @@ class ScreenshotTests {
     fun tearDown() {
         // Clean up static mocks after each test
         clearStaticMockk(EncryptedSharedPreferences::class)
+        runBlocking {
+            database.getBaseNoteDao().deleteFrom(Folder.ARCHIVED)
+            database.getBaseNoteDao().deleteFrom(Folder.NOTES)
+            database.getBaseNoteDao().deleteFrom(Folder.DELETED)
+        }
     }
 
     @Test
@@ -407,24 +422,58 @@ class ScreenshotTests {
 
     @Test
     fun notesOverview() = runTest {
-        withContext(Dispatchers.IO) {
-            database.getBaseNoteDao().apply {
-                insert(
-                    (1..10).flatMap { idx ->
-                        // TODO: add dummy images arbitrarly
-                        generateNotes(idx, fixedTime)
-                    }
-                )
-            }
-        }
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            // Get total count from adapter safely on the main thread
-            scenario.scrollAndScreenshotRecyclerView(
-                recyclerViewId = R.id.MainListView,
-                {
-                    "${ScreenshotTests::class.java.simpleName}/notesOverview/${"%02d".format(it)}_notes_overview_scroll.png"
-                },
+        // Copy cat.jpg attachment to context.getCurrentImagesDirectory() for image preview
+        val mediaDir = context.getCurrentImagesDirectory().apply { if (!exists()) mkdirs() }
+        val catFile = File(mediaDir, "cat.jpg")
+        val catInput =
+            ScreenshotTests::class.java.classLoader?.getResourceAsStream("attachments/cat.jpg")
+                ?: File("src/androidTest/resources/attachments/cat.jpg")
+                    .takeIf { it.exists() }
+                    ?.inputStream()
+                ?: File("app/src/androidTest/resources/attachments/cat.jpg")
+                    .takeIf { it.exists() }
+                    ?.inputStream()
+
+        catInput?.use { input -> catFile.outputStream().use { output -> input.copyTo(output) } }
+
+        val notes =
+            listOf(
+                SampleNotes.LOREM_IPSUM_NOTE,
+                SampleNotes.LIST_NOTE,
+                SampleNotes.RICH_TEXT_NOTE,
+                SampleNotes.GENERATED_LIST_NOTE,
             )
+
+        val insertedIds = withContext(Dispatchers.IO) { database.getBaseNoteDao().insert(notes) }
+
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            ShadowLooper.idleMainLooper()
+
+            composeTestRule.waitUntil(10_000) {
+                insertedIds.all { noteId ->
+                    composeTestRule
+                        .onAllNodes(hasTestTag("NoteCard_$noteId"))
+                        .fetchSemanticsNodes()
+                        .isNotEmpty()
+                }
+            }
+
+            // 1. Capture the entire list view
+            onView(isRoot())
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/notesOverview/00_notes_overview_list.png"
+                )
+
+            // 2. Capture each individual note card
+            insertedIds.forEachIndexed { index, noteId ->
+                val cardTag = "NoteCard_$noteId"
+                val noteIndex = "%02d".format(index + 1)
+                composeTestRule
+                    .onNodeWithTag(cardTag)
+                    .captureRoboImage(
+                        "${ScreenshotTests::class.java.simpleName}/notesOverview/${noteIndex}_card_$noteIndex.png"
+                    )
+            }
         }
     }
 

@@ -224,7 +224,8 @@ fun generateNotes(batchIdx: Int, date: Date): List<BaseNote> =
             pinned = batchIdx % 5 == 0,
             body = if (isList) getRandomString(idx * 10, (batchIdx * 10 + idx).toLong()) else "",
             items =
-                if (isList) (0..batchIdx).map { createListItem(body = "Item$it") } else listOf(),
+                if (isList) (0..batchIdx * 3).map { createListItem(body = "Item$it") }
+                else listOf(),
             color = Color.entries[batchIdx % Color.entries.size].toColorString(),
             files =
                 if ((batchIdx + 1) % 5 == 0)

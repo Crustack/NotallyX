@@ -14,7 +14,18 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.widget.EditText
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.recyclerview.widget.RecyclerView
+import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.NoMatchingRootException
 import androidx.test.espresso.Root
@@ -27,7 +38,6 @@ import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.action.ViewActions.typeTextIntoFocusedView
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.contrib.DrawerActions
 import androidx.test.espresso.matcher.BoundedMatcher
 import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
@@ -519,9 +529,50 @@ fun createListItem(
 fun onDisplayView(viewMatcher: Matcher<View>) = onView(allOf(viewMatcher, isDisplayed()))
 
 fun navigateTo(fragmentId: Int) {
-    onView(withId(R.id.DrawerLayout)).perform(DrawerActions.open())
-    onDisplayView(allOf(withId(fragmentId), isDescendantOfA(withId(R.id.NavigationView))))
-        .perform(click())
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    val appName = context.getString(R.string.app_name)
+    val stringResId =
+        when (fragmentId) {
+            R.id.Notes -> R.string.notes
+            R.id.Unlabeled -> R.string.unlabeled
+            R.id.Labels -> R.string.labels
+            R.id.Deleted -> R.string.deleted
+            R.id.Archived -> R.string.archived
+            R.id.Reminders -> R.string.reminders
+            R.id.Settings -> R.string.settings
+            else -> error("Unknown fragmentId: $fragmentId")
+        }
+    val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+    val menuButton = device.findObject(By.desc(appName))
+    if (menuButton != null) {
+        menuButton.click()
+    } else {
+        onView(withContentDescription(appName)).perform(click())
+    }
+    val targetText = context.getString(stringResId)
+    val item = device.findObject(By.text(targetText))
+    if (item != null) {
+        item.click()
+    } else {
+        onView(withText(stringResId)).perform(click())
+    }
+}
+
+fun ComposeTestRule.navigateTo(fragmentId: Int) {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    val stringResId =
+        when (fragmentId) {
+            R.id.Notes -> R.string.notes
+            R.id.Unlabeled -> R.string.unlabeled
+            R.id.Labels -> R.string.labels
+            R.id.Deleted -> R.string.deleted
+            R.id.Archived -> R.string.archived
+            R.id.Reminders -> R.string.reminders
+            R.id.Settings -> R.string.settings
+            else -> error("Unknown fragmentId: $fragmentId")
+        }
+    onNodeWithContentDescription(context.getString(R.string.app_name)).performClick()
+    onNodeWithText(context.getString(stringResId)).performClick()
 }
 
 fun Int.byId(viewMatcher: Matcher<View>? = null, checkDisplayed: Boolean = true): ViewInteraction {
@@ -727,13 +778,9 @@ fun UiTestBase.initFakeBiometric(): FakeBiometricAuthenticator {
     return fakeBiometricAuthenticator
 }
 
-fun UiTestBase.checkAndUpdateNoteTitle(noteIdx: Int, textToMatch: String, textToAdd: String) {
-    waitUntilSucceeds {
-        R.id.MainListView.byId()
-            .onPositionView(noteIdx, withId(R.id.Title))
-            .check(matches(withText(textToMatch)))
-            .perform(click())
-    }
+fun ComposeTestRule.checkAndUpdateNoteTitle(textToMatch: String, textToAdd: String) {
+    waitUntil(10_000) { onAllNodes(hasText(textToMatch)).fetchSemanticsNodes().isNotEmpty() }
+    onNodeWithText(textToMatch).performClick()
     R.id.EnterTitle.byId()
         .perform(
             click(),
@@ -741,24 +788,38 @@ fun UiTestBase.checkAndUpdateNoteTitle(noteIdx: Int, textToMatch: String, textTo
             typeTextIntoFocusedView(textToAdd),
             closeSoftKeyboard(),
         )
-    toolbarBackButton.perform(click())
-    waitUntilSucceeds {
-        R.id.MainListView.byId()
-            .onPositionView(noteIdx, withId(R.id.Title))
-            .check(matches(withText(textToMatch + textToAdd)))
+    Espresso.pressBack()
+    waitUntil(10_000) {
+        onAllNodes(hasText(textToMatch + textToAdd)).fetchSemanticsNodes().isNotEmpty()
     }
+    onNodeWithText(textToMatch + textToAdd).assertIsDisplayed()
 }
 
-fun waitUntilSettingsValue(settingId: Int, valueResId: Int, timeoutMs: Long = 15_000L) {
-    waitUntilSucceeds(timeoutMs) {
-        onView(withId(settingId))
-            .perform(scrollTo())
-            .check(matches(hasDescendant(allOf(withId(R.id.Value), withText(valueResId)))))
+fun ComposeTestRule.waitUntilSettingsValue(
+    tag: String,
+    valueResId: Int,
+    timeoutMs: Long = 15_000L,
+) {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    val expectedText = context.getString(valueResId)
+    val matcher = hasTestTag(tag) and hasAnyDescendant(hasText(expectedText))
+    val endTime = System.currentTimeMillis() + timeoutMs
+    while (System.currentTimeMillis() < endTime) {
+        try {
+            if (onAllNodes(matcher, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()) {
+                onNode(matcher, useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+                return
+            }
+        } catch (_: Throwable) {
+            // Ignore temporary absence of Compose hierarchy during Activity transitions
+        }
+        SystemClock.sleep(200)
     }
+    onNode(matcher, useUnmergedTree = true).performScrollTo().assertIsDisplayed()
 }
 
-fun enableBiometricLock(encryptDb: Boolean = false) {
-    onView(withId(R.id.BiometricLock)).perform(scrollTo(), click())
+fun ComposeTestRule.enableBiometricLock(encryptDb: Boolean = false) {
+    onNodeWithTag("BiometricLock").performScrollTo().performClick()
     R.string.enabled.byText().perform(click())
     R.string.continue_.byText().perform(scrollTo(), click())
     if (encryptDb) {
@@ -767,33 +828,35 @@ fun enableBiometricLock(encryptDb: Boolean = false) {
     R.string.continue_.byText().perform(scrollTo(), click())
     val expectedValueResId =
         if (encryptDb) R.string.biometric_lock_enabled_with_encryption else R.string.enabled
-    waitUntilSettingsValue(R.id.BiometricLock, expectedValueResId)
+    waitUntilSettingsValue("BiometricLock", expectedValueResId)
 }
 
-fun disableBiometricLock() {
-    onView(withId(R.id.BiometricLock)).perform(scrollTo(), click())
+fun ComposeTestRule.disableBiometricLock() {
+    onNodeWithTag("BiometricLock").performScrollTo().performClick()
     R.string.disabled.byText().perform(click())
     R.string.continue_.byText().perform(scrollTo(), click())
-    waitUntilSettingsValue(R.id.BiometricLock, R.string.disabled)
+    waitUntilSettingsValue("BiometricLock", R.string.disabled)
 }
 
-fun UiTestBase.enableDataInPublic() {
-    onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
+fun ComposeTestRule.enableDataInPublic(context: android.content.Context) {
+    onNodeWithTag("DataInPublicFolder").performScrollTo().performClick()
     R.string.enabled.byText().perform(click())
-    waitUntilSettingsValue(R.id.DataInPublicFolder, R.string.enabled)
+    waitUntilSettingsValue("DataInPublicFolder", R.string.enabled)
+    val contextWrapper = android.content.ContextWrapper(context)
     waitUntil(15_000L) {
-        NotallyDatabase.getCurrentDatabaseFile(context) ==
-            NotallyDatabase.getExternalDatabaseFile(context)
+        NotallyDatabase.getCurrentDatabaseFile(contextWrapper) ==
+            NotallyDatabase.getExternalDatabaseFile(contextWrapper)
     }
 }
 
-fun UiTestBase.disableDataInPublic() {
-    onView(withId(R.id.DataInPublicFolder)).perform(scrollTo(), click())
+fun ComposeTestRule.disableDataInPublic(context: android.content.Context) {
+    onNodeWithTag("DataInPublicFolder").performScrollTo().performClick()
     R.string.disabled.byText().perform(click())
-    waitUntilSettingsValue(R.id.DataInPublicFolder, R.string.disabled)
+    waitUntilSettingsValue("DataInPublicFolder", R.string.disabled)
+    val contextWrapper = android.content.ContextWrapper(context)
     waitUntil(15_000L) {
-        NotallyDatabase.getCurrentDatabaseFile(context) ==
-            NotallyDatabase.getInternalDatabaseFile(context)
+        NotallyDatabase.getCurrentDatabaseFile(contextWrapper) ==
+            NotallyDatabase.getInternalDatabaseFile(contextWrapper)
     }
 }
 
