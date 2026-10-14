@@ -27,6 +27,7 @@ dependencies {
     api(libs.kaspresso.compose.support)
     api(libs.androidx.test.espresso.core)
     api(libs.androidx.test.espresso.contrib)
+    api(libs.androidx.test.espresso.intents)
     api(libs.androidx.test.junit)
 
     // Dependencies required by shared test helpers in test-lib

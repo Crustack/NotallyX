@@ -1,9 +1,14 @@
 package com.philkes.notallyx.presentation.activity.main
 
+import android.app.Activity
+import android.app.Instrumentation
+import android.content.ClipData
 import android.content.Intent
+import android.net.Uri
 import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
+import android.widget.ImageView
 import androidx.annotation.IdRes
 import androidx.compose.foundation.ScrollState
 import androidx.compose.ui.platform.ComposeView
@@ -17,10 +22,18 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.action.ViewActions.typeText
+import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.Intents.intending
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasType
+import androidx.test.espresso.matcher.RootMatchers.isDialog
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isRoot
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -41,11 +54,15 @@ import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EX
 import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
 import com.philkes.notallyx.presentation.view.components.SampleNotes
 import com.philkes.notallyx.test.FakeAndroidKeyStore
+import com.philkes.notallyx.test.byContentDescription
+import com.philkes.notallyx.test.byText
 import com.philkes.notallyx.test.context
 import com.philkes.notallyx.test.database
 import com.philkes.notallyx.test.generateNotes
 import com.philkes.notallyx.test.preferences
+import com.philkes.notallyx.test.setSelection
 import com.philkes.notallyx.test.toMillis
+import com.philkes.notallyx.test.waitUntil
 import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import io.mockk.clearStaticMockk
 import java.io.File
@@ -54,6 +71,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import org.hamcrest.Matchers.allOf
 import org.junit.After
 import org.junit.BeforeClass
 import org.junit.Rule
@@ -138,6 +156,137 @@ class ScreenshotTests {
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/editNote/01_title_and_body.png"
                 )
+
+            // Select first word ("Test"), check bottom bar switches to formatting actions, make
+            // bold
+            onView(withId(R.id.EnterBody)).perform(setSelection(0, 4))
+            ShadowLooper.idleMainLooper()
+
+            R.string.bold.byContentDescription().check(matches(isDisplayed()))
+            R.string.italic.byContentDescription().check(matches(isDisplayed()))
+
+            R.string.bold.byContentDescription().perform(click())
+            ShadowLooper.idleMainLooper()
+
+            onView(isRoot())
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/editNote/02_text_formatting.png"
+                )
+
+            // Close text formatting menu and open lower right more menu
+            R.string.cancel.byContentDescription().perform(click())
+            ShadowLooper.idleMainLooper()
+
+            R.string.tap_for_more_options.byContentDescription().perform(click())
+            ShadowLooper.idleMainLooper()
+
+            onView(isRoot())
+                .inRoot(isDialog())
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/editNote/03_more_options.png"
+                )
+
+            Espresso.pressBack()
+            ShadowLooper.idleMainLooper()
+
+            // Open bottom left (+) menu and capture screenshot
+            R.string.add_item.byContentDescription().perform(click())
+            ShadowLooper.idleMainLooper()
+
+            onView(isRoot())
+                .inRoot(isDialog())
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/editNote/04_add_menu.png"
+                )
+
+            // Prepare cat.jpg and dog.jpg attachments
+            val catFile = File(context.cacheDir, "cat.jpg")
+            val dogFile = File(context.cacheDir, "dog.jpg")
+
+            val catInput =
+                ScreenshotTests::class.java.classLoader?.getResourceAsStream("attachments/cat.jpg")
+                    ?: File("src/androidTest/resources/attachments/cat.jpg")
+                        .takeIf { it.exists() }
+                        ?.inputStream()
+                    ?: File("app/src/androidTest/resources/attachments/cat.jpg")
+                        .takeIf { it.exists() }
+                        ?.inputStream()
+
+            val dogInput =
+                ScreenshotTests::class.java.classLoader?.getResourceAsStream("attachments/dog.jpg")
+                    ?: File("src/androidTest/resources/attachments/dog.jpg")
+                        .takeIf { it.exists() }
+                        ?.inputStream()
+                    ?: File("app/src/androidTest/resources/attachments/dog.jpg")
+                        .takeIf { it.exists() }
+                        ?.inputStream()
+
+            catInput?.use { input -> catFile.outputStream().use { output -> input.copyTo(output) } }
+            dogInput?.use { input -> dogFile.outputStream().use { output -> input.copyTo(output) } }
+
+            val catUri = Uri.fromFile(catFile)
+            val dogUri = Uri.fromFile(dogFile)
+
+            Intents.init()
+            try {
+                val addImagesClipData =
+                    ClipData.newUri(context.contentResolver, "image", catUri).apply {
+                        addItem(ClipData.Item(dogUri))
+                    }
+                val addImagesResultIntent = Intent().apply { this.clipData = addImagesClipData }
+                val addImagesResult =
+                    Instrumentation.ActivityResult(Activity.RESULT_OK, addImagesResultIntent)
+
+                intending(
+                        allOf(
+                            hasAction(Intent.ACTION_CHOOSER),
+                            hasExtra(
+                                Intent.EXTRA_INTENT,
+                                allOf(hasAction(Intent.ACTION_GET_CONTENT), hasType("image/*")),
+                            ),
+                        )
+                    )
+                    .respondWith(addImagesResult)
+
+                R.string.add_images.byText().perform(click())
+
+                // 1. Wait for background import on Dispatchers.IO to complete and update model
+                // images
+                waitUntil(timeoutMs = 10_000) {
+                    ShadowLooper.idleMainLooper()
+                    var isImported = false
+                    scenario.onActivity { activity ->
+                        isImported = activity.notallyModel.images.value.size >= 2
+                    }
+                    isImported
+                }
+
+                // 2. Wait for Glide to load the image into ImageView
+                waitUntil(timeoutMs = 10_000) {
+                    ShadowLooper.idleMainLooper()
+                    var isLoaded = false
+                    scenario.onActivity { activity ->
+                        val recyclerView = activity.findViewById<RecyclerView>(R.id.ImagePreview)
+                        val viewHolder = recyclerView?.findViewHolderForAdapterPosition(0)
+                        val imageView =
+                            viewHolder?.itemView?.findViewById<ImageView>(R.id.ImageView)
+                        val drawable = imageView?.drawable
+                        isLoaded = drawable != null && drawable.intrinsicWidth > 0
+                    }
+                    isLoaded
+                }
+
+                ShadowLooper.idleMainLooper()
+
+                onView(withId(R.id.ImagePreview)).check(matches(isDisplayed()))
+
+                onView(isRoot())
+                    .captureRoboImage(
+                        "${ScreenshotTests::class.java.simpleName}/editNote/05_added_image.png"
+                    )
+            } finally {
+                Intents.release()
+            }
         }
     }
 
@@ -172,13 +321,11 @@ class ScreenshotTests {
             }
             ShadowLooper.idleMainLooper()
             onView(isRoot())
-                .inRoot(androidx.test.espresso.matcher.RootMatchers.isDialog())
+                .inRoot(isDialog())
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/settings/${"%02d".format(scrollCount)}_dialog_date_time_format.png"
                 )
-            onView(withId(android.R.id.button2))
-                .inRoot(androidx.test.espresso.matcher.RootMatchers.isDialog())
-                .perform(click())
+            onView(withId(android.R.id.button2)).inRoot(isDialog()).perform(click())
 
             // 2. Scroll to top and touch down on Text Size slider to capture screenshot while
             // dragging
