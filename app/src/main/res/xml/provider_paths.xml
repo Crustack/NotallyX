@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
     <cache-path
+        name="cache"
+        path="." />
+    <cache-path
         name="exported"
         path="/exported" />
     <files-path

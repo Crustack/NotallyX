@@ -51,4 +51,15 @@
     <item name="elapsed" type="id" />
     <item name="upcoming" type="id" />
     <item name="all" type="id" />
+    <item name="EnterTitle" type="id" />
+    <item name="EnterBody" type="id" />
+    <item name="ContentLayout" type="id" />
+    <item name="AddItem" type="id" />
+    <item name="MainListView" type="id" />
+    <item name="CheckedListView" type="id" />
+    <item name="EditNoteReminderChip" type="id" />
+    <item name="ImagePreview" type="id" />
+    <item name="ImagePreviewPosition" type="id" />
+    <item name="FilesPreview" type="id" />
+    <item name="AudioRecyclerView" type="id" />
 </resources>

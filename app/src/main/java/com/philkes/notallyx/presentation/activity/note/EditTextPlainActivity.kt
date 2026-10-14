@@ -2,50 +2,40 @@ package com.philkes.notallyx.presentation.activity.note
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.Intent.ACTION_CREATE_DOCUMENT
-import android.content.Intent.CATEGORY_OPENABLE
 import android.net.Uri
 import android.os.Bundle
-import android.view.View.GONE
-import android.view.View.VISIBLE
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.presentation.addIconButton
 import com.philkes.notallyx.presentation.collectIn
-import com.philkes.notallyx.presentation.setCancelButton
-import com.philkes.notallyx.presentation.setOnNextAction
-import com.philkes.notallyx.presentation.showKeyboard
+import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.showToast
-import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
+import com.philkes.notallyx.presentation.view.screens.EditChangeHandlers
+import com.philkes.notallyx.presentation.view.screens.EditClickHandlers
+import com.philkes.notallyx.presentation.view.screens.EditNoteScreen
+import com.philkes.notallyx.presentation.view.screens.EditNoteState
 import com.philkes.notallyx.utils.changehistory.ChangeHistory
 import com.philkes.notallyx.utils.findAllOccurrences
 import com.philkes.notallyx.utils.getFileName
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * Activity for editing plain text files without formatting options. This editor provides a simple
- * text editing experience with change history but without any text formatting or attachment
- * capabilities.
- */
 class EditTextPlainActivity : EditActivity(Type.NOTE) {
 
     private var searchResultIndices: List<Pair<Int, Int>>? = null
     private lateinit var saveAsActivityResultLauncher: ActivityResultLauncher<Intent>
-    val originalFileUri: StateFlow<Uri?>
-        field = MutableStateFlow<Uri?>(null)
+    private val originalFileUri = MutableStateFlow<Uri?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Store the original URI if this is a txt file being opened
         if (intent.action == Intent.ACTION_VIEW && intent.data != null) {
             originalFileUri.value = intent.data
         }
@@ -65,128 +55,75 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
     override suspend fun checkSave() {}
 
     override fun configureUI() {
-        // Set the file name as the title and make it non-editable
         originalFileUri.collectIn(this) { uri ->
             uri?.let {
                 val fileName = getFileName(it)
                 if (!fileName.isNullOrEmpty()) {
                     notallyModel.title = fileName
-                    binding.EnterTitle.setText(fileName)
-                    binding.EnterTitle.isEnabled = false
+                    titleState.value = fileName
                 }
-            }
-        }
-
-        binding.EnterTitle.setOnNextAction { binding.EnterBody.requestFocus() }
-
-        if (notallyModel.isNewNote) {
-            binding.EnterBody.requestFocus()
-        }
-        // Disable text formatting by providing a null callback
-        binding.EnterBody.customSelectionActionModeCallback = null
-        binding.ContentLayout.setOnClickListener {
-            binding.EnterBody.apply {
-                requestFocus()
-                setSelection(length())
-                showKeyboard(this)
             }
         }
     }
 
     override fun toggleCanEdit(mode: NoteViewMode) {}
 
-    @SuppressLint("MissingSuperCall")
-    override fun onSaveInstanceState(outState: Bundle) {
-        outState.apply {
-            putInt(EXTRA_SELECTION_START, binding.EnterBody.selectionStart)
-            putInt(EXTRA_SELECTION_END, binding.EnterBody.selectionEnd)
-        }
-    }
+    @SuppressLint("MissingSuperCall") override fun onSaveInstanceState(outState: Bundle) {}
 
     override suspend fun highlightSearchResults(search: String): Int {
-        binding.EnterBody.clearHighlights()
         if (search.isEmpty()) {
             return 0
         }
         val text = notallyModel.body.toString()
         val occurrences = withContext(Dispatchers.Default) { text.findAllOccurrences(search) }
-        binding.EnterBody.highlight(occurrences, -1)
         searchResultIndices = occurrences
         return searchResultIndices!!.size
     }
 
-    override fun selectSearchResult(resultPos: Int) {
-        if (resultPos < 0) {
-            binding.EnterBody.unselectHighlight()
-            return
-        }
-        searchResultIndices?.get(resultPos)?.let { (startIdx, endIdx) ->
-            val selectedLineTop = binding.EnterBody.select(startIdx, endIdx)
-            selectedLineTop?.let { binding.ScrollView.scrollTo(0, it) }
-        }
+    override fun selectSearchResult(resultPos: Int) {}
+
+    @Composable
+    override fun RenderScreen() {
+        val noteState =
+            EditNoteState(
+                title = titleState.value,
+                bodyText = bodyTextState.value,
+                createdTimestamp = notallyModel.timestamp,
+                modifiedTimestamp = notallyModel.modifiedTimestamp,
+            )
+
+        EditNoteScreen(
+            noteState = noteState,
+            backgroundColor = Color(colorIntState.intValue),
+            changeHandlers =
+                object : EditChangeHandlers {
+                    override fun onBodyTextChange(bodyText: String) {
+                        bodyTextState.value = bodyText
+                        notallyModel.body.replace(0, notallyModel.body.length, bodyText)
+                    }
+                },
+            clickHandlers =
+                object : EditClickHandlers {
+                    override fun onBackClick() {
+                        finish()
+                    }
+
+                    override fun onMoreOptionsClick() {
+                        openMoreOptionsBottomSheet()
+                    }
+                },
+        )
     }
 
-    override fun setupListeners() {
-        super.setupListeners()
-        binding.EnterBody.initHistory(changeHistory) { text ->
-            val textChanged = !notallyModel.body.toString().contentEquals(text)
-            notallyModel.body = text
-            if (textChanged) {
-                updateSearchResults(search.query)
-            }
-        }
-    }
-
-    override fun resetToolbars() {
-        binding.Toolbar.setNavigationOnClickListener { finish() }
-        binding.Toolbar.setNavigationIcon(R.drawable.close)
-        updateTopActions(listOf(EditAction.SEARCH), changeable = false)
-    }
+    override fun resetToolbars() {}
 
     override fun setStateFromModel(savedInstanceState: Bundle?) {
         super.setStateFromModel(savedInstanceState)
-        // Remove the modified time display
-        binding.Date.visibility = GONE
-
-        updateEditText()
-        savedInstanceState?.let {
-            val selectionStart = it.getInt(EXTRA_SELECTION_START, -1)
-            val selectionEnd = it.getInt(EXTRA_SELECTION_END, -1)
-            if (selectionStart > -1) {
-                binding.EnterBody.focusAndSelect(selectionStart, selectionEnd)
-            }
-        }
+        bodyTextState.value = notallyModel.body.toString()
+        titleState.value = notallyModel.title
     }
 
-    private fun updateEditText() {
-        binding.EnterBody.text = notallyModel.body
-    }
-
-    override fun initBottomMenu() {
-        super.initBottomMenu()
-        binding.BottomAppBarCenter.visibility = VISIBLE
-        binding.BottomAppBarLeft.apply {
-            removeAllViews()
-            addIconButton(R.string.convert_to_text_note, R.drawable.convert_to_text, colorInt) {
-                convertToTextNote()
-            }
-        }
-        binding.BottomAppBarRight.apply {
-            removeAllViews()
-            addIconButton(R.string.save, R.drawable.save, colorInt) {
-                originalFileUri.value?.let { uri -> saveToUri(uri) }
-            }
-            addIconButton(R.string.save_to_device, R.drawable.save_as, colorInt) {
-                val intent =
-                    Intent(ACTION_CREATE_DOCUMENT).apply {
-                        addCategory(CATEGORY_OPENABLE)
-                        this.type = "text/*"
-                    }
-                saveAsActivityResultLauncher.launch(intent)
-            }
-        }
-        setBottomAppBarColor(colorInt)
-    }
+    override fun initBottomMenu() {}
 
     override fun setupAdditionalListeners() {}
 
@@ -217,22 +154,19 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
                 MaterialAlertDialogBuilder(this@EditTextPlainActivity)
                     .setTitle(R.string.something_went_wrong)
                     .setMessage(e.message)
-                    .setCancelButton()
-                    .show()
+                    .setPositiveButton(android.R.string.ok, null)
+                    .showAndFocus()
             }
         }
     }
 
-    // We can't override createNoteTypeActions, so we'll add a button to convert to regular note
-    // in the bottom menu instead
     private fun convertToTextNote() {
         lifecycleScope.launch {
-            // Save the current note
-            val noteId = saveNote(checkAutoSave = false)
-
-            // Create a new intent to open the note in EditNoteActivity
-            val intent = Intent(this@EditTextPlainActivity, EditNoteActivity::class.java)
-            intent.putExtra(EXTRA_SELECTED_BASE_NOTE, noteId)
+            val id = notallyModel.saveNote(checkBackupOnSave = false)
+            val intent =
+                Intent(this@EditTextPlainActivity, EditNoteActivity::class.java).apply {
+                    putExtra(EXTRA_SELECTED_BASE_NOTE, id)
+                }
             startActivity(intent)
             finish()
         }

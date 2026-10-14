@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -34,7 +33,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -48,8 +46,6 @@ import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.data.model.findNextNotificationDate
-import com.philkes.notallyx.data.model.haveAnyRepetition
 import com.philkes.notallyx.data.model.toColorString
 import com.philkes.notallyx.presentation.format
 import com.philkes.notallyx.presentation.theme.NotallyXTheme
@@ -328,77 +324,6 @@ fun BaseNoteCard(
     }
 }
 
-@Composable
-fun ReminderChip(
-    baseNote: BaseNote,
-    dateFormat: DateFormat,
-    timeFormat: TimeFormat,
-    modifier: Modifier = Modifier,
-    textSize: Float = 16f,
-    onClick: (() -> Unit)? = null,
-) {
-    val now = remember { Date() }
-    val mostRecentNotificationDate =
-        remember(baseNote.reminders) {
-            baseNote.reminders.findNextNotificationDate()
-                ?: baseNote.reminders.maxOfOrNull { it.dateTime }
-        } ?: return
-
-    val formattedDate =
-        remember(mostRecentNotificationDate, dateFormat, timeFormat) {
-            mostRecentNotificationDate.format(dateFormat, timeFormat, ensureFullFormat = true)
-        }
-    val hasRepetition = remember(baseNote.reminders) { baseNote.reminders.haveAnyRepetition() }
-    val isElapsed = mostRecentNotificationDate < now
-
-    Surface(
-        onClick = onClick ?: {},
-        enabled = onClick != null,
-        shape = CircleShape,
-        color =
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isElapsed) 0.5f else 1.0f),
-        modifier = modifier,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.notifications),
-                contentDescription = null,
-                tint =
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                        alpha = if (isElapsed) 0.5f else 1.0f
-                    ),
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = formattedDate,
-                fontSize = textSize.displaySmallerSize.sp,
-                style = MaterialTheme.typography.labelSmall,
-                textDecoration = if (isElapsed) TextDecoration.LineThrough else TextDecoration.None,
-                color =
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                        alpha = if (isElapsed) 0.5f else 1.0f
-                    ),
-            )
-            if (hasRepetition) {
-                Spacer(modifier = Modifier.width(6.dp))
-                Icon(
-                    painter = painterResource(id = R.drawable.repetition),
-                    contentDescription = null,
-                    tint =
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                            alpha = if (isElapsed) 0.5f else 1.0f
-                        ),
-                    modifier = Modifier.size(14.dp),
-                )
-            }
-        }
-    }
-}
-
 private fun BaseNote.hasNoContents() = body.isEmpty() && items.isEmpty()
 
 private fun BaseNote.isEmpty() = title.isBlank() && hasNoContents() && images.isEmpty()
@@ -512,7 +437,11 @@ object SampleNotes {
                 "This note contains multiple attachments, labels, and a reminder to demonstrate full UI card features.",
             spans = emptyList(),
             items = emptyList(),
-            images = listOf(FileAttachment("cat.jpg", "cat.jpg", "image/jpeg")),
+            images =
+                listOf(
+                    FileAttachment("cat.jpg", "cat.jpg", "image/jpeg"),
+                    FileAttachment("cat.jpg", "cat.jpg", "image/jpeg"),
+                ),
             files =
                 listOf(
                     FileAttachment("file1.pdf", "Specification.pdf", "application/pdf"),

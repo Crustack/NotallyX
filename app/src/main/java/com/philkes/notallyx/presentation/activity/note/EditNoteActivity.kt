@@ -1,36 +1,36 @@
 package com.philkes.notallyx.presentation.activity.note
 
 import android.content.Intent
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
+import android.text.Spanned
+import android.text.style.StrikethroughSpan
+import android.text.style.StyleSpan
+import android.text.style.TypefaceSpan
 import android.text.style.URLSpan
-import android.view.View
-import android.view.View.GONE
-import android.view.View.VISIBLE
-import android.widget.LinearLayout
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.view.isVisible
-import androidx.core.view.updateLayoutParams
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.model.Audio
+import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.getNoteIdFromUrl
 import com.philkes.notallyx.data.model.getNoteTypeFromUrl
 import com.philkes.notallyx.data.model.isNoteUrl
-import com.philkes.notallyx.databinding.BottomTextFormattingMenuBinding
-import com.philkes.notallyx.databinding.RecyclerToggleBinding
-import com.philkes.notallyx.presentation.addIconButton
-import com.philkes.notallyx.presentation.dp
-import com.philkes.notallyx.presentation.hideKeyboard
-import com.philkes.notallyx.presentation.setControlsContrastColorForAllViews
-import com.philkes.notallyx.presentation.setOnNextAction
-import com.philkes.notallyx.presentation.showKeyboard
+import com.philkes.notallyx.presentation.createBoldSpan
 import com.philkes.notallyx.presentation.showToast
-import com.philkes.notallyx.presentation.view.note.TextFormattingAdapter
 import com.philkes.notallyx.presentation.view.note.action.AddNoteBottomSheet
-import com.philkes.notallyx.utils.LinkMovementMethod
+import com.philkes.notallyx.presentation.view.screens.EditChangeHandlers
+import com.philkes.notallyx.presentation.view.screens.EditClickHandlers
+import com.philkes.notallyx.presentation.view.screens.EditNotePreferences
+import com.philkes.notallyx.presentation.view.screens.EditNoteScreen
+import com.philkes.notallyx.presentation.view.screens.EditNoteState
+import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 import com.philkes.notallyx.utils.copyToClipBoard
 import com.philkes.notallyx.utils.findAllOccurrences
 import com.philkes.notallyx.utils.openNote
@@ -40,235 +40,196 @@ import kotlinx.coroutines.withContext
 
 class EditNoteActivity : EditActivity(Type.NOTE) {
 
-    private lateinit var textFormatMenu: View
-
-    private var textFormattingAdapter: TextFormattingAdapter? = null
-
     private var searchResultIndices: List<Pair<Int, Int>>? = null
 
-    override fun configureUI() {
-        binding.EnterTitle.setOnNextAction { binding.EnterBody.requestFocus() }
-
-        if (notallyModel.isNewNote) {
-            binding.EnterBody.requestFocus()
-        }
-    }
-
-    override fun toggleCanEdit(mode: NoteViewMode) {
-        super.toggleCanEdit(mode)
-        textFormatMenu.isVisible = mode == NoteViewMode.EDIT
-        when {
-            mode == NoteViewMode.EDIT -> showKeyboard(binding.EnterBody)
-            binding.EnterBody.isFocused -> hideKeyboard(binding.EnterBody)
-        }
-        binding.EnterBody.setCanEdit(mode == NoteViewMode.EDIT)
-        setupEditor()
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.apply {
-            putInt(EXTRA_SELECTION_START, binding.EnterBody.selectionStart)
-            putInt(EXTRA_SELECTION_END, binding.EnterBody.selectionEnd)
-        }
-    }
+    override fun configureUI() {}
 
     override suspend fun highlightSearchResults(search: String): Int {
-        binding.EnterBody.clearHighlights()
         if (search.isEmpty()) {
             return 0
         }
         val text = notallyModel.body.toString()
         val occurrences = withContext(Dispatchers.Default) { text.findAllOccurrences(search) }
-        binding.EnterBody.highlight(occurrences, -1)
         searchResultIndices = occurrences
         return searchResultIndices!!.size
     }
 
-    override fun selectSearchResult(resultPos: Int) {
-        if (resultPos < 0) {
-            binding.EnterBody.unselectHighlight()
-            return
-        }
-        searchResultIndices?.get(resultPos)?.let { (startIdx, endIdx) ->
-            val selectedLineTop = binding.EnterBody.select(startIdx, endIdx)
-            selectedLineTop?.let { binding.ScrollView.scrollTo(0, it) }
-        }
-    }
+    override fun selectSearchResult(resultPos: Int) {}
 
-    override fun setupListeners() {
-        super.setupListeners()
-        binding.EnterBody.initHistory(changeHistory) { text ->
-            val textChanged = !notallyModel.body.toString().contentEquals(text)
-            notallyModel.body = text
-            if (textChanged) {
-                updateSearchResults(search.query)
-                updateJumpButtonsVisibility()
-            }
+    @Composable
+    override fun RenderScreen() {
+        val imagesState = notallyModel.images.collectAsStateWithLifecycle(emptyList())
+        val filesState = notallyModel.files.collectAsStateWithLifecycle(emptyList())
+        val audiosState = notallyModel.audios.collectAsStateWithLifecycle(emptyList())
+        val remindersState = notallyModel.reminders.collectAsStateWithLifecycle(emptyList())
+
+        val topActionsState = remember {
+            mutableStateOf(preferences.getSafeEditNoteActivityTopActions())
         }
+        val bottomActionState = remember {
+            mutableStateOf(preferences.editNoteActivityBottomAction.value)
+        }
+        val canUndoState = changeHistory.canUndo.collectAsStateWithLifecycle(false)
+        val canRedoState = changeHistory.canRedo.collectAsStateWithLifecycle(false)
+        val viewModeState = notallyModel.viewMode.collectAsStateWithLifecycle(NoteViewMode.EDIT)
+
+        val noteState =
+            EditNoteState(
+                title = titleState.value,
+                bodyText = bodyTextState.value,
+                createdTimestamp = notallyModel.timestamp,
+                modifiedTimestamp = notallyModel.modifiedTimestamp,
+                images = imagesState.value,
+                mediaRoot = notallyModel.imageRoot,
+                files = filesState.value,
+                audios = audiosState.value,
+                labels = labelsState.value,
+                reminders = remindersState.value,
+                pinned = notallyModel.pinned,
+                viewMode = viewModeState.value,
+                folder = notallyModel.folder,
+                type = notallyModel.type,
+                isPinnedToStatus = notallyModel.isPinnedToStatus,
+            )
+
+        val preferencesState =
+            EditNotePreferences(
+                notesSortBy = preferences.notesSorting.value.sortedBy,
+                dateFormat = preferences.dateFormatNoteView.value,
+                timeFormat = preferences.timeFormatNoteView.value,
+                topActions = topActionsState.value,
+                bottomAction = bottomActionState.value,
+            )
+
+        EditNoteScreen(
+            noteState = noteState,
+            preferences = preferencesState,
+            backgroundColor = Color(colorIntState.intValue),
+            canUndo = canUndoState.value,
+            canRedo = canRedoState.value,
+            isFormattingMenuVisible = isFormattingMenuVisible.value,
+            changeHandlers =
+                object : EditChangeHandlers {
+                    override fun onTitleChange(title: String) {
+                        titleState.value = title
+                        notallyModel.title = title
+                    }
+
+                    override fun onBodyTextChange(bodyText: String) {
+                        bodyTextState.value = bodyText
+                        notallyModel.body.replace(0, notallyModel.body.length, bodyText)
+                    }
+                },
+            clickHandlers =
+                object : EditClickHandlers {
+                    override fun onBackClick() {
+                        finish()
+                    }
+
+                    override fun onAddItemClick() {
+                        AddNoteBottomSheet(actionHandler, colorInt)
+                            .show(supportFragmentManager, AddNoteBottomSheet.TAG)
+                    }
+
+                    override fun onMoreOptionsClick() {
+                        openMoreOptionsBottomSheet()
+                    }
+
+                    override fun onFormatClick() {
+                        isFormattingMenuVisible.value = !isFormattingMenuVisible.value
+                    }
+
+                    override fun onCloseFormattingClick() {
+                        isFormattingMenuVisible.value = false
+                    }
+
+                    override fun onActionClick(action: EditAction) {
+                        actionHandler.handleAction(action)
+                    }
+
+                    override fun onActionLongClick(action: EditAction) {
+                        openActionSelectionBottomSheet(
+                            action = action,
+                            onUpdateTopActions = { topActionsState.value = it },
+                            onUpdateBottomAction = { bottomActionState.value = it },
+                        )
+                    }
+
+                    override fun onUndoClick() {
+                        if (changeHistory.canUndo.value) {
+                            changeHistory.undo()
+                        }
+                    }
+
+                    override fun onRedoClick() {
+                        if (changeHistory.canRedo.value) {
+                            changeHistory.redo()
+                        }
+                    }
+
+                    override fun onBoldClick() {
+                        notallyModel.body.setSpan(
+                            createBoldSpan(),
+                            0,
+                            notallyModel.body.length,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                        )
+                        bodyTextState.value = notallyModel.body.toString()
+                    }
+
+                    override fun onItalicClick() {
+                        notallyModel.body.setSpan(
+                            StyleSpan(Typeface.ITALIC),
+                            0,
+                            notallyModel.body.length,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                        )
+                        bodyTextState.value = notallyModel.body.toString()
+                    }
+
+                    override fun onStrikethroughClick() {
+                        notallyModel.body.setSpan(
+                            StrikethroughSpan(),
+                            0,
+                            notallyModel.body.length,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                        )
+                        bodyTextState.value = notallyModel.body.toString()
+                    }
+
+                    override fun onMonospaceClick() {
+                        notallyModel.body.setSpan(
+                            TypefaceSpan("monospace"),
+                            0,
+                            notallyModel.body.length,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                        )
+                        bodyTextState.value = notallyModel.body.toString()
+                    }
+
+                    override fun onClearFormattingClick() {
+                        notallyModel.body.clearSpans()
+                        bodyTextState.value = notallyModel.body.toString()
+                    }
+
+                    override fun onImageClick(image: FileAttachment) {
+                        actionHandler.viewImage(image)
+                    }
+
+                    override fun onFileClick(file: FileAttachment) {
+                        actionHandler.viewFile(file)
+                    }
+
+                    override fun onAudioClick(audio: Audio) {
+                        actionHandler.playAudio(audio)
+                    }
+                },
+        )
     }
 
     override fun setStateFromModel(savedInstanceState: Bundle?) {
         super.setStateFromModel(savedInstanceState)
-        updateEditText()
-        savedInstanceState?.let {
-            val selectionStart = it.getInt(EXTRA_SELECTION_START, -1)
-            val selectionEnd = it.getInt(EXTRA_SELECTION_END, -1)
-            if (selectionStart > -1) {
-                binding.EnterBody.postOnAnimation {
-                    binding.EnterBody.focusAndSelect(selectionStart, selectionEnd)
-                }
-            }
-        }
-    }
-
-    private fun updateEditText() {
-        binding.EnterBody.text = notallyModel.body
-    }
-
-    private fun setupEditor() {
-        setupMovementMethod()
-        binding.EnterBody.customSelectionActionModeCallback =
-            if (canEdit) {
-                FormattingActionModeCallback(this, binding.EnterBody)
-            } else null
-
-        binding.EnterBody.customInsertionActionModeCallback =
-            if (canEdit) {
-                FormattingActionModeCallback(this, binding.EnterBody)
-            } else null
-        if (canEdit) {
-            binding.EnterBody.setOnSelectionChange { selStart, selEnd ->
-                if (selEnd - selStart > 0) {
-                    if (!textFormatMenu.isEnabled) {
-                        initBottomTextFormattingMenu()
-                    }
-                    textFormatMenu.isEnabled = true
-                    textFormattingAdapter?.updateTextFormattingToggles(selStart, selEnd)
-                } else {
-                    if (textFormatMenu.isEnabled) {
-                        initBottomMenu()
-                    }
-                    textFormatMenu.isEnabled = false
-                }
-            }
-        } else {
-            binding.EnterBody.setOnSelectionChange { _, _ -> }
-        }
-        binding.ContentLayout.setOnClickListener {
-            binding.EnterBody.apply {
-                requestFocus()
-                if (canEdit) {
-                    setSelection(length())
-                    showKeyboard(this)
-                }
-            }
-        }
-    }
-
-    override fun initBottomMenu() {
-        super.initBottomMenu()
-        binding.BottomAppBarCenter.visibility = VISIBLE
-        binding.BottomAppBarLeft.apply {
-            removeAllViews()
-            addIconButton(R.string.add_item, R.drawable.add, colorInt, marginStart = 0) {
-                AddNoteBottomSheet(actionHandler, colorInt)
-                    .show(supportFragmentManager, AddNoteBottomSheet.TAG)
-            }
-            updateLayoutParams<ConstraintLayout.LayoutParams> { endToStart = -1 }
-            textFormatMenu =
-                addIconButton(R.string.edit, R.drawable.text_format, colorInt) {
-                        initBottomTextFormattingMenu()
-                    }
-                    .apply { isEnabled = binding.EnterBody.isActionModeOn }
-        }
-        setBottomAppBarColor(colorInt)
-    }
-
-    private fun initBottomTextFormattingMenu() {
-        binding.BottomAppBarCenter.visibility = GONE
-        val extractColor = colorInt
-        binding.BottomAppBarRight.apply {
-            removeAllViews()
-            addView(
-                RecyclerToggleBinding.inflate(layoutInflater, this, false).root.apply {
-                    setIconResource(R.drawable.close)
-                    contentDescription = context.getString(R.string.cancel)
-                    setOnClickListener { initBottomMenu() }
-
-                    updateLayoutParams<LinearLayout.LayoutParams> {
-                        marginEnd = 0
-                        marginStart = 10.dp
-                    }
-                    setControlsContrastColorForAllViews(extractColor)
-                    setBackgroundColor(0)
-                }
-            )
-        }
-        binding.BottomAppBarLeft.apply {
-            removeAllViews()
-            updateLayoutParams<ConstraintLayout.LayoutParams> {
-                endToStart = R.id.BottomAppBarRight
-            }
-            requestLayout()
-            val layout = BottomTextFormattingMenuBinding.inflate(layoutInflater, this, false)
-            layout.MainListView.apply {
-                textFormattingAdapter =
-                    TextFormattingAdapter(this@EditNoteActivity, binding.EnterBody, colorInt)
-                adapter = textFormattingAdapter
-                layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-            }
-            addView(layout.root)
-        }
-    }
-
-    private fun setupMovementMethod() {
-        val movementMethod = LinkMovementMethod { span ->
-            val items =
-                if (span.url.isNoteUrl()) {
-                    if (canEdit) {
-                        arrayOf(
-                            getString(R.string.open_note),
-                            getString(R.string.remove_link),
-                            getString(R.string.change_note),
-                            getString(R.string.edit),
-                        )
-                    } else arrayOf(getString(R.string.open_note))
-                } else {
-                    if (canEdit) {
-                        arrayOf(
-                            getString(R.string.open_link),
-                            getString(R.string.copy),
-                            getString(R.string.remove_link),
-                            getString(R.string.edit),
-                        )
-                    } else arrayOf(getString(R.string.open_link), getString(R.string.copy))
-                }
-            MaterialAlertDialogBuilder(this)
-                .setTitle(
-                    if (span.url.isNoteUrl())
-                        "${getString(R.string.note)}: ${
-                            binding.EnterBody.getSpanText(span)
-                        }"
-                    else span.url
-                )
-                .setItems(items) { _, which ->
-                    when (which) {
-                        0 -> openLink(span)
-                        1 ->
-                            if (span.url.isNoteUrl()) {
-                                removeLink(span)
-                            } else copyLink(span)
-                        2 ->
-                            if (span.url.isNoteUrl()) {
-                                actionHandler.updateNoteLink(span)
-                            } else removeLink(span)
-                        3 -> editLink(span)
-                    }
-                }
-                .show()
-        }
-        binding.EnterBody.movementMethod = movementMethod
+        bodyTextState.value = notallyModel.body.toString()
     }
 
     private fun openLink(span: URLSpan) {
@@ -281,20 +242,9 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
         }
     }
 
-    private fun editLink(span: URLSpan) {
-        binding.EnterBody.showEditDialog(span)
-    }
-
     private fun copyLink(span: URLSpan) {
         copyToClipBoard(span.url)
         showToast(R.string.copied_link)
-    }
-
-    private fun removeLink(span: URLSpan) {
-        binding.EnterBody.removeSpanWithHistory(
-            span,
-            span.url.isNoteUrl() || span.url == binding.EnterBody.getSpanText(span),
-        )
     }
 
     private fun openLink(url: String) {

@@ -11,7 +11,6 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.databinding.DialogInputBinding
 import com.philkes.notallyx.presentation.activity.ComposeBinding
 import com.philkes.notallyx.presentation.activity.LockedActivity
-import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EXTRA_SELECTED_LABELS
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.showToast
@@ -98,6 +97,6 @@ class SelectLabelsActivity : LockedActivity<ComposeBinding>() {
     }
 
     companion object {
-        const val EXTRA_SELECTED_LABELS = "notallyx.intent.extra.SELECTED_LABELS"
+        const val EXTRA_SELECTED_LABELS = "notallyx.intent.extra.EXTRA_SELECTED_LABELS"
     }
 }
