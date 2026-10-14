@@ -126,6 +126,7 @@ android {
         buildConfig = true
         resValues = true
         compose = true
+        testFixtures.enable = true
     }
 
     packaging {
@@ -402,42 +403,18 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.workmanager)
 
-    androidTestImplementation(libs.androidx.test.uiautomator)
-    androidTestImplementation(libs.androidx.test.espresso.core)
-    androidTestImplementation(libs.androidx.test.espresso.contrib)
     androidTestImplementation(libs.androidx.test.espresso.intents)
-    androidTestImplementation(libs.androidx.test.junit)
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.androidx.test.rules)
     androidTestUtil(libs.androidx.test.orchestrator)
     androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.androidx.work.testing)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    androidTestImplementation(libs.kaspresso.core)
-    androidTestImplementation(libs.kaspresso.compose.support)
+    androidTestImplementation(project(":test-lib"))
 
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.junit.rule)
-    testImplementation(platform(libs.androidx.compose.bom))
-    testImplementation("androidx.compose.ui:ui-test-junit4")
-    testImplementation(libs.kaspresso.core)
-    testImplementation(libs.kaspresso.compose.support)
-    testImplementation(libs.androidx.test.espresso.core)
-    testImplementation(libs.androidx.test.junit)
-    testImplementation(libs.androidx.core.testing)
-    testImplementation(libs.androidx.test.core.ktx)
-    testImplementation(libs.androidx.test.core)
-    testImplementation(libs.mockk)
-    testImplementation(libs.junit)
     testImplementation(libs.assertj)
     testImplementation(libs.json)
-    testImplementation(libs.mockito.kotlin)
-    testImplementation(libs.mockito.core)
     testImplementation(libs.robolectric)
     testImplementation(libs.zstd.jni.test)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.androidx.test.espresso.contrib)
-    testImplementation(libs.koin.test)
-    testImplementation(libs.koin.test.junit4)
+    testImplementation(project(":test-lib"))
 }

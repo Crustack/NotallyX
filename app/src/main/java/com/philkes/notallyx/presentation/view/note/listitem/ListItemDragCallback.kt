@@ -41,7 +41,7 @@ class ListItemDragCallback(private val elevation: Float, internal val listManage
         return move(from, to)
     }
 
-    internal fun move(from: Int, to: Int): Boolean {
+    fun move(from: Int, to: Int): Boolean {
         if (positionFrom == null) {
             positionFrom = from
             stateBefore = listManager.getState(selectedPos = from)
@@ -112,7 +112,7 @@ class ListItemDragCallback(private val elevation: Float, internal val listManage
         }
     }
 
-    internal fun onDragEnd() {
+    fun onDragEnd() {
         Log.d(TAG, "onDragEnd: from: $positionFrom to: $positionTo")
         if (positionTo != null && positionTo != -1 && stateBefore != null) {
             // The items have already been moved accordingly via move() calls
@@ -126,7 +126,7 @@ class ListItemDragCallback(private val elevation: Float, internal val listManage
         }
     }
 
-    internal fun reset() {
+    fun reset() {
         positionFrom = null
         positionTo = null
         newPosition = null

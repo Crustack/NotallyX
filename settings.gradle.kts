@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "NotallyX"
 include(":app")
+include(":test-lib")

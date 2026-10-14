@@ -13,16 +13,15 @@ import javax.crypto.spec.IvParameterSpec
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class FakeBiometricAuthenticator : BiometricAuthenticator, KoinComponent {
+class FakeBiometricAuthenticator() : BiometricAuthenticator, KoinComponent {
+    var cipher: Cipher? = null
+    var shouldSucceed: Boolean = true
     var iv: ByteArray? = null
+
     private var encryptCounter = 0
     private var decryptCounter = 0
-    private val secretKey: SecretKey
+    private val secretKey: SecretKey by lazy { getOrCreateSecretKey() }
     private val preferences: NotallyXPreferences by inject()
-
-    constructor() {
-        secretKey = getOrCreateSecretKey()
-    }
 
     override fun authenticate(
         activity: FragmentActivity,
@@ -31,22 +30,29 @@ class FakeBiometricAuthenticator : BiometricAuthenticator, KoinComponent {
         onSuccess: (Cipher?) -> Unit,
         onError: (String) -> Unit,
     ) {
+        if (!shouldSucceed) {
+            onError("Authentication failed")
+            return
+        }
+
         if (iv != null) {
             if (isForDecrypt) {
                 if (preferences.biometricLockEncryptsDb.value && cipherIv != null) {
-                    val cipher = getCipher()
+                    val c = getCipher()
                     decryptCounter++
-                    cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(cipherIv))
-                    onSuccess(cipher)
+                    c.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(cipherIv))
+                    onSuccess(c)
                 } else {
-                    onSuccess(null)
+                    onSuccess(cipher)
                 }
             } else {
-                val cipher = getCipher()
+                val c = getCipher()
                 encryptCounter++
-                cipher.init(Cipher.ENCRYPT_MODE, secretKey)
-                onSuccess(cipher)
+                c.init(Cipher.ENCRYPT_MODE, secretKey)
+                onSuccess(cipher ?: c)
             }
+        } else if (cipher != null) {
+            onSuccess(cipher)
         } else {
             onError("Authentication failed")
         }

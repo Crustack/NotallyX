@@ -16,6 +16,7 @@ plugins {
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.firebase.testlab) apply false
     alias(libs.plugins.roborazzi) apply false
+    alias(libs.plugins.android.library) apply false
 }
 
 tasks.register<Delete>("clean") {
