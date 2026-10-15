@@ -1,12 +1,11 @@
 package com.philkes.notallyx.feature.labels
 
-// import com.philkes.notallyx.displayEditLabelDialog
-// import com.philkes.notallyx.setCancelButton
-// import com.philkes.notallyx.showToast
+import android.app.Dialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
@@ -14,11 +13,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.dialog.TextInputDialog
 import com.philkes.notallyx.core.ui.extensions.displayEditLabelDialog
-import com.philkes.notallyx.core.ui.extensions.setCancelButton
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.feature.labels.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
@@ -90,7 +88,12 @@ class LabelsFragment : Fragment(), LabelListener {
 
     internal fun displayAddLabelDialog() {
         val composeView = ComposeView(requireContext())
-        val dialog = MaterialAlertDialogBuilder(requireContext()).setView(composeView).create()
+        val dialog =
+            Dialog(requireContext()).apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                setContentView(composeView)
+            }
 
         composeView.setContent {
             NotallyXTheme(theme = model.preferences.theme.value) {
@@ -116,11 +119,25 @@ class LabelsFragment : Fragment(), LabelListener {
     }
 
     private fun confirmDeletion(value: String) {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.delete_label)
-            .setMessage(R.string.your_notes_associated)
-            .setPositiveButton(R.string.delete) { _, _ -> model.deleteLabel(value) }
-            .setCancelButton()
-            .show()
+        val composeView = ComposeView(requireContext())
+        val dialog =
+            Dialog(requireContext()).apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                setContentView(composeView)
+            }
+
+        composeView.setContent {
+            NotallyXTheme(theme = model.preferences.theme.value) {
+                ConfirmDialog(
+                    title = stringResource(R.string.delete_label),
+                    message = stringResource(R.string.your_notes_associated),
+                    positiveButtonText = stringResource(R.string.delete),
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = { model.deleteLabel(value) },
+                )
+            }
+        }
+        dialog.show()
     }
 }

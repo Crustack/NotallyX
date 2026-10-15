@@ -3,18 +3,21 @@ package com.philkes.notallyx.feature.editor
 import android.Manifest
 import android.app.Activity
 import android.app.Activity.RESULT_OK
+import android.app.Dialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
 import android.text.Spanned
 import android.text.style.URLSpan
+import android.view.Window
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.IntentCompat
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.SUBFOLDER_FILES
 import com.philkes.notallyx.core.common.extensions.getUriForFile
@@ -25,11 +28,13 @@ import com.philkes.notallyx.core.common.extensions.viewFile
 import com.philkes.notallyx.core.common.extensions.wrapWithChooser
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.EditAction
+import com.philkes.notallyx.core.preference.NotallyXPreferences
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.extensions.checkNotificationPermission
 import com.philkes.notallyx.core.ui.extensions.isLightColor
-import com.philkes.notallyx.core.ui.extensions.setCancelButton
 import com.philkes.notallyx.core.ui.extensions.showColorSelectDialog
 import com.philkes.notallyx.core.ui.extensions.showToast
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.ColorString
@@ -380,16 +385,30 @@ class NoteActionHandler(
     }
 
     private fun deleteForever() {
-        MaterialAlertDialogBuilder(activity)
-            .setMessage(R.string.delete_note_forever)
-            .setPositiveButton(R.string.delete) { _, _ ->
-                activity.lifecycleScope.launch {
-                    notallyModel.deleteBaseNote()
-                    activity.finishAfterDeleteForever()
-                }
+        val composeView = ComposeView(activity)
+        val dialog =
+            Dialog(activity).apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                setContentView(composeView)
             }
-            .setCancelButton()
-            .show()
+        composeView.setContent {
+            NotallyXTheme(theme = notallyModel.preferences.theme.value) {
+                ConfirmDialog(
+                    message = stringResource(R.string.delete_note_forever),
+                    positiveButtonText = stringResource(R.string.delete),
+                    negativeButtonText = stringResource(R.string.cancel),
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = {
+                        activity.lifecycleScope.launch {
+                            notallyModel.deleteBaseNote()
+                            activity.finishAfterDeleteForever()
+                        }
+                    },
+                )
+            }
+        }
+        dialog.show()
     }
 
     private fun convertTo() {
@@ -415,16 +434,30 @@ class NoteActionHandler(
         val permission = Manifest.permission.RECORD_AUDIO
         if (activity.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
             if (activity.shouldShowRequestPermissionRationale(permission)) {
-                MaterialAlertDialogBuilder(activity)
-                    .setMessage(R.string.please_grant_notally_audio)
-                    .setCancelButton()
-                    .setPositiveButton(R.string.continue_) { _, _ ->
-                        activity.requestPermissions(
-                            arrayOf(permission),
-                            EditActivity.REQUEST_AUDIO_PERMISSION,
+                val composeView = ComposeView(activity)
+                val dialog =
+                    Dialog(activity).apply {
+                        requestWindowFeature(Window.FEATURE_NO_TITLE)
+                        window?.setBackgroundDrawableResource(android.R.color.transparent)
+                        setContentView(composeView)
+                    }
+                composeView.setContent {
+                    NotallyXTheme(theme = notallyModel.preferences.theme.value) {
+                        ConfirmDialog(
+                            message = stringResource(R.string.please_grant_notally_audio),
+                            positiveButtonText = stringResource(R.string.continue_),
+                            negativeButtonText = stringResource(R.string.cancel),
+                            onDismissRequest = { dialog.dismiss() },
+                            onConfirm = {
+                                activity.requestPermissions(
+                                    arrayOf(permission),
+                                    EditActivity.REQUEST_AUDIO_PERMISSION,
+                                )
+                            },
                         )
                     }
-                    .show()
+                }
+                dialog.show()
             } else
                 activity.requestPermissions(
                     arrayOf(permission),
@@ -557,13 +590,28 @@ fun Activity.refreshStatusBarPin(note: BaseNote) {
 }
 
 fun Activity.handleRejection(msgResId: Int) {
-    MaterialAlertDialogBuilder(this)
-        .setMessage(msgResId)
-        .setCancelButton()
-        .setPositiveButton(R.string.settings) { _, _ ->
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-            intent.data = Uri.parse("package:${this.packageName}")
-            startActivity(intent)
+    val composeView = ComposeView(this)
+    val dialog =
+        Dialog(this).apply {
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+            setContentView(composeView)
         }
-        .show()
+    val preferences = NotallyXPreferences.getInstance(this)
+    composeView.setContent {
+        NotallyXTheme(theme = preferences.theme.value) {
+            ConfirmDialog(
+                message = stringResource(msgResId),
+                positiveButtonText = stringResource(R.string.settings),
+                negativeButtonText = stringResource(R.string.cancel),
+                onDismissRequest = { dialog.dismiss() },
+                onConfirm = {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    intent.data = Uri.parse("package:${this.packageName}")
+                    startActivity(intent)
+                },
+            )
+        }
+    }
+    dialog.show()
 }

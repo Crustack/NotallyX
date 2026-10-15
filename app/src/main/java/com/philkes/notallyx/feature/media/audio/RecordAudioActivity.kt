@@ -1,19 +1,22 @@
 package com.philkes.notallyx.feature.media.audio
 
+import android.app.Dialog
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
+import android.view.Window
 import androidx.activity.OnBackPressedCallback
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.compose.ui.res.stringResource
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getTempAudioFile
 import com.philkes.notallyx.core.security.ComposeBinding
 import com.philkes.notallyx.core.security.LockedActivity
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.extensions.collectIn
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
@@ -82,11 +85,27 @@ class RecordAudioActivity : LockedActivity<ComposeBinding>() {
                     if (s == null || statusState.value == Status.READY) {
                         finish()
                     } else {
-                        MaterialAlertDialogBuilder(this@RecordAudioActivity)
-                            .setMessage(R.string.save_recording)
-                            .setPositiveButton(R.string.save) { _, _ -> stopRecording(s) }
-                            .setNegativeButton(R.string.discard) { _, _ -> discard(s) }
-                            .show()
+                        val composeView = ComposeView(this@RecordAudioActivity)
+                        val dialog =
+                            Dialog(this@RecordAudioActivity).apply {
+                                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                                setContentView(composeView)
+                            }
+
+                        composeView.setContent {
+                            NotallyXTheme(theme = preferences.theme.value) {
+                                ConfirmDialog(
+                                    message = stringResource(R.string.save_recording),
+                                    positiveButtonText = stringResource(R.string.save),
+                                    neutralButtonText = stringResource(R.string.discard),
+                                    onNeutralButtonClick = { discard(s) },
+                                    onDismissRequest = { dialog.dismiss() },
+                                    onConfirm = { stopRecording(s) },
+                                )
+                            }
+                        }
+                        dialog.show()
                     }
                 }
             }

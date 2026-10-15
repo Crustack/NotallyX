@@ -1,13 +1,14 @@
 package com.philkes.notallyx.feature.labels
 
+import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
+import android.view.Window
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.security.ComposeBinding
 import com.philkes.notallyx.core.security.LockedActivity
@@ -75,7 +76,12 @@ class SelectLabelsActivity : LockedActivity<ComposeBinding>() {
 
     private fun addLabel() {
         val composeView = ComposeView(this)
-        val dialog = MaterialAlertDialogBuilder(this).setView(composeView).create()
+        val dialog =
+            Dialog(this).apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                setContentView(composeView)
+            }
 
         composeView.setContent {
             NotallyXTheme(theme = preferences.theme.value) {

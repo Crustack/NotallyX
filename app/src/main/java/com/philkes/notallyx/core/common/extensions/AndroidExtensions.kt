@@ -2,6 +2,7 @@ package com.philkes.notallyx.core.common.extensions
 
 // import com.philkes.notallyx.BuildConfig
 import android.app.Activity
+import android.app.Dialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -19,10 +20,10 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.util.Log
+import android.view.Window
 import android.webkit.MimeTypeMap
 import androidx.annotation.ColorInt
 import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AlertDialog
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
@@ -31,13 +32,12 @@ import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.BuildConfig
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.preference.NotallyXPreferences
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.dialog.ErrorDialog
 import com.philkes.notallyx.core.ui.extensions.getQuantityString
-import com.philkes.notallyx.core.ui.extensions.setCancelButton
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.core.ui.views.LengthFilterWithToast
@@ -191,17 +191,35 @@ fun Fragment.showErrorDialog(
     titleResId: Int,
     message: String,
     originalStacktrace: String? = null,
+    neutralButtonTextResId: Int? = null,
+    neutralButtonClickListener: DialogInterface.OnClickListener? = null,
 ) {
     val composeView = ComposeView(requireContext())
-    val dialog = MaterialAlertDialogBuilder(requireContext()).setView(composeView).create()
-    val preferences = NotallyXPreferences.getInstance(requireActivity())
+    val dialog =
+        Dialog(requireContext()).apply {
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+            setContentView(composeView)
+        }
+    val preferences =
+        NotallyXPreferences.getInstance(
+            requireActivity() as? ContextWrapper ?: ContextWrapper(requireActivity())
+        )
 
     composeView.setContent {
         NotallyXTheme(theme = preferences.theme.value) {
             ErrorDialog(
                 title = stringResource(titleResId),
                 message = message,
-                details = throwable.stackTraceToString(),
+                details = originalStacktrace ?: throwable.stackTraceToString(),
+                neutralButtonText = neutralButtonTextResId?.let { stringResource(it) },
+                onNeutralButtonClick =
+                    neutralButtonClickListener?.let { listener ->
+                        {
+                            dialog.dismiss()
+                            listener.onClick(dialog, DialogInterface.BUTTON_NEUTRAL)
+                        }
+                    },
                 onDismissRequest = { dialog.dismiss() },
             )
         }
@@ -230,17 +248,31 @@ fun Activity.showErrorDialog(
     originalStacktrace: String? = null,
     neutralButtonTextResId: Int? = null,
     neutralButtonClickListener: DialogInterface.OnClickListener? = null,
-): AlertDialog? {
+): Dialog? {
     val composeView = ComposeView(this)
-    val dialog = MaterialAlertDialogBuilder(this).setView(composeView).create()
-    val preferences = NotallyXPreferences.getInstance(this)
+    val dialog =
+        Dialog(this).apply {
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+            setContentView(composeView)
+        }
+    val preferences =
+        NotallyXPreferences.getInstance(this as? ContextWrapper ?: ContextWrapper(this))
 
     composeView.setContent {
         NotallyXTheme(theme = preferences.theme.value) {
             ErrorDialog(
                 title = stringResource(titleResId),
                 message = message,
-                details = throwable.stackTraceToString(),
+                details = originalStacktrace ?: throwable.stackTraceToString(),
+                neutralButtonText = neutralButtonTextResId?.let { stringResource(it) },
+                onNeutralButtonClick =
+                    neutralButtonClickListener?.let { listener ->
+                        {
+                            dialog.dismiss()
+                            listener.onClick(dialog, DialogInterface.BUTTON_NEUTRAL)
+                        }
+                    },
                 onDismissRequest = { dialog.dismiss() },
             )
         }
@@ -331,13 +363,31 @@ fun Fragment.getExtraBooleanFromBundleOrIntent(
 }
 
 private fun Context.showConfirmCrashLogTooLong() {
-    MaterialAlertDialogBuilder(this)
-        .setMessage(
-            getString(R.string.report_bug_stacktrace_too_long, getString(R.string.continue_))
-        )
-        .setPositiveButton(R.string.continue_) { _, _ -> reportBug("<PASTE CRASH LOGS HERE>") }
-        .setCancelButton()
-        .show()
+    val composeView = ComposeView(this)
+    val dialog =
+        Dialog(this).apply {
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+            setContentView(composeView)
+        }
+    val preferences =
+        NotallyXPreferences.getInstance(this as? ContextWrapper ?: ContextWrapper(this))
+
+    composeView.setContent {
+        NotallyXTheme(theme = preferences.theme.value) {
+            ConfirmDialog(
+                message =
+                    stringResource(
+                        R.string.report_bug_stacktrace_too_long,
+                        stringResource(R.string.continue_),
+                    ),
+                positiveButtonText = stringResource(R.string.continue_),
+                onDismissRequest = { dialog.dismiss() },
+                onConfirm = { reportBug("<PASTE CRASH LOGS HERE>") },
+            )
+        }
+    }
+    dialog.show()
 }
 
 fun Context.reportBug(stackTrace: String?) {

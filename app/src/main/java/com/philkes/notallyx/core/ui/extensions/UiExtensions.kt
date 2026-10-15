@@ -3,6 +3,7 @@ package com.philkes.notallyx.core.ui.extensions
 import android.Manifest
 import android.app.Activity
 import android.app.AlarmManager
+import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
@@ -40,10 +41,8 @@ import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.view.Window
 import android.view.WindowManager
-import android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.Button
 import android.widget.CompoundButton
 import android.widget.EditText
 import android.widget.ImageButton
@@ -56,7 +55,6 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.compose.ui.platform.ComposeView
@@ -75,16 +73,20 @@ import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.chip.Chip
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.shape.RelativeCornerSize
 import com.google.android.material.shape.RoundedCornerTreatment
@@ -99,6 +101,7 @@ import com.philkes.notallyx.core.common.result.Progress
 import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.preference.TimeFormat
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.dialog.TextInputDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.core.ui.views.StylableEditTextWithHistory
@@ -474,7 +477,21 @@ private fun <T : Progress> StateFlow<T?>.setupProgressDialog(
     val preferences = NotallyXPreferences.getInstance(activity)
     val composeView = ComposeView(context)
     val dialog =
-        MaterialAlertDialogBuilder(context).setView(composeView).setCancelable(false).create()
+        Dialog(context).apply {
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+            setContentView(composeView)
+            setCancelable(false)
+            window?.decorView?.let { decorView ->
+                decorView.setViewTreeLifecycleOwner(viewLifecycleOwner)
+                if (viewLifecycleOwner is ViewModelStoreOwner) {
+                    decorView.setViewTreeViewModelStoreOwner(viewLifecycleOwner)
+                }
+                if (viewLifecycleOwner is SavedStateRegistryOwner) {
+                    decorView.setViewTreeSavedStateRegistryOwner(viewLifecycleOwner)
+                }
+            }
+        }
 
     viewLifecycleOwner.repeatOnLifecycleScope {
         collect { progress ->
@@ -522,13 +539,26 @@ fun Activity.checkNotificationPermission(
         val permission = Manifest.permission.POST_NOTIFICATIONS
         if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
             if (shouldShowRequestPermissionRationale(permission)) {
-                MaterialAlertDialogBuilder(this)
-                    .setMessage(R.string.please_grant_notally_notification)
-                    .setCancelButton()
-                    .setPositiveButton(R.string.continue_) { _, _ ->
-                        requestPermissions(arrayOf(permission), requestCode)
+                val composeView = ComposeView(this)
+                val dialog =
+                    Dialog(this).apply {
+                        requestWindowFeature(Window.FEATURE_NO_TITLE)
+                        window?.setBackgroundDrawableResource(android.R.color.transparent)
+                        setContentView(composeView)
                     }
-                    .show()
+                val preferences = NotallyXPreferences.getInstance(this)
+                composeView.setContent {
+                    NotallyXTheme(theme = preferences.theme.value) {
+                        ConfirmDialog(
+                            message = stringResource(R.string.please_grant_notally_notification),
+                            positiveButtonText = stringResource(R.string.continue_),
+                            negativeButtonText = stringResource(R.string.cancel),
+                            onDismissRequest = { dialog.dismiss() },
+                            onConfirm = { requestPermissions(arrayOf(permission), requestCode) },
+                        )
+                    }
+                }
+                dialog.show()
             } else requestPermissions(arrayOf(permission), requestCode)
         } else if (alsoCheckAlarmPermission)
             checkAlarmPermission(alarmPermissionResultLauncher, onSuccess)
@@ -546,19 +576,34 @@ fun Activity.checkAlarmPermission(
         if (getSystemService<AlarmManager>()!!.canScheduleExactAlarms()) {
             onSuccess()
         } else {
-            MaterialAlertDialogBuilder(this)
-                .setMessage(R.string.please_grant_notally_alarm)
-                .setCancelButton()
-                .setPositiveButton(R.string.continue_) { _, _ ->
-                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                    intent.data = Uri.parse("package:$packageName")
-                    if (resultLauncher != null) {
-                        resultLauncher.launch(intent)
-                    } else {
-                        startActivity(intent)
-                    }
+            val composeView = ComposeView(this)
+            val dialog =
+                Dialog(this).apply {
+                    requestWindowFeature(Window.FEATURE_NO_TITLE)
+                    window?.setBackgroundDrawableResource(android.R.color.transparent)
+                    setContentView(composeView)
                 }
-                .show()
+            val preferences = NotallyXPreferences.getInstance(this)
+            composeView.setContent {
+                NotallyXTheme(theme = preferences.theme.value) {
+                    ConfirmDialog(
+                        message = stringResource(R.string.please_grant_notally_alarm),
+                        positiveButtonText = stringResource(R.string.continue_),
+                        negativeButtonText = stringResource(R.string.cancel),
+                        onDismissRequest = { dialog.dismiss() },
+                        onConfirm = {
+                            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                            intent.data = Uri.parse("package:$packageName")
+                            if (resultLauncher != null) {
+                                resultLauncher.launch(intent)
+                            } else {
+                                startActivity(intent)
+                            }
+                        },
+                    )
+                }
+            }
+            dialog.show()
         }
     } else onSuccess()
 }
@@ -617,7 +662,12 @@ fun Context.displayEditLabelDialog(
     val activity = (this as? Activity) ?: return
     val preferences = NotallyXPreferences.getInstance(activity)
     val composeView = ComposeView(activity)
-    val dialog = MaterialAlertDialogBuilder(activity).setView(composeView).create()
+    val dialog =
+        Dialog(activity).apply {
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+            setContentView(composeView)
+        }
 
     composeView.setContent {
         NotallyXTheme(theme = preferences.theme.value) {
@@ -663,41 +713,6 @@ fun Date.format(
         "$datePart $timePart"
     } else {
         datePart + timePart
-    }
-}
-
-fun MaterialAlertDialogBuilder.showAndFocus(
-    viewToFocus: View? = null,
-    selectAll: Boolean = false,
-    allowFullSize: Boolean = false,
-    onShowListener: DialogInterface.OnShowListener? = null,
-    applyToPositiveButton: ((positiveButton: Button) -> Unit)? = null,
-): AlertDialog {
-    if (allowFullSize) {
-        setBackgroundInsetEnd(0)
-        setBackgroundInsetStart(0)
-        setBackgroundInsetBottom(0)
-        setBackgroundInsetTop(0)
-    }
-    return create().apply {
-        viewToFocus?.requestFocus()
-        if (viewToFocus is EditText) {
-            if (selectAll) {
-                viewToFocus.selectAll()
-            }
-            window?.setSoftInputMode(SOFT_INPUT_STATE_VISIBLE)
-        }
-        if (allowFullSize) {
-            window?.setLayout(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-            )
-        }
-        onShowListener?.let { setOnShowListener(it) }
-        show()
-        applyToPositiveButton?.let {
-            getButton(AlertDialog.BUTTON_POSITIVE)?.let { positiveButton -> it(positiveButton) }
-        }
     }
 }
 
@@ -919,9 +934,6 @@ fun @receiver:ColorInt Int.getSlightContrastColor(): Int {
     )
 }
 
-fun MaterialAlertDialogBuilder.setCancelButton(listener: DialogInterface.OnClickListener? = null) =
-    setNegativeButton(R.string.cancel, listener)
-
 fun Fragment.showDialog(
     messageResId: Int,
     positiveButtonTextResId: Int,
@@ -966,15 +978,34 @@ fun Context.showDialog(
     onNeutralButtonClickListener: DialogInterface.OnClickListener? = null,
     fullSize: Boolean = false,
 ) {
-    MaterialAlertDialogBuilder(this).apply {
-        setMessage(messageResId)
-        setPositiveButton(positiveButtonTextResId, onPositiveButtonClickListener)
-        setCancelButton()
-        neutralButtonTextResId?.let { setNeutralButton(it, onNeutralButtonClickListener) }
-        if (fullSize) {
-            showAndFocus(allowFullSize = true)
-        } else {
-            show()
+    showDialog(
+        message = getString(messageResId),
+        positiveButtonTextResId = positiveButtonTextResId,
+        onPositiveButtonClickListener = onPositiveButtonClickListener,
+        neutralButtonTextResId = neutralButtonTextResId,
+        onNeutralButtonClickListener = onNeutralButtonClickListener,
+        fullSize = fullSize,
+    )
+}
+
+fun createComposeDialog(
+    context: Context,
+    composeView: ComposeView,
+    lifecycleOwner: LifecycleOwner? = null,
+): Dialog {
+    val owner = lifecycleOwner ?: (context as? LifecycleOwner)
+    val viewModelStoreOwner = owner as? ViewModelStoreOwner ?: (context as? ViewModelStoreOwner)
+    val savedStateRegistryOwner =
+        owner as? SavedStateRegistryOwner ?: (context as? SavedStateRegistryOwner)
+
+    return Dialog(context).apply {
+        requestWindowFeature(Window.FEATURE_NO_TITLE)
+        window?.setBackgroundDrawableResource(android.R.color.transparent)
+        setContentView(composeView)
+        window?.decorView?.let { decorView ->
+            owner?.let { decorView.setViewTreeLifecycleOwner(it) }
+            viewModelStoreOwner?.let { decorView.setViewTreeViewModelStoreOwner(it) }
+            savedStateRegistryOwner?.let { decorView.setViewTreeSavedStateRegistryOwner(it) }
         }
     }
 }
@@ -987,17 +1018,30 @@ fun Context.showDialog(
     onNeutralButtonClickListener: DialogInterface.OnClickListener? = null,
     fullSize: Boolean = false,
 ) {
-    MaterialAlertDialogBuilder(this).apply {
-        setMessage(message)
-        setPositiveButton(positiveButtonTextResId, onPositiveButtonClickListener)
-        setCancelButton()
-        neutralButtonTextResId?.let { setNeutralButton(it, onNeutralButtonClickListener) }
-        if (fullSize) {
-            showAndFocus(allowFullSize = true)
-        } else {
-            show()
+    val activity = (this as? Activity) ?: return
+    val preferences = NotallyXPreferences.getInstance(activity)
+    val composeView = ComposeView(activity)
+    val dialog = createComposeDialog(activity, composeView)
+
+    composeView.setContent {
+        NotallyXTheme(theme = preferences.theme.value) {
+            ConfirmDialog(
+                message = message,
+                positiveButtonText = stringResource(positiveButtonTextResId),
+                negativeButtonText = stringResource(R.string.cancel),
+                neutralButtonText = neutralButtonTextResId?.let { stringResource(it) },
+                onNeutralButtonClick =
+                    onNeutralButtonClickListener?.let { listener ->
+                        { listener.onClick(dialog, DialogInterface.BUTTON_NEUTRAL) }
+                    },
+                onDismissRequest = { dialog.dismiss() },
+                onConfirm = {
+                    onPositiveButtonClickListener.onClick(dialog, DialogInterface.BUTTON_POSITIVE)
+                },
+            )
         }
     }
+    dialog.show()
 }
 
 fun Fragment.showToast(messageResId: Int) = requireContext().showToast(messageResId)

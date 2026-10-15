@@ -1,5 +1,6 @@
 package com.philkes.notallyx.feature.editor
 
+import android.app.Dialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -9,14 +10,15 @@ import android.text.Editable
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
+import android.view.Window
 import android.view.inputmethod.InputMethodManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.changeStatusAndNavigationBarColor
 import com.philkes.notallyx.core.common.extensions.log
@@ -25,6 +27,7 @@ import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.security.ComposeBinding
 import com.philkes.notallyx.core.security.LockedActivity
+import com.philkes.notallyx.core.ui.dialog.ListDialog
 import com.philkes.notallyx.core.ui.extensions.collectIn
 import com.philkes.notallyx.core.ui.extensions.extractColor
 import com.philkes.notallyx.core.ui.extensions.isLightColor
@@ -428,13 +431,25 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
     }
 
     private fun displayFileErrors(errors: List<FileError>) {
-        val context = this
-        val messages = errors.map { "${it.name}: ${it.description}" }.toTypedArray()
-        MaterialAlertDialogBuilder(context)
-            .setTitle(R.string.cant_load_file)
-            .setItems(messages, null)
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
+        val messages = errors.map { "${it.name}: ${it.description}" }
+        val composeView = ComposeView(this)
+        val dialog =
+            Dialog(this).apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                setContentView(composeView)
+            }
+        val preferences = NotallyXPreferences.getInstance(this)
+        composeView.setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                ListDialog(
+                    title = stringResource(R.string.cant_load_file),
+                    items = messages,
+                    onDismissRequest = { dialog.dismiss() },
+                )
+            }
+        }
+        dialog.show()
     }
 
     open fun setColor() {
