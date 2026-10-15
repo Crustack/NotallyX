@@ -209,7 +209,10 @@ internal fun EditScreen(
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    IconButton(onClick = { clickHandlers.onBackClick() }) {
+                    IconButton(
+                        onClick = { clickHandlers.onBackClick() },
+                        modifier = Modifier.testTag("BackButton"),
+                    ) {
                         Icon(
                             painter = painterResource(id = R.drawable.arrow_back),
                             contentDescription = stringResource(id = R.string.back),

@@ -4,6 +4,8 @@ import android.app.Activity
 import android.app.Instrumentation
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.action.ViewActions.click
@@ -30,15 +32,16 @@ import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.extensions.*
 import com.philkes.notallyx.feature.editor.EditTextPlainActivity
 import com.philkes.notallyx.test.UiTestBase
+import com.philkes.notallyx.test.appendText
 import com.philkes.notallyx.test.byContentDescription
 import com.philkes.notallyx.test.byId
-import com.philkes.notallyx.test.typeTextAtEnd
 import com.philkes.notallyx.test.waitUntil
 import com.philkes.notallyx.test.waitUntilSucceeds
 import java.io.File
 import org.hamcrest.Matchers.not
 import org.junit.Assert.assertEquals
 import org.junit.FixMethodOrder
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -46,6 +49,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder
 class EditTextPlainActivityTest : UiTestBase() {
+
+    @get:Rule val composeTestRule = createAndroidComposeRule<EditTextPlainActivity>()
 
     @Test
     fun editAndSavePlainTextFile() {
@@ -71,7 +76,7 @@ class EditTextPlainActivityTest : UiTestBase() {
 
         val appendText = " - appended text"
         val expectedContent = "Original file content - appended text"
-        R.id.EnterBody.byId().typeTextAtEnd(appendText)
+        composeTestRule.onNodeWithTag("EnterBody").appendText(appendText)
 
         R.string.save.byContentDescription().perform(click())
 
@@ -115,7 +120,7 @@ class EditTextPlainActivityTest : UiTestBase() {
 
             val appendText = " - new text"
             val expectedContent = "Original content - new text"
-            R.id.EnterBody.byId().typeTextAtEnd(appendText)
+            composeTestRule.onNodeWithTag("EnterBody").appendText(appendText)
 
             R.string.save_to_device.byContentDescription().perform(click())
 
@@ -142,8 +147,8 @@ class EditTextPlainActivityTest : UiTestBase() {
         val noteTitle = "Converted Plain Note"
         val noteBody = "Body text for plain note conversion"
 
-        R.id.EnterTitle.byId().typeTextAtEnd(noteTitle)
-        R.id.EnterBody.byId().typeTextAtEnd(noteBody)
+        composeTestRule.onNodeWithTag("EnterTitle").appendText(noteTitle)
+        composeTestRule.onNodeWithTag("EnterBody").appendText(noteBody)
 
         Espresso.closeSoftKeyboard()
 

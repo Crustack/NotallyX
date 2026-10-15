@@ -17,42 +17,31 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
-import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onData
-import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
-import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.error.*
-import com.philkes.notallyx.core.common.extensions.*
-import com.philkes.notallyx.core.common.result.*
-import com.philkes.notallyx.core.database.*
-import com.philkes.notallyx.core.preference.*
-import com.philkes.notallyx.core.security.*
-import com.philkes.notallyx.core.ui.components.*
-import com.philkes.notallyx.core.ui.dialog.*
-import com.philkes.notallyx.core.ui.extensions.*
-import com.philkes.notallyx.core.ui.views.*
-import com.philkes.notallyx.data.model.extensions.*
+import com.philkes.notallyx.core.common.extensions.getExternalBackupsDirectory
+import com.philkes.notallyx.core.common.extensions.getExternalMediaDirectory
+import com.philkes.notallyx.core.common.extensions.getUriForFile
+import com.philkes.notallyx.core.common.extensions.listZipFiles
+import com.philkes.notallyx.core.preference.PeriodicBackup
 import com.philkes.notallyx.feature.editor.refreshStatusBarPin
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.migration.backup.ON_SAVE_BACKUP_FILE
 import com.philkes.notallyx.feature.migration.backup.PERIODIC_BACKUP_FILE_PREFIX
 import com.philkes.notallyx.test.UiTestBase
+import com.philkes.notallyx.test.appendText
 import com.philkes.notallyx.test.assertLogAppeared
-import com.philkes.notallyx.test.byId
 import com.philkes.notallyx.test.byText
 import com.philkes.notallyx.test.checkAndUpdateNoteTitle
 import com.philkes.notallyx.test.createBaseNote
@@ -66,7 +55,6 @@ import com.philkes.notallyx.test.lockAndUnlockDevice
 import com.philkes.notallyx.test.navigateTo
 import com.philkes.notallyx.test.waitUntil
 import com.philkes.notallyx.test.waitUntilSettingsValue
-import com.philkes.notallyx.test.waitUntilSucceeds
 import java.io.File
 import java.util.Date
 import kotlinx.coroutines.Dispatchers
@@ -269,11 +257,7 @@ class SettingsFragmentTest : UiTestBase() {
         // Go to Settings and import backup
         composeTestRule.navigateTo(R.id.Settings)
         composeTestRule.onNodeWithTag("ImportBackup").performScrollTo().performClick()
-        waitUntilSucceeds {
-            onView(allOf(withId(android.R.id.button1), withText(R.string.import_backup)))
-                .inRoot(isDialog())
-                .perform(click())
-        }
+        composeTestRule.onNodeWithTag("ImportButton").performClick()
         waitUntil(15_000L) {
             runBlocking {
                 withContext(Dispatchers.IO) { database.getBaseNoteDao().getAll().isNotEmpty() }
@@ -326,9 +310,9 @@ class SettingsFragmentTest : UiTestBase() {
             }
 
         composeTestRule.onNodeWithText("Test").performClick()
-        R.id.EnterTitle.byId().perform(typeText(" Foo"))
-        R.id.EnterBody.byId().perform(typeText(" Foo"), closeSoftKeyboard())
-        Espresso.pressBack()
+        composeTestRule.onNodeWithTag("EnterTitle").appendText(" Foo")
+        composeTestRule.onNodeWithTag("EnterBody").appendText(" Foo")
+        composeTestRule.onNodeWithTag("BackButton").performClick()
         assertLogAppeared("ExportExtensions", "Finished backup ")
 
         composeTestRule.onNodeWithText("Test Foo").performTouchInput { longClick() }
@@ -347,11 +331,7 @@ class SettingsFragmentTest : UiTestBase() {
 
         composeTestRule.navigateTo(R.id.Settings)
         composeTestRule.onNodeWithTag("ImportBackup").performScrollTo().performClick()
-        waitUntilSucceeds {
-            onView(allOf(withId(android.R.id.button1), withText(R.string.import_backup)))
-                .inRoot(isDialog())
-                .perform(click())
-        }
+        composeTestRule.onNodeWithTag("ImportButton").performClick()
         waitUntil(15_000L) {
             runBlocking {
                 withContext(Dispatchers.IO) { database.getBaseNoteDao().getAll().isNotEmpty() }
