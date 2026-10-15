@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentContainerView
@@ -49,7 +50,6 @@ import com.philkes.notallyx.core.ui.extensions.setupProgressDialog
 import com.philkes.notallyx.core.ui.extensions.showColorSelectDialog
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
-import com.philkes.notallyx.core.ui.views.TriStateCheckBox
 import com.philkes.notallyx.core.ui.views.setMultiChoiceTriStateItems
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
@@ -683,11 +683,11 @@ class MainActivity : LockedActivity<ComposeBinding>() {
             labels
                 .map { label ->
                     if (baseNotes.all { it.labels.contains(label) }) {
-                        TriStateCheckBox.State.CHECKED
+                        ToggleableState.On
                     } else if (baseNotes.any { it.labels.contains(label) }) {
-                        TriStateCheckBox.State.PARTIALLY_CHECKED
+                        ToggleableState.Indeterminate
                     } else {
-                        TriStateCheckBox.State.UNCHECKED
+                        ToggleableState.Off
                     }
                 }
                 .toTypedArray()
@@ -700,12 +700,12 @@ class MainActivity : LockedActivity<ComposeBinding>() {
             }
             .setPositiveButton(R.string.save) { _, _ ->
                 val checkedLabels = checkedPositions.mapIndexedNotNull { index, checked ->
-                    if (checked == TriStateCheckBox.State.CHECKED) {
+                    if (checked == ToggleableState.On) {
                         labels[index]
                     } else null
                 }
                 val uncheckedLabels = checkedPositions.mapIndexedNotNull { index, checked ->
-                    if (checked == TriStateCheckBox.State.UNCHECKED) {
+                    if (checked == ToggleableState.Off) {
                         labels[index]
                     } else null
                 }

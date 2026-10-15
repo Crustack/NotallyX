@@ -13,37 +13,23 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.scrollTo
-import androidx.test.espresso.contrib.RecyclerViewActions.actionOnItemAtPosition
 import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.error.*
-import com.philkes.notallyx.core.common.extensions.*
-import com.philkes.notallyx.core.common.result.*
-import com.philkes.notallyx.core.database.*
-import com.philkes.notallyx.core.preference.*
-import com.philkes.notallyx.core.security.*
-import com.philkes.notallyx.core.ui.components.*
-import com.philkes.notallyx.core.ui.dialog.*
-import com.philkes.notallyx.core.ui.extensions.*
-import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
-import com.philkes.notallyx.data.model.extensions.*
 import com.philkes.notallyx.feature.editor.refreshStatusBarPin
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.reminder.PinnedNotificationManager
 import com.philkes.notallyx.test.UiTestBase
-import com.philkes.notallyx.test.childAtPosition
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.createListItem
 import com.philkes.notallyx.test.waitUntil
@@ -114,10 +100,8 @@ class MainActivityTest : UiTestBase() {
             .performClick()
 
         // 6. click the "label" twice to give both notes the "label" Label
-        val labelDialogList =
-            onView(childAtPosition(withId(android.R.id.custom), 0)).inRoot(isDialog())
-        labelDialogList.perform(actionOnItemAtPosition<ViewHolder>(0, click()))
-        labelDialogList.perform(actionOnItemAtPosition<ViewHolder>(0, click()))
+        composeTestRule.onNodeWithTag("TriStateItem_label").performClick()
+        composeTestRule.onNodeWithTag("TriStateItem_label").performClick()
 
         onView(withId(android.R.id.button1)).inRoot(isDialog()).perform(scrollTo(), click())
 

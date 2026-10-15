@@ -283,8 +283,8 @@ fun ViewGroup.addIconButton(
                         LinearLayout.LayoutParams.WRAP_CONTENT,
                         LinearLayout.LayoutParams.MATCH_PARENT,
                     )
-                    .apply { setMargins(marginStart.dp, marginTop, 0, marginBottom) }
-            setPadding(8.dp)
+                    .apply { setMargins(marginStart.toDp, marginTop, 0, marginBottom) }
+            setPadding(8.toDp)
             setControlsContrastColorForAllViews(colorInt)
         }
     addView(view)
@@ -309,10 +309,10 @@ fun TextView.setTextSizeSp(textSizeSp: Float) {
     setTextSize(TypedValue.COMPLEX_UNIT_SP, textSizeSp)
 }
 
-val Int.dp: Int
+val Int.toDp: Int
     get() = (this * Resources.getSystem().displayMetrics.density + 0.5f).toInt()
 
-val Float.dp: Int
+val Float.toDpFloat: Int
     get() = (this * Resources.getSystem().displayMetrics.density + 0.5f).toInt()
 
 /**
@@ -1074,7 +1074,7 @@ fun FastScrollerBuilder.useColoredStyle(
             setThumbDrawable(it)
         }
     ContextCompat.getDrawable(context, R.drawable.scroll_track)?.let { setTrackDrawable(it) }
-    setPadding(0, 0, 2.dp, 0)
+    setPadding(0, 0, 2.toDp, 0)
     setPopupStyle(PopupStyles.MD2)
     return this
 }
@@ -1132,7 +1132,7 @@ fun MaterialAutoCompleteTextView.select(value: CharSequence) {
     setText(value, false)
 }
 
-fun Context.createTextView(textResId: Int, padding: Int = 16.dp): TextView {
+fun Context.createTextView(textResId: Int, padding: Int = 16.toDp): TextView {
     return AppCompatTextView(this).apply {
         setText(textResId)
         TextViewCompat.setTextAppearance(

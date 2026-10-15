@@ -1,95 +1,97 @@
 package com.philkes.notallyx.core.ui.views
 
-import android.animation.AnimatorSet
-import android.animation.ObjectAnimator
-import android.content.Context
-import android.graphics.drawable.Drawable
-import android.util.AttributeSet
-import android.view.animation.AnimationUtils
-import androidx.appcompat.widget.AppCompatCheckBox
-import androidx.core.animation.addListener
-import androidx.core.content.ContextCompat
-import com.philkes.notallyx.R
-import com.philkes.notallyx.core.ui.extensions.dp
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TriStateCheckbox
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
-// import com.philkes.notallyx.dp
+@Composable
+internal fun TriStateMultiChoiceContent(
+    items: Array<String>,
+    initialStates: Array<ToggleableState>,
+    onItemClick: (index: Int, state: ToggleableState) -> Unit,
+) {
+    val states = remember { initialStates.clone() }
 
-/**
- * [AppCompatCheckBox] with 3 states ([State.UNCHECKED],[State.CHECKED],[State.PARTIALLY_CHECKED])
- */
-class TriStateCheckBox
-@JvmOverloads
-constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
-    AppCompatCheckBox(context, attrs, defStyleAttr) {
-
-    enum class State {
-        UNCHECKED,
-        CHECKED,
-        PARTIALLY_CHECKED,
-    }
-
-    var state: State = State.UNCHECKED
-        private set
-
-    fun setState(state: State, animate: Boolean = true) {
-        if (this.state != state) {
-            this.state = state
-            if (animate) {
-                animateButtonDrawable()
-            } else {
-                buttonDrawable = getCurrentDrawable()
-            }
+    Column(
+        modifier =
+            Modifier.fillMaxWidth().padding(top = 8.dp).verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
+    ) {
+        items.forEachIndexed { index, item ->
+            var currentState by remember { mutableStateOf(states[index]) }
+            TriStateChoiceItemRow(
+                text = item,
+                state = currentState,
+                onClick = {
+                    val nextState =
+                        when (currentState) {
+                            ToggleableState.Off -> ToggleableState.On
+                            ToggleableState.Indeterminate -> ToggleableState.Off
+                            ToggleableState.On -> ToggleableState.Off
+                        }
+                    currentState = nextState
+                    states[index] = nextState
+                    onItemClick(index, nextState)
+                },
+            )
         }
     }
+}
 
-    private val uncheckedDrawable: Drawable? =
-        ContextCompat.getDrawable(context, R.drawable.checkbox_unchecked)
-    private val checkedDrawable: Drawable? =
-        ContextCompat.getDrawable(context, R.drawable.checkbox_checked)
-    private val partiallyCheckedDrawable: Drawable? =
-        ContextCompat.getDrawable(context, R.drawable.checkbox_partial)
-
-    init {
-        compoundDrawablePadding = 4.dp
-        buttonDrawable = getCurrentDrawable()
-        setOnClickListener { toggleState() }
-    }
-
-    fun toggleState() {
-        setState(
-            when (state) {
-                State.UNCHECKED -> State.CHECKED
-                State.PARTIALLY_CHECKED -> State.UNCHECKED
-                State.CHECKED -> State.UNCHECKED
-            }
+@Composable
+internal fun TriStateChoiceItemRow(
+    text: String,
+    state: ToggleableState,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .testTag("TriStateItem_$text")
+                .padding(horizontal = 24.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TriStateCheckbox(
+            state = state,
+            onClick = null,
+            modifier = Modifier.padding(end = 8.dp),
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
         )
     }
+}
 
-    private fun animateButtonDrawable() {
-        val targetDrawable = getCurrentDrawable()
-        val fadeOut =
-            ObjectAnimator.ofInt(this.buttonDrawable, "alpha", 255, 0).apply {
-                duration = 33
-                addListener(onEnd = { buttonDrawable = targetDrawable })
-            }
-
-        val fadeIn =
-            ObjectAnimator.ofInt(this.buttonDrawable, "alpha", 0, 255).apply {
-                duration = 166
-                interpolator =
-                    AnimationUtils.loadInterpolator(
-                        context,
-                        androidx.appcompat.R.interpolator
-                            .btn_checkbox_unchecked_mtrl_animation_interpolator_0,
-                    )
-            }
-        AnimatorSet().apply { playSequentially(fadeOut, fadeIn) }.start()
+@Preview(showBackground = true)
+@Composable
+private fun TriStateChoiceItemRowPreview() {
+    NotallyXTheme {
+        TriStateChoiceItemRow(text = "Test", state = ToggleableState.Indeterminate, onClick = {})
     }
-
-    private fun getCurrentDrawable() =
-        when (state) {
-            State.UNCHECKED -> uncheckedDrawable
-            State.CHECKED -> checkedDrawable
-            State.PARTIALLY_CHECKED -> partiallyCheckedDrawable
-        }
 }
