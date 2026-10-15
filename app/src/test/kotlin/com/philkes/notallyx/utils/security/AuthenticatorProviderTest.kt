@@ -1,6 +1,8 @@
-package com.philkes.notallyx.utils.security
+package com.philkes.notallyx.core.common.security
 
 import androidx.fragment.app.FragmentActivity
+import com.philkes.notallyx.core.security.AuthenticatorProvider
+import com.philkes.notallyx.core.security.SystemBiometricAuthenticator
 import com.philkes.notallyx.test.FakeBiometricAuthenticator
 import javax.crypto.Cipher
 import org.junit.After

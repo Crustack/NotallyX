@@ -6,7 +6,7 @@ import android.util.Log
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.documentfile.provider.DocumentFile
-import com.philkes.notallyx.utils.nameWithoutExtension
+import com.philkes.notallyx.core.common.extensions.nameWithoutExtension
 
 private const val TAG = "PdfExtensions"
 

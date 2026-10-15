@@ -8,7 +8,7 @@
 
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetClass="com.philkes.notallyx.presentation.activity.note.EditNoteActivity"
+            android:targetClass="com.philkes.notallyx.feature.editor.EditNoteActivity"
             android:targetPackage="com.philkes.notallyx" />
 
     </shortcut>
@@ -20,7 +20,7 @@
 
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetClass="com.philkes.notallyx.presentation.activity.note.EditListActivity"
+            android:targetClass="com.philkes.notallyx.feature.editor.EditListActivity"
             android:targetPackage="com.philkes.notallyx" />
 
     </shortcut>

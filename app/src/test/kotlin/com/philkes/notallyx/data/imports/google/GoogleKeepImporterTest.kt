@@ -1,4 +1,4 @@
-package com.philkes.notallyx.data.imports.google
+package com.philkes.notallyx.feature.migration.imports.google
 
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote

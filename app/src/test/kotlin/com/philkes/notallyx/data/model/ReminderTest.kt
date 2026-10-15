@@ -1,5 +1,12 @@
 package com.philkes.notallyx.data.model
 
+import com.philkes.notallyx.data.model.extensions.findLastNotificationDate
+import com.philkes.notallyx.data.model.extensions.findLastNotified
+import com.philkes.notallyx.data.model.extensions.findNextNotificationDate
+import com.philkes.notallyx.data.model.extensions.lastNotification
+import com.philkes.notallyx.data.model.extensions.nextNotification
+import com.philkes.notallyx.data.model.extensions.nextRepetition
+import com.philkes.notallyx.data.model.extensions.toMillis
 import java.util.Calendar
 import org.junit.Assert.assertEquals
 import org.junit.Test

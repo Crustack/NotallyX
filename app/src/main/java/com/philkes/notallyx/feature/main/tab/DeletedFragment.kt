@@ -1,0 +1,42 @@
+package com.philkes.notallyx.feature.main.tab
+
+// import com.philkes.notallyx.add
+// import com.philkes.notallyx.setCancelButton
+import android.os.Bundle
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.View
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.philkes.notallyx.R
+import com.philkes.notallyx.core.ui.extensions.add
+import com.philkes.notallyx.core.ui.extensions.setCancelButton
+import com.philkes.notallyx.data.model.Folder
+import org.koin.androidx.viewmodel.ext.android.viewModel
+
+class DeletedFragment : NotesFragment() {
+
+    private val deletedViewModel: DeletedViewModel by viewModel()
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        model.setFolder(Folder.DELETED)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        menu.add(R.string.delete_all, R.drawable.delete_all) { deleteAllNotes() }
+    }
+
+    private fun deleteAllNotes() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setMessage(R.string.delete_all_notes)
+            .setPositiveButton(R.string.delete) { _, _ ->
+                deletedViewModel.deleteAllTrashedBaseNotes()
+            }
+            .setCancelButton()
+            .show()
+    }
+
+    override fun getBackgroundResId() = R.drawable.delete
+
+    override fun getFlow() = deletedViewModel.deletedNotes
+}

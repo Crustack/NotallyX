@@ -1,4 +1,4 @@
-package com.philkes.notallyx.data.imports.txt
+package com.philkes.notallyx.feature.migration.imports.txt
 
 import junit.framework.TestCase.assertNotNull
 import org.assertj.core.api.Assertions.assertThat

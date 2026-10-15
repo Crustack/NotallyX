@@ -1,5 +1,6 @@
 package com.philkes.notallyx.data.model
 
+import com.philkes.notallyx.data.model.extensions.toMarkdown
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

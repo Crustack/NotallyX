@@ -1,12 +1,23 @@
-package com.philkes.notallyx.presentation.viewmodel.main.fragment
+package com.philkes.notallyx.viewmodel.main.fragment
 
 import android.app.Application
 import android.os.Environment
 import androidx.preference.PreferenceManager
 import androidx.test.core.app.ApplicationProvider
+import com.philkes.notallyx.core.common.error.*
+import com.philkes.notallyx.core.common.extensions.*
+import com.philkes.notallyx.core.common.result.*
+import com.philkes.notallyx.core.database.*
+import com.philkes.notallyx.core.preference.*
+import com.philkes.notallyx.core.preference.NotallyXPreferences.Companion.EMPTY_PATH
+import com.philkes.notallyx.core.security.*
+import com.philkes.notallyx.core.ui.components.*
+import com.philkes.notallyx.core.ui.dialog.*
+import com.philkes.notallyx.core.ui.extensions.*
+import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.ShadowContextImplMedia
-import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
-import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.EMPTY_PATH
+import com.philkes.notallyx.data.model.extensions.*
+import com.philkes.notallyx.feature.settings.SettingsViewModel
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before

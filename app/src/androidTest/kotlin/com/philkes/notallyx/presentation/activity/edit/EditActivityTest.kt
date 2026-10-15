@@ -1,5 +1,6 @@
-package com.philkes.notallyx.presentation.activity.edit
+package com.philkes.notallyx.activity.edit
 
+// import com.philkes.notallyx.R
 import android.Manifest
 import android.app.Activity
 import android.app.Instrumentation
@@ -31,16 +32,24 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
-import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.error.*
+import com.philkes.notallyx.core.common.extensions.*
+import com.philkes.notallyx.core.common.result.*
+import com.philkes.notallyx.core.database.*
+import com.philkes.notallyx.core.preference.*
+import com.philkes.notallyx.core.security.*
+import com.philkes.notallyx.core.ui.components.*
+import com.philkes.notallyx.core.ui.dialog.*
+import com.philkes.notallyx.core.ui.extensions.*
+import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Color
+import com.philkes.notallyx.data.model.extensions.*
 import com.philkes.notallyx.data.model.toColorString
-import com.philkes.notallyx.presentation.activity.main.MainActivity
-import com.philkes.notallyx.presentation.activity.note.RecordAudioActivity
+import com.philkes.notallyx.feature.main.MainActivity
+import com.philkes.notallyx.feature.media.audio.RecordAudioActivity
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.waitUntil
-import com.philkes.notallyx.utils.getTempAudioFile
-import com.philkes.notallyx.utils.getUriForFile
 import java.io.File
 import org.hamcrest.Matchers.allOf
 import org.junit.Assert.assertTrue

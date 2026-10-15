@@ -1,4 +1,4 @@
-package com.philkes.notallyx.presentation.view.screens
+package com.philkes.notallyx.view.screens
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test

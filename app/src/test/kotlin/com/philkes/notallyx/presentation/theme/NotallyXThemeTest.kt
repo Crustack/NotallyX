@@ -1,7 +1,21 @@
-package com.philkes.notallyx.presentation.theme
+package com.philkes.notallyx.theme
 
 import androidx.compose.ui.graphics.Color
-import com.philkes.notallyx.presentation.viewmodel.preference.Theme
+import com.philkes.notallyx.core.common.error.*
+import com.philkes.notallyx.core.common.extensions.*
+import com.philkes.notallyx.core.common.result.*
+import com.philkes.notallyx.core.database.*
+import com.philkes.notallyx.core.preference.*
+import com.philkes.notallyx.core.security.*
+import com.philkes.notallyx.core.ui.components.*
+import com.philkes.notallyx.core.ui.dialog.*
+import com.philkes.notallyx.core.ui.extensions.*
+import com.philkes.notallyx.core.ui.theme.ContainerDark
+import com.philkes.notallyx.core.ui.theme.ContainerLight
+import com.philkes.notallyx.core.ui.theme.ContainerSuperDark
+import com.philkes.notallyx.core.ui.theme.MdThemePrimary
+import com.philkes.notallyx.core.ui.views.*
+import com.philkes.notallyx.data.model.extensions.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 

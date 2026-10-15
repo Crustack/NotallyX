@@ -1,8 +1,8 @@
 package com.philkes.notallyx.data.model
 
 import android.content.ContextWrapper
+import com.philkes.notallyx.core.common.extensions.log
 import com.philkes.notallyx.data.dao.BaseNoteDao
-import com.philkes.notallyx.utils.log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

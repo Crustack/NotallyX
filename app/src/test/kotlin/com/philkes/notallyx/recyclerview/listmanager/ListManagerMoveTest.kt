@@ -1,12 +1,22 @@
 package com.philkes.notallyx.recyclerview.listmanager
 
-import com.philkes.notallyx.presentation.view.note.listitem.printList
-import com.philkes.notallyx.presentation.viewmodel.preference.ListItemSort
+import com.philkes.notallyx.core.common.error.*
+import com.philkes.notallyx.core.common.extensions.*
+import com.philkes.notallyx.core.common.result.*
+import com.philkes.notallyx.core.database.*
+import com.philkes.notallyx.core.preference.*
+import com.philkes.notallyx.core.security.*
+import com.philkes.notallyx.core.ui.components.*
+import com.philkes.notallyx.core.ui.dialog.*
+import com.philkes.notallyx.core.ui.extensions.*
+import com.philkes.notallyx.core.ui.views.*
+import com.philkes.notallyx.data.model.extensions.*
+import com.philkes.notallyx.feature.editor.history.ListMoveChange
+import com.philkes.notallyx.feature.editor.listitem.printList
 import com.philkes.notallyx.test.assertOrder
 import com.philkes.notallyx.test.assertSize
 import com.philkes.notallyx.test.createListItem
 import com.philkes.notallyx.test.simulateDrag
-import com.philkes.notallyx.utils.changehistory.ListMoveChange
 import org.junit.Test
 
 class ListManagerMoveTest : ListManagerTestBase() {

@@ -1,17 +1,17 @@
-package com.philkes.notallyx.data.imports.google
+package com.philkes.notallyx.feature.migration.imports.google
 
-import com.philkes.notallyx.data.imports.evernote.EvernoteImporter
-import com.philkes.notallyx.data.imports.evernote.EvernoteNote
-import com.philkes.notallyx.data.imports.evernote.EvernoteResource
-import com.philkes.notallyx.data.imports.evernote.EvernoteResourceAttributes
-import com.philkes.notallyx.data.imports.evernote.EvernoteResourceData
-import com.philkes.notallyx.data.imports.evernote.EvernoteTag
-import com.philkes.notallyx.data.imports.evernote.EvernoteTask
-import com.philkes.notallyx.data.imports.evernote.TaskStatus
-import com.philkes.notallyx.data.imports.evernote.mapToBaseNote
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.Type
+import com.philkes.notallyx.feature.migration.imports.evernote.EvernoteImporter
+import com.philkes.notallyx.feature.migration.imports.evernote.EvernoteNote
+import com.philkes.notallyx.feature.migration.imports.evernote.EvernoteResource
+import com.philkes.notallyx.feature.migration.imports.evernote.EvernoteResourceAttributes
+import com.philkes.notallyx.feature.migration.imports.evernote.EvernoteResourceData
+import com.philkes.notallyx.feature.migration.imports.evernote.EvernoteTag
+import com.philkes.notallyx.feature.migration.imports.evernote.EvernoteTask
+import com.philkes.notallyx.feature.migration.imports.evernote.TaskStatus
+import com.philkes.notallyx.feature.migration.imports.evernote.mapToBaseNote
 import java.io.InputStream
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.atIndex

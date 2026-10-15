@@ -43,7 +43,7 @@
         </provider>
 
         <activity
-            android:name=".presentation.activity.main.MainActivity"
+            android:name=".feature.main.MainActivity"
             android:exported="true">
 
             <intent-filter>
@@ -58,11 +58,11 @@
         </activity>
 
         <activity
-            android:name=".presentation.activity.note.EditListActivity"
+            android:name=".feature.editor.EditListActivity"
             android:windowSoftInputMode="adjustResize" />
 
         <activity
-            android:name=".presentation.activity.note.EditNoteActivity"
+            android:name=".feature.editor.EditNoteActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
 
@@ -96,7 +96,7 @@
         </activity>
 
         <activity
-            android:name=".presentation.activity.note.EditTextPlainActivity"
+            android:name=".feature.editor.EditTextPlainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
 
@@ -117,24 +117,24 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".presentation.activity.note.ViewImageActivity" />
+        <activity android:name=".feature.media.image.ViewImageActivity" />
 
         <activity
-            android:name=".presentation.activity.DatabaseTransitionActivity"
+            android:name=".feature.migration.backup.DatabaseTransitionActivity"
             android:exported="false" />
 
-        <activity android:name=".presentation.activity.note.SelectLabelsActivity" />
+        <activity android:name=".feature.labels.SelectLabelsActivity" />
 
-        <activity android:name=".presentation.activity.note.reminders.RemindersActivity" />
+        <activity android:name=".feature.reminder.RemindersActivity" />
 
         <activity
-            android:name=".presentation.activity.note.RecordAudioActivity"
+            android:name=".feature.media.audio.RecordAudioActivity"
             android:launchMode="singleTask" />
 
-        <activity android:name=".presentation.activity.note.PlayAudioActivity" />
+        <activity android:name=".feature.media.audio.PlayAudioActivity" />
 
         <activity
-            android:name=".presentation.activity.ConfigureWidgetActivity"
+            android:name=".feature.widget.ConfigureWidgetActivity"
             android:exported="false">
 
             <intent-filter>
@@ -144,12 +144,12 @@
         </activity>
 
         <activity
-            android:name=".presentation.activity.note.PickNoteActivity"
+            android:name=".feature.main.PickNoteActivity"
             android:exported="false">
         </activity>
 
         <activity
-          android:name=".utils.ErrorActivity"
+          android:name=".core.common.error.ErrorActivity"
           android:exported="true"
           android:label="@string/unknown_error"
           android:process=":error_activity">
@@ -159,7 +159,7 @@
         </activity>
 
         <receiver
-            android:name=".presentation.widget.WidgetProvider"
+            android:name=".feature.widget.WidgetProvider"
             android:exported="false"
             android:label="@string/single_note_or_list">
 
@@ -174,7 +174,7 @@
 
         </receiver>
 
-        <receiver android:name=".presentation.activity.note.reminders.ReminderReceiver" android:enabled="true" android:exported="false" >
+        <receiver android:name=".feature.reminder.ReminderReceiver" android:enabled="true" android:exported="false" >
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
@@ -183,21 +183,21 @@
         </receiver>
 
         <service
-            android:name=".presentation.widget.WidgetService"
+            android:name=".feature.widget.WidgetService"
             android:permission="android.permission.BIND_REMOTEVIEWS" />
 
         <service
-            android:name=".utils.audio.AudioRecordService"
+            android:name=".feature.media.audio.AudioRecordService"
             android:exported="false"
             android:foregroundServiceType="microphone" />
 
         <service
-            android:name=".utils.audio.AudioPlayService"
+            android:name=".feature.media.audio.AudioPlayService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
         <receiver
-            android:name=".utils.backup.CleanupMissingAttachmentsReceiver"
+            android:name=".feature.migration.backup.CleanupMissingAttachmentsReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.philkes.notallyx.action.CLEANUP_MISSING_ATTACHMENTS" />

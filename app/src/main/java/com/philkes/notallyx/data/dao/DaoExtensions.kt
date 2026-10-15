@@ -2,8 +2,8 @@ package com.philkes.notallyx.data.dao
 
 import android.content.Context
 import com.philkes.notallyx.data.model.Folder
-import com.philkes.notallyx.utils.cancelPinAndReminders
-import com.philkes.notallyx.utils.pinAndScheduleReminders
+import com.philkes.notallyx.feature.reminder.cancelPinAndReminders
+import com.philkes.notallyx.feature.reminder.pinAndScheduleReminders
 
 suspend fun Context.moveBaseNotes(baseNoteDao: BaseNoteDao, ids: LongArray, folder: Folder) {
     // Only reminders of notes in NOTES folder are active

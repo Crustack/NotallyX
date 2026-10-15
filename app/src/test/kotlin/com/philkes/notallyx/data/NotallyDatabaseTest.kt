@@ -2,9 +2,10 @@ package com.philkes.notallyx.data
 
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
-import com.philkes.notallyx.data.NotallyDatabase.Companion.setupEncryption
-import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
-import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
+import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.database.NotallyDatabase.Companion.setupEncryption
+import com.philkes.notallyx.core.preference.BiometricLock
+import com.philkes.notallyx.core.preference.NotallyXPreferences
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test

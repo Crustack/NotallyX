@@ -1,4 +1,4 @@
-package com.philkes.notallyx.presentation.view.components
+package com.philkes.notallyx.view.components
 
 import androidx.compose.ui.graphics.Color
 import org.assertj.core.api.Assertions.assertThat

@@ -1,5 +1,6 @@
 package com.philkes.notallyx.test
 
+// import com.philkes.notallyx.NotallyXApplication
 import android.content.ContextWrapper
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -8,7 +9,16 @@ import android.util.Log
 import androidx.recyclerview.widget.SortedList
 import androidx.test.core.app.ApplicationProvider
 import com.philkes.notallyx.NotallyXApplication
-import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.core.common.error.*
+import com.philkes.notallyx.core.common.extensions.*
+import com.philkes.notallyx.core.common.result.*
+import com.philkes.notallyx.core.database.*
+import com.philkes.notallyx.core.preference.*
+import com.philkes.notallyx.core.security.*
+import com.philkes.notallyx.core.ui.components.*
+import com.philkes.notallyx.core.ui.dialog.*
+import com.philkes.notallyx.core.ui.extensions.*
+import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Color
 import com.philkes.notallyx.data.model.FileAttachment
@@ -17,16 +27,18 @@ import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Repetition
 import com.philkes.notallyx.data.model.RepetitionTimeUnit
 import com.philkes.notallyx.data.model.Type
+import com.philkes.notallyx.data.model.extensions.*
 import com.philkes.notallyx.data.model.toColorString
-import com.philkes.notallyx.presentation.view.note.listitem.ListItemDragCallback
-import com.philkes.notallyx.presentation.view.note.listitem.toReadableString
-import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
-import com.philkes.notallyx.utils.MIME_TYPE_JSON
-import com.philkes.notallyx.utils.changehistory.ListIsChildChange
-import com.philkes.notallyx.utils.find
-import com.philkes.notallyx.utils.getCurrentImagesDirectory
+import com.philkes.notallyx.feature.editor.history.ListIsChildChange
+import com.philkes.notallyx.feature.editor.listitem.ListItemDragCallback
+import com.philkes.notallyx.feature.editor.listitem.toReadableString
 import io.mockk.every
 import io.mockk.mockkStatic
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.koin.core.context.GlobalContext
+import org.mockito.Mockito
 import java.io.File
 import java.io.FileOutputStream
 import java.time.LocalDateTime
@@ -34,11 +46,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Date
 import kotlin.random.Random
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.koin.core.context.GlobalContext
-import org.mockito.Mockito
 
 val context
     get() = ApplicationProvider.getApplicationContext<ContextWrapper>()

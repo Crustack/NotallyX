@@ -1,4 +1,4 @@
-// package com.philkes.notallyx.presentation.viewmodel
+// package com.philkes.notallyx.viewmodel
 //
 // import android.app.Application
 // import android.content.ContextWrapper
@@ -16,13 +16,13 @@
 // import com.philkes.notallyx.data.model.Reminder
 // import com.philkes.notallyx.data.model.SpanRepresentation
 // import com.philkes.notallyx.data.model.Type
-// import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
-// import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
-// import com.philkes.notallyx.presentation.viewmodel.preference.PeriodicBackup
-// import com.philkes.notallyx.utils.security.getInitializedCipherForDecryption
-// import com.philkes.notallyx.utils.security.getInitializedCipherForEncryption
-// import com.philkes.notallyx.utils.security.isEncryptedDatabase
-// import com.philkes.notallyx.utils.security.isUnencryptedDatabase
+// import com.philkes.notallyx.core.preference.BiometricLock
+// import com.philkes.notallyx.core.preference.NotallyXPreferences
+// import com.philkes.notallyx.core.preference.PeriodicBackup
+// import com.philkes.notallyx.core.security.getInitializedCipherForDecryption
+// import com.philkes.notallyx.core.security.getInitializedCipherForEncryption
+// import com.philkes.notallyx.core.security.isEncryptedDatabase
+// import com.philkes.notallyx.core.security.isUnencryptedDatabase
 // import java.io.File
 // import kotlinx.coroutines.Dispatchers
 // import kotlinx.coroutines.runBlocking

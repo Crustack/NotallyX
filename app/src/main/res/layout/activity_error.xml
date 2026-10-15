@@ -72,7 +72,7 @@
                         android:padding="12dp"
                         android:textIsSelectable="true"
                         android:textSize="12sp"
-                        tools:text="at com.philkes.notallyx.presentation.activity...\nat com.philkes.notallyx.presentation.activity..." />
+                        tools:text="at com.philkes.notallyx.activity...\nat com.philkes.notallyx.activity..." />
                 </HorizontalScrollView>
 
                 <!-- Copy Icon Pinned Top Right -->

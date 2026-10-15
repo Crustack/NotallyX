@@ -1,5 +1,7 @@
 package com.philkes.notallyx.data.model
 
+import com.philkes.notallyx.data.model.extensions.toBaseNote
+import com.philkes.notallyx.data.model.extensions.toJson
 import com.philkes.notallyx.test.createListItem
 import java.util.Date
 import org.junit.Assert.assertEquals

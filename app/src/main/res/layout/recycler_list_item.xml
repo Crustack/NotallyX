@@ -51,7 +51,7 @@
                 android:layout_alignBaseline="@id/EditText"
                 app:lastBaselineToBottomHeight="7sp" />
 
-            <com.philkes.notallyx.presentation.view.misc.EditTextAutoClearFocus
+            <com.philkes.notallyx.core.ui.views.EditTextAutoClearFocus
               android:id="@+id/EditText"
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
