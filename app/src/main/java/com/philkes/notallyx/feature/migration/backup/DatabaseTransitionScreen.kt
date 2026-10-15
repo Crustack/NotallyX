@@ -27,13 +27,22 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.ui.dialog.ErrorDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
+
+internal data class ErrorDialogData(
+    val title: String,
+    val details: String? = null,
+    val message: String? = null,
+)
 
 /** Composable replacing activity_database_transition.xml layout. */
 @Composable
 internal fun DatabaseTransitionScreen(
     statusText: String,
     modifier: Modifier = Modifier,
+    errorData: ErrorDialogData? = null,
+    onErrorDismiss: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val appIconPainter =
@@ -73,6 +82,15 @@ internal fun DatabaseTransitionScreen(
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
+        )
+    }
+
+    if (errorData != null) {
+        ErrorDialog(
+            title = errorData.title,
+            details = errorData.details,
+            message = errorData.message,
+            onDismissRequest = onErrorDismiss,
         )
     }
 }

@@ -22,7 +22,6 @@ import com.philkes.notallyx.core.common.extensions.getLogsDir
 import com.philkes.notallyx.core.common.extensions.getUriForFile
 import com.philkes.notallyx.core.common.extensions.log
 import com.philkes.notallyx.core.common.extensions.reportBug
-import com.philkes.notallyx.core.common.extensions.showErrorDialog
 import com.philkes.notallyx.core.common.extensions.toMessage
 import com.philkes.notallyx.core.common.extensions.viewFile
 import com.philkes.notallyx.core.common.extensions.viewLogs
@@ -31,7 +30,6 @@ import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.extensions.exportedText
 import com.philkes.notallyx.core.ui.extensions.restartApplication
-import com.philkes.notallyx.core.ui.extensions.setupProgressDialog
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.feature.migration.ExportMimeType
@@ -78,6 +76,8 @@ class ErrorActivity : AppCompatActivity() {
                 val showReimportDialog = viewModel.showReimportDialog.collectAsStateWithLifecycle()
                 val importResultDialogMessage =
                     viewModel.importResultDialogMessage.collectAsStateWithLifecycle()
+                val errorDialogState = viewModel.errorDialogState.collectAsStateWithLifecycle()
+                val backupProgress = viewModel.backupProgress.collectAsStateWithLifecycle()
 
                 ErrorScreen(
                     uiState =
@@ -88,6 +88,8 @@ class ErrorActivity : AppCompatActivity() {
                             showExportBackupDialog = showExportBackupDialog.value,
                             showReimportDialog = showReimportDialog.value,
                             importResultDialogMessage = importResultDialogMessage.value,
+                            errorDialogState = errorDialogState.value,
+                            backupProgress = backupProgress.value,
                         ),
                     onDismissExportBackupDialog = { viewModel.setShowExportBackupDialog(false) },
                     onConfirmExportBackupDialog = {
@@ -106,19 +108,21 @@ class ErrorActivity : AppCompatActivity() {
                         exportBackupActivityResultLauncher.launch(intent)
                     },
                     onDismissReimportDialog = { viewModel.setShowReimportDialog(false) },
+                    onDismissErrorDialog = { viewModel.errorDialogState.value = null },
                     onConfirmReimportDialog = {
                         viewModel.setShowReimportDialog(false)
                         viewModel.pendingImportUri?.let { uri ->
                             val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
-                                showErrorDialog(
-                                    throwable,
-                                    R.string.reimport_database_failed,
-                                    getString(
-                                        crash_export_backup_failed,
-                                        getString(report_bug),
-                                    ),
-                                    originalStacktrace = throwable.stackTraceToString(),
-                                )
+                                viewModel.errorDialogState.value =
+                                    ErrorDialogState(
+                                        titleResId = R.string.reimport_database_failed,
+                                        message =
+                                            getString(
+                                                crash_export_backup_failed,
+                                                getString(report_bug),
+                                            ),
+                                        details = throwable.stackTraceToString(),
+                                    )
                             }
                             lifecycleScope.launch(exceptionHandler) {
                                 val importResult =
@@ -196,35 +200,36 @@ class ErrorActivity : AppCompatActivity() {
                             } catch (e: Exception) {
                                 Log.w(TAG, "Failed to delete empty backup file '$uri'", e)
                             }
-                            showErrorDialog(
-                                throwable,
-                                auto_backup_failed,
-                                getString(
-                                    R.string.crash_export_backup,
-                                    getString(report_bug),
-                                    getString(R.string.export_database),
-                                ),
-                                originalStacktrace = stacktrace,
-                                neutralButtonTextResId = R.string.export_database,
-                                neutralButtonClickListener = { _, _ ->
-                                    val intent =
-                                        Intent(Intent.ACTION_CREATE_DOCUMENT)
-                                            .apply {
-                                                type = "application/octet-stream"
-                                                addCategory(Intent.CATEGORY_OPENABLE)
-                                                putExtra(
-                                                    Intent.EXTRA_TITLE,
-                                                    "NotallyX_Raw_Database-${
-                                                        FILE_TIMESTAMP_FORMAT.format(
-                                                            Date()
-                                                        )
-                                                    }.sqlite",
-                                                )
-                                            }
-                                            .wrapWithChooser(this@ErrorActivity)
-                                    exportDatabaseActivityResultLauncher.launch(intent)
-                                },
-                            )
+                            viewModel.errorDialogState.value =
+                                ErrorDialogState(
+                                    titleResId = auto_backup_failed,
+                                    message =
+                                        getString(
+                                            R.string.crash_export_backup,
+                                            getString(report_bug),
+                                            getString(R.string.export_database),
+                                        ),
+                                    details = stacktrace ?: throwable.stackTraceToString(),
+                                    neutralButtonTextResId = R.string.export_database,
+                                    onNeutralButtonClick = {
+                                        val intent =
+                                            Intent(Intent.ACTION_CREATE_DOCUMENT)
+                                                .apply {
+                                                    type = "application/octet-stream"
+                                                    addCategory(Intent.CATEGORY_OPENABLE)
+                                                    putExtra(
+                                                        Intent.EXTRA_TITLE,
+                                                        "NotallyX_Raw_Database-${
+                                                            FILE_TIMESTAMP_FORMAT.format(
+                                                                Date()
+                                                            )
+                                                        }.sqlite",
+                                                    )
+                                                }
+                                                .wrapWithChooser(this@ErrorActivity)
+                                        exportDatabaseActivityResultLauncher.launch(intent)
+                                    },
+                                )
                         }
                         lifecycleScope.launch(exceptionHandler) {
                             val exportedNotesAndAttachments =
@@ -252,12 +257,16 @@ class ErrorActivity : AppCompatActivity() {
                             } catch (e: Exception) {
                                 Log.w(TAG, "Failed to delete empty database file '$uri'", e)
                             }
-                            showErrorDialog(
-                                throwable,
-                                auto_backup_failed,
-                                getString(crash_export_backup_failed, getString(report_bug)),
-                                originalStacktrace = stacktrace,
-                            )
+                            viewModel.errorDialogState.value =
+                                ErrorDialogState(
+                                    titleResId = auto_backup_failed,
+                                    message =
+                                        getString(
+                                            crash_export_backup_failed,
+                                            getString(report_bug),
+                                        ),
+                                    details = stacktrace ?: throwable.stackTraceToString(),
+                                )
                         }
                         lifecycleScope.launch(exceptionHandler) {
                             val exportException: Throwable? =
@@ -275,15 +284,17 @@ class ErrorActivity : AppCompatActivity() {
                                     }
                                 }
                             if (exportException != null) {
-                                showErrorDialog(
-                                    exportException,
-                                    auto_backup_failed,
-                                    getString(
-                                        R.string.crash_export_raw_backup_failed,
-                                        viewModel.backupPath ?: "null",
-                                        getString(report_bug),
-                                    ),
-                                )
+                                viewModel.errorDialogState.value =
+                                    ErrorDialogState(
+                                        titleResId = auto_backup_failed,
+                                        message =
+                                            getString(
+                                                R.string.crash_export_raw_backup_failed,
+                                                viewModel.backupPath ?: "null",
+                                                getString(report_bug),
+                                            ),
+                                        details = exportException.stackTraceToString(),
+                                    )
                                 return@launch
                             }
                             application.showToast(
@@ -295,7 +306,6 @@ class ErrorActivity : AppCompatActivity() {
                     }
                 }
             }
-        viewModel.backupProgress.setupProgressDialog(this)
     }
 
     companion object {

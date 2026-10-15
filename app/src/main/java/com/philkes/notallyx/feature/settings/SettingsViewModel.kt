@@ -4,8 +4,6 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -22,12 +20,9 @@ import com.philkes.notallyx.core.preference.NotallyXPreferences.Companion.EMPTY_
 import com.philkes.notallyx.core.preference.NotallyXPreferences.Companion.START_VIEW_DEFAULT
 import com.philkes.notallyx.core.preference.NotallyXPreferences.Companion.START_VIEW_UNLABELED
 import com.philkes.notallyx.core.preference.Theme
-import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
-import com.philkes.notallyx.core.ui.extensions.createComposeDialog
 import com.philkes.notallyx.core.ui.extensions.exportedText
 import com.philkes.notallyx.core.ui.extensions.restartApplication
 import com.philkes.notallyx.core.ui.extensions.showToast
-import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.dao.CommonDao
 import com.philkes.notallyx.data.dao.LabelDao
@@ -296,7 +291,6 @@ class SettingsViewModel(
             themeBefore,
             useDynamicColorsBefore,
             oldStartView,
-            context,
             askForUriPermissions,
         ) {
             if (success) {
@@ -310,7 +304,6 @@ class SettingsViewModel(
         themeBefore: Theme,
         useDynamicColorsBefore: Boolean,
         oldStartView: String,
-        context: Context,
         askForUriPermissions: (uri: Uri) -> Unit,
         callback: () -> Unit,
     ) {
@@ -322,7 +315,6 @@ class SettingsViewModel(
             previousBackupsFolder = oldBackupsFolder
             if (themeBefore == preferences.theme.getFreshValue() && !hasUseDynamicColorsChange) {
                 refreshBackupsFolder(
-                    context,
                     backupFolder,
                     oldBackupsFolder,
                     askForUriPermissions,
@@ -344,10 +336,9 @@ class SettingsViewModel(
     }
 
     fun refreshBackupsFolder(
-        context: Context,
         backupFolder: String = preferences.backupsFolder.value,
         oldBackupsFolder: String? = previousBackupsFolder,
-        askForUriPermissions: (uri: Uri) -> Unit,
+        askForUriPermissions: (backupFolderUri: Uri) -> Unit,
     ) {
         if (oldBackupsFolder != null) {
             previousBackupsFolder = oldBackupsFolder
@@ -357,30 +348,7 @@ class SettingsViewModel(
         }
         try {
             val backupFolderUri = backupFolder.toUri()
-            var isPositiveButtonClicked = false
-            val composeView = ComposeView(context)
-            val dialog = createComposeDialog(context, composeView)
-
-            composeView.setContent {
-                NotallyXTheme(theme = preferences.theme.value) {
-                    ConfirmDialog(
-                        message = stringResource(R.string.auto_backups_folder_rechoose),
-                        positiveButtonText = stringResource(R.string.choose_folder),
-                        negativeButtonText = stringResource(R.string.cancel),
-                        onDismissRequest = {
-                            if (!isPositiveButtonClicked) {
-                                cancelFolderSelection(oldBackupsFolder)
-                            }
-                            dialog.dismiss()
-                        },
-                        onConfirm = {
-                            isPositiveButtonClicked = true
-                            askForUriPermissions(backupFolderUri)
-                        },
-                    )
-                }
-            }
-            dialog.show()
+            askForUriPermissions(backupFolderUri)
         } catch (_: Exception) {
             cancelFolderSelection(oldBackupsFolder)
         }

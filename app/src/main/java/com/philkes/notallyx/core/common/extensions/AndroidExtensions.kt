@@ -35,7 +35,6 @@ import androidx.lifecycle.Observer
 import com.philkes.notallyx.BuildConfig
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.preference.NotallyXPreferences
-import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.dialog.ErrorDialog
 import com.philkes.notallyx.core.ui.extensions.getQuantityString
 import com.philkes.notallyx.core.ui.extensions.showToast
@@ -186,6 +185,9 @@ private fun PrintWriter.printBuildInfos(timeString: String) {
     this.println("Android : " + Build.VERSION.SDK_INT)
 }
 
+@Deprecated(
+    "Use StateFlow/State flags and render ErrorDialog declaratively inside Composable screen"
+)
 fun Fragment.showErrorDialog(
     throwable: Throwable,
     titleResId: Int,
@@ -241,6 +243,9 @@ fun Activity.openNote(noteId: Long, noteType: Type, clearBackStack: Boolean = fa
     startActivity(intent)
 }
 
+@Deprecated(
+    "Use StateFlow/State flags and render ErrorDialog declaratively inside Composable screen"
+)
 fun Activity.showErrorDialog(
     throwable: Throwable,
     titleResId: Int,
@@ -362,41 +367,23 @@ fun Fragment.getExtraBooleanFromBundleOrIntent(
     )
 }
 
-private fun Context.showConfirmCrashLogTooLong() {
-    val composeView = ComposeView(this)
-    val dialog =
-        Dialog(this).apply {
-            requestWindowFeature(Window.FEATURE_NO_TITLE)
-            window?.setBackgroundDrawableResource(android.R.color.transparent)
-            setContentView(composeView)
-        }
-    val preferences =
-        NotallyXPreferences.getInstance(this as? ContextWrapper ?: ContextWrapper(this))
-
-    composeView.setContent {
-        NotallyXTheme(theme = preferences.theme.value) {
-            ConfirmDialog(
-                message =
-                    stringResource(
-                        R.string.report_bug_stacktrace_too_long,
-                        stringResource(R.string.continue_),
-                    ),
-                positiveButtonText = stringResource(R.string.continue_),
-                onDismissRequest = { dialog.dismiss() },
-                onConfirm = { reportBug("<PASTE CRASH LOGS HERE>") },
-            )
-        }
-    }
-    dialog.show()
-}
-
 fun Context.reportBug(stackTrace: String?) {
     catchNoBrowserInstalled {
         try {
             startActivity(createReportBugIntent(stackTrace))
         } catch (_: IllegalArgumentException) {
-            copyToClipBoard(stackTrace!!)
-            showConfirmCrashLogTooLong()
+            if (stackTrace != null) {
+                copyToClipBoard(stackTrace)
+            }
+            showToast(R.string.report_bug_stacktrace_too_long)
+            startActivity(
+                Intent(
+                        Intent.ACTION_VIEW,
+                        "https://github.com/Crustack/NotallyX/issues/new?labels=bug&template=bug_report.md"
+                            .toUri(),
+                    )
+                    .wrapWithChooser(this)
+            )
         }
     }
 }

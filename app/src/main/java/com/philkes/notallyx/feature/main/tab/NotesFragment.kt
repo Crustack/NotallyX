@@ -163,11 +163,14 @@ abstract class NotesFragment : Fragment(), ItemListener {
                             onNoteLongClick = { _, position -> onLongClick(position) },
                             onReminderClick = { _, position -> onReminderClick(position) },
                         )
+                        ContentOverlay()
                     }
                 }
             }
         return composeView
     }
+
+    @androidx.compose.runtime.Composable protected open fun ContentOverlay() {}
 
     override fun onClick(position: Int) {
         if (position != -1) {

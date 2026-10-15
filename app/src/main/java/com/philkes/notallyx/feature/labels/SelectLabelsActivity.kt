@@ -1,18 +1,15 @@
 package com.philkes.notallyx.feature.labels
 
-import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
-import android.view.Window
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.security.ComposeBinding
 import com.philkes.notallyx.core.security.LockedActivity
-import com.philkes.notallyx.core.ui.dialog.TextInputDialog
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -47,10 +44,12 @@ class SelectLabelsActivity : LockedActivity<ComposeBinding>() {
                 val selectedLabelsState = remember {
                     mutableStateListOf(*selectedLabels.toTypedArray())
                 }
+                val dialogState by labelsViewModel.dialogState.collectAsStateWithLifecycle()
 
                 SelectLabelsScreen(
                     labels = labelsState.value,
                     selectedLabels = selectedLabelsState,
+                    dialogState = dialogState,
                     onLabelToggle = { value, checked ->
                         if (checked) {
                             if (!selectedLabels.contains(value)) {
@@ -62,8 +61,16 @@ class SelectLabelsActivity : LockedActivity<ComposeBinding>() {
                             selectedLabelsState.remove(value)
                         }
                     },
-                    onAddLabelClick = { addLabel() },
+                    onAddLabelClick = { labelsViewModel.showAddDialog() },
                     onBackClick = { finish() },
+                    onDismissDialog = { labelsViewModel.dismissDialog() },
+                    onConfirmAddLabel = { value ->
+                        labelsViewModel.insertLabel(value) { success ->
+                            if (success) {
+                                labelsViewModel.dismissDialog()
+                            } else showToast(R.string.label_exists)
+                        }
+                    },
                 )
             }
         }
@@ -72,36 +79,6 @@ class SelectLabelsActivity : LockedActivity<ComposeBinding>() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putStringArrayList(EXTRA_SELECTED_LABELS, selectedLabels)
-    }
-
-    private fun addLabel() {
-        val composeView = ComposeView(this)
-        val dialog =
-            Dialog(this).apply {
-                requestWindowFeature(Window.FEATURE_NO_TITLE)
-                window?.setBackgroundDrawableResource(android.R.color.transparent)
-                setContentView(composeView)
-            }
-
-        composeView.setContent {
-            NotallyXTheme(theme = preferences.theme.value) {
-                TextInputDialog(
-                    title = stringResource(R.string.add_label),
-                    initialValue = "",
-                    onDismissRequest = { dialog.dismiss() },
-                    onConfirm = { value ->
-                        if (value.isNotEmpty()) {
-                            labelsViewModel.insertLabel(value) { success ->
-                                if (success) {
-                                    dialog.dismiss()
-                                } else showToast(R.string.label_exists)
-                            }
-                        }
-                    },
-                )
-            }
-        }
-        dialog.show()
     }
 
     companion object {

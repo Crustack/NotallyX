@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
 /** Composable replacing activity_play_audio.xml layout. */
@@ -45,12 +46,15 @@ internal fun PlayAudioScreen(
     titleText: String = stringResource(R.string.edit_reminders),
     isPlaying: Boolean = false,
     errorMessage: String? = null,
+    showDeleteConfirmDialog: Boolean = false,
     onPlayPauseClick: () -> Unit = {},
     onSeek: (Long) -> Unit = {},
     onBackClick: () -> Unit = {},
     onShareClick: () -> Unit = {},
     onSaveClick: () -> Unit = {},
     onDeleteClick: () -> Unit = {},
+    onDismissDeleteConfirm: () -> Unit = {},
+    onConfirmDelete: () -> Unit = {},
 ) {
     var isSeeking by remember { mutableStateOf(false) }
     var sliderPosition by remember { mutableFloatStateOf(currentPosition.toFloat()) }
@@ -162,6 +166,15 @@ internal fun PlayAudioScreen(
                 }
             }
         }
+    }
+
+    if (showDeleteConfirmDialog) {
+        ConfirmDialog(
+            message = stringResource(R.string.delete_audio_recording_forever),
+            positiveButtonText = stringResource(R.string.delete),
+            onDismissRequest = onDismissDeleteConfirm,
+            onConfirm = onConfirmDelete,
+        )
     }
 }
 

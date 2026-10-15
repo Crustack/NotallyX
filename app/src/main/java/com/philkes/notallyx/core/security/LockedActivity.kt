@@ -22,7 +22,6 @@ import com.philkes.notallyx.core.common.extensions.secondsBetween
 import com.philkes.notallyx.core.database.splitOversizedNotes
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.preference.Theme
-import com.philkes.notallyx.core.ui.extensions.setupProgressDialog
 import com.philkes.notallyx.feature.migration.progress.MigrationProgress
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -92,7 +91,6 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
                         val time = System.currentTimeMillis()
                         if (!isExceptionAlreadyBeingHandled(time)) {
                             EXCEPTION_HANDLER_MUTEX_LAST_TIMESTAMP = time
-                            migrationProgress.setupProgressDialog(this@LockedActivity)
                             setMigrationProgress(
                                 MigrationProgress(
                                     R.string.migration_splitting_notes,

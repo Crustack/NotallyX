@@ -34,8 +34,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.result.Progress
 import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.dialog.ErrorDialog
+import com.philkes.notallyx.core.ui.dialog.ProgressDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
 data class ErrorScreenUiState(
@@ -45,6 +47,8 @@ data class ErrorScreenUiState(
     val showExportBackupDialog: Boolean = false,
     val showReimportDialog: Boolean = false,
     val importResultDialogMessage: String? = null,
+    val errorDialogState: ErrorDialogState? = null,
+    val backupProgress: Progress? = null,
 )
 
 /** Composable replacing activity_error.xml layout. */
@@ -57,6 +61,7 @@ internal fun ErrorScreen(
     onDismissReimportDialog: () -> Unit = {},
     onConfirmReimportDialog: () -> Unit = {},
     onDismissImportResultDialog: () -> Unit = {},
+    onDismissErrorDialog: () -> Unit = {},
     onRestartClick: () -> Unit = {},
     onReportBugClick: () -> Unit = {},
     onExportBackupClick: () -> Unit = {},
@@ -124,6 +129,7 @@ internal fun ErrorScreen(
             onDismissReimportDialog = onDismissReimportDialog,
             onConfirmReimportDialog = onConfirmReimportDialog,
             onDismissImportResultDialog = onDismissImportResultDialog,
+            onDismissErrorDialog = onDismissErrorDialog,
         )
     }
 }
@@ -234,6 +240,7 @@ private fun ErrorScreenDialogs(
     onDismissReimportDialog: () -> Unit,
     onConfirmReimportDialog: () -> Unit,
     onDismissImportResultDialog: () -> Unit,
+    onDismissErrorDialog: () -> Unit,
 ) {
     if (uiState.showExportBackupDialog) {
         ConfirmDialog(
@@ -264,6 +271,38 @@ private fun ErrorScreenDialogs(
             title = stringResource(R.string.database),
             message = uiState.importResultDialogMessage,
             onDismissRequest = onDismissImportResultDialog,
+        )
+    }
+
+    if (uiState.errorDialogState != null) {
+        val errorState = uiState.errorDialogState
+        ErrorDialog(
+            title = stringResource(errorState.titleResId),
+            message = errorState.message,
+            details = errorState.details,
+            neutralButtonText = errorState.neutralButtonTextResId?.let { stringResource(it) },
+            onNeutralButtonClick = errorState.onNeutralButtonClick,
+            onDismissRequest = onDismissErrorDialog,
+        )
+    }
+
+    if (uiState.backupProgress?.inProgress == true) {
+        val progress = uiState.backupProgress
+        val msg =
+            when {
+                progress.indeterminate -> stringResource(R.string.calculating)
+                else ->
+                    stringResource(R.string.count, progress.current, progress.total) +
+                        (progress.countSuffix?.let { " $it" } ?: "")
+            }
+        val progressValue =
+            if (progress.indeterminate || progress.total == 0) null
+            else progress.current.toFloat() / progress.total.toFloat()
+
+        ProgressDialog(
+            title = stringResource(progress.titleId),
+            message = msg,
+            progress = progressValue,
         )
     }
 }

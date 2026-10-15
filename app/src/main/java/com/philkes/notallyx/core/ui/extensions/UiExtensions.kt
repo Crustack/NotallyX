@@ -934,6 +934,7 @@ fun @receiver:ColorInt Int.getSlightContrastColor(): Int {
     )
 }
 
+@Deprecated("Use StateFlow/State flags and render dialogs declaratively inside Composable screen")
 fun Fragment.showDialog(
     messageResId: Int,
     positiveButtonTextResId: Int,
@@ -952,6 +953,7 @@ fun Fragment.showDialog(
             fullSize,
         )
 
+@Deprecated("Use StateFlow/State flags and render dialogs declaratively inside Composable screen")
 fun Fragment.showDialog(
     message: String,
     positiveButtonTextResId: Int,
@@ -970,6 +972,7 @@ fun Fragment.showDialog(
             fullSize,
         )
 
+@Deprecated("Use StateFlow/State flags and render dialogs declaratively inside Composable screen")
 fun Context.showDialog(
     messageResId: Int,
     positiveButtonTextResId: Int,
@@ -988,6 +991,7 @@ fun Context.showDialog(
     )
 }
 
+@Deprecated("Use StateFlow/State flags and render dialogs declaratively inside Composable screen")
 fun createComposeDialog(
     context: Context,
     composeView: ComposeView,

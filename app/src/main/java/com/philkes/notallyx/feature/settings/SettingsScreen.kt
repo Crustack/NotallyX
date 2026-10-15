@@ -1,7 +1,5 @@
 package com.philkes.notallyx.feature.settings
 
-// import com.philkes.notallyx.format
-// import com.philkes.notallyx.getQuantityStringPlain
 import android.content.Context
 import android.net.Uri
 import androidx.compose.foundation.ScrollState
@@ -28,6 +26,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getDocumentFolder
 import com.philkes.notallyx.core.common.extensions.toReadablePath
+import com.philkes.notallyx.core.common.result.ImportProgress
+import com.philkes.notallyx.core.common.result.ImportStage
+import com.philkes.notallyx.core.common.result.Progress
 import com.philkes.notallyx.core.preference.BiometricLock
 import com.philkes.notallyx.core.preference.Constants.PASSWORD_EMPTY
 import com.philkes.notallyx.core.preference.DateFormat
@@ -54,11 +55,94 @@ import com.philkes.notallyx.core.preference.TEXT_SIZE_MIN
 import com.philkes.notallyx.core.preference.Theme
 import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.core.ui.components.SectionHeaderItem
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
+import com.philkes.notallyx.core.ui.dialog.IconListDialog
+import com.philkes.notallyx.core.ui.dialog.IconListItem
+import com.philkes.notallyx.core.ui.dialog.ListDialog
+import com.philkes.notallyx.core.ui.dialog.ProgressDialog
+import com.philkes.notallyx.core.ui.dialog.SelectionItem
+import com.philkes.notallyx.core.ui.dialog.SingleSelectionDialog
+import com.philkes.notallyx.core.ui.dialog.TextInputDialog
 import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.extensions.getQuantityStringPlain
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
+import com.philkes.notallyx.feature.settings.dialogs.DateTimeFormatDialog
+import com.philkes.notallyx.feature.settings.dialogs.EncryptDatabaseDialog
+import com.philkes.notallyx.feature.settings.dialogs.ImportNotesDialog
+import com.philkes.notallyx.feature.settings.dialogs.NotesSortDialog
 import java.util.Date
 import kotlin.math.roundToInt
+
+internal sealed interface SettingsDialogState {
+    data class SingleSelection<T>(
+        val title: String,
+        val items: List<SelectionItem<T>>,
+        val selectedItem: T,
+        val onConfirm: (T) -> Unit,
+    ) : SettingsDialogState
+
+    data class Theme(
+        val initialTheme: com.philkes.notallyx.core.preference.Theme,
+        val initialUseDynamicColors: Boolean,
+        val onConfirm:
+            (
+                newTheme: com.philkes.notallyx.core.preference.Theme,
+                useDynamicColors: Boolean,
+            ) -> Unit,
+    ) : SettingsDialogState
+
+    data class DateTimeFormat(
+        val initialDate: DateFormat,
+        val initialTime: TimeFormat,
+        val onConfirm: (DateFormat, TimeFormat) -> Unit,
+    ) : SettingsDialogState
+
+    data class NotesSort(
+        val currentSort: com.philkes.notallyx.core.preference.NotesSort,
+        val onConfirm: (com.philkes.notallyx.core.preference.NotesSort) -> Unit,
+    ) : SettingsDialogState
+
+    data class BooleanPref(
+        val title: String,
+        val message: String? = null,
+        val initialValue: Boolean,
+        val onConfirm: (Boolean) -> Unit,
+    ) : SettingsDialogState
+
+    data class BackupPassword(
+        val password: String,
+        val onConfirm: (String) -> Unit,
+    ) : SettingsDialogState
+
+    data class ImportNotesPassword(
+        val initialPassword: String,
+        val onConfirm: (password: String, checkDuplicates: Boolean) -> Unit,
+    ) : SettingsDialogState
+
+    data class IconList(
+        val title: String,
+        val items: List<IconListItem>,
+        val onItemClick: (Int) -> Unit,
+    ) : SettingsDialogState
+
+    data class ListSelection(
+        val title: String,
+        val items: List<String>,
+        val onItemClick: (Int) -> Unit,
+    ) : SettingsDialogState
+
+    data class Confirm(
+        val title: String? = null,
+        val message: String,
+        val positiveButtonText: String = "",
+        val negativeButtonText: String = "",
+        val neutralButtonText: String? = null,
+        val onNeutralButtonClick: (() -> Unit)? = null,
+        val onConfirm: () -> Unit = {},
+    ) : SettingsDialogState
+
+    data class EncryptDatabase(val onContinue: (Boolean) -> Unit) : SettingsDialogState
+}
 
 data class SettingsUiState(
     val notesView: NotesView = NotesView.LIST,
@@ -187,6 +271,9 @@ internal fun SettingsScreen(
     state: SettingsUiState,
     modifier: Modifier = Modifier,
     scrollState: ScrollState = rememberScrollState(),
+    dialogState: SettingsDialogState? = null,
+    importProgress: Progress? = null,
+    onDismissDialog: () -> Unit = {},
     onNotesViewClick: () -> Unit = {},
     onThemeClick: () -> Unit = {},
     onDateFormatOverviewClick: () -> Unit = {},
@@ -622,6 +709,172 @@ internal fun SettingsScreen(
                     Modifier.testTag("VersionText").padding(horizontal = 16.dp, vertical = 16.dp),
             )
         }
+    }
+
+    when (dialogState) {
+        is SettingsDialogState.SingleSelection<*> -> {
+            @Suppress("UNCHECKED_CAST")
+            val s = dialogState as SettingsDialogState.SingleSelection<Any>
+            SingleSelectionDialog(
+                title = s.title,
+                items = s.items,
+                selectedItem = s.selectedItem,
+                onDismissRequest = onDismissDialog,
+                onConfirm = { selected ->
+                    s.onConfirm(selected)
+                    onDismissDialog()
+                },
+            )
+        }
+        is SettingsDialogState.Theme -> {
+            PreferenceEnumWithToggleDialog(
+                title = stringResource(R.string.theme),
+                hint = null,
+                items = Theme.entries.map { SelectionItem(it, it.getText(context)) },
+                selectedItem = dialogState.initialTheme,
+                toggleLabel = stringResource(R.string.theme_use_dynamic_colors),
+                initialToggleValue = dialogState.initialUseDynamicColors,
+                onDismissRequest = onDismissDialog,
+                onConfirm = { newTheme, useDynamicColors ->
+                    dialogState.onConfirm(newTheme, useDynamicColors)
+                    onDismissDialog()
+                },
+            )
+        }
+        is SettingsDialogState.DateTimeFormat -> {
+            DateTimeFormatDialog(
+                initialDateFormat = dialogState.initialDate,
+                initialTimeFormat = dialogState.initialTime,
+                onDismissRequest = onDismissDialog,
+                onConfirm = { newDate, newTime ->
+                    dialogState.onConfirm(newDate, newTime)
+                    onDismissDialog()
+                },
+            )
+        }
+        is SettingsDialogState.NotesSort -> {
+            NotesSortDialog(
+                currentSort = dialogState.currentSort,
+                onDismissRequest = onDismissDialog,
+                onConfirm = { newSort ->
+                    dialogState.onConfirm(newSort)
+                    onDismissDialog()
+                },
+            )
+        }
+        is SettingsDialogState.BooleanPref -> {
+            PreferenceBooleanDialog(
+                title = dialogState.title,
+                message = dialogState.message,
+                initialValue = dialogState.initialValue,
+                onDismissRequest = onDismissDialog,
+                onConfirm = { newValue ->
+                    dialogState.onConfirm(newValue)
+                    onDismissDialog()
+                },
+            )
+        }
+        is SettingsDialogState.BackupPassword -> {
+            TextInputDialog(
+                title = stringResource(R.string.backup_password),
+                initialValue = dialogState.password,
+                message = stringResource(R.string.backup_password_hint),
+                isPassword = true,
+                onDismissRequest = onDismissDialog,
+                onConfirm = { updatedPassword ->
+                    dialogState.onConfirm(updatedPassword)
+                    onDismissDialog()
+                },
+            )
+        }
+        is SettingsDialogState.ImportNotesPassword -> {
+            ImportNotesDialog(
+                title = stringResource(R.string.backup_password),
+                initialText = dialogState.initialPassword,
+                message = stringResource(R.string.import_backup_password_hint),
+                initialCheckDuplicates = true,
+                onDismissRequest = onDismissDialog,
+                onConfirm = { usedPassword, checkDuplicates ->
+                    dialogState.onConfirm(usedPassword, checkDuplicates)
+                    onDismissDialog()
+                },
+            )
+        }
+        is SettingsDialogState.IconList -> {
+            IconListDialog(
+                title = dialogState.title,
+                items = dialogState.items,
+                onDismissRequest = onDismissDialog,
+                onItemClick = { which ->
+                    onDismissDialog()
+                    dialogState.onItemClick(which)
+                },
+            )
+        }
+        is SettingsDialogState.ListSelection -> {
+            ListDialog(
+                title = dialogState.title,
+                items = dialogState.items,
+                onDismissRequest = onDismissDialog,
+                onItemClick = { which ->
+                    onDismissDialog()
+                    dialogState.onItemClick(which)
+                },
+            )
+        }
+        is SettingsDialogState.Confirm -> {
+            ConfirmDialog(
+                title = dialogState.title,
+                message = dialogState.message,
+                positiveButtonText =
+                    dialogState.positiveButtonText.ifEmpty { stringResource(android.R.string.ok) },
+                negativeButtonText =
+                    dialogState.negativeButtonText.ifEmpty { stringResource(R.string.cancel) },
+                neutralButtonText = dialogState.neutralButtonText,
+                onNeutralButtonClick = dialogState.onNeutralButtonClick,
+                onDismissRequest = onDismissDialog,
+                onConfirm = dialogState.onConfirm,
+            )
+        }
+        is SettingsDialogState.EncryptDatabase -> {
+            EncryptDatabaseDialog(
+                onDismissRequest = onDismissDialog,
+                onContinue = { shouldEncrypt ->
+                    onDismissDialog()
+                    dialogState.onContinue(shouldEncrypt)
+                },
+            )
+        }
+        null -> {}
+    }
+
+    if (importProgress?.inProgress == true) {
+        val msg =
+            if (importProgress is ImportProgress) {
+                val stageStr =
+                    stringResource(
+                        when (importProgress.stage) {
+                            ImportStage.IMPORT_NOTES -> R.string.imported_notes
+                            ImportStage.EXTRACT_FILES -> R.string.extracted_files
+                            ImportStage.IMPORT_FILES -> R.string.imported_files
+                        }
+                    )
+                stringResource(R.string.count, importProgress.current, importProgress.total) +
+                    " " +
+                    stageStr
+            } else {
+                stringResource(R.string.count, importProgress.current, importProgress.total) +
+                    (importProgress.countSuffix?.let { " $it" } ?: "")
+            }
+        val progressValue =
+            if (importProgress.indeterminate || importProgress.total == 0) null
+            else importProgress.current.toFloat() / importProgress.total.toFloat()
+
+        ProgressDialog(
+            title = stringResource(importProgress.titleId),
+            message = msg,
+            progress = progressValue,
+        )
     }
 }
 

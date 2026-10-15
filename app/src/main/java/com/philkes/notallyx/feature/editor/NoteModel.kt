@@ -66,11 +66,45 @@ import kotlinx.coroutines.withContext
 
 data class BackupFile(val targetPath: String, val file: File)
 
+sealed interface EditorDialogState {
+    data class ColorPicker(
+        val currentColor: String,
+        val colors: Set<String>,
+        val onColorSelected: (selectedColor: String) -> Unit,
+    ) : EditorDialogState
+
+    data class DeleteForeverConfirm(val onConfirm: () -> Unit) : EditorDialogState
+
+    data class AudioPermissionRationale(val onConfirm: () -> Unit) : EditorDialogState
+
+    data class RejectionConfirm(
+        val msgResId: Int,
+        val onConfirm: () -> Unit,
+    ) : EditorDialogState
+
+    data class FileErrors(val errors: List<FileError>) : EditorDialogState
+
+    data class Error(
+        val titleResId: Int,
+        val message: String?,
+    ) : EditorDialogState
+
+    data class EditLink(
+        val urlBefore: String,
+        val displayTextBefore: String,
+        val isNoteUrl: Boolean,
+        val onConfirm: (urlAfter: String?, displayTextAfter: String) -> Unit,
+        val onDismiss: () -> Unit = {},
+    ) : EditorDialogState
+}
+
 /** Core ViewModel for note content editing, attachments, reminders, and auto-save logic. */
 open class NoteModel(
     protected val app: Application,
     val preferences: NotallyXPreferences,
 ) : AndroidViewModel(app) {
+
+    val activeDialog = MutableStateFlow<EditorDialogState?>(null)
 
     protected val database = NotallyDatabase.getDatabase(app)
     protected var baseNoteDao: BaseNoteDao? = null

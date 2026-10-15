@@ -1,6 +1,5 @@
 package com.philkes.notallyx.feature.reminder
 
-// import com.philkes.notallyx.format
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -27,10 +26,43 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.TimeFormat
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
+import com.philkes.notallyx.core.ui.dialog.SelectionItem
+import com.philkes.notallyx.core.ui.dialog.SingleSelectionDialog
 import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.extensions.toRepetitionText
+import java.util.Calendar
+
+internal sealed interface ReminderDialogState {
+    data class Repetition(
+        val reminder: Reminder?,
+        val calendar: Calendar,
+        val initialOption: RepetitionOption,
+    ) : ReminderDialogState
+
+    data class MonthlyAdvanced(
+        val reminder: Reminder?,
+        val calendar: Calendar,
+        val options: List<String>,
+        val selectedIndex: Int,
+        val dayOfWeek: Int,
+    ) : ReminderDialogState
+
+    data class CustomRepetition(
+        val reminder: Reminder?,
+        val calendar: Calendar,
+        val initialValue: String,
+        val initialUnit: TimeUnit,
+    ) : ReminderDialogState
+
+    data class ConfirmDelete(
+        val reminder: Reminder,
+        val formattedDateTime: String,
+        val repetitionText: String,
+    ) : ReminderDialogState
+}
 
 /** Composable replacing activity_reminders.xml layout. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,10 +72,16 @@ internal fun RemindersScreen(
     dateFormat: DateFormat,
     timeFormat: TimeFormat,
     modifier: Modifier = Modifier,
+    dialogState: ReminderDialogState? = null,
     onAddReminderClick: () -> Unit = {},
     onEditReminder: (Reminder) -> Unit = {},
     onDeleteReminder: (Reminder) -> Unit = {},
     onBackClick: () -> Unit = {},
+    onDismissDialog: () -> Unit = {},
+    onRepetitionOptionSelected: (Reminder?, Calendar, RepetitionOption) -> Unit = { _, _, _ -> },
+    onMonthlyAdvancedSelected: (Reminder?, Calendar, Int, Int) -> Unit = { _, _, _, _ -> },
+    onCustomRepetitionSelected: (Reminder?, Calendar, Int, TimeUnit) -> Unit = { _, _, _, _ -> },
+    onConfirmDeleteReminder: (Reminder) -> Unit = {},
 ) {
     val context = LocalContext.current
 
@@ -105,6 +143,77 @@ internal fun RemindersScreen(
                 }
             }
         }
+    }
+
+    when (dialogState) {
+        is ReminderDialogState.Repetition -> {
+            ReminderRepetitionDialog(
+                initialOption = dialogState.initialOption,
+                onDismissRequest = onDismissDialog,
+                onOptionSelected = { selected ->
+                    onRepetitionOptionSelected(
+                        dialogState.reminder,
+                        dialogState.calendar,
+                        selected,
+                    )
+                },
+            )
+        }
+        is ReminderDialogState.MonthlyAdvanced -> {
+            val items =
+                dialogState.options.mapIndexed { index, option -> SelectionItem(index, option) }
+            SingleSelectionDialog(
+                title = stringResource(R.string.monthly),
+                items = items,
+                selectedItem = dialogState.selectedIndex,
+                onDismissRequest = {
+                    onRepetitionOptionSelected(
+                        dialogState.reminder,
+                        dialogState.calendar,
+                        RepetitionOption.CUSTOM,
+                    )
+                },
+                onConfirm = { which ->
+                    onMonthlyAdvancedSelected(
+                        dialogState.reminder,
+                        dialogState.calendar,
+                        which,
+                        dialogState.dayOfWeek,
+                    )
+                },
+            )
+        }
+        is ReminderDialogState.CustomRepetition -> {
+            CustomRepetitionDialog(
+                initialValue = dialogState.initialValue,
+                initialTimeUnit = dialogState.initialUnit,
+                onDismissRequest = {
+                    onRepetitionOptionSelected(
+                        dialogState.reminder,
+                        dialogState.calendar,
+                        RepetitionOption.CUSTOM,
+                    )
+                },
+                onConfirm = { valInt, unitEnum ->
+                    onCustomRepetitionSelected(
+                        dialogState.reminder,
+                        dialogState.calendar,
+                        valInt,
+                        unitEnum,
+                    )
+                },
+            )
+        }
+        is ReminderDialogState.ConfirmDelete -> {
+            ConfirmDialog(
+                title = stringResource(R.string.delete_reminder_question),
+                message = "${dialogState.formattedDateTime}\n${dialogState.repetitionText}",
+                positiveButtonText = stringResource(R.string.delete),
+                onDismissRequest = onDismissDialog,
+                onConfirm = { onConfirmDeleteReminder(dialogState.reminder) },
+            )
+        }
+        null -> {}
     }
 }
 

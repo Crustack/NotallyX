@@ -44,10 +44,13 @@ internal fun ViewImageScreen(
     images: List<FileAttachment>,
     modifier: Modifier = Modifier,
     initialPage: Int = 0,
+    imageToDeletePosition: Int? = null,
     onBackClick: () -> Unit = {},
     onShareClick: (Int) -> Unit = {},
     onSaveClick: (Int) -> Unit = {},
     onDeleteClick: (Int) -> Unit = {},
+    onDismissDeleteConfirm: () -> Unit = {},
+    onConfirmDelete: (Int) -> Unit = {},
 ) {
     val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { images.size })
     val currentPosition = if (images.isNotEmpty()) pagerState.currentPage else 0
@@ -110,6 +113,15 @@ internal fun ViewImageScreen(
                     ImagePreviewCard()
                 }
             }
+        }
+
+        if (imageToDeletePosition != null) {
+            ConfirmDialog(
+                message = stringResource(R.string.delete_image_forever),
+                positiveButtonText = stringResource(R.string.delete),
+                onDismissRequest = onDismissDeleteConfirm,
+                onConfirm = { onConfirmDelete(imageToDeletePosition) },
+            )
         }
     }
 }
