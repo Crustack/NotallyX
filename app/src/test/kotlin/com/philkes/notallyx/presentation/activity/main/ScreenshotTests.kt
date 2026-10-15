@@ -1,6 +1,5 @@
 package com.philkes.notallyx.activity.main
 
-// import com.philkes.notallyx.R
 import android.app.Activity
 import android.app.Instrumentation
 import android.content.ClipData
@@ -42,6 +41,7 @@ import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.RoborazziRule
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.error.*
 import com.philkes.notallyx.core.common.extensions.*
 import com.philkes.notallyx.core.common.result.*

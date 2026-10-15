@@ -11,7 +11,7 @@ import com.philkes.notallyx.core.ui.dialog.*
 import com.philkes.notallyx.core.ui.extensions.*
 import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.model.extensions.*
-import com.philkes.notallyx.feature.editor.history.ListMoveChange
+import com.philkes.notallyx.feature.editor.history.changes.ListMoveChange
 import com.philkes.notallyx.feature.editor.listitem.printList
 import com.philkes.notallyx.test.assertOrder
 import com.philkes.notallyx.test.assertSize

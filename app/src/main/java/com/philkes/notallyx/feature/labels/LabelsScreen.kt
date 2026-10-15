@@ -14,7 +14,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
-import com.philkes.notallyx.feature.labels.adapter.LabelData
 
 /** Composable replacing fragment_notes.xml layout for LabelsFragment. */
 @Composable

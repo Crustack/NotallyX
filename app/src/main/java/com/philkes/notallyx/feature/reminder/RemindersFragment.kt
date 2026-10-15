@@ -1,27 +1,15 @@
 package com.philkes.notallyx.feature.reminder
 
-// import com.philkes.notallyx.repeatOnLifecycleScope
 import android.os.Bundle
 import android.view.View
-import androidx.recyclerview.widget.SortedListAdapterCallback
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.error.*
-import com.philkes.notallyx.core.common.extensions.*
-import com.philkes.notallyx.core.common.result.*
-import com.philkes.notallyx.core.database.*
-import com.philkes.notallyx.core.preference.*
-import com.philkes.notallyx.core.security.*
-import com.philkes.notallyx.core.ui.components.*
-import com.philkes.notallyx.core.ui.dialog.*
-import com.philkes.notallyx.core.ui.extensions.*
-import com.philkes.notallyx.core.ui.views.*
+import com.philkes.notallyx.core.ui.extensions.createItemsFromNotes
+import com.philkes.notallyx.core.ui.extensions.repeatOnLifecycleScope
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Item
-import com.philkes.notallyx.data.model.extensions.*
-import com.philkes.notallyx.feature.main.adapter.BaseNoteAdapter
-import com.philkes.notallyx.feature.main.sorting.BaseNoteLastNotificationSort
-import com.philkes.notallyx.feature.main.sorting.BaseNoteMostRecentNotificationSort
-import com.philkes.notallyx.feature.main.sorting.BaseNoteNextNotificationSort
+import com.philkes.notallyx.data.model.extensions.hasAnyUpcomingNotifications
+import com.philkes.notallyx.feature.main.sorting.compareLastNotification
+import com.philkes.notallyx.feature.main.sorting.compareNextNotification
 import com.philkes.notallyx.feature.main.tab.NotesFragment
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,16 +20,24 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 class RemindersFragment : NotesFragment() {
     private val remindersViewModel: RemindersViewModel by viewModel()
     private val currentReminderNotes = MutableStateFlow<List<Item>>(emptyList())
-    private val allReminderNotes: StateFlow<List<Item>> by lazy { remindersViewModel.reminderNotes }
+    private val allReminderNotes: StateFlow<List<BaseNote>> by lazy {
+        remindersViewModel.reminderNotes
+    }
     val filterModeFlow = MutableStateFlow(FilterOptions.UPCOMING)
     val filterMode: FilterOptions
         get() = filterModeFlow.value
 
+    private var allNotes: List<BaseNote> = emptyList()
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        currentReminderNotes.value = allReminderNotes.value
         viewLifecycleOwner.repeatOnLifecycleScope {
-            launch { allReminderNotes.collect { applyFilter(filterMode) } }
+            launch {
+                allReminderNotes.collect { notes ->
+                    allNotes = notes
+                    applyFilter(filterMode)
+                }
+            }
         }
     }
 
@@ -49,32 +45,27 @@ class RemindersFragment : NotesFragment() {
 
     override fun getFlow(): Flow<List<Item>> = currentReminderNotes
 
-    override fun notesAdapterSortCallback(): (BaseNoteAdapter) -> SortedListAdapterCallback<Item> =
-        { adapter ->
-            when (filterMode) {
-                FilterOptions.UPCOMING -> BaseNoteNextNotificationSort(adapter, SortDirection.ASC)
-                FilterOptions.ELAPSED -> BaseNoteLastNotificationSort(adapter, SortDirection.DESC)
-                FilterOptions.ALL -> BaseNoteMostRecentNotificationSort(adapter, SortDirection.DESC)
-            }
-        }
-
     fun applyFilter(filterOptions: FilterOptions) {
         filterModeFlow.value = filterOptions
-        val items: List<Item> = allReminderNotes.value
-        val filteredList: List<Item> =
+        val filtered =
             when (filterOptions) {
-                FilterOptions.ALL -> {
-                    items
-                }
-                FilterOptions.UPCOMING -> {
-                    items.filter { it is BaseNote && it.reminders.hasAnyUpcomingNotifications() }
-                }
-                FilterOptions.ELAPSED -> {
-                    items.filter { it is BaseNote && !it.reminders.hasAnyUpcomingNotifications() }
-                }
+                FilterOptions.ALL ->
+                    allNotes.sortedWith { n1, n2 ->
+                        val sort =
+                            n1.compareNextNotification(n2).takeIf { it != 0 }
+                                ?: n1.compareLastNotification(n2)
+                        -1 * sort
+                    }
+                FilterOptions.UPCOMING ->
+                    allNotes
+                        .filter { it.reminders.hasAnyUpcomingNotifications() }
+                        .sortedWith { n1, n2 -> n1.compareNextNotification(n2) }
+                FilterOptions.ELAPSED ->
+                    allNotes
+                        .filter { !it.reminders.hasAnyUpcomingNotifications() }
+                        .sortedWith { n1, n2 -> -1 * n1.compareLastNotification(n2) }
             }
-        currentReminderNotes.value = filteredList
-        notesAdapter?.setNotesSortCallback(notesAdapterSortCallback())
+        currentReminderNotes.value = requireContext().createItemsFromNotes(filtered)
     }
 }
 

@@ -11,7 +11,7 @@ import com.philkes.notallyx.core.ui.dialog.*
 import com.philkes.notallyx.core.ui.extensions.*
 import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.model.extensions.*
-import com.philkes.notallyx.feature.editor.history.ListIsChildChange
+import com.philkes.notallyx.feature.editor.history.changes.ListIsChildChange
 import com.philkes.notallyx.test.assert
 import com.philkes.notallyx.test.assertOrder
 import org.junit.Test

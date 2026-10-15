@@ -1,7 +1,5 @@
 package com.philkes.notallyx.activity.main
 
-// import com.philkes.notallyx.NotallyXApplication
-// import com.philkes.notallyx.R
 import android.app.Notification
 import android.util.Log
 import androidx.compose.ui.test.assertIsDisplayed
@@ -27,7 +25,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.NotallyXApplication
-import com.philkes.notallyx.activity.note.refreshStatusBarPin
+import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.error.*
 import com.philkes.notallyx.core.common.extensions.*
 import com.philkes.notallyx.core.common.result.*
@@ -41,6 +39,7 @@ import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.extensions.*
+import com.philkes.notallyx.feature.editor.refreshStatusBarPin
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.reminder.PinnedNotificationManager
 import com.philkes.notallyx.test.UiTestBase
@@ -116,7 +115,7 @@ class MainActivityTest : UiTestBase() {
 
         // 6. click the "label" twice to give both notes the "label" Label
         val labelDialogList =
-            onView(childAtPosition(withId(androidx.appcompat.R.id.custom), 0)).inRoot(isDialog())
+            onView(childAtPosition(withId(android.R.id.custom), 0)).inRoot(isDialog())
         labelDialogList.perform(actionOnItemAtPosition<ViewHolder>(0, click()))
         labelDialogList.perform(actionOnItemAtPosition<ViewHolder>(0, click()))
 

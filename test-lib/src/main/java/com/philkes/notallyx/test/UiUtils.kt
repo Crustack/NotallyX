@@ -1,6 +1,5 @@
 package com.philkes.notallyx.test
 
-// import com.philkes.notallyx.R
 import android.graphics.Point
 import android.graphics.Typeface
 import android.os.SystemClock
@@ -64,16 +63,9 @@ import androidx.test.uiautomator.Until
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import cn.leaqi.drawer.SwipeDrawer
-import com.philkes.notallyx.core.common.error.*
-import com.philkes.notallyx.core.common.extensions.*
-import com.philkes.notallyx.core.common.result.*
-import com.philkes.notallyx.core.database.*
-import com.philkes.notallyx.core.preference.*
-import com.philkes.notallyx.core.security.*
-import com.philkes.notallyx.core.ui.components.*
-import com.philkes.notallyx.core.ui.dialog.*
-import com.philkes.notallyx.core.ui.extensions.*
-import com.philkes.notallyx.core.ui.views.*
+import com.philkes.notallyx.R
+import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.security.AuthenticatorProvider
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
@@ -83,7 +75,6 @@ import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.data.model.extensions.*
 import junit.framework.TestCase.assertTrue
 import org.hamcrest.Description
 import org.hamcrest.Matcher

@@ -10,8 +10,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.core.ui.extensions.dp
 import com.philkes.notallyx.databinding.ChoiceItemTriStateBinding
 
-// import com.philkes.notallyx.dp
-
 fun MaterialAlertDialogBuilder.setMultiChoiceTriStateItems(
     context: Context,
     items: Array<String>,

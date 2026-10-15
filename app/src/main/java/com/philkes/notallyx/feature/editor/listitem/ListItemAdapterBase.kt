@@ -1,6 +1,5 @@
 package com.philkes.notallyx.feature.editor.listitem
 
-import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.annotation.ColorInt
 import androidx.core.widget.NestedScrollView
@@ -10,7 +9,6 @@ import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.preference.TextSizeSp
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
-import com.philkes.notallyx.databinding.RecyclerListItemBinding
 
 data class ListItemHighlight(
     val itemPos: Int,
@@ -54,10 +52,16 @@ abstract class ListItemAdapterBase(
     abstract fun getItem(position: Int): ListItem
 
     fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ListItemVH {
-        val inflater = LayoutInflater.from(parent.context)
-        val binding = RecyclerListItemBinding.inflate(inflater, parent, false)
-        binding.root.background = parent.background
-        return ListItemVH(binding, listManager, touchHelper, textSize, isCheckedListAdapter)
+        val composeView =
+            androidx.compose.ui.platform.ComposeView(parent.context).apply {
+                layoutParams =
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                    )
+                background = parent.background
+            }
+        return ListItemVH(composeView, listManager, touchHelper, textSize, isCheckedListAdapter)
     }
 
     internal fun setBackgroundColor(@ColorInt color: Int) {
