@@ -5,16 +5,15 @@ import android.os.Bundle
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
-import com.philkes.notallyx.databinding.DialogInputBinding
 import com.philkes.notallyx.presentation.activity.ComposeBinding
 import com.philkes.notallyx.presentation.activity.LockedActivity
-import com.philkes.notallyx.presentation.setCancelButton
-import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.theme.NotallyXTheme
+import com.philkes.notallyx.presentation.view.dialog.TextInputDialog
 import com.philkes.notallyx.presentation.view.screens.SelectLabelsScreen
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.LabelsViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -77,23 +76,28 @@ class SelectLabelsActivity : LockedActivity<ComposeBinding>() {
     }
 
     private fun addLabel() {
-        val binding = DialogInputBinding.inflate(layoutInflater)
+        val composeView = ComposeView(this)
+        val dialog = MaterialAlertDialogBuilder(this).setView(composeView).create()
 
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.add_label)
-            .setView(binding.root)
-            .setCancelButton()
-            .setPositiveButton(R.string.save) { dialog, _ ->
-                val value = binding.EditText.text.toString().trim()
-                if (value.isNotEmpty()) {
-                    labelsViewModel.insertLabel(value) { success ->
-                        if (success) {
-                            dialog.dismiss()
-                        } else showToast(R.string.label_exists)
-                    }
-                }
+        composeView.setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                TextInputDialog(
+                    title = stringResource(R.string.add_label),
+                    initialValue = "",
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = { value ->
+                        if (value.isNotEmpty()) {
+                            labelsViewModel.insertLabel(value) { success ->
+                                if (success) {
+                                    dialog.dismiss()
+                                } else showToast(R.string.label_exists)
+                            }
+                        }
+                    },
+                )
             }
-            .showAndFocus(binding.EditText, allowFullSize = true)
+        }
+        dialog.show()
     }
 
     companion object {

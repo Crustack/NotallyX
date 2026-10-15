@@ -244,6 +244,7 @@ fun EditScreen(
             if (isFormattingMenuVisible) {
                 TextFormattingBar(
                     formattingState = formattingState,
+                    backgroundColor = backgroundColor,
                     onBoldClick = { clickHandlers.onBoldClick() },
                     onItalicClick = { clickHandlers.onItalicClick() },
                     onStrikethroughClick = { clickHandlers.onStrikethroughClick() },

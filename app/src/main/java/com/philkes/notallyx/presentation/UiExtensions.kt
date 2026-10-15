@@ -59,6 +59,8 @@ import androidx.annotation.ColorInt
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatTextView
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.core.graphics.ColorUtils
@@ -70,7 +72,6 @@ import androidx.core.view.marginTop
 import androidx.core.view.setPadding
 import androidx.core.view.updatePadding
 import androidx.core.widget.TextViewCompat
-import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -101,10 +102,10 @@ import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.findNextNotificationDate
 import com.philkes.notallyx.data.model.haveAnyRepetition
-import com.philkes.notallyx.databinding.DialogInputBinding
-import com.philkes.notallyx.databinding.DialogProgressBinding
 import com.philkes.notallyx.databinding.LabelBinding
 import com.philkes.notallyx.presentation.activity.main.MainActivity
+import com.philkes.notallyx.presentation.theme.NotallyXTheme
+import com.philkes.notallyx.presentation.view.dialog.TextInputDialog
 import com.philkes.notallyx.presentation.view.misc.Progress
 import com.philkes.notallyx.presentation.view.misc.StylableEditTextWithHistory
 import com.philkes.notallyx.presentation.view.note.listitem.ListManager
@@ -112,6 +113,7 @@ import com.philkes.notallyx.presentation.view.note.listitem.adapter.ListItemVH
 import com.philkes.notallyx.presentation.viewmodel.edit.EditActivityViewModel
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.LabelsViewModel
 import com.philkes.notallyx.presentation.viewmodel.preference.DateFormat
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.TimeFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.displayBodySize
 import com.philkes.notallyx.utils.backup.NotesAndAttachments
@@ -451,7 +453,7 @@ fun StateFlow<out Progress?>.setupImportProgressDialog(fragment: Fragment) {
         fragment.requireContext(),
         fragment.layoutInflater,
         fragment.viewLifecycleOwner,
-    ) { context, binding, progress ->
+    ) { context, progress ->
         val importProgress = progress as ImportProgress
         val stageStr =
             context.getString(
@@ -461,8 +463,7 @@ fun StateFlow<out Progress?>.setupImportProgressDialog(fragment: Fragment) {
                     ImportStage.IMPORT_FILES -> R.string.imported_files
                 }
             )
-        binding.Count.text =
-            "${context.getString(R.string.count, importProgress.current, importProgress.total)} $stageStr"
+        "${context.getString(R.string.count, importProgress.current, importProgress.total)} $stageStr"
     }
 }
 
@@ -470,48 +471,46 @@ private fun <T : Progress> StateFlow<T?>.setupProgressDialog(
     context: Context,
     layoutInflater: LayoutInflater,
     viewLifecycleOwner: LifecycleOwner,
-    renderProgress: ((context: Context, binding: DialogProgressBinding, progress: T) -> Unit)? =
-        null,
+    renderProgressMessage: ((context: Context, progress: T) -> String)? = null,
 ) {
-    val dialogBinding = DialogProgressBinding.inflate(layoutInflater)
+    val activity = context as? Activity ?: return
+    val preferences = NotallyXPreferences.getInstance(activity)
+    val composeView = ComposeView(context)
     val dialog =
-        MaterialAlertDialogBuilder(context)
-            .setView(dialogBinding.root)
-            .setCancelable(false)
-            .create()
+        MaterialAlertDialogBuilder(context).setView(composeView).setCancelable(false).create()
 
     viewLifecycleOwner.repeatOnLifecycleScope {
         collect { progress ->
-            if (progress == null) {
+            if (progress == null || !progress.inProgress) {
                 dialog.dismiss()
                 return@collect
             }
-            dialog.setTitle(progress.titleId)
-            if (progress.inProgress) {
-                if (progress.indeterminate) {
-                    dialogBinding.apply {
-                        ProgressBar.isIndeterminate = true
-                        Count.setText(R.string.calculating)
-                    }
-                } else {
-                    dialogBinding.apply {
-                        ProgressBar.apply {
-                            isIndeterminate = false
-                            max = progress.total
-                            setProgressCompat(progress.current, true)
-                        }
-                        if (renderProgress == null) {
-                            Count.text =
-                                context.getString(
-                                    R.string.count,
-                                    progress.current,
-                                    progress.total,
-                                ) + (progress.countSuffix?.let { " $it" } ?: "")
-                        } else renderProgress.invoke(context, this, progress)
-                    }
+
+            val msg =
+                when {
+                    progress.indeterminate -> context.getString(R.string.calculating)
+                    renderProgressMessage != null -> renderProgressMessage.invoke(context, progress)
+                    else ->
+                        context.getString(R.string.count, progress.current, progress.total) +
+                            (progress.countSuffix?.let { " $it" } ?: "")
                 }
+
+            val progressValue =
+                if (progress.indeterminate || progress.total == 0) null
+                else progress.current.toFloat() / progress.total.toFloat()
+
+            composeView.setContent {
+                NotallyXTheme(theme = preferences.theme.value) {
+                    com.philkes.notallyx.presentation.view.dialog.ProgressDialog(
+                        title = stringResource(progress.titleId),
+                        message = msg,
+                        progress = progressValue,
+                    )
+                }
+            }
+            if (!dialog.isShowing) {
                 dialog.show()
-            } else dialog.dismiss()
+            }
         }
     }
 }
@@ -618,29 +617,31 @@ fun Context.displayEditLabelDialog(
     layoutInflater: LayoutInflater,
     onUpdateLabel: ((oldLabel: String, newLabel: String) -> Unit)? = null,
 ) {
-    val dialogBinding = DialogInputBinding.inflate(layoutInflater)
-    dialogBinding.EditText.setText(oldValue)
-    MaterialAlertDialogBuilder(this)
-        .setView(dialogBinding.root)
-        .setTitle(R.string.edit_label)
-        .setCancelButton()
-        .setPositiveButton(R.string.save) { dialog, _ ->
-            val value = dialogBinding.EditText.text.toString().trim()
-            if (value.isNotEmpty()) {
-                updateLabel(oldValue, value) { success ->
-                    if (success) {
-                        onUpdateLabel?.invoke(oldValue, value)
-                        dialog.dismiss()
-                    } else showToast(R.string.label_exists)
-                }
-            }
+    val activity = (this as? Activity) ?: return
+    val preferences = NotallyXPreferences.getInstance(activity)
+    val composeView = ComposeView(activity)
+    val dialog = MaterialAlertDialogBuilder(activity).setView(composeView).create()
+
+    composeView.setContent {
+        NotallyXTheme(theme = preferences.theme.value) {
+            TextInputDialog(
+                title = stringResource(R.string.edit_label),
+                initialValue = oldValue,
+                onDismissRequest = { dialog.dismiss() },
+                onConfirm = { value ->
+                    if (value.isNotEmpty()) {
+                        updateLabel(oldValue, value) { success ->
+                            if (success) {
+                                onUpdateLabel?.invoke(oldValue, value)
+                                dialog.dismiss()
+                            } else showToast(R.string.label_exists)
+                        }
+                    }
+                },
+            )
         }
-        .showAndFocus(dialogBinding.EditText, allowFullSize = true) { positiveButton ->
-            dialogBinding.EditText.doAfterTextChanged { text ->
-                positiveButton.isEnabled = !text.isNullOrEmpty()
-            }
-            positiveButton.isEnabled = oldValue.isNotEmpty()
-        }
+    }
+    dialog.show()
 }
 
 fun Date.format(

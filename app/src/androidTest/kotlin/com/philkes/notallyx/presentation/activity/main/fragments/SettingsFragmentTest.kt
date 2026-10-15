@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
@@ -21,15 +22,12 @@ import androidx.test.espresso.Espresso.onData
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
-import androidx.test.espresso.action.ViewActions.replaceText
-import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.matcher.RootMatchers.isDialog
-import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -54,7 +52,6 @@ import com.philkes.notallyx.test.enableDataInPublic
 import com.philkes.notallyx.test.initFakeBiometric
 import com.philkes.notallyx.test.lockAndUnlockDevice
 import com.philkes.notallyx.test.navigateTo
-import com.philkes.notallyx.test.onDisplayView
 import com.philkes.notallyx.test.waitUntil
 import com.philkes.notallyx.test.waitUntilSettingsValue
 import com.philkes.notallyx.test.waitUntilSucceeds
@@ -150,29 +147,21 @@ class SettingsFragmentTest : UiTestBase() {
         viewSettingOption.perform(click())
 
         composeTestRule.onNodeWithTag("ShowSearchInTopBar").performScrollTo().performClick()
-        val showSearchEnabledOption =
-            onDisplayView(allOf(withId(R.id.EnabledButton), withText(R.string.enabled)))
-        showSearchEnabledOption.perform(click())
+        composeTestRule.onNodeWithText(context.getString(R.string.enabled)).performClick()
 
         composeTestRule.onNodeWithTag("NotesSortOrder").performScrollTo().performClick()
-        onDisplayView(withText(R.string.ascending)).perform(click())
-        val saveSortOrderButton =
-            onDisplayView(allOf(withId(android.R.id.button1), withText(R.string.save)))
-        saveSortOrderButton.perform(scrollTo(), click())
+        composeTestRule.onNodeWithText(context.getString(R.string.ascending)).performClick()
+        composeTestRule.onNodeWithTag("button1").performClick()
 
         composeTestRule.onNodeWithTag("BackupPassword").performScrollTo().performClick()
-        val backupPasswordInput =
-            onDisplayView(allOf(withId(R.id.InputText), withContentDescription("Input")))
-        backupPasswordInput.perform(replaceText("1234"), closeSoftKeyboard())
-        val saveBackupPasswordButton =
-            onDisplayView(allOf(withId(android.R.id.button1), withText(R.string.save)))
-        saveBackupPasswordButton.perform(scrollTo(), click())
+        composeTestRule.onNodeWithTag("EditText").performTextInput("1234")
+        composeTestRule.onNodeWithTag("button1").performClick()
 
         composeTestRule.onNodeWithTag("SecureFlag").performScrollTo().performClick()
-        R.id.EnabledButton.byId().perform(click())
+        composeTestRule.onNodeWithText(context.getString(R.string.enabled)).performClick()
 
         composeTestRule.onNodeWithTag("SecureFlag").performScrollTo().performClick()
-        R.id.DisabledButton.byId().perform(click())
+        composeTestRule.onNodeWithText(context.getString(R.string.disabled)).performClick()
 
         composeTestRule.enableDataInPublic(context)
 

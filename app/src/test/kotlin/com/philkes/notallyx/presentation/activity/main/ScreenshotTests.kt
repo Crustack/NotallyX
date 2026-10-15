@@ -16,6 +16,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.core.view.GravityCompat
@@ -27,7 +28,6 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
@@ -35,7 +35,6 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasType
 import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.isRoot
-import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.dropbox.differ.SimpleImageComparator
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
@@ -54,7 +53,6 @@ import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EX
 import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
 import com.philkes.notallyx.presentation.view.components.SampleNotes
 import com.philkes.notallyx.test.FakeAndroidKeyStore
-import com.philkes.notallyx.test.byText
 import com.philkes.notallyx.test.context
 import com.philkes.notallyx.test.database
 import com.philkes.notallyx.test.generateNotes
@@ -144,6 +142,16 @@ class ScreenshotTests {
                 putExtra(EXTRA_SELECTED_BASE_NOTE, noteId)
             }
         ActivityScenario.launch<EditNoteActivity>(intent).use { scenario ->
+            waitUntil(timeoutMs = 10_000) {
+                ShadowLooper.idleMainLooper()
+                var isLoaded = false
+                scenario.onActivity { activity ->
+                    isLoaded = activity.notallyModel.originalNote != null
+                }
+                isLoaded
+            }
+            ShadowLooper.idleMainLooper()
+
             onView(isRoot())
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/editNote/00_initial.png"
@@ -261,7 +269,9 @@ class ScreenshotTests {
                     )
                     .respondWith(addImagesResult)
 
-                R.string.add_images.byText().inRoot(isDialog()).perform(click())
+                composeTestRule
+                    .onNodeWithText(context.getString(R.string.add_images))
+                    .performClick()
 
                 // 1. Wait for background import on Dispatchers.IO to complete and update model
                 // images
@@ -321,7 +331,8 @@ class ScreenshotTests {
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/settings/${"%02d".format(scrollCount)}_dialog_date_time_format.png"
                 )
-            onView(withId(android.R.id.button2)).inRoot(isDialog()).perform(click())
+            Espresso.pressBack()
+            ShadowLooper.idleMainLooper()
 
             // 2. Scroll to top and touch down on Text Size slider to capture screenshot while
             // dragging
