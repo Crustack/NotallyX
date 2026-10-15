@@ -1,7 +1,6 @@
 package com.philkes.notallyx.core.common.error
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.provider.DocumentsContract
 import android.util.Log
@@ -9,7 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import cat.ereza.customactivityoncrash.CustomActivityOnCrash
 import com.philkes.notallyx.R
@@ -19,7 +18,6 @@ import com.philkes.notallyx.R.string.report_bug
 import com.philkes.notallyx.core.common.extensions.MIME_TYPE_ZIP
 import com.philkes.notallyx.core.common.extensions.copyToClipBoard
 import com.philkes.notallyx.core.common.extensions.copyToLarge
-import com.philkes.notallyx.core.common.extensions.exportCrashLogs
 import com.philkes.notallyx.core.common.extensions.getLogsDir
 import com.philkes.notallyx.core.common.extensions.getUriForFile
 import com.philkes.notallyx.core.common.extensions.log
@@ -29,7 +27,6 @@ import com.philkes.notallyx.core.common.extensions.toMessage
 import com.philkes.notallyx.core.common.extensions.viewFile
 import com.philkes.notallyx.core.common.extensions.viewLogs
 import com.philkes.notallyx.core.common.extensions.wrapWithChooser
-import com.philkes.notallyx.core.common.result.Progress
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.extensions.exportedText
@@ -39,7 +36,6 @@ import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.feature.migration.ExportMimeType
 import com.philkes.notallyx.feature.migration.backup.FILE_TIMESTAMP_FORMAT
-import com.philkes.notallyx.feature.migration.backup.backupDatabaseFiles
 import com.philkes.notallyx.feature.migration.backup.copyDatabase
 import com.philkes.notallyx.feature.migration.backup.exportAsZip
 import com.philkes.notallyx.feature.migration.backup.exportRawDatabase
@@ -48,9 +44,9 @@ import java.io.File
 import java.util.Date
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 /**
  * Activity used when the app is about to crash. Implicitly used by
@@ -58,16 +54,10 @@ import kotlinx.coroutines.withContext
  */
 class ErrorActivity : AppCompatActivity() {
 
+    private val viewModel: ErrorActivityViewModel by viewModel()
+
     private lateinit var exportBackupActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var exportDatabaseActivityResultLauncher: ActivityResultLauncher<Intent>
-    private var backupPath: File? = null
-    private var appLogs: File? = null
-    private val backupProgress = MutableStateFlow<Progress?>(null)
-    private val crashLogsLinkState = mutableStateOf<String?>(null)
-    private val showExportBackupDialog = mutableStateOf(false)
-    private val showReimportDialog = mutableStateOf(false)
-    private val importResultDialogMessage = mutableStateOf<String?>(null)
-    private var pendingImportUri: Uri? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,14 +72,26 @@ class ErrorActivity : AppCompatActivity() {
 
         setContent {
             NotallyXTheme(theme = preferences.theme.value) {
+                val crashLogsLinkText = viewModel.crashLogsLinkText.collectAsStateWithLifecycle()
+                val showExportBackupDialog =
+                    viewModel.showExportBackupDialog.collectAsStateWithLifecycle()
+                val showReimportDialog = viewModel.showReimportDialog.collectAsStateWithLifecycle()
+                val importResultDialogMessage =
+                    viewModel.importResultDialogMessage.collectAsStateWithLifecycle()
+
                 ErrorScreen(
-                    exceptionTitle = exceptionTitle,
-                    stackTrace = exceptionDetails,
-                    crashLogsLinkText = crashLogsLinkState.value,
-                    showExportBackupDialog = showExportBackupDialog.value,
-                    onDismissExportBackupDialog = { showExportBackupDialog.value = false },
+                    uiState =
+                        ErrorScreenUiState(
+                            exceptionTitle = exceptionTitle,
+                            stackTrace = exceptionDetails,
+                            crashLogsLinkText = crashLogsLinkText.value,
+                            showExportBackupDialog = showExportBackupDialog.value,
+                            showReimportDialog = showReimportDialog.value,
+                            importResultDialogMessage = importResultDialogMessage.value,
+                        ),
+                    onDismissExportBackupDialog = { viewModel.setShowExportBackupDialog(false) },
                     onConfirmExportBackupDialog = {
-                        showExportBackupDialog.value = false
+                        viewModel.setShowExportBackupDialog(false)
                         val intent =
                             Intent(Intent.ACTION_CREATE_DOCUMENT)
                                 .apply {
@@ -103,11 +105,10 @@ class ErrorActivity : AppCompatActivity() {
                                 .wrapWithChooser(this@ErrorActivity)
                         exportBackupActivityResultLauncher.launch(intent)
                     },
-                    showReimportDialog = showReimportDialog.value,
-                    onDismissReimportDialog = { showReimportDialog.value = false },
+                    onDismissReimportDialog = { viewModel.setShowReimportDialog(false) },
                     onConfirmReimportDialog = {
-                        showReimportDialog.value = false
-                        pendingImportUri?.let { uri ->
+                        viewModel.setShowReimportDialog(false)
+                        viewModel.pendingImportUri?.let { uri ->
                             val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
                                 showErrorDialog(
                                     throwable,
@@ -137,17 +138,17 @@ class ErrorActivity : AppCompatActivity() {
                                         application.importRawDatabase(
                                             uri,
                                             false,
-                                            backupProgress,
+                                            viewModel.backupProgress,
                                         )
                                     }
-                                importResultDialogMessage.value =
+                                viewModel.setImportResultDialogMessage(
                                     this@ErrorActivity.toMessage(importResult)
+                                )
                             }
                         }
                     },
-                    importResultDialogMessage = importResultDialogMessage.value,
                     onDismissImportResultDialog = {
-                        importResultDialogMessage.value = null
+                        viewModel.setImportResultDialogMessage(null)
                         restartApplication()
                     },
                     onRestartClick = {
@@ -165,7 +166,9 @@ class ErrorActivity : AppCompatActivity() {
                         }
                     },
                     onCrashLogsLinkClick = {
-                        appLogs?.let { viewFile(getUriForFile(it), ExportMimeType.TXT.mimeType) }
+                        viewModel.appLogs?.let {
+                            viewFile(getUriForFile(it), ExportMimeType.TXT.mimeType)
+                        }
                     },
                 )
             }
@@ -173,32 +176,11 @@ class ErrorActivity : AppCompatActivity() {
 
         setupExportBackup(stacktrace)
 
-        val now = Date()
-        lifecycleScope.launch(
-            CoroutineExceptionHandler { _, throwable ->
-                log(TAG, msg = "Creating crash database dump failed", throwable = throwable)
-            }
-        ) {
-            backupPath = withContext(Dispatchers.IO) { application.backupDatabaseFiles(now) }
-        }
-
-        lifecycleScope.launch(
-            CoroutineExceptionHandler { _, throwable ->
-                log(TAG, msg = "Creating crash logs dump failed", throwable = throwable)
-            }
-        ) {
-            appLogs =
-                withContext(Dispatchers.IO) {
-                        CustomActivityOnCrash.getCustomCrashDataFromIntent(intent)?.toInt()?.let {
-                            application.exportCrashLogs(it, now)
-                        }
-                    }
-                    ?.also { crashLogsLinkState.value = getString(R.string.view_crash_logs) }
-        }
+        viewModel.loadCrashData(intent, Date())
     }
 
     private fun onExportBackupRequested(stacktrace: String?) {
-        showExportBackupDialog.value = true
+        viewModel.setShowExportBackupDialog(true)
     }
 
     private fun setupExportBackup(stacktrace: String?) {
@@ -250,7 +232,7 @@ class ErrorActivity : AppCompatActivity() {
                                     return@withContext application.exportAsZip(
                                         uri,
                                         password = preferences.backupPassword.value,
-                                        backupProgress = backupProgress,
+                                        backupProgress = viewModel.backupProgress,
                                     )
                                 }
                             val message = application.exportedText(exportedNotesAndAttachments)
@@ -298,7 +280,7 @@ class ErrorActivity : AppCompatActivity() {
                                     auto_backup_failed,
                                     getString(
                                         R.string.crash_export_raw_backup_failed,
-                                        backupPath ?: "null",
+                                        viewModel.backupPath ?: "null",
                                         getString(report_bug),
                                     ),
                                 )
@@ -307,13 +289,13 @@ class ErrorActivity : AppCompatActivity() {
                             application.showToast(
                                 "${getString(R.string.exported)} ${getString(R.string.database)}"
                             )
-                            pendingImportUri = uri
-                            showReimportDialog.value = true
+                            viewModel.pendingImportUri = uri
+                            viewModel.setShowReimportDialog(true)
                         }
                     }
                 }
             }
-        backupProgress.setupProgressDialog(this)
+        viewModel.backupProgress.setupProgressDialog(this)
     }
 
     companion object {
