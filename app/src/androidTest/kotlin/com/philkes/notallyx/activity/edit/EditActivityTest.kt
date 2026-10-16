@@ -14,6 +14,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.test.core.app.ActivityScenario
@@ -206,12 +207,16 @@ class EditActivityTest : UiTestBase() {
         composeTestRule.onNodeWithTag("MONTHLY").performClick()
         composeTestRule.onNodeWithTag("button1").performClick()
 
-        composeTestRule
-            .onNodeWithText(
-                context.getString(R.string.of_the_month, "").replace("%1\$s", "").trim(),
-                substring = true,
-            )
-            .assertIsDisplayed()
+        val ofTheMonthText =
+            context.getString(R.string.of_the_month, "").replace("%1\$s", "").trim()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText(ofTheMonthText, substring = true))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onAllNodes(hasText(ofTheMonthText, substring = true))[0].assertIsDisplayed()
+        composeTestRule.onNodeWithTag("button1").performClick()
 
         // 5. Reminder 5: Yearly repetition
         composeTestRule
@@ -230,7 +235,7 @@ class EditActivityTest : UiTestBase() {
         confirmDateAndTime()
         composeTestRule.onNodeWithTag("CUSTOM").performClick()
         composeTestRule.onNodeWithTag("button1").performClick()
-        composeTestRule.onNodeWithTag("Value").performTextInput("3")
+        composeTestRule.onNodeWithTag("Value").performTextReplacement("3")
         composeTestRule.onNodeWithTag("Weeks").performClick()
         composeTestRule.onNodeWithTag("button1").performClick()
 
