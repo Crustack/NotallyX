@@ -2,6 +2,7 @@ package com.philkes.notallyx.feature.main
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -72,6 +73,154 @@ internal interface ActionModeListener {
     fun onExport() {}
 }
 
+@Composable
+private fun MainDrawerContent(
+    selectedDestinationId: Int,
+    title: String,
+    labels: List<Label>,
+    onNavigationItemClick: (Int, String?) -> Unit,
+    onCloseDrawer: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ModalDrawerSheet(modifier = modifier) {
+        DrawerHeaderView()
+        HorizontalDivider()
+        Spacer(modifier = Modifier.height(8.dp))
+
+        NavigationDrawerItem(
+            label = { Text(text = stringResource(R.string.notes)) },
+            selected = selectedDestinationId == R.id.Notes,
+            icon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.home),
+                    contentDescription = null,
+                )
+            },
+            onClick = {
+                onCloseDrawer()
+                onNavigationItemClick(R.id.Notes, null)
+            },
+            modifier = Modifier.padding(horizontal = 12.dp),
+        )
+
+        NavigationDrawerItem(
+            label = { Text(text = stringResource(R.string.unlabeled)) },
+            selected = selectedDestinationId == R.id.Unlabeled,
+            icon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.label_off),
+                    contentDescription = null,
+                )
+            },
+            onClick = {
+                onCloseDrawer()
+                onNavigationItemClick(R.id.Unlabeled, null)
+            },
+            modifier = Modifier.padding(horizontal = 12.dp),
+        )
+
+        NavigationDrawerItem(
+            label = { Text(text = stringResource(R.string.labels)) },
+            selected = selectedDestinationId == R.id.Labels,
+            icon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.label_more),
+                    contentDescription = null,
+                )
+            },
+            onClick = {
+                onCloseDrawer()
+                onNavigationItemClick(R.id.Labels, null)
+            },
+            modifier = Modifier.padding(horizontal = 12.dp),
+        )
+
+        labels.forEach { label ->
+            NavigationDrawerItem(
+                label = { Text(text = label.value) },
+                selected = selectedDestinationId == R.id.DisplayLabel && title == label.value,
+                icon = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.label),
+                        contentDescription = null,
+                    )
+                },
+                onClick = {
+                    onCloseDrawer()
+                    onNavigationItemClick(R.id.DisplayLabel, label.value)
+                },
+                modifier = Modifier.padding(horizontal = 12.dp),
+            )
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+        NavigationDrawerItem(
+            label = { Text(text = stringResource(R.string.deleted)) },
+            selected = selectedDestinationId == R.id.Deleted,
+            icon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.delete),
+                    contentDescription = null,
+                )
+            },
+            onClick = {
+                onCloseDrawer()
+                onNavigationItemClick(R.id.Deleted, null)
+            },
+            modifier = Modifier.padding(horizontal = 12.dp),
+        )
+
+        NavigationDrawerItem(
+            label = { Text(text = stringResource(R.string.archived)) },
+            selected = selectedDestinationId == R.id.Archived,
+            icon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.archive),
+                    contentDescription = null,
+                )
+            },
+            onClick = {
+                onCloseDrawer()
+                onNavigationItemClick(R.id.Archived, null)
+            },
+            modifier = Modifier.padding(horizontal = 12.dp),
+        )
+
+        NavigationDrawerItem(
+            label = { Text(text = stringResource(R.string.reminders)) },
+            selected = selectedDestinationId == R.id.Reminders,
+            icon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.notifications),
+                    contentDescription = null,
+                )
+            },
+            onClick = {
+                onCloseDrawer()
+                onNavigationItemClick(R.id.Reminders, null)
+            },
+            modifier = Modifier.padding(horizontal = 12.dp),
+        )
+
+        NavigationDrawerItem(
+            label = { Text(text = stringResource(R.string.settings)) },
+            selected = selectedDestinationId == R.id.Settings,
+            icon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.settings),
+                    contentDescription = null,
+                )
+            },
+            onClick = {
+                onCloseDrawer()
+                onNavigationItemClick(R.id.Settings, null)
+            },
+            modifier = Modifier.padding(horizontal = 12.dp),
+        )
+    }
+}
+
 /** Composable replacing activity_main.xml layout and drawer navigation. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,144 +251,13 @@ internal fun MainScreen(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet {
-                DrawerHeaderView()
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(8.dp))
-
-                NavigationDrawerItem(
-                    label = { Text(text = stringResource(R.string.notes)) },
-                    selected = selectedDestinationId == R.id.Notes,
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.home),
-                            contentDescription = null,
-                        )
-                    },
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        onNavigationItemClick(R.id.Notes, null)
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                )
-
-                NavigationDrawerItem(
-                    label = { Text(text = stringResource(R.string.unlabeled)) },
-                    selected = selectedDestinationId == R.id.Unlabeled,
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.label_off),
-                            contentDescription = null,
-                        )
-                    },
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        onNavigationItemClick(R.id.Unlabeled, null)
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                )
-
-                NavigationDrawerItem(
-                    label = { Text(text = stringResource(R.string.labels)) },
-                    selected = selectedDestinationId == R.id.Labels,
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.label_more),
-                            contentDescription = null,
-                        )
-                    },
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        onNavigationItemClick(R.id.Labels, null)
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                )
-
-                labels.forEach { label ->
-                    NavigationDrawerItem(
-                        label = { Text(text = label.value) },
-                        selected =
-                            selectedDestinationId == R.id.DisplayLabel && title == label.value,
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.label),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = {
-                            scope.launch { drawerState.close() }
-                            onNavigationItemClick(R.id.DisplayLabel, label.value)
-                        },
-                        modifier = Modifier.padding(horizontal = 12.dp),
-                    )
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                NavigationDrawerItem(
-                    label = { Text(text = stringResource(R.string.deleted)) },
-                    selected = selectedDestinationId == R.id.Deleted,
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.delete),
-                            contentDescription = null,
-                        )
-                    },
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        onNavigationItemClick(R.id.Deleted, null)
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                )
-
-                NavigationDrawerItem(
-                    label = { Text(text = stringResource(R.string.archived)) },
-                    selected = selectedDestinationId == R.id.Archived,
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.archive),
-                            contentDescription = null,
-                        )
-                    },
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        onNavigationItemClick(R.id.Archived, null)
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                )
-
-                NavigationDrawerItem(
-                    label = { Text(text = stringResource(R.string.reminders)) },
-                    selected = selectedDestinationId == R.id.Reminders,
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.notifications),
-                            contentDescription = null,
-                        )
-                    },
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        onNavigationItemClick(R.id.Reminders, null)
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                )
-
-                NavigationDrawerItem(
-                    label = { Text(text = stringResource(R.string.settings)) },
-                    selected = selectedDestinationId == R.id.Settings,
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.settings),
-                            contentDescription = null,
-                        )
-                    },
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        onNavigationItemClick(R.id.Settings, null)
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                )
-            }
+            MainDrawerContent(
+                selectedDestinationId = selectedDestinationId,
+                title = title,
+                labels = labels,
+                onNavigationItemClick = onNavigationItemClick,
+                onCloseDrawer = { scope.launch { drawerState.close() } },
+            )
         },
         modifier = modifier.fillMaxSize(),
     ) {
@@ -363,252 +381,275 @@ private fun ActionModeActions(
     isAllPinned: Boolean,
     isAllPinnedToStatus: Boolean,
     listener: ActionModeListener,
+    modifier: Modifier = Modifier,
 ) {
-    var showOverflowMenu by remember { mutableStateOf(false) }
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        var showOverflowMenu by remember { mutableStateOf(false) }
 
-    IconButton(onClick = { listener.onSelectAll() }) {
-        Icon(
-            painter = painterResource(id = R.drawable.select_all),
-            contentDescription = stringResource(R.string.select_all),
-        )
-    }
-
-    when (currentFolder) {
-        Folder.NOTES -> {
-            IconButton(onClick = { listener.onPin() }) {
-                Icon(
-                    painter =
-                        painterResource(id = if (isAllPinned) R.drawable.unpin else R.drawable.pin),
-                    contentDescription =
-                        stringResource(if (isAllPinned) R.string.unpin else R.string.pin),
-                )
-            }
-            IconButton(onClick = { listener.onLabels() }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.label),
-                    contentDescription = stringResource(R.string.labels),
-                )
-            }
-            IconButton(onClick = { listener.onDelete() }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.delete),
-                    contentDescription = stringResource(R.string.delete),
-                )
-            }
-        }
-        Folder.ARCHIVED -> {
-            IconButton(onClick = { listener.onRestore() }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.unarchive),
-                    contentDescription = stringResource(R.string.unarchive),
-                )
-            }
-            IconButton(onClick = { listener.onDelete() }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.delete),
-                    contentDescription = stringResource(R.string.delete),
-                )
-            }
-        }
-        Folder.DELETED -> {
-            IconButton(onClick = { listener.onRestore() }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.restore),
-                    contentDescription = stringResource(R.string.restore),
-                )
-            }
-            IconButton(onClick = { listener.onDeleteForever() }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.delete),
-                    contentDescription = stringResource(R.string.delete_forever),
-                )
-            }
-        }
-    }
-
-    Box {
-        IconButton(onClick = { showOverflowMenu = true }) {
+        IconButton(onClick = { listener.onSelectAll() }) {
             Icon(
-                painter = painterResource(id = R.drawable.more_vert),
-                contentDescription = stringResource(R.string.tap_for_more_options),
+                painter = painterResource(id = R.drawable.select_all),
+                contentDescription = stringResource(R.string.select_all),
             )
         }
-        DropdownMenu(
-            expanded = showOverflowMenu,
-            onDismissRequest = { showOverflowMenu = false },
-        ) {
-            when (currentFolder) {
-                Folder.NOTES -> {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.duplicate)) },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.content_copy),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = {
-                            showOverflowMenu = false
-                            listener.onDuplicate()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.archive)) },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.archive),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = {
-                            showOverflowMenu = false
-                            listener.onArchive()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.change_color)) },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.change_color),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = {
-                            showOverflowMenu = false
-                            listener.onChangeColor()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                stringResource(
-                                    if (isAllPinnedToStatus) R.string.unpin_from_status_bar
-                                    else R.string.pin_to_status_bar
-                                )
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(
-                                painter =
-                                    painterResource(
-                                        if (isAllPinnedToStatus) R.drawable.pinboard_filled
-                                        else R.drawable.pinboard
-                                    ),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = {
-                            showOverflowMenu = false
-                            listener.onPinToStatus()
-                        },
+
+        when (currentFolder) {
+            Folder.NOTES -> {
+                IconButton(onClick = { listener.onPin() }) {
+                    Icon(
+                        painter =
+                            painterResource(
+                                id = if (isAllPinned) R.drawable.unpin else R.drawable.pin
+                            ),
+                        contentDescription =
+                            stringResource(if (isAllPinned) R.string.unpin else R.string.pin),
                     )
                 }
-                Folder.ARCHIVED -> {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.duplicate)) },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.content_copy),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = {
-                            showOverflowMenu = false
-                            listener.onDuplicate()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = {
-                            Text(stringResource(if (isAllPinned) R.string.unpin else R.string.pin))
-                        },
-                        leadingIcon = {
-                            Icon(
-                                painter =
-                                    painterResource(
-                                        if (isAllPinned) R.drawable.unpin else R.drawable.pin
-                                    ),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = {
-                            showOverflowMenu = false
-                            listener.onPin()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.labels)) },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.label),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = {
-                            showOverflowMenu = false
-                            listener.onLabels()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.change_color)) },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.change_color),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = {
-                            showOverflowMenu = false
-                            listener.onChangeColor()
-                        },
+                IconButton(onClick = { listener.onLabels() }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.label),
+                        contentDescription = stringResource(R.string.labels),
                     )
                 }
-                Folder.DELETED -> {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.change_color)) },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.change_color),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = {
-                            showOverflowMenu = false
-                            listener.onChangeColor()
-                        },
+                IconButton(onClick = { listener.onDelete() }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.delete),
+                        contentDescription = stringResource(R.string.delete),
                     )
                 }
             }
+            Folder.ARCHIVED -> {
+                IconButton(onClick = { listener.onRestore() }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.unarchive),
+                        contentDescription = stringResource(R.string.unarchive),
+                    )
+                }
+                IconButton(onClick = { listener.onDelete() }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.delete),
+                        contentDescription = stringResource(R.string.delete),
+                    )
+                }
+            }
+            Folder.DELETED -> {
+                IconButton(onClick = { listener.onRestore() }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.restore),
+                        contentDescription = stringResource(R.string.restore),
+                    )
+                }
+                IconButton(onClick = { listener.onDeleteForever() }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.delete),
+                        contentDescription = stringResource(R.string.delete_forever),
+                    )
+                }
+            }
+        }
 
-            if (selectedCount == 1) {
+        Box {
+            IconButton(onClick = { showOverflowMenu = true }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.more_vert),
+                    contentDescription = stringResource(R.string.tap_for_more_options),
+                )
+            }
+            DropdownMenu(
+                expanded = showOverflowMenu,
+                onDismissRequest = { showOverflowMenu = false },
+            ) {
+                when (currentFolder) {
+                    Folder.NOTES -> {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.duplicate)) },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.content_copy),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                showOverflowMenu = false
+                                listener.onDuplicate()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.archive)) },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.archive),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                showOverflowMenu = false
+                                listener.onArchive()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.change_color)) },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.change_color),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                showOverflowMenu = false
+                                listener.onChangeColor()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(
+                                        if (isAllPinnedToStatus) R.string.unpin_from_status_bar
+                                        else R.string.pin_to_status_bar
+                                    )
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter =
+                                        painterResource(
+                                            if (isAllPinnedToStatus) R.drawable.pinboard_filled
+                                            else R.drawable.pinboard
+                                        ),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                showOverflowMenu = false
+                                listener.onPinToStatus()
+                            },
+                        )
+                    }
+                    Folder.ARCHIVED -> {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.duplicate)) },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.content_copy),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                showOverflowMenu = false
+                                listener.onDuplicate()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(
+                                        if (isAllPinned) R.string.unpin else R.string.pin
+                                    )
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter =
+                                        painterResource(
+                                            if (isAllPinned) R.drawable.unpin else R.drawable.pin
+                                        ),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                showOverflowMenu = false
+                                listener.onPin()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.labels)) },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.label),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                showOverflowMenu = false
+                                listener.onLabels()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.change_color)) },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.change_color),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                showOverflowMenu = false
+                                listener.onChangeColor()
+                            },
+                        )
+                    }
+                    Folder.DELETED -> {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.change_color)) },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.change_color),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                showOverflowMenu = false
+                                listener.onChangeColor()
+                            },
+                        )
+                    }
+                }
+
+                if (selectedCount == 1) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.share)) },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(R.drawable.share),
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = {
+                            showOverflowMenu = false
+                            listener.onShare()
+                        },
+                    )
+                }
+
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.share)) },
+                    text = { Text(stringResource(R.string.export)) },
                     leadingIcon = {
                         Icon(
-                            painter = painterResource(R.drawable.share),
+                            painter = painterResource(R.drawable.export),
                             contentDescription = null,
                         )
                     },
                     onClick = {
                         showOverflowMenu = false
-                        listener.onShare()
+                        listener.onExport()
                     },
                 )
             }
-
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.export)) },
-                leadingIcon = {
-                    Icon(
-                        painter = painterResource(R.drawable.export),
-                        contentDescription = null,
-                    )
-                },
-                onClick = {
-                    showOverflowMenu = false
-                    listener.onExport()
-                },
-            )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ActionModeActionsPreview() {
+    NotallyXTheme {
+        ActionModeActions(
+            currentFolder = Folder.NOTES,
+            selectedCount = 2,
+            isAllPinned = false,
+            isAllPinnedToStatus = false,
+            listener = object : ActionModeListener {},
+        )
     }
 }
 

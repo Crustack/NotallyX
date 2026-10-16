@@ -22,15 +22,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.preference.NotesSort
 import com.philkes.notallyx.core.preference.NotesSortBy
 import com.philkes.notallyx.core.preference.SortDirection
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
 @Composable
 internal fun NotesSortDialog(
     currentSort: NotesSort,
+    modifier: Modifier = Modifier,
     onDismissRequest: () -> Unit,
     onConfirm: (NotesSort) -> Unit,
 ) {
@@ -38,6 +41,7 @@ internal fun NotesSortDialog(
     var selectedSortDirection by remember { mutableStateOf(currentSort.sortDirection) }
 
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(text = stringResource(R.string.notes_sorted_by)) },
         text = {
@@ -122,4 +126,16 @@ internal fun NotesSortDialog(
             TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
         },
     )
+}
+
+@Preview
+@Composable
+private fun NotesSortDialogPreview() {
+    NotallyXTheme {
+        NotesSortDialog(
+            currentSort = NotesSort(),
+            onDismissRequest = {},
+            onConfirm = {},
+        )
+    }
 }

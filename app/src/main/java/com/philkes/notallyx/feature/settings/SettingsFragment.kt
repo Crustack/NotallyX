@@ -115,309 +115,348 @@ class SettingsFragment : Fragment() {
                             scrollState = scrollState,
                             dialogState = activeDialogState.value,
                             importProgress = importProgressState.value,
-                            onDismissDialog = { activeDialogState.value = null },
-                            onNotesViewClick = {
-                                showEnumChoiceDialog(model.preferences.notesView) { newValue ->
-                                    model.savePreference(model.preferences.notesView, newValue)
-                                }
-                            },
-                            onThemeClick = { showThemeDialog() },
-                            onDateFormatOverviewClick = {
-                                showDateTimeFormatDialog(
-                                    R.string.date_format_overview,
-                                    model.preferences.dateFormatOverview,
-                                    model.preferences.timeFormatOverview,
-                                ) { newDate, newTime ->
-                                    model.savePreference(
-                                        model.preferences.dateFormatOverview,
-                                        newDate,
-                                    )
-                                    model.savePreference(
-                                        model.preferences.timeFormatOverview,
-                                        newTime,
-                                    )
-                                }
-                            },
-                            onDateFormatNoteViewClick = { showDateTimeFormatNoteViewDialog() },
-                            onTextSizeNoteEditorChange = { newValue ->
-                                model.savePreference(
-                                    model.preferences.textSizeNoteEditor,
-                                    newValue,
-                                )
-                            },
-                            onTextSizeOverviewChange = { newValue ->
-                                model.savePreference(model.preferences.textSizeOverview, newValue)
-                            },
-                            onAlwaysShowSearchBarClick = {
-                                showBooleanPreferenceDialog(
-                                    model.preferences.alwaysShowSearchBar,
-                                    R.string.always_show_search_bar_hint,
-                                ) { enabled ->
-                                    model.savePreference(
-                                        model.preferences.alwaysShowSearchBar,
-                                        enabled,
-                                    )
-                                }
-                            },
-                            onNotesSortOrderClick = { showNotesSortDialog() },
-                            onCheckedListItemSortingClick = {
-                                showEnumChoiceDialog(model.preferences.listItemSorting) { newValue
-                                    ->
-                                    model.savePreference(
-                                        model.preferences.listItemSorting,
-                                        newValue,
-                                    )
-                                }
-                            },
-                            onStartViewClick = {
-                                showStartViewDialog(labelsState.value.map { it.value })
-                            },
-                            onDefaultListNoteViewModeClick = {
-                                showEnumChoiceDialog(model.preferences.defaultListNoteViewMode) {
-                                    newValue ->
-                                    model.savePreference(
-                                        model.preferences.defaultListNoteViewMode,
-                                        newValue,
-                                    )
-                                }
-                            },
-                            onAutoSaveAfterIdleChange = { newValue ->
-                                model.savePreference(
-                                    model.preferences.autoSaveAfterIdleTime,
-                                    newValue,
-                                )
-                            },
-                            onAutoRemoveDeletedNotesChange = { newValue ->
-                                model.savePreference(
-                                    model.preferences.autoRemoveDeletedNotesAfterDays,
-                                    newValue,
-                                )
-                                val workManager = WorkManager.getInstance(requireContext())
-                                if (newValue > 0) {
-                                    workManager.scheduleAutoRemoveOldDeletedNotes(
-                                        requireContext() as ContextWrapper
-                                    )
-                                } else {
-                                    workManager.cancelAutoRemoveOldDeletedNotes()
-                                }
-                            },
-                            onMaxTitleChange = { newValue ->
-                                model.savePreference(model.preferences.maxTitle, newValue)
-                            },
-                            onMaxItemsChange = { newValue ->
-                                model.savePreference(model.preferences.maxItems, newValue)
-                            },
-                            onMaxLinesChange = { newValue ->
-                                model.savePreference(model.preferences.maxLines, newValue)
-                            },
-                            onMaxLabelsChange = { newValue ->
-                                model.savePreference(model.preferences.maxLabels, newValue)
-                            },
-                            onLabelTagsHiddenClick = {
-                                showBooleanPreferenceDialog(
-                                    model.preferences.labelTagsHiddenInOverview,
-                                    R.string.labels_hidden_in_overview_title,
-                                ) { enabled ->
-                                    model.savePreference(
-                                        model.preferences.labelTagsHiddenInOverview,
-                                        enabled,
-                                    )
-                                }
-                            },
-                            onImagesHiddenClick = {
-                                showBooleanPreferenceDialog(
-                                    model.preferences.imagesHiddenInOverview,
-                                    R.string.images_hidden_in_overview_title,
-                                ) { enabled ->
-                                    model.savePreference(
-                                        model.preferences.imagesHiddenInOverview,
-                                        enabled,
-                                    )
-                                }
-                            },
-                            onImportBackupClick = {
-                                val intent =
-                                    Intent(Intent.ACTION_OPEN_DOCUMENT)
-                                        .apply {
-                                            type = "*/*"
-                                            putExtra(
-                                                Intent.EXTRA_MIME_TYPES,
-                                                arrayOf(MIME_TYPE_ZIP, "text/xml"),
+                            actions =
+                                SettingsActions(
+                                    onDismissDialog = { activeDialogState.value = null },
+                                    onNotesViewClick = {
+                                        showEnumChoiceDialog(model.preferences.notesView) { newValue
+                                            ->
+                                            model.savePreference(
+                                                model.preferences.notesView,
+                                                newValue,
                                             )
-                                            addCategory(Intent.CATEGORY_OPENABLE)
                                         }
-                                        .wrapWithChooser(requireContext())
-                                importBackupActivityResultLauncher.launch(intent)
-                            },
-                            onImportOtherClick = { importFromOtherApp() },
-                            onExportBackupClick = {
-                                val intent =
-                                    Intent(Intent.ACTION_CREATE_DOCUMENT)
-                                        .apply {
-                                            type = MIME_TYPE_ZIP
-                                            addCategory(Intent.CATEGORY_OPENABLE)
-                                            putExtra(Intent.EXTRA_TITLE, buildBackupTitle())
+                                    },
+                                    onThemeClick = { showThemeDialog() },
+                                    onDateFormatOverviewClick = {
+                                        showDateTimeFormatDialog(
+                                            R.string.date_format_overview,
+                                            model.preferences.dateFormatOverview,
+                                            model.preferences.timeFormatOverview,
+                                        ) { newDate, newTime ->
+                                            model.savePreference(
+                                                model.preferences.dateFormatOverview,
+                                                newDate,
+                                            )
+                                            model.savePreference(
+                                                model.preferences.timeFormatOverview,
+                                                newTime,
+                                            )
                                         }
-                                        .wrapWithChooser(requireContext())
-                                exportBackupActivityResultLauncher.launch(intent)
-                            },
-                            onBackupsFolderClick = {
-                                val folder = model.preferences.backupsFolder.value
-                                if (folder == EMPTY_PATH) {
-                                    displayChooseBackupFolderDialog()
-                                } else {
-                                    activeDialogState.value =
-                                        SettingsDialogState.ListSelection(
-                                            title = getString(R.string.auto_backups_folder),
-                                            items =
-                                                listOf(
-                                                    getString(R.string.clear),
-                                                    getString(R.string.choose_another_folder),
-                                                ),
-                                            onItemClick = { which ->
-                                                when (which) {
-                                                    0 -> model.disableBackups()
-                                                    1 -> displayChooseBackupFolderDialog()
-                                                }
-                                            },
+                                    },
+                                    onDateFormatNoteViewClick = {
+                                        showDateTimeFormatNoteViewDialog()
+                                    },
+                                    onTextSizeNoteEditorChange = { newValue ->
+                                        model.savePreference(
+                                            model.preferences.textSizeNoteEditor,
+                                            newValue,
                                         )
-                                }
-                            },
-                            onBackupOnSaveClick = {
-                                showBooleanPreferenceDialog(
-                                    model.preferences.backupOnSave,
-                                    R.string.auto_backup_on_save,
-                                    enabled = model.preferences.backupsFolder.value != EMPTY_PATH,
-                                    disabledTextResId = R.string.auto_backups_folder_set,
-                                ) { enabled ->
-                                    model.savePreference(model.preferences.backupOnSave, enabled)
-                                }
-                            },
-                            onPeriodicBackupsClick = { showPeriodicBackupDialog() },
-                            onPeriodicBackupsPeriodInDaysChange = { newValue ->
-                                val current = model.preferences.periodicBackups.value
-                                model.savePreference(
-                                    model.preferences.periodicBackups,
-                                    current.copy(periodInDays = newValue),
-                                )
-                            },
-                            onPeriodicBackupsMaxChange = { newValue ->
-                                val current = model.preferences.periodicBackups.value
-                                model.savePreference(
-                                    model.preferences.periodicBackups,
-                                    current.copy(maxBackups = newValue),
-                                )
-                            },
-                            onBiometricLockClick = { showBiometricLockDialog() },
-                            onBackupPasswordClick = { showBackupPasswordDialog() },
-                            onSecureFlagClick = {
-                                showBooleanPreferenceDialog(model.preferences.secureFlag) { enabled
-                                    ->
-                                    model.savePreference(model.preferences.secureFlag, enabled)
-                                    activity?.setEnabledSecureFlag(enabled)
-                                }
-                            },
-                            onImportSettingsClick = {
-                                activeDialogState.value =
-                                    SettingsDialogState.Confirm(
-                                        message = getString(R.string.import_settings_message),
-                                        positiveButtonText = getString(R.string.import_action),
-                                        negativeButtonText = getString(R.string.cancel),
-                                        onConfirm = {
-                                            val intent =
-                                                Intent(Intent.ACTION_OPEN_DOCUMENT)
-                                                    .apply {
-                                                        type = MIME_TYPE_JSON
-                                                        addCategory(Intent.CATEGORY_OPENABLE)
-                                                        putExtra(
-                                                            Intent.EXTRA_TITLE,
-                                                            "NotallyX_Settings.json",
-                                                        )
-                                                    }
-                                                    .wrapWithChooser(requireContext())
-                                            importSettingsActivityResultLauncher.launch(intent)
-                                        },
-                                    )
-                            },
-                            onExportSettingsClick = {
-                                activeDialogState.value =
-                                    SettingsDialogState.Confirm(
-                                        message = getString(R.string.export_settings_message),
-                                        positiveButtonText = getString(R.string.export),
-                                        negativeButtonText = getString(R.string.cancel),
-                                        onConfirm = {
-                                            val intent =
-                                                Intent(Intent.ACTION_CREATE_DOCUMENT)
-                                                    .apply {
-                                                        type = MIME_TYPE_JSON
-                                                        addCategory(Intent.CATEGORY_OPENABLE)
-                                                        putExtra(
-                                                            Intent.EXTRA_TITLE,
-                                                            "NotallyX_Settings.json",
-                                                        )
-                                                    }
-                                                    .wrapWithChooser(requireContext())
-                                            exportSettingsActivityResultLauncher.launch(intent)
-                                        },
-                                    )
-                            },
-                            onResetSettingsClick = {
-                                activeDialogState.value =
-                                    SettingsDialogState.Confirm(
-                                        message = getString(R.string.reset_settings_message),
-                                        positiveButtonText = getString(R.string.reset_settings),
-                                        negativeButtonText = getString(R.string.cancel),
-                                        onConfirm = {
-                                            lifecycleScope.launch {
-                                                model.resetPreferences { _ ->
-                                                    showToast(R.string.reset_settings_success)
+                                    },
+                                    onTextSizeOverviewChange = { newValue ->
+                                        model.savePreference(
+                                            model.preferences.textSizeOverview,
+                                            newValue,
+                                        )
+                                    },
+                                    onAlwaysShowSearchBarClick = {
+                                        showBooleanPreferenceDialog(
+                                            model.preferences.alwaysShowSearchBar,
+                                            R.string.always_show_search_bar_hint,
+                                        ) { enabled ->
+                                            model.savePreference(
+                                                model.preferences.alwaysShowSearchBar,
+                                                enabled,
+                                            )
+                                        }
+                                    },
+                                    onNotesSortOrderClick = { showNotesSortDialog() },
+                                    onCheckedListItemSortingClick = {
+                                        showEnumChoiceDialog(model.preferences.listItemSorting) {
+                                            newValue ->
+                                            model.savePreference(
+                                                model.preferences.listItemSorting,
+                                                newValue,
+                                            )
+                                        }
+                                    },
+                                    onStartViewClick = {
+                                        showStartViewDialog(labelsState.value.map { it.value })
+                                    },
+                                    onDefaultListNoteViewModeClick = {
+                                        showEnumChoiceDialog(
+                                            model.preferences.defaultListNoteViewMode
+                                        ) { newValue ->
+                                            model.savePreference(
+                                                model.preferences.defaultListNoteViewMode,
+                                                newValue,
+                                            )
+                                        }
+                                    },
+                                    onAutoSaveAfterIdleChange = { newValue ->
+                                        model.savePreference(
+                                            model.preferences.autoSaveAfterIdleTime,
+                                            newValue,
+                                        )
+                                    },
+                                    onAutoRemoveDeletedNotesChange = { newValue ->
+                                        model.savePreference(
+                                            model.preferences.autoRemoveDeletedNotesAfterDays,
+                                            newValue,
+                                        )
+                                        val workManager = WorkManager.getInstance(requireContext())
+                                        if (newValue > 0) {
+                                            workManager.scheduleAutoRemoveOldDeletedNotes(
+                                                requireContext() as ContextWrapper
+                                            )
+                                        } else {
+                                            workManager.cancelAutoRemoveOldDeletedNotes()
+                                        }
+                                    },
+                                    onMaxTitleChange = { newValue ->
+                                        model.savePreference(model.preferences.maxTitle, newValue)
+                                    },
+                                    onMaxItemsChange = { newValue ->
+                                        model.savePreference(model.preferences.maxItems, newValue)
+                                    },
+                                    onMaxLinesChange = { newValue ->
+                                        model.savePreference(model.preferences.maxLines, newValue)
+                                    },
+                                    onMaxLabelsChange = { newValue ->
+                                        model.savePreference(model.preferences.maxLabels, newValue)
+                                    },
+                                    onLabelTagsHiddenClick = {
+                                        showBooleanPreferenceDialog(
+                                            model.preferences.labelTagsHiddenInOverview,
+                                            R.string.labels_hidden_in_overview_title,
+                                        ) { enabled ->
+                                            model.savePreference(
+                                                model.preferences.labelTagsHiddenInOverview,
+                                                enabled,
+                                            )
+                                        }
+                                    },
+                                    onImagesHiddenClick = {
+                                        showBooleanPreferenceDialog(
+                                            model.preferences.imagesHiddenInOverview,
+                                            R.string.images_hidden_in_overview_title,
+                                        ) { enabled ->
+                                            model.savePreference(
+                                                model.preferences.imagesHiddenInOverview,
+                                                enabled,
+                                            )
+                                        }
+                                    },
+                                    onImportBackupClick = {
+                                        val intent =
+                                            Intent(Intent.ACTION_OPEN_DOCUMENT)
+                                                .apply {
+                                                    type = "*/*"
+                                                    putExtra(
+                                                        Intent.EXTRA_MIME_TYPES,
+                                                        arrayOf(MIME_TYPE_ZIP, "text/xml"),
+                                                    )
+                                                    addCategory(Intent.CATEGORY_OPENABLE)
                                                 }
+                                                .wrapWithChooser(requireContext())
+                                        importBackupActivityResultLauncher.launch(intent)
+                                    },
+                                    onImportOtherClick = { importFromOtherApp() },
+                                    onExportBackupClick = {
+                                        val intent =
+                                            Intent(Intent.ACTION_CREATE_DOCUMENT)
+                                                .apply {
+                                                    type = MIME_TYPE_ZIP
+                                                    addCategory(Intent.CATEGORY_OPENABLE)
+                                                    putExtra(Intent.EXTRA_TITLE, buildBackupTitle())
+                                                }
+                                                .wrapWithChooser(requireContext())
+                                        exportBackupActivityResultLauncher.launch(intent)
+                                    },
+                                    onBackupsFolderClick = {
+                                        val folder = model.preferences.backupsFolder.value
+                                        if (folder == EMPTY_PATH) {
+                                            displayChooseBackupFolderDialog()
+                                        } else {
+                                            activeDialogState.value =
+                                                SettingsDialogState.ListSelection(
+                                                    title = getString(R.string.auto_backups_folder),
+                                                    items =
+                                                        listOf(
+                                                            getString(R.string.clear),
+                                                            getString(
+                                                                R.string.choose_another_folder
+                                                            ),
+                                                        ),
+                                                    onItemClick = { which ->
+                                                        when (which) {
+                                                            0 -> model.disableBackups()
+                                                            1 -> displayChooseBackupFolderDialog()
+                                                        }
+                                                    },
+                                                )
+                                        }
+                                    },
+                                    onBackupOnSaveClick = {
+                                        showBooleanPreferenceDialog(
+                                            model.preferences.backupOnSave,
+                                            R.string.auto_backup_on_save,
+                                            enabled =
+                                                model.preferences.backupsFolder.value != EMPTY_PATH,
+                                            disabledTextResId = R.string.auto_backups_folder_set,
+                                        ) { enabled ->
+                                            model.savePreference(
+                                                model.preferences.backupOnSave,
+                                                enabled,
+                                            )
+                                        }
+                                    },
+                                    onPeriodicBackupsClick = { showPeriodicBackupDialog() },
+                                    onPeriodicBackupsPeriodInDaysChange = { newValue ->
+                                        val current = model.preferences.periodicBackups.value
+                                        model.savePreference(
+                                            model.preferences.periodicBackups,
+                                            current.copy(periodInDays = newValue),
+                                        )
+                                    },
+                                    onPeriodicBackupsMaxChange = { newValue ->
+                                        val current = model.preferences.periodicBackups.value
+                                        model.savePreference(
+                                            model.preferences.periodicBackups,
+                                            current.copy(maxBackups = newValue),
+                                        )
+                                    },
+                                    onBiometricLockClick = { showBiometricLockDialog() },
+                                    onBackupPasswordClick = { showBackupPasswordDialog() },
+                                    onSecureFlagClick = {
+                                        showBooleanPreferenceDialog(model.preferences.secureFlag) {
+                                            enabled ->
+                                            model.savePreference(
+                                                model.preferences.secureFlag,
+                                                enabled,
+                                            )
+                                            activity?.setEnabledSecureFlag(enabled)
+                                        }
+                                    },
+                                    onImportSettingsClick = {
+                                        activeDialogState.value =
+                                            SettingsDialogState.Confirm(
+                                                message =
+                                                    getString(R.string.import_settings_message),
+                                                positiveButtonText =
+                                                    getString(R.string.import_action),
+                                                negativeButtonText = getString(R.string.cancel),
+                                                onConfirm = {
+                                                    val intent =
+                                                        Intent(Intent.ACTION_OPEN_DOCUMENT)
+                                                            .apply {
+                                                                type = MIME_TYPE_JSON
+                                                                addCategory(
+                                                                    Intent.CATEGORY_OPENABLE
+                                                                )
+                                                                putExtra(
+                                                                    Intent.EXTRA_TITLE,
+                                                                    "NotallyX_Settings.json",
+                                                                )
+                                                            }
+                                                            .wrapWithChooser(requireContext())
+                                                    importSettingsActivityResultLauncher.launch(
+                                                        intent
+                                                    )
+                                                },
+                                            )
+                                    },
+                                    onExportSettingsClick = {
+                                        activeDialogState.value =
+                                            SettingsDialogState.Confirm(
+                                                message =
+                                                    getString(R.string.export_settings_message),
+                                                positiveButtonText = getString(R.string.export),
+                                                negativeButtonText = getString(R.string.cancel),
+                                                onConfirm = {
+                                                    val intent =
+                                                        Intent(Intent.ACTION_CREATE_DOCUMENT)
+                                                            .apply {
+                                                                type = MIME_TYPE_JSON
+                                                                addCategory(
+                                                                    Intent.CATEGORY_OPENABLE
+                                                                )
+                                                                putExtra(
+                                                                    Intent.EXTRA_TITLE,
+                                                                    "NotallyX_Settings.json",
+                                                                )
+                                                            }
+                                                            .wrapWithChooser(requireContext())
+                                                    exportSettingsActivityResultLauncher.launch(
+                                                        intent
+                                                    )
+                                                },
+                                            )
+                                    },
+                                    onResetSettingsClick = {
+                                        activeDialogState.value =
+                                            SettingsDialogState.Confirm(
+                                                message =
+                                                    getString(R.string.reset_settings_message),
+                                                positiveButtonText =
+                                                    getString(R.string.reset_settings),
+                                                negativeButtonText = getString(R.string.cancel),
+                                                onConfirm = {
+                                                    lifecycleScope.launch {
+                                                        model.resetPreferences { _ ->
+                                                            showToast(
+                                                                R.string.reset_settings_success
+                                                            )
+                                                        }
+                                                    }
+                                                },
+                                            )
+                                    },
+                                    onDataInPublicFolderClick = {
+                                        showBooleanPreferenceDialog(
+                                            model.preferences.dataInPublicFolder,
+                                            R.string.data_in_public_message,
+                                        ) { enabled ->
+                                            if (enabled) {
+                                                DatabaseTransitionActivity.start(
+                                                    requireActivity(),
+                                                    DatabaseAction.ENABLE_DATA_IN_PUBLIC,
+                                                )
+                                            } else {
+                                                DatabaseTransitionActivity.start(
+                                                    requireActivity(),
+                                                    DatabaseAction.DISABLE_DATA_IN_PUBLIC,
+                                                )
                                             }
-                                        },
-                                    )
-                            },
-                            onDataInPublicFolderClick = {
-                                showBooleanPreferenceDialog(
-                                    model.preferences.dataInPublicFolder,
-                                    R.string.data_in_public_message,
-                                ) { enabled ->
-                                    if (enabled) {
-                                        DatabaseTransitionActivity.start(
-                                            requireActivity(),
-                                            DatabaseAction.ENABLE_DATA_IN_PUBLIC,
+                                        }
+                                    },
+                                    onClearDataClick = {
+                                        activeDialogState.value =
+                                            SettingsDialogState.Confirm(
+                                                message = getString(R.string.clear_data_message),
+                                                positiveButtonText = getString(R.string.delete_all),
+                                                negativeButtonText = getString(R.string.cancel),
+                                                onConfirm = { model.deleteAll() },
+                                            )
+                                    },
+                                    onSendFeedbackClick = { showFeedbackDialog() },
+                                    onRateClick = {
+                                        openLink(
+                                            "https://play.google.com/store/apps/details?id=com.philkes.notallyx"
                                         )
-                                    } else {
-                                        DatabaseTransitionActivity.start(
-                                            requireActivity(),
-                                            DatabaseAction.DISABLE_DATA_IN_PUBLIC,
-                                        )
-                                    }
-                                }
-                            },
-                            onClearDataClick = {
-                                activeDialogState.value =
-                                    SettingsDialogState.Confirm(
-                                        message = getString(R.string.clear_data_message),
-                                        positiveButtonText = getString(R.string.delete_all),
-                                        negativeButtonText = getString(R.string.cancel),
-                                        onConfirm = { model.deleteAll() },
-                                    )
-                            },
-                            onSendFeedbackClick = { showFeedbackDialog() },
-                            onRateClick = {
-                                openLink(
-                                    "https://play.google.com/store/apps/details?id=com.philkes.notallyx"
-                                )
-                            },
-                            onDonateClick = { openLink("https://ko-fi.com/crustack") },
-                            onViewLogsClick = { (requireContext() as ContextWrapper).viewLogs() },
-                            onViewCrashesClick = { showCrashesDialog() },
-                            onDocumentationClick = {
-                                openLink("https://crustack.github.io/NotallyX")
-                            },
-                            onSourceCodeClick = {
-                                openLink("https://github.com/Crustack/NotallyX")
-                            },
+                                    },
+                                    onDonateClick = { openLink("https://ko-fi.com/crustack") },
+                                    onViewLogsClick = {
+                                        (requireContext() as ContextWrapper).viewLogs()
+                                    },
+                                    onViewCrashesClick = { showCrashesDialog() },
+                                    onDocumentationClick = {
+                                        openLink("https://crustack.github.io/NotallyX")
+                                    },
+                                    onSourceCodeClick = {
+                                        openLink("https://github.com/Crustack/NotallyX")
+                                    },
+                                ),
                         )
                     }
                 }

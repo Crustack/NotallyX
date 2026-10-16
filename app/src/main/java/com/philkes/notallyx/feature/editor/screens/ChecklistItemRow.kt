@@ -34,12 +34,12 @@ internal fun ChecklistItemRow(
     editText: EditTextAutoClearFocus? = null,
     isChecked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
     isChild: Boolean = false,
     showDragHandle: Boolean = true,
     showDelete: Boolean = true,
     onDragTouch: (MotionEvent) -> Boolean = { false },
     onDelete: () -> Unit = {},
-    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier.fillMaxWidth().padding(vertical = 2.dp),

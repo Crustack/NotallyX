@@ -1,6 +1,5 @@
 package com.philkes.notallyx.core.ui.components
 
-// import com.philkes.notallyx.format
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -18,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.philkes.notallyx.R
@@ -25,6 +25,7 @@ import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.core.preference.displaySmallerSize
 import com.philkes.notallyx.core.ui.extensions.format
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.extensions.findNextNotificationDate
@@ -120,4 +121,35 @@ internal fun ReminderChip(
         textSize = textSize,
         onClick = onClick,
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ReminderChipListPreview() {
+    NotallyXTheme {
+        ReminderChip(
+            reminders =
+                listOf(
+                    Reminder(
+                        id = 1L,
+                        dateTime = Date(System.currentTimeMillis() + 86400000L),
+                        repetition = null,
+                    )
+                ),
+            dateFormat = DateFormat.DD_MM_YY_GER,
+            timeFormat = TimeFormat.TWENTY_FOUR_H,
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ReminderChipBaseNotePreview() {
+    NotallyXTheme {
+        ReminderChip(
+            baseNote = SampleNotes.RICH_TEXT_NOTE,
+            dateFormat = DateFormat.DD_MM_YY_GER,
+            timeFormat = TimeFormat.TWENTY_FOUR_H,
+        )
+    }
 }

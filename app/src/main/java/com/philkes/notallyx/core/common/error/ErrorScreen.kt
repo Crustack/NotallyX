@@ -51,23 +51,27 @@ data class ErrorScreenUiState(
     val backupProgress: Progress? = null,
 )
 
+data class ErrorScreenActions(
+    val onDismissExportBackupDialog: () -> Unit = {},
+    val onConfirmExportBackupDialog: () -> Unit = {},
+    val onDismissReimportDialog: () -> Unit = {},
+    val onConfirmReimportDialog: () -> Unit = {},
+    val onDismissImportResultDialog: () -> Unit = {},
+    val onDismissErrorDialog: () -> Unit = {},
+    val onRestartClick: () -> Unit = {},
+    val onReportBugClick: () -> Unit = {},
+    val onExportBackupClick: () -> Unit = {},
+    val onViewLogsClick: () -> Unit = {},
+    val onCopyStackTraceClick: () -> Unit = {},
+    val onCrashLogsLinkClick: () -> Unit = {},
+)
+
 /** Composable replacing activity_error.xml layout. */
 @Composable
 internal fun ErrorScreen(
     uiState: ErrorScreenUiState,
     modifier: Modifier = Modifier,
-    onDismissExportBackupDialog: () -> Unit = {},
-    onConfirmExportBackupDialog: () -> Unit = {},
-    onDismissReimportDialog: () -> Unit = {},
-    onConfirmReimportDialog: () -> Unit = {},
-    onDismissImportResultDialog: () -> Unit = {},
-    onDismissErrorDialog: () -> Unit = {},
-    onRestartClick: () -> Unit = {},
-    onReportBugClick: () -> Unit = {},
-    onExportBackupClick: () -> Unit = {},
-    onViewLogsClick: () -> Unit = {},
-    onCopyStackTraceClick: () -> Unit = {},
-    onCrashLogsLinkClick: () -> Unit = {},
+    actions: ErrorScreenActions = ErrorScreenActions(),
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -99,11 +103,11 @@ internal fun ErrorScreen(
             Spacer(modifier = Modifier.height(12.dp))
             StackTraceCard(
                 stackTrace = uiState.stackTrace,
-                onCopyStackTraceClick = onCopyStackTraceClick,
+                onCopyStackTraceClick = actions.onCopyStackTraceClick,
             )
             if (!uiState.crashLogsLinkText.isNullOrEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
-                TextButton(onClick = onCrashLogsLinkClick) {
+                TextButton(onClick = actions.onCrashLogsLinkClick) {
                     Text(
                         text = uiState.crashLogsLinkText,
                         style = MaterialTheme.typography.bodyMedium,
@@ -115,21 +119,16 @@ internal fun ErrorScreen(
             Spacer(modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.height(24.dp))
             ErrorActionsSection(
-                onRestartClick = onRestartClick,
-                onReportBugClick = onReportBugClick,
-                onExportBackupClick = onExportBackupClick,
-                onViewLogsClick = onViewLogsClick,
+                onRestartClick = actions.onRestartClick,
+                onReportBugClick = actions.onReportBugClick,
+                onExportBackupClick = actions.onExportBackupClick,
+                onViewLogsClick = actions.onViewLogsClick,
             )
         }
 
         ErrorScreenDialogs(
             uiState = uiState,
-            onDismissExportBackupDialog = onDismissExportBackupDialog,
-            onConfirmExportBackupDialog = onConfirmExportBackupDialog,
-            onDismissReimportDialog = onDismissReimportDialog,
-            onConfirmReimportDialog = onConfirmReimportDialog,
-            onDismissImportResultDialog = onDismissImportResultDialog,
-            onDismissErrorDialog = onDismissErrorDialog,
+            actions = actions,
         )
     }
 }
@@ -172,6 +171,18 @@ private fun StackTraceCard(
                 )
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun StackTraceCardPreview() {
+    NotallyXTheme {
+        StackTraceCard(
+            stackTrace =
+                "java.lang.NullPointerException: Attempt to invoke virtual method\n\tat com.philkes.notallyx.MainActivity.onCreate(MainActivity.kt:90)",
+            onCopyStackTraceClick = {},
+        )
     }
 }
 
@@ -232,15 +243,24 @@ private fun ErrorActionsSection(
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+private fun ErrorActionsSectionPreview() {
+    NotallyXTheme {
+        ErrorActionsSection(
+            onRestartClick = {},
+            onReportBugClick = {},
+            onExportBackupClick = {},
+            onViewLogsClick = {},
+        )
+    }
+}
+
 @Composable
 private fun ErrorScreenDialogs(
     uiState: ErrorScreenUiState,
-    onDismissExportBackupDialog: () -> Unit,
-    onConfirmExportBackupDialog: () -> Unit,
-    onDismissReimportDialog: () -> Unit,
-    onConfirmReimportDialog: () -> Unit,
-    onDismissImportResultDialog: () -> Unit,
-    onDismissErrorDialog: () -> Unit,
+    actions: ErrorScreenActions,
+    modifier: Modifier = Modifier,
 ) {
     if (uiState.showExportBackupDialog) {
         ConfirmDialog(
@@ -251,8 +271,9 @@ private fun ErrorScreenDialogs(
                     stringResource(R.string.report_bug),
                 ),
             positiveButtonText = stringResource(R.string.continue_),
-            onDismissRequest = onDismissExportBackupDialog,
-            onConfirm = onConfirmExportBackupDialog,
+            onDismissRequest = actions.onDismissExportBackupDialog,
+            onConfirm = actions.onConfirmExportBackupDialog,
+            modifier = modifier,
         )
     }
 
@@ -261,8 +282,9 @@ private fun ErrorScreenDialogs(
             title = stringResource(R.string.database),
             message = stringResource(R.string.reimport_database_message),
             positiveButtonText = stringResource(R.string.reimport_database),
-            onDismissRequest = onDismissReimportDialog,
-            onConfirm = onConfirmReimportDialog,
+            onDismissRequest = actions.onDismissReimportDialog,
+            onConfirm = actions.onConfirmReimportDialog,
+            modifier = modifier,
         )
     }
 
@@ -270,7 +292,8 @@ private fun ErrorScreenDialogs(
         ErrorDialog(
             title = stringResource(R.string.database),
             message = uiState.importResultDialogMessage,
-            onDismissRequest = onDismissImportResultDialog,
+            onDismissRequest = actions.onDismissImportResultDialog,
+            modifier = modifier,
         )
     }
 
@@ -282,7 +305,8 @@ private fun ErrorScreenDialogs(
             details = errorState.details,
             neutralButtonText = errorState.neutralButtonTextResId?.let { stringResource(it) },
             onNeutralButtonClick = errorState.onNeutralButtonClick,
-            onDismissRequest = onDismissErrorDialog,
+            onDismissRequest = actions.onDismissErrorDialog,
+            modifier = modifier,
         )
     }
 
@@ -303,6 +327,17 @@ private fun ErrorScreenDialogs(
             title = stringResource(progress.titleId),
             message = msg,
             progress = progressValue,
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ErrorScreenDialogsPreview() {
+    NotallyXTheme {
+        ErrorScreenDialogs(
+            uiState = ErrorScreenUiState(showExportBackupDialog = true),
+            actions = ErrorScreenActions(),
         )
     }
 }

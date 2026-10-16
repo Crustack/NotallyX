@@ -49,45 +49,56 @@ class LabelsFragment : Fragment(), LabelListener {
                     LabelsScreen(
                         labels = labelsState.value,
                         dialogState = dialogState,
-                        onLabelClick = { labelData ->
-                            val bundle = Bundle()
-                            bundle.putString(EXTRA_DISPLAYED_LABEL, labelData.value)
-                            findNavController().navigate(R.id.LabelsToDisplayLabel, bundle)
-                        },
-                        onEditClick = { labelData -> model.showEditDialog(labelData.value) },
-                        onDeleteClick = { labelData -> model.showDeleteDialog(labelData.value) },
-                        onToggleVisibilityClick = { labelData ->
-                            val hiddenLabels = model.preferences.labelsHidden.value.toMutableSet()
-                            if (labelData.visibleInNavigation) {
-                                hiddenLabels.add(labelData.value)
-                            } else {
-                                hiddenLabels.remove(labelData.value)
-                            }
-                            model.savePreference(model.preferences.labelsHidden, hiddenLabels)
-                        },
-                        onDismissDialog = { model.dismissDialog() },
-                        onConfirmAddLabel = { value ->
-                            model.insertLabel(value) { success ->
-                                if (success) {
+                        actions =
+                            LabelsScreenActions(
+                                onLabelClick = { labelData ->
+                                    val bundle = Bundle()
+                                    bundle.putString(EXTRA_DISPLAYED_LABEL, labelData.value)
+                                    findNavController().navigate(R.id.LabelsToDisplayLabel, bundle)
+                                },
+                                onEditClick = { labelData ->
+                                    model.showEditDialog(labelData.value)
+                                },
+                                onDeleteClick = { labelData ->
+                                    model.showDeleteDialog(labelData.value)
+                                },
+                                onToggleVisibilityClick = { labelData ->
+                                    val hiddenLabels =
+                                        model.preferences.labelsHidden.value.toMutableSet()
+                                    if (labelData.visibleInNavigation) {
+                                        hiddenLabels.add(labelData.value)
+                                    } else {
+                                        hiddenLabels.remove(labelData.value)
+                                    }
+                                    model.savePreference(
+                                        model.preferences.labelsHidden,
+                                        hiddenLabels,
+                                    )
+                                },
+                                onDismissDialog = { model.dismissDialog() },
+                                onConfirmAddLabel = { value ->
+                                    model.insertLabel(value) { success ->
+                                        if (success) {
+                                            model.dismissDialog()
+                                        } else {
+                                            showToast(R.string.label_exists)
+                                        }
+                                    }
+                                },
+                                onConfirmEditLabel = { oldLabel, newLabel ->
+                                    model.updateLabel(oldLabel, newLabel) { success ->
+                                        if (success) {
+                                            model.dismissDialog()
+                                        } else {
+                                            showToast(R.string.label_exists)
+                                        }
+                                    }
+                                },
+                                onConfirmDeleteLabel = { label ->
+                                    model.deleteLabel(label)
                                     model.dismissDialog()
-                                } else {
-                                    showToast(R.string.label_exists)
-                                }
-                            }
-                        },
-                        onConfirmEditLabel = { oldLabel, newLabel ->
-                            model.updateLabel(oldLabel, newLabel) { success ->
-                                if (success) {
-                                    model.dismissDialog()
-                                } else {
-                                    showToast(R.string.label_exists)
-                                }
-                            }
-                        },
-                        onConfirmDeleteLabel = { label ->
-                            model.deleteLabel(label)
-                            model.dismissDialog()
-                        },
+                                },
+                            ),
                     )
                 }
             }

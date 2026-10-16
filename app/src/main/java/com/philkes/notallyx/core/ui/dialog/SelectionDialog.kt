@@ -22,8 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
 data class SelectionItem<T>(
     val value: T,
@@ -37,10 +39,12 @@ internal fun <T> SingleSelectionDialog(
     selectedItem: T,
     onDismissRequest: () -> Unit,
     onConfirm: (T) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var selected by remember { mutableStateOf(selectedItem) }
 
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(text = title) },
         text = {
@@ -86,4 +90,22 @@ internal fun <T> SingleSelectionDialog(
             TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
         },
     )
+}
+
+@Preview
+@Composable
+private fun SingleSelectionDialogPreview() {
+    NotallyXTheme {
+        SingleSelectionDialog(
+            title = "Select Sort Order",
+            items =
+                listOf(
+                    SelectionItem("title", "Title"),
+                    SelectionItem("date", "Date Modified"),
+                ),
+            selectedItem = "date",
+            onDismissRequest = {},
+            onConfirm = {},
+        )
+    }
 }

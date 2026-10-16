@@ -17,6 +17,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.preference.NotesView
 import com.philkes.notallyx.core.ui.components.ItemListener
+import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.core.ui.extensions.getQuantityString
 import com.philkes.notallyx.core.ui.extensions.movedToResId
 import com.philkes.notallyx.core.ui.extensions.repeatOnLifecycleScope
@@ -150,15 +151,18 @@ abstract class NotesFragment : Fragment(), ItemListener {
                             selectedNoteIds = selectedNoteIds,
                             backgroundResId = getBackgroundResId(),
                             isLoading = isLoading,
-                            dateFormat = model.preferences.dateFormatOverview.value,
-                            timeFormat = model.preferences.timeFormatOverview.value,
-                            sortBy = model.preferences.notesSorting.value.sortedBy,
-                            textSize = model.preferences.textSizeOverview.value,
-                            maxTitleLines = model.preferences.maxTitle.value,
-                            maxLines = model.preferences.maxLines.value,
-                            maxItems = model.preferences.maxItems.value,
-                            hideLabels = model.preferences.labelTagsHiddenInOverview.value,
-                            hideImages = model.preferences.imagesHiddenInOverview.value,
+                            displayConfig =
+                                NoteCardDisplayConfig(
+                                    dateFormat = model.preferences.dateFormatOverview.value,
+                                    timeFormat = model.preferences.timeFormatOverview.value,
+                                    sortBy = model.preferences.notesSorting.value.sortedBy,
+                                    textSize = model.preferences.textSizeOverview.value,
+                                    maxTitleLines = model.preferences.maxTitle.value,
+                                    maxLines = model.preferences.maxLines.value,
+                                    maxItems = model.preferences.maxItems.value,
+                                    hideLabels = model.preferences.labelTagsHiddenInOverview.value,
+                                    hideImages = model.preferences.imagesHiddenInOverview.value,
+                                ),
                             onNoteClick = { _, position -> onClick(position) },
                             onNoteLongClick = { _, position -> onLongClick(position) },
                             onReminderClick = { _, position -> onReminderClick(position) },

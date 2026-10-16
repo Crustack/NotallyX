@@ -21,12 +21,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
 @Composable
 internal fun ImportNotesDialog(
     title: String,
+    modifier: Modifier = Modifier,
     initialText: String = "",
     hint: String? = null,
     message: String? = null,
@@ -38,6 +41,7 @@ internal fun ImportNotesDialog(
     var checkDuplicates by remember { mutableStateOf(initialCheckDuplicates) }
 
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(text = title) },
         text = {
@@ -94,4 +98,17 @@ internal fun ImportNotesDialog(
             TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
         },
     )
+}
+
+@Preview
+@Composable
+private fun ImportNotesDialogPreview() {
+    NotallyXTheme {
+        ImportNotesDialog(
+            title = "Import Backup Password",
+            message = "Enter the password used to encrypt the backup file",
+            onDismissRequest = {},
+            onConfirm = { _, _ -> },
+        )
+    }
 }

@@ -33,10 +33,8 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.preference.DateFormat
-import com.philkes.notallyx.core.preference.NotesSortBy
-import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.core.ui.components.BaseNoteCard
+import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.core.ui.components.SectionHeaderItem
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.BaseNote
@@ -64,15 +62,7 @@ internal fun NotesGridScreen(
     selectedNoteIds: Set<Long> = emptySet(),
     @DrawableRes backgroundResId: Int = R.drawable.notebook,
     isLoading: Boolean = false,
-    dateFormat: DateFormat = DateFormat.RELATIVE,
-    timeFormat: TimeFormat = TimeFormat.AM_PM,
-    sortBy: NotesSortBy = NotesSortBy.CREATION_DATE,
-    textSize: Float = 16f,
-    maxTitleLines: Int = 2,
-    maxLines: Int = 10,
-    maxItems: Int = 5,
-    hideLabels: Boolean = false,
-    hideImages: Boolean = false,
+    displayConfig: NoteCardDisplayConfig = NoteCardDisplayConfig(),
     onNoteClick: (BaseNote, Int) -> Unit = { _, _ -> },
     onNoteLongClick: (BaseNote, Int) -> Unit = { _, _ -> },
     onReminderClick: (BaseNote, Int) -> Unit = { _, _ -> },
@@ -174,17 +164,9 @@ internal fun NotesGridScreen(
                                     BaseNoteCard(
                                         baseNote = item,
                                         modifier = Modifier.testTag("NoteCard_${item.id}"),
+                                        config = displayConfig,
                                         imageRoot = imageRoot,
                                         isSelected = isSelected,
-                                        dateFormat = dateFormat,
-                                        timeFormat = timeFormat,
-                                        sortBy = sortBy,
-                                        textSize = textSize,
-                                        maxTitleLines = maxTitleLines,
-                                        maxLines = maxLines,
-                                        maxItems = maxItems,
-                                        hideLabels = hideLabels,
-                                        hideImages = hideImages,
                                         onClick = { onNoteClick(item, index) },
                                         onLongClick = { onNoteLongClick(item, index) },
                                         onReminderClick = { onReminderClick(item, index) },
@@ -224,17 +206,9 @@ internal fun NotesGridScreen(
                                         BaseNoteCard(
                                             baseNote = item,
                                             modifier = Modifier.testTag("NoteCard_${item.id}"),
+                                            config = displayConfig,
                                             imageRoot = imageRoot,
                                             isSelected = isSelected,
-                                            dateFormat = dateFormat,
-                                            timeFormat = timeFormat,
-                                            sortBy = sortBy,
-                                            textSize = textSize,
-                                            maxTitleLines = maxTitleLines,
-                                            maxLines = maxLines,
-                                            maxItems = maxItems,
-                                            hideLabels = hideLabels,
-                                            hideImages = hideImages,
                                             onClick = { onNoteClick(item, index) },
                                             onLongClick = { onNoteLongClick(item, index) },
                                             onReminderClick = { onReminderClick(item, index) },

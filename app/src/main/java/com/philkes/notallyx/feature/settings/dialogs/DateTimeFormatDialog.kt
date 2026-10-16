@@ -21,16 +21,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.TimeFormat
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun DateTimeFormatDialog(
     initialDateFormat: DateFormat,
     initialTimeFormat: TimeFormat,
+    modifier: Modifier = Modifier,
     onDismissRequest: () -> Unit,
     onConfirm: (DateFormat, TimeFormat) -> Unit,
 ) {
@@ -42,6 +45,7 @@ internal fun DateTimeFormatDialog(
     var timeExpanded by remember { mutableStateOf(false) }
 
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(text = stringResource(R.string.date_format)) },
         text = {
@@ -128,4 +132,17 @@ internal fun DateTimeFormatDialog(
             TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
         },
     )
+}
+
+@Preview
+@Composable
+private fun DateTimeFormatDialogPreview() {
+    NotallyXTheme {
+        DateTimeFormatDialog(
+            initialDateFormat = DateFormat.DD_MM_YY_GER,
+            initialTimeFormat = TimeFormat.TWENTY_FOUR_H,
+            onDismissRequest = {},
+            onConfirm = { _, _ -> },
+        )
+    }
 }

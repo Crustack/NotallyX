@@ -66,20 +66,23 @@ class PlayAudioActivity : LockedActivity<ComposeBinding>() {
                     isPlaying = isPlayingState.value,
                     errorMessage = errorMessageState.value,
                     showDeleteConfirmDialog = showDeleteConfirmState.value,
-                    onPlayPauseClick = { service?.play() },
-                    onSeek = { ms -> service?.seek(ms) },
-                    onBackClick = { onBackPressedDispatcher.onBackPressed() },
-                    onShareClick = { share() },
-                    onSaveClick = { saveToDevice() },
-                    onDeleteClick = { showDeleteConfirmState.value = true },
-                    onDismissDeleteConfirm = { showDeleteConfirmState.value = false },
-                    onConfirmDelete = {
-                        showDeleteConfirmState.value = false
-                        val intent = Intent()
-                        intent.putExtra(EXTRA_AUDIO, audio)
-                        setResult(RESULT_OK, intent)
-                        finish()
-                    },
+                    actions =
+                        PlayAudioActions(
+                            onPlayPauseClick = { service?.play() },
+                            onSeek = { ms -> service?.seek(ms) },
+                            onBackClick = { onBackPressedDispatcher.onBackPressed() },
+                            onShareClick = { share() },
+                            onSaveClick = { saveToDevice() },
+                            onDeleteClick = { showDeleteConfirmState.value = true },
+                            onDismissDeleteConfirm = { showDeleteConfirmState.value = false },
+                            onConfirmDelete = {
+                                showDeleteConfirmState.value = false
+                                val intent = Intent()
+                                intent.putExtra(EXTRA_AUDIO, audio)
+                                setResult(RESULT_OK, intent)
+                                finish()
+                            },
+                        ),
                 )
             }
         }

@@ -36,13 +36,17 @@ internal fun IconListDialog(
     items: List<IconListItem>,
     onDismissRequest: () -> Unit,
     onItemClick: (index: Int) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(text = title) },
         text = {
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                itemsIndexed(items) { index, item ->
+                itemsIndexed(items, key = { index, item -> "${item.iconResId}_$index" }) {
+                    index,
+                    item ->
                     Row(
                         modifier =
                             Modifier.fillMaxWidth()

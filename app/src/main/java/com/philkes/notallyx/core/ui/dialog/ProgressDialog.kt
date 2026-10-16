@@ -12,16 +12,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
 @Composable
 internal fun ProgressDialog(
     title: String,
+    modifier: Modifier = Modifier,
     message: String? = null,
     progress: Float? = null,
     onDismissRequest: (() -> Unit)? = null,
 ) {
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = { onDismissRequest?.invoke() },
         title = { Text(text = title) },
         text = {
@@ -50,4 +54,16 @@ internal fun ProgressDialog(
         },
         confirmButton = {},
     )
+}
+
+@Preview
+@Composable
+private fun ProgressDialogPreview() {
+    NotallyXTheme {
+        ProgressDialog(
+            title = "Exporting Database",
+            message = "Please wait...",
+            progress = 0.5f,
+        )
+    }
 }

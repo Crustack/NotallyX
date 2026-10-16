@@ -91,89 +91,95 @@ class ErrorActivity : AppCompatActivity() {
                             errorDialogState = errorDialogState.value,
                             backupProgress = backupProgress.value,
                         ),
-                    onDismissExportBackupDialog = { viewModel.setShowExportBackupDialog(false) },
-                    onConfirmExportBackupDialog = {
-                        viewModel.setShowExportBackupDialog(false)
-                        val intent =
-                            Intent(Intent.ACTION_CREATE_DOCUMENT)
-                                .apply {
-                                    type = MIME_TYPE_ZIP
-                                    addCategory(Intent.CATEGORY_OPENABLE)
-                                    putExtra(
-                                        Intent.EXTRA_TITLE,
-                                        "NotallyX_Crash_Backup-${FILE_TIMESTAMP_FORMAT.format(Date())}",
-                                    )
-                                }
-                                .wrapWithChooser(this@ErrorActivity)
-                        exportBackupActivityResultLauncher.launch(intent)
-                    },
-                    onDismissReimportDialog = { viewModel.setShowReimportDialog(false) },
-                    onDismissErrorDialog = { viewModel.errorDialogState.value = null },
-                    onConfirmReimportDialog = {
-                        viewModel.setShowReimportDialog(false)
-                        viewModel.pendingImportUri?.let { uri ->
-                            val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
-                                viewModel.errorDialogState.value =
-                                    ErrorDialogState(
-                                        titleResId = R.string.reimport_database_failed,
-                                        message =
-                                            getString(
-                                                crash_export_backup_failed,
-                                                getString(report_bug),
-                                            ),
-                                        details = throwable.stackTraceToString(),
-                                    )
-                            }
-                            lifecycleScope.launch(exceptionHandler) {
-                                val importResult =
-                                    withContext(Dispatchers.IO) {
-                                        val (_, databaseCopy) =
-                                            copyDatabase(suffix = "_BACKUP_BEFORE_REIMPORT")
-                                        databaseCopy.copyToLarge(
-                                            File(
-                                                getLogsDir(),
-                                                "${NotallyDatabase.DATABASE_NAME}_BACKUP_BEFORE_REIMPORT.sqlite",
-                                            ),
-                                            overwrite = true,
-                                            deleteSourceFile = true,
-                                        )
-                                        deleteDatabase(NotallyDatabase.DATABASE_NAME)
-                                        NotallyDatabase.clearInstance()
-                                        application.importRawDatabase(
-                                            uri,
-                                            false,
-                                            viewModel.backupProgress,
+                    actions =
+                        ErrorScreenActions(
+                            onDismissExportBackupDialog = {
+                                viewModel.setShowExportBackupDialog(false)
+                            },
+                            onConfirmExportBackupDialog = {
+                                viewModel.setShowExportBackupDialog(false)
+                                val intent =
+                                    Intent(Intent.ACTION_CREATE_DOCUMENT)
+                                        .apply {
+                                            type = MIME_TYPE_ZIP
+                                            addCategory(Intent.CATEGORY_OPENABLE)
+                                            putExtra(
+                                                Intent.EXTRA_TITLE,
+                                                "NotallyX_Crash_Backup-${FILE_TIMESTAMP_FORMAT.format(Date())}",
+                                            )
+                                        }
+                                        .wrapWithChooser(this@ErrorActivity)
+                                exportBackupActivityResultLauncher.launch(intent)
+                            },
+                            onDismissReimportDialog = { viewModel.setShowReimportDialog(false) },
+                            onDismissErrorDialog = { viewModel.errorDialogState.value = null },
+                            onConfirmReimportDialog = {
+                                viewModel.setShowReimportDialog(false)
+                                viewModel.pendingImportUri?.let { uri ->
+                                    val exceptionHandler =
+                                        CoroutineExceptionHandler { _, throwable ->
+                                            viewModel.errorDialogState.value =
+                                                ErrorDialogState(
+                                                    titleResId = R.string.reimport_database_failed,
+                                                    message =
+                                                        getString(
+                                                            crash_export_backup_failed,
+                                                            getString(report_bug),
+                                                        ),
+                                                    details = throwable.stackTraceToString(),
+                                                )
+                                        }
+                                    lifecycleScope.launch(exceptionHandler) {
+                                        val importResult =
+                                            withContext(Dispatchers.IO) {
+                                                val (_, databaseCopy) =
+                                                    copyDatabase(suffix = "_BACKUP_BEFORE_REIMPORT")
+                                                databaseCopy.copyToLarge(
+                                                    File(
+                                                        getLogsDir(),
+                                                        "${NotallyDatabase.DATABASE_NAME}_BACKUP_BEFORE_REIMPORT.sqlite",
+                                                    ),
+                                                    overwrite = true,
+                                                    deleteSourceFile = true,
+                                                )
+                                                deleteDatabase(NotallyDatabase.DATABASE_NAME)
+                                                NotallyDatabase.clearInstance()
+                                                application.importRawDatabase(
+                                                    uri,
+                                                    false,
+                                                    viewModel.backupProgress,
+                                                )
+                                            }
+                                        viewModel.setImportResultDialogMessage(
+                                            this@ErrorActivity.toMessage(importResult)
                                         )
                                     }
-                                viewModel.setImportResultDialogMessage(
-                                    this@ErrorActivity.toMessage(importResult)
+                                }
+                            },
+                            onDismissImportResultDialog = {
+                                viewModel.setImportResultDialogMessage(null)
+                                restartApplication()
+                            },
+                            onRestartClick = {
+                                CustomActivityOnCrash.restartApplication(
+                                    this@ErrorActivity,
+                                    CustomActivityOnCrash.getConfigFromIntent(intent)!!,
                                 )
-                            }
-                        }
-                    },
-                    onDismissImportResultDialog = {
-                        viewModel.setImportResultDialogMessage(null)
-                        restartApplication()
-                    },
-                    onRestartClick = {
-                        CustomActivityOnCrash.restartApplication(
-                            this@ErrorActivity,
-                            CustomActivityOnCrash.getConfigFromIntent(intent)!!,
-                        )
-                    },
-                    onReportBugClick = { reportBug(stacktrace) },
-                    onExportBackupClick = { onExportBackupRequested(stacktrace) },
-                    onViewLogsClick = { viewLogs() },
-                    onCopyStackTraceClick = {
-                        if (stacktrace != null) {
-                            copyToClipBoard(stacktrace)
-                        }
-                    },
-                    onCrashLogsLinkClick = {
-                        viewModel.appLogs?.let {
-                            viewFile(getUriForFile(it), ExportMimeType.TXT.mimeType)
-                        }
-                    },
+                            },
+                            onReportBugClick = { reportBug(stacktrace) },
+                            onExportBackupClick = { onExportBackupRequested(stacktrace) },
+                            onViewLogsClick = { viewLogs() },
+                            onCopyStackTraceClick = {
+                                if (stacktrace != null) {
+                                    copyToClipBoard(stacktrace)
+                                }
+                            },
+                            onCrashLogsLinkClick = {
+                                viewModel.appLogs?.let {
+                                    viewFile(getUriForFile(it), ExportMimeType.TXT.mimeType)
+                                }
+                            },
+                        ),
                 )
             }
         }

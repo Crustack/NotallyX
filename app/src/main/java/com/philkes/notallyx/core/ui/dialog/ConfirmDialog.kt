@@ -14,16 +14,18 @@ import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
 @Composable
 internal fun ConfirmDialog(
-    title: String? = null,
     message: String,
+    onDismissRequest: () -> Unit,
+    onConfirm: () -> Unit,
+    modifier: Modifier = Modifier,
+    title: String? = null,
     positiveButtonText: String = stringResource(R.string.delete),
     negativeButtonText: String = stringResource(R.string.cancel),
     neutralButtonText: String? = null,
     onNeutralButtonClick: (() -> Unit)? = null,
-    onDismissRequest: () -> Unit,
-    onConfirm: () -> Unit,
 ) {
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = title?.let { { Text(it) } },
         text = { Text(text = message) },

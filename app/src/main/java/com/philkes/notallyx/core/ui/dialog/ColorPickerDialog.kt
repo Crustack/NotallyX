@@ -31,8 +31,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Color as NoteColor
 import com.philkes.notallyx.data.model.parseToColorString
@@ -53,12 +55,14 @@ internal fun ColorPickerDialog(
     currentColor: String,
     onDismissRequest: () -> Unit,
     onColorSelected: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var selectedColor by remember { mutableStateOf(currentColor) }
 
     val presetColors = NoteColor.allColorStrings()
 
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(text = stringResource(R.string.change_color)) },
         text = {
@@ -141,4 +145,16 @@ internal fun ColorPickerDialog(
             TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
         },
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ColorPickerDialogPreview() {
+    NotallyXTheme {
+        ColorPickerDialog(
+            currentColor = BaseNote.COLOR_DEFAULT,
+            onDismissRequest = {},
+            onColorSelected = {},
+        )
+    }
 }
