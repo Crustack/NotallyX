@@ -1,4 +1,4 @@
-package com.philkes.notallyx.feature.main.tab
+package com.philkes.notallyx.feature.main.routes.deleted
 
 // import com.philkes.notallyx.createItemsFromNotes
 import android.app.Application

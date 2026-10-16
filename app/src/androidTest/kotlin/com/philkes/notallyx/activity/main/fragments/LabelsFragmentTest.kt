@@ -2,39 +2,23 @@ package com.philkes.notallyx.activity.main.fragments
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.core.app.ActivityScenario
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
-import androidx.test.espresso.action.ViewActions.replaceText
-import androidx.test.espresso.action.ViewActions.scrollTo
-import androidx.test.espresso.matcher.RootMatchers.isDialog
-import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.error.*
-import com.philkes.notallyx.core.common.extensions.*
-import com.philkes.notallyx.core.common.result.*
-import com.philkes.notallyx.core.database.*
-import com.philkes.notallyx.core.preference.*
-import com.philkes.notallyx.core.security.*
-import com.philkes.notallyx.core.ui.components.*
-import com.philkes.notallyx.core.ui.dialog.*
-import com.philkes.notallyx.core.ui.extensions.*
-import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.model.Label
-import com.philkes.notallyx.data.model.extensions.*
 import com.philkes.notallyx.feature.main.MainActivity
+import com.philkes.notallyx.navigation.NotallyNavKey
 import com.philkes.notallyx.test.UiTestBase
-import com.philkes.notallyx.test.byId
-import com.philkes.notallyx.test.byText
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.createListItem
 import com.philkes.notallyx.test.navigateTo
@@ -77,7 +61,7 @@ class LabelsFragmentTest : UiTestBase() {
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        composeTestRule.navigateTo(R.id.Labels)
+        composeTestRule.navigateTo(NotallyNavKey.Labels)
 
         composeTestRule.waitUntil(5_000) {
             composeTestRule.onAllNodes(hasText("label")).fetchSemanticsNodes().size >= 2
@@ -90,11 +74,8 @@ class LabelsFragmentTest : UiTestBase() {
             .onLast()
             .performClick()
 
-        R.id.EditText.byId(withText("label")).inRoot(isDialog()).perform(replaceText("label1"))
-        R.string.save
-            .byText(withId(android.R.id.button1))
-            .inRoot(isDialog())
-            .perform(scrollTo(), click())
+        composeTestRule.onNode(hasSetTextAction()).performTextReplacement("label1")
+        composeTestRule.onNodeWithText(context.getString(R.string.save)).performClick()
 
         composeTestRule.waitUntil(5_000) {
             composeTestRule.onAllNodes(hasText("label1")).fetchSemanticsNodes().isNotEmpty()
@@ -106,11 +87,8 @@ class LabelsFragmentTest : UiTestBase() {
             .onNodeWithContentDescription(context.getString(R.string.add_label))
             .performClick()
 
-        R.id.EditText.byId().inRoot(isDialog()).perform(replaceText("label2"), closeSoftKeyboard())
-        R.string.save
-            .byText(withId(android.R.id.button1))
-            .inRoot(isDialog())
-            .perform(scrollTo(), click())
+        composeTestRule.onNode(hasSetTextAction()).performTextInput("label2")
+        composeTestRule.onNodeWithText(context.getString(R.string.save)).performClick()
 
         composeTestRule.waitUntil(5_000) {
             composeTestRule.onAllNodes(hasText("label2")).fetchSemanticsNodes().isNotEmpty()
@@ -122,10 +100,7 @@ class LabelsFragmentTest : UiTestBase() {
             .onAllNodes(hasContentDescription(context.getString(R.string.delete)))
             .onLast()
             .performClick()
-        R.string.delete
-            .byText(withId(android.R.id.button1))
-            .inRoot(isDialog())
-            .perform(scrollTo(), click())
+        composeTestRule.onNodeWithText(context.getString(R.string.delete)).performClick()
 
         composeTestRule.onNodeWithText("label1").assertDoesNotExist()
 
@@ -156,7 +131,7 @@ class LabelsFragmentTest : UiTestBase() {
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        composeTestRule.navigateTo(R.id.Unlabeled)
+        composeTestRule.navigateTo(NotallyNavKey.Unlabeled)
 
         composeTestRule.waitUntil(5_000) {
             composeTestRule.onAllNodes(hasText("Unlabeled Note")).fetchSemanticsNodes().isNotEmpty()

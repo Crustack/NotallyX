@@ -23,8 +23,6 @@ dependencies {
     // Shared test dependencies used by both unit tests (test) and instrumented tests (androidTest)
     api(platform(libs.androidx.compose.bom))
     api("androidx.compose.ui:ui-test-junit4")
-    api(libs.kaspresso.core)
-    api(libs.kaspresso.compose.support)
     api(libs.androidx.test.espresso.core)
     api(libs.androidx.test.espresso.contrib)
     api(libs.androidx.test.espresso.intents)

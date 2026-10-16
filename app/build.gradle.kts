@@ -366,7 +366,8 @@ roborazzi {
 
 dependencies {
     implementation(libs.androidx.documentfile)
-    implementation(libs.bundles.navigation)
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.preference)
     ksp(libs.androidx.room.compiler)
     implementation(libs.bundles.room)
@@ -394,13 +395,13 @@ dependencies {
     // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
-    implementation(libs.androidx.navigation.compose)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     // Koin
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.core)
     implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
     implementation(libs.koin.androidx.workmanager)
 
     androidTestImplementation(libs.androidx.test.espresso.intents)

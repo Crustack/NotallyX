@@ -6,11 +6,12 @@ import android.app.Instrumentation
 import android.content.ClipData
 import android.content.Intent
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -61,10 +62,17 @@ class EditActivityTest : UiTestBase() {
     fun createAndEditTextNote() {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        composeTestRule.onNodeWithTag("TakeNote").performClick()
+        val takeNoteLabel = context.getString(R.string.take_note)
+        val titleLabel = context.getString(R.string.title)
+        val bodyLabel = context.getString(R.string.note)
+        val saveLabel = context.getString(R.string.save)
+        val addLabel = context.getString(R.string.add_label)
+        val backLabel = context.getString(R.string.back)
 
-        composeTestRule.onNodeWithTag("EnterBody").performTextInput("Body")
-        composeTestRule.onNodeWithTag("EnterTitle").performTextInput("Test")
+        composeTestRule.onNodeWithContentDescription(takeNoteLabel).performClick()
+
+        composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput("Body")
+        composeTestRule.onNodeWithContentDescription(titleLabel).performTextInput("Test")
 
         composeTestRule.onNodeWithContentDescription(context.getString(R.string.pin)).performClick()
 
@@ -74,22 +82,22 @@ class EditActivityTest : UiTestBase() {
         composeTestRule.onNodeWithText(context.getString(R.string.change_color)).performClick()
         composeTestRule.onNodeWithContentDescription(BaseNote.COLOR_NEW).performClick()
         composeTestRule.onNodeWithContentDescription(Color.CORAL.toColorString()).performClick()
-        composeTestRule.onNodeWithTag("button1").performClick()
+        composeTestRule.onNodeWithText(saveLabel).performClick()
 
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.tap_for_more_options))
             .performClick()
         composeTestRule.onNodeWithText(context.getString(R.string.labels)).performClick()
-        composeTestRule.onNodeWithTag("AddLabel").performClick()
-        composeTestRule.onNodeWithTag("EditText").performTextInput("label")
-        composeTestRule.onNodeWithTag("button1").performClick()
+        composeTestRule.onNodeWithContentDescription(addLabel).performClick()
+        composeTestRule.onNode(hasSetTextAction()).performTextInput("label")
+        composeTestRule.onNodeWithText(saveLabel).performClick()
 
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("label")).fetchSemanticsNodes().isNotEmpty()
         }
         composeTestRule.onNodeWithText("label").performClick()
 
-        composeTestRule.onNodeWithTag("Back").performClick()
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
 
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("label")).fetchSemanticsNodes().isNotEmpty()
@@ -108,11 +116,14 @@ class EditActivityTest : UiTestBase() {
     fun textFormatting() {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        composeTestRule.onNodeWithTag("TakeNote").performClick()
+        val takeNoteLabel = context.getString(R.string.take_note)
+        val bodyLabel = context.getString(R.string.note)
+
+        composeTestRule.onNodeWithContentDescription(takeNoteLabel).performClick()
 
         val text = "Lorem ipsum dolor sit amet, consectetur adipiscing."
 
-        composeTestRule.onNodeWithTag("EnterBody").performTextInput(text)
+        composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput(text)
 
         // Open formatting bar
         composeTestRule
@@ -143,9 +154,12 @@ class EditActivityTest : UiTestBase() {
     fun listItems() {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        composeTestRule.onNodeWithTag("TakeList").performClick()
+        val makeListLabel = context.getString(R.string.make_list)
+        val titleLabel = context.getString(R.string.title)
 
-        composeTestRule.onNodeWithTag("EnterTitle").performTextInput("Shopping List")
+        composeTestRule.onNodeWithContentDescription(makeListLabel).performClick()
+
+        composeTestRule.onNodeWithContentDescription(titleLabel).performTextInput("Shopping List")
 
         composeTestRule.onNodeWithText(context.getString(R.string.add_item)).performClick()
 
@@ -163,17 +177,21 @@ class EditActivityTest : UiTestBase() {
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        composeTestRule.onNodeWithTag("TakeNote").performClick()
-        composeTestRule.onNodeWithTag("EnterTitle").performTextInput("Reminder Note")
+        val takeNoteLabel = context.getString(R.string.take_note)
+        val titleLabel = context.getString(R.string.title)
+        val saveLabel = context.getString(R.string.save)
+        val backLabel = context.getString(R.string.back)
+        val remindersLabel = context.getString(R.string.reminders)
+
+        composeTestRule.onNodeWithContentDescription(takeNoteLabel).performClick()
+        composeTestRule.onNodeWithContentDescription(titleLabel).performTextInput("Reminder Note")
 
         // Click Reminders button on top toolbar (opens RemindersActivity)
-        composeTestRule
-            .onNodeWithContentDescription(context.getString(R.string.reminders))
-            .performClick()
+        composeTestRule.onNodeWithContentDescription(remindersLabel).performClick()
 
         // 1. Reminder 1: None repetition
         confirmDateAndTime()
-        composeTestRule.onNodeWithTag("button1").performClick()
+        composeTestRule.onNodeWithText(saveLabel).performClick()
 
         composeTestRule
             .onNodeWithText(context.getString(R.string.reminder_no_repetition))
@@ -184,8 +202,8 @@ class EditActivityTest : UiTestBase() {
             .onNodeWithContentDescription(context.getString(R.string.add_reminder))
             .performClick()
         confirmDateAndTime()
-        composeTestRule.onNodeWithTag("DAILY").performClick()
-        composeTestRule.onNodeWithTag("button1").performClick()
+        composeTestRule.onNodeWithText(context.getString(R.string.daily)).performClick()
+        composeTestRule.onNodeWithText(saveLabel).performClick()
 
         composeTestRule.onNodeWithText(context.getString(R.string.daily)).assertIsDisplayed()
 
@@ -194,8 +212,8 @@ class EditActivityTest : UiTestBase() {
             .onNodeWithContentDescription(context.getString(R.string.add_reminder))
             .performClick()
         confirmDateAndTime()
-        composeTestRule.onNodeWithTag("WEEKLY").performClick()
-        composeTestRule.onNodeWithTag("button1").performClick()
+        composeTestRule.onNodeWithText(context.getString(R.string.weekly)).performClick()
+        composeTestRule.onNodeWithText(saveLabel).performClick()
 
         composeTestRule.onNodeWithText(context.getString(R.string.weekly)).assertIsDisplayed()
 
@@ -204,8 +222,8 @@ class EditActivityTest : UiTestBase() {
             .onNodeWithContentDescription(context.getString(R.string.add_reminder))
             .performClick()
         confirmDateAndTime()
-        composeTestRule.onNodeWithTag("MONTHLY").performClick()
-        composeTestRule.onNodeWithTag("button1").performClick()
+        composeTestRule.onNodeWithText(context.getString(R.string.monthly)).performClick()
+        composeTestRule.onNodeWithText(saveLabel).performClick()
 
         val ofTheMonthText =
             context.getString(R.string.of_the_month, "").replace("%1\$s", "").trim()
@@ -216,15 +234,15 @@ class EditActivityTest : UiTestBase() {
                 .isNotEmpty()
         }
         composeTestRule.onAllNodes(hasText(ofTheMonthText, substring = true))[0].assertIsDisplayed()
-        composeTestRule.onNodeWithTag("button1").performClick()
+        composeTestRule.onNodeWithText(saveLabel).performClick()
 
         // 5. Reminder 5: Yearly repetition
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.add_reminder))
             .performClick()
         confirmDateAndTime()
-        composeTestRule.onNodeWithTag("YEARLY").performClick()
-        composeTestRule.onNodeWithTag("button1").performClick()
+        composeTestRule.onNodeWithText(context.getString(R.string.yearly)).performClick()
+        composeTestRule.onNodeWithText(saveLabel).performClick()
 
         composeTestRule.onNodeWithText(context.getString(R.string.yearly)).assertIsDisplayed()
 
@@ -233,11 +251,13 @@ class EditActivityTest : UiTestBase() {
             .onNodeWithContentDescription(context.getString(R.string.add_reminder))
             .performClick()
         confirmDateAndTime()
-        composeTestRule.onNodeWithTag("CUSTOM").performClick()
-        composeTestRule.onNodeWithTag("button1").performClick()
-        composeTestRule.onNodeWithTag("Value").performTextReplacement("3")
-        composeTestRule.onNodeWithTag("Weeks").performClick()
-        composeTestRule.onNodeWithTag("button1").performClick()
+        composeTestRule.onNodeWithText(context.getString(R.string.custom)).performClick()
+        composeTestRule.onNodeWithText(saveLabel).performClick()
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.repetition_value_hint))
+            .performTextReplacement("3")
+        composeTestRule.onNodeWithText(context.getString(R.string.weeks)).performClick()
+        composeTestRule.onNodeWithText(saveLabel).performClick()
 
         composeTestRule.waitUntil(10_000) {
             composeTestRule
@@ -247,16 +267,16 @@ class EditActivityTest : UiTestBase() {
         }
 
         // Go back from RemindersActivity to EditActivity
-        composeTestRule.onNodeWithTag("Back").performClick()
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
 
         // Verify reminder chip is visible in EditScreen
         composeTestRule.waitUntil(10_000) {
             composeTestRule
-                .onAllNodes(hasTestTag("ReminderChip"))
+                .onAllNodes(hasContentDescription(remindersLabel))
                 .fetchSemanticsNodes()
                 .isNotEmpty()
         }
-        composeTestRule.onNodeWithTag("ReminderChip").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(remindersLabel).assertIsDisplayed()
 
         scenario.close()
     }
@@ -265,16 +285,19 @@ class EditActivityTest : UiTestBase() {
     fun undoAndRedo() {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        composeTestRule.onNodeWithTag("TakeNote").performClick()
+        val takeNoteLabel = context.getString(R.string.take_note)
+        val bodyLabel = context.getString(R.string.note)
+
+        composeTestRule.onNodeWithContentDescription(takeNoteLabel).performClick()
 
         // Step 1: Perform first edit
-        composeTestRule.onNodeWithTag("EnterBody").performTextInput("A")
+        composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput("A")
 
         // Step 2: Perform second edit
-        composeTestRule.onNodeWithTag("EnterBody").performTextInput("B")
+        composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput("B")
 
         // Step 3: Perform third edit
-        composeTestRule.onNodeWithTag("EnterBody").performTextInput("C")
+        composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput("C")
 
         // 1. Single tap undo
         composeTestRule
@@ -388,7 +411,9 @@ class EditActivityTest : UiTestBase() {
 
             val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-            composeTestRule.onNodeWithTag("TakeNote").performClick()
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.take_note))
+                .performClick()
 
             composeTestRule
                 .onNodeWithContentDescription(context.getString(R.string.add_item))
@@ -418,7 +443,7 @@ class EditActivityTest : UiTestBase() {
             )
 
             // Scroll to 2nd image in ViewImageActivity and check 2 / 2
-            composeTestRule.onNodeWithTag("ImagePager").performTouchInput { swipeLeft() }
+            composeTestRule.onNode(hasScrollAction()).performTouchInput { swipeLeft() }
 
             composeTestRule.waitUntil(10_000) {
                 composeTestRule.onAllNodes(hasText("2 / 2")).fetchSemanticsNodes().isNotEmpty()

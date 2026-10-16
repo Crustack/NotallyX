@@ -95,6 +95,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getUrl
+import com.philkes.notallyx.core.common.extensions.putNavKey
 import com.philkes.notallyx.core.common.result.ImportProgress
 import com.philkes.notallyx.core.common.result.ImportStage
 import com.philkes.notallyx.core.common.result.Progress
@@ -121,6 +122,7 @@ import com.philkes.notallyx.feature.editor.listitem.ListManager
 import com.philkes.notallyx.feature.labels.LabelsViewModel
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.migration.backup.NotesAndAttachments
+import com.philkes.notallyx.navigation.NotallyNavKey
 import java.util.Date
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -1076,24 +1078,13 @@ fun View.showSnackbar(
         .show()
 
 fun Context.restartApplication(
-    fragmentIdToOpen: Int? = null,
+    destinationToOpen: NotallyNavKey? = null,
     extra: Pair<String, Boolean>? = null,
 ) {
-    //    val intent = packageManager.getLaunchIntentForPackage(packageName)
-    //    val componentName = intent!!.component
-    //    val mainIntent =
-    //        Intent.makeRestartActivityTask(componentName).apply {
-    //            fragmentIdToOpen?.let { putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, it) }
-    //            extra?.let { (key, value) -> putExtra(key, value) }
-    //        }
-    //    mainIntent.setPackage(packageName)
-    //    startActivity(mainIntent)
-    //    Runtime.getRuntime().exit(0)
-
     val intent =
         Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            fragmentIdToOpen?.let { putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, it) }
+            destinationToOpen?.let { putNavKey(it) }
             extra?.let { (key, value) -> putExtra(key, value) }
         }
     startActivity(intent)

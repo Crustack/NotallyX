@@ -15,11 +15,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.error.*
@@ -56,7 +53,7 @@ internal fun ViewImageScreen(
     val currentPosition = if (images.isNotEmpty()) pagerState.currentPage else 0
 
     Scaffold(
-        modifier = modifier.fillMaxSize().semantics { testTagsAsResourceId = true },
+        modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = {
@@ -108,7 +105,7 @@ internal fun ViewImageScreen(
             } else {
                 HorizontalPager(
                     state = pagerState,
-                    modifier = Modifier.fillMaxSize().testTag("ImagePager"),
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     ImagePreviewCard()
                 }

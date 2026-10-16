@@ -37,7 +37,7 @@ import com.philkes.notallyx.feature.migration.imports.ImportException
 import com.philkes.notallyx.feature.migration.imports.ImportSource
 import com.philkes.notallyx.feature.migration.imports.NotesImporter
 import com.philkes.notallyx.feature.reminder.cancelPinAndReminders
-import com.philkes.notallyx.feature.settings.SettingsFragment.Companion.EXTRA_SHOW_IMPORT_BACKUPS_FOLDER
+import com.philkes.notallyx.navigation.NotallyNavKey
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -269,7 +269,7 @@ class SettingsViewModel(
             clearPersistedUriPermissions(backupsFolder)
         }
         callback(!isThemeDefault)
-        app.restartApplication(R.id.Settings)
+        app.restartApplication(NotallyNavKey.Settings)
     }
 
     fun importPreferences(
@@ -331,7 +331,7 @@ class SettingsViewModel(
         preferences.theme.refresh()
         callback()
         if (showRefreshBackupsFolderAfterThemeChange) {
-            app.restartApplication(R.id.Settings, EXTRA_SHOW_IMPORT_BACKUPS_FOLDER to true)
+            app.restartApplication(NotallyNavKey.Settings, EXTRA_SHOW_IMPORT_BACKUPS_FOLDER to true)
         }
     }
 
@@ -405,5 +405,7 @@ class SettingsViewModel(
 
     companion object {
         private const val TAG = "SettingsViewModel"
+        const val EXTRA_SHOW_IMPORT_BACKUPS_FOLDER =
+            "notallyx.intent.extra.SHOW_IMPORT_BACKUPS_FOLDER"
     }
 }

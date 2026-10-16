@@ -1,35 +1,28 @@
 package com.philkes.notallyx.utils
 
 import android.app.Application
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.error.*
-import com.philkes.notallyx.core.common.extensions.*
-import com.philkes.notallyx.core.common.result.*
-import com.philkes.notallyx.core.database.*
-import com.philkes.notallyx.core.preference.*
-import com.philkes.notallyx.core.security.*
-import com.philkes.notallyx.core.ui.components.*
-import com.philkes.notallyx.core.ui.dialog.*
-import com.philkes.notallyx.core.ui.extensions.*
-import com.philkes.notallyx.core.ui.views.*
-import com.philkes.notallyx.data.model.extensions.*
+import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.database.runMigrations
+import com.philkes.notallyx.core.preference.BiometricLock
+import com.philkes.notallyx.core.security.encryptDatabase
+import com.philkes.notallyx.core.security.isEncryptedDatabase
+import com.philkes.notallyx.core.security.isUnencryptedDatabase
 import com.philkes.notallyx.feature.main.MainActivity
+import com.philkes.notallyx.navigation.NotallyNavKey
 import com.philkes.notallyx.test.UiTestBase
-import com.philkes.notallyx.test.byId
-import com.philkes.notallyx.test.byText
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.initFakeBiometric
 import com.philkes.notallyx.test.navigateTo
-import com.philkes.notallyx.test.onPositionView
 import com.philkes.notallyx.test.waitUntil
-import com.philkes.notallyx.test.waitUntilSucceeds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -37,6 +30,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.FixMethodOrder
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -44,6 +38,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder
 class DataSchemaMigrationsTest : UiTestBase() {
+
+    @get:Rule val composeTestRule = createEmptyComposeRule()
 
     @Test
     fun migration3_whenBiometricLockDisabled_doesNotShowWarning() {
@@ -115,7 +111,11 @@ class DataSchemaMigrationsTest : UiTestBase() {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
         // 3. Verify experimental warning dialog appears and click "Decrypt"
-        R.string.decrypt.byText().perform(click())
+        val decryptText = context.getString(R.string.decrypt)
+        composeTestRule.waitUntil(15_000L) {
+            composeTestRule.onAllNodes(hasText(decryptText)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(decryptText).performClick()
 
         // 4. Assert migration complete, database decrypted, biometric lock stays ENABLED, and DB
         // encryption preference is FALSE
@@ -127,13 +127,15 @@ class DataSchemaMigrationsTest : UiTestBase() {
         }
 
         // Navigate to Notes fragment to verify notes list
-        navigateTo(R.id.Notes)
+        composeTestRule.navigateTo(NotallyNavKey.Notes)
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Migration Test Note")))
+        composeTestRule.waitUntil(15_000L) {
+            composeTestRule
+                .onAllNodes(hasText("Migration Test Note"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
+        composeTestRule.onNodeWithText("Migration Test Note").assertIsDisplayed()
 
         scenario.close()
     }
@@ -173,7 +175,11 @@ class DataSchemaMigrationsTest : UiTestBase() {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
         // 3. Verify experimental warning dialog appears and click "OK" (decline decrypt)
-        android.R.string.ok.byText().perform(click())
+        val okText = context.getString(android.R.string.ok)
+        composeTestRule.waitUntil(15_000L) {
+            composeTestRule.onAllNodes(hasText(okText)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(okText).performClick()
 
         // 4. Assert migration complete, biometric lock stays ENABLED, DB encryption preference is
         // TRUE, and DB remains ENCRYPTED
@@ -184,11 +190,13 @@ class DataSchemaMigrationsTest : UiTestBase() {
                 NotallyDatabase.getCurrentDatabaseFile(context).isEncryptedDatabase(context)
         }
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Migration Test Note")))
+        composeTestRule.waitUntil(15_000L) {
+            composeTestRule
+                .onAllNodes(hasText("Migration Test Note"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
+        composeTestRule.onNodeWithText("Migration Test Note").assertIsDisplayed()
 
         scenario.close()
     }

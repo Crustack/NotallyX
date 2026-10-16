@@ -1,4 +1,4 @@
-package com.philkes.notallyx.feature.main.tab
+package com.philkes.notallyx.feature.main.routes.settings
 
 // import com.philkes.notallyx.format
 import android.content.Context

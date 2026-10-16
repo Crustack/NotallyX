@@ -1,4 +1,4 @@
-package com.philkes.notallyx.feature.main.tab
+package com.philkes.notallyx.feature.main.routes.notes
 
 // import com.philkes.notallyx.createItemsFromNotes
 import android.app.Application
@@ -11,21 +11,31 @@ import com.philkes.notallyx.data.model.Item
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
-class ArchivedViewModel(app: Application, preferences: NotallyXPreferences) :
+class NotesViewModel(app: Application, preferences: NotallyXPreferences) :
     BaseViewModel(app, preferences) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val archivedNotes: StateFlow<List<Item>> =
-        databaseStateFlow
-            .flatMapLatest { database ->
-                database?.getBaseNoteDao()?.getByFolder(Folder.ARCHIVED) ?: flowOf(emptyList())
+    val baseNotes: StateFlow<List<Item>> =
+        combine(
+                databaseStateFlow,
+                preferences.labelsHidden.flow,
+            ) { database, labelsHidden ->
+                Pair(database, labelsHidden)
             }
-            .map { list -> app.createItemsFromNotes(list) }
+            .flatMapLatest { (database, labelsHidden) ->
+                database?.getBaseNoteDao()?.getByFolder(Folder.NOTES)?.map { list ->
+                    val filtered = list.filter { baseNote ->
+                        baseNote.labels.none { labelsHidden.contains(it) }
+                    }
+                    app.createItemsFromNotes(filtered)
+                } ?: flowOf(emptyList())
+            }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),

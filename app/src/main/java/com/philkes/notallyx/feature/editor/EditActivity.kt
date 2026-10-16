@@ -47,7 +47,7 @@ import com.philkes.notallyx.data.model.extensions.generateBaseNote
 import com.philkes.notallyx.feature.editor.bottomsheet.ActionSelectionBottomSheet
 import com.philkes.notallyx.feature.editor.bottomsheet.MoreNoteBottomSheet
 import com.philkes.notallyx.feature.editor.history.ChangeHistory
-import com.philkes.notallyx.feature.labels.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
+import com.philkes.notallyx.feature.main.MainActivity.Companion.EXTRA_DISPLAYED_LABEL
 import com.philkes.notallyx.feature.widget.WidgetProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

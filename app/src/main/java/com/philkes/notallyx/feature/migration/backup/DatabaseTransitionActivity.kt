@@ -15,6 +15,7 @@ import com.philkes.notallyx.core.common.extensions.copyToLarge
 import com.philkes.notallyx.core.common.extensions.getExternalBackupsDirectory
 import com.philkes.notallyx.core.common.extensions.log
 import com.philkes.notallyx.core.common.extensions.migrateAllAttachments
+import com.philkes.notallyx.core.common.extensions.putNavKey
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.database.NotallyDatabase.Companion.DATABASE_NAME
 import com.philkes.notallyx.core.preference.BiometricLock
@@ -28,6 +29,7 @@ import com.philkes.notallyx.core.security.isUnencryptedDatabase
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.feature.main.MainActivity
+import com.philkes.notallyx.navigation.NotallyNavKey
 import java.io.File
 import java.util.Date
 import javax.crypto.Cipher
@@ -162,7 +164,7 @@ class DatabaseTransitionActivity : AppCompatActivity() {
     private fun launchMainActivity() {
         val intent =
             Intent(this, MainActivity::class.java).apply {
-                putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, R.id.Settings)
+                putNavKey(NotallyNavKey.Settings)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         startActivity(intent)

@@ -2,14 +2,15 @@ package com.philkes.notallyx.activity
 
 // import com.philkes.notallyx.NotallyXApplication
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
-import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.NotallyXApplication
+import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.error.*
 import com.philkes.notallyx.core.common.extensions.*
 import com.philkes.notallyx.core.common.result.*
@@ -50,10 +51,14 @@ class LockedActivityTest : UiTestBase() {
 
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
+        val takeNoteLabel = context.getString(R.string.take_note)
         composeTestRule.waitUntil(10_000) {
-            composeTestRule.onAllNodes(hasTestTag("TakeNote")).fetchSemanticsNodes().isNotEmpty()
+            composeTestRule
+                .onAllNodes(hasContentDescription(takeNoteLabel))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
-        composeTestRule.onNodeWithTag("TakeNote").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(takeNoteLabel).assertIsDisplayed()
 
         scenario.close()
     }
@@ -69,10 +74,14 @@ class LockedActivityTest : UiTestBase() {
 
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
+        val takeNoteLabel = context.getString(R.string.take_note)
         composeTestRule.waitUntil(10_000) {
-            composeTestRule.onAllNodes(hasTestTag("TakeNote")).fetchSemanticsNodes().isNotEmpty()
+            composeTestRule
+                .onAllNodes(hasContentDescription(takeNoteLabel))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
-        composeTestRule.onNodeWithTag("TakeNote").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(takeNoteLabel).assertIsDisplayed()
         assertFalse(application.locked.value)
 
         scenario.close()

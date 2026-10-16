@@ -16,10 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -338,25 +335,21 @@ private fun SettingsAppearanceSection(
         PreferenceRow(
             title = stringResource(id = R.string.view),
             value = state.notesView.getText(context),
-            testTag = "View",
             onClick = actions.onNotesViewClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.theme),
             value = state.theme.getText(context),
-            testTag = "Theme",
             onClick = actions.onThemeClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.date_format_overview),
             value = formatDateTime(context, state.dateFormatOverview, state.timeFormatOverview),
-            testTag = "DateFormatOverview",
             onClick = actions.onDateFormatOverviewClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.date_format_note_view),
             value = formatDateTime(context, state.dateFormatNoteView, state.timeFormatNoteView),
-            testTag = "DateFormatNoteView",
             onClick = actions.onDateFormatNoteViewClick,
         )
         SeekBarPreferenceRow(
@@ -364,7 +357,6 @@ private fun SettingsAppearanceSection(
             value = state.textSizeNoteEditor,
             valueRange = TEXT_SIZE_MIN..TEXT_SIZE_MAX,
             showPreviewText = true,
-            testTag = "TextSize",
             onValueChange = actions.onTextSizeNoteEditorChange,
         )
         SeekBarPreferenceRow(
@@ -372,7 +364,6 @@ private fun SettingsAppearanceSection(
             value = state.textSizeOverview,
             valueRange = TEXT_SIZE_MIN..TEXT_SIZE_MAX,
             showPreviewText = true,
-            testTag = "TextSizeOverview",
             onValueChange = actions.onTextSizeOverviewChange,
         )
         PreferenceRow(
@@ -380,7 +371,6 @@ private fun SettingsAppearanceSection(
             value =
                 if (state.alwaysShowSearchBar) stringResource(id = R.string.enabled)
                 else stringResource(id = R.string.disabled),
-            testTag = "ShowSearchInTopBar",
             onClick = actions.onAlwaysShowSearchBarClick,
         )
     }
@@ -408,25 +398,21 @@ private fun SettingsBehaviourSection(
         PreferenceRow(
             title = stringResource(id = R.string.notes_sorted_by),
             value = state.notesSort.getText(context),
-            testTag = "NotesSortOrder",
             onClick = actions.onNotesSortOrderClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.list_item_auto_sort),
             value = state.listItemSorting.getText(context),
-            testTag = "CheckedListItemSorting",
             onClick = actions.onCheckedListItemSortingClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.start_view),
             value = startViewValueText,
-            testTag = "StartView",
             onClick = actions.onStartViewClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.default_list_note_view_mode),
             value = state.defaultListNoteViewMode.getText(context),
-            testTag = "DefaultListNoteViewMode",
             onClick = actions.onDefaultListNoteViewModeClick,
         )
         StepperPreferenceRow(
@@ -434,7 +420,6 @@ private fun SettingsBehaviourSection(
             value = state.autoSaveAfterIdleTime,
             valueRange = NUMBER_PREF_DISABLED..Integer.MAX_VALUE,
             labelFormatter = { v -> if (v == -1) offText else "${v}s" },
-            testTag = "AutoSaveAfterIdle",
             onValueChange = actions.onAutoSaveAfterIdleChange,
         )
         StepperPreferenceRow(
@@ -444,7 +429,6 @@ private fun SettingsBehaviourSection(
             labelFormatter = { v ->
                 if (v == 0) offText else "$v ${context.getQuantityStringPlain(R.plurals.days, v)}"
             },
-            testTag = "AutoEmptyBin",
             onValueChange = actions.onAutoRemoveDeletedNotesChange,
         )
     }
@@ -462,28 +446,24 @@ private fun SettingsContentDensitySection(
             title = stringResource(id = R.string.max_lines_to_display_title),
             value = state.maxTitle.toFloat(),
             valueRange = MAX_TITLE_LINES_MIN.toFloat()..MAX_TITLE_LINES_MAX.toFloat(),
-            testTag = "MaxTitle",
             onValueChange = { actions.onMaxTitleChange(it.roundToInt()) },
         )
         SeekBarPreferenceRow(
             title = stringResource(id = R.string.max_items_to_display),
             value = state.maxItems.toFloat(),
             valueRange = 0f..MAX_ITEMS_MAX.toFloat(),
-            testTag = "MaxItems",
             onValueChange = { actions.onMaxItemsChange(it.roundToInt()) },
         )
         SeekBarPreferenceRow(
             title = stringResource(id = R.string.max_lines_to_display),
             value = state.maxLines.toFloat(),
             valueRange = 0f..MAX_ITEMS_MAX.toFloat(),
-            testTag = "MaxLines",
             onValueChange = { actions.onMaxLinesChange(it.roundToInt()) },
         )
         StepperPreferenceRow(
             title = stringResource(id = R.string.max_labels_to_display),
             value = state.maxLabels,
             valueRange = 0..MAX_LABELS_IN_NAVIGATION_MAX,
-            testTag = "MaxLabels",
             onValueChange = actions.onMaxLabelsChange,
         )
         PreferenceRow(
@@ -491,7 +471,6 @@ private fun SettingsContentDensitySection(
             value =
                 if (state.labelTagsHiddenInOverview) stringResource(id = R.string.enabled)
                 else stringResource(id = R.string.disabled),
-            testTag = "LabelsHiddenInOverview",
             onClick = actions.onLabelTagsHiddenClick,
         )
         PreferenceRow(
@@ -499,7 +478,6 @@ private fun SettingsContentDensitySection(
             value =
                 if (state.imagesHiddenInOverview) stringResource(id = R.string.enabled)
                 else stringResource(id = R.string.disabled),
-            testTag = "ImagesHiddenInOverview",
             onClick = actions.onImagesHiddenClick,
         )
     }
@@ -531,17 +509,14 @@ private fun SettingsBackupSection(
         SectionHeaderItem(title = stringResource(id = R.string.backup))
         PreferenceRow(
             title = stringResource(id = R.string.import_backup),
-            testTag = "ImportBackup",
             onClick = actions.onImportBackupClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.import_other),
-            testTag = "ImportOther",
             onClick = actions.onImportOtherClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.export_backup),
-            testTag = "ExportBackup",
             onClick = actions.onExportBackupClick,
         )
 
@@ -549,7 +524,6 @@ private fun SettingsBackupSection(
         PreferenceRow(
             title = stringResource(id = R.string.auto_backups_folder),
             value = backupsFolderText,
-            testTag = "BackupsFolder",
             onClick = actions.onBackupsFolderClick,
         )
         PreferenceRow(
@@ -560,7 +534,6 @@ private fun SettingsBackupSection(
                 else if (state.backupOnSave) stringResource(id = R.string.enabled)
                 else stringResource(id = R.string.disabled),
             enabled = state.backupsFolder != EMPTY_PATH,
-            testTag = "BackupOnSave",
             onClick = actions.onBackupOnSaveClick,
         )
         PreferenceRow(
@@ -571,7 +544,6 @@ private fun SettingsBackupSection(
                 else if (periodicBackupsEnabled) stringResource(id = R.string.enabled)
                 else stringResource(id = R.string.disabled),
             enabled = state.backupsFolder != EMPTY_PATH,
-            testTag = "PeriodicBackups",
             onClick = actions.onPeriodicBackupsClick,
         )
         if (state.periodicBackupLastExecution != -1L) {
@@ -586,9 +558,7 @@ private fun SettingsBackupSection(
                 text = "${stringResource(id = R.string.auto_backup_last)}: $lastBackupFormatted",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier =
-                    Modifier.testTag("PeriodicBackupLastExecution")
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
         StepperPreferenceRow(
@@ -596,7 +566,6 @@ private fun SettingsBackupSection(
             value = state.periodicBackups.periodInDays,
             valueRange = BACKUP_PERIOD_DAYS_MIN..BACKUP_PERIOD_DAYS_MAX,
             enabled = periodicBackupsEnabled,
-            testTag = "PeriodicBackupsPeriodInDays",
             onValueChange = actions.onPeriodicBackupsPeriodInDaysChange,
         )
         StepperPreferenceRow(
@@ -604,7 +573,6 @@ private fun SettingsBackupSection(
             value = state.periodicBackups.maxBackups,
             valueRange = BACKUP_MAX_MIN..BACKUP_MAX_MAX,
             enabled = periodicBackupsEnabled,
-            testTag = "PeriodicBackupsMax",
             onValueChange = actions.onPeriodicBackupsMaxChange,
         )
     }
@@ -629,7 +597,6 @@ private fun SettingsSecuritySection(
         PreferenceRow(
             title = stringResource(id = R.string.biometric_lock),
             value = biometricLockText,
-            testTag = "BiometricLock",
             onClick = actions.onBiometricLockClick,
         )
         PreferenceRow(
@@ -637,7 +604,6 @@ private fun SettingsSecuritySection(
             value =
                 if (state.backupPassword != PASSWORD_EMPTY) "••••••••"
                 else stringResource(id = R.string.tap_to_set_up),
-            testTag = "BackupPassword",
             onClick = actions.onBackupPasswordClick,
         )
         PreferenceRow(
@@ -645,7 +611,6 @@ private fun SettingsSecuritySection(
             value =
                 if (state.secureFlag) stringResource(id = R.string.enabled)
                 else stringResource(id = R.string.disabled),
-            testTag = "SecureFlag",
             onClick = actions.onSecureFlagClick,
         )
     }
@@ -661,17 +626,14 @@ private fun SettingsGeneralSection(
         SectionHeaderItem(title = stringResource(id = R.string.settings))
         PreferenceRow(
             title = stringResource(id = R.string.import_settings),
-            testTag = "ImportSettings",
             onClick = actions.onImportSettingsClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.export_settings),
-            testTag = "ExportSettings",
             onClick = actions.onExportSettingsClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.reset_settings),
-            testTag = "ResetSettings",
             onClick = actions.onResetSettingsClick,
         )
         PreferenceRow(
@@ -679,12 +641,10 @@ private fun SettingsGeneralSection(
             value =
                 if (state.dataInPublicFolder) stringResource(id = R.string.enabled)
                 else stringResource(id = R.string.disabled),
-            testTag = "DataInPublicFolder",
             onClick = actions.onDataInPublicFolderClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.clear_data),
-            testTag = "ClearData",
             onClick = actions.onClearDataClick,
         )
     }
@@ -700,37 +660,30 @@ private fun SettingsAboutSection(
         SectionHeaderItem(title = stringResource(id = R.string.about))
         PreferenceRow(
             title = stringResource(id = R.string.send_feedback),
-            testTag = "SendFeedback",
             onClick = actions.onSendFeedbackClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.rate),
-            testTag = "Rate",
             onClick = actions.onRateClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.donate),
-            testTag = "Donate",
             onClick = actions.onDonateClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.view_logs),
-            testTag = "ViewLogs",
             onClick = actions.onViewLogsClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.view_crash_logs),
-            testTag = "ViewCrashes",
             onClick = actions.onViewCrashesClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.documentation),
-            testTag = "Documentation",
             onClick = actions.onDocumentationClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.source_code),
-            testTag = "SourceCode",
             onClick = actions.onSourceCodeClick,
         )
         if (state.appVersion.isNotEmpty()) {
@@ -738,8 +691,7 @@ private fun SettingsAboutSection(
                 text = "v${state.appVersion}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier =
-                    Modifier.testTag("VersionText").padding(horizontal = 16.dp, vertical = 16.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
             )
         }
     }
@@ -758,13 +710,7 @@ internal fun SettingsScreen(
 ) {
     val context = LocalContext.current
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .semantics { testTagsAsResourceId = true }
-                .verticalScroll(scrollState)
-    ) {
+    Column(modifier = modifier.fillMaxSize().verticalScroll(scrollState)) {
         SettingsAppearanceSection(state = state, actions = actions)
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         SettingsBehaviourSection(state = state, actions = actions)
@@ -789,10 +735,7 @@ internal fun SettingsScreen(
                 items = s.items,
                 selectedItem = s.selectedItem,
                 onDismissRequest = actions.onDismissDialog,
-                onConfirm = { selected ->
-                    s.onConfirm(selected)
-                    actions.onDismissDialog()
-                },
+                onConfirm = s.onConfirm,
             )
         }
         is SettingsDialogState.Theme -> {
@@ -803,10 +746,7 @@ internal fun SettingsScreen(
                 toggleLabel = stringResource(R.string.theme_use_dynamic_colors),
                 initialToggleValue = dialogState.initialUseDynamicColors,
                 onDismissRequest = actions.onDismissDialog,
-                onConfirm = { newTheme, useDynamicColors ->
-                    dialogState.onConfirm(newTheme, useDynamicColors)
-                    actions.onDismissDialog()
-                },
+                onConfirm = dialogState.onConfirm,
             )
         }
         is SettingsDialogState.DateTimeFormat -> {
@@ -814,20 +754,14 @@ internal fun SettingsScreen(
                 initialDateFormat = dialogState.initialDate,
                 initialTimeFormat = dialogState.initialTime,
                 onDismissRequest = actions.onDismissDialog,
-                onConfirm = { newDate, newTime ->
-                    dialogState.onConfirm(newDate, newTime)
-                    actions.onDismissDialog()
-                },
+                onConfirm = dialogState.onConfirm,
             )
         }
         is SettingsDialogState.NotesSort -> {
             NotesSortDialog(
                 currentSort = dialogState.currentSort,
                 onDismissRequest = actions.onDismissDialog,
-                onConfirm = { newSort ->
-                    dialogState.onConfirm(newSort)
-                    actions.onDismissDialog()
-                },
+                onConfirm = dialogState.onConfirm,
             )
         }
         is SettingsDialogState.BooleanPref -> {
@@ -836,10 +770,7 @@ internal fun SettingsScreen(
                 message = dialogState.message,
                 initialValue = dialogState.initialValue,
                 onDismissRequest = actions.onDismissDialog,
-                onConfirm = { newValue ->
-                    dialogState.onConfirm(newValue)
-                    actions.onDismissDialog()
-                },
+                onConfirm = dialogState.onConfirm,
             )
         }
         is SettingsDialogState.BackupPassword -> {
@@ -849,10 +780,7 @@ internal fun SettingsScreen(
                 message = stringResource(R.string.backup_password_hint),
                 isPassword = true,
                 onDismissRequest = actions.onDismissDialog,
-                onConfirm = { updatedPassword ->
-                    dialogState.onConfirm(updatedPassword)
-                    actions.onDismissDialog()
-                },
+                onConfirm = dialogState.onConfirm,
             )
         }
         is SettingsDialogState.ImportNotesPassword -> {
@@ -862,10 +790,7 @@ internal fun SettingsScreen(
                 message = stringResource(R.string.import_backup_password_hint),
                 initialCheckDuplicates = true,
                 onDismissRequest = actions.onDismissDialog,
-                onConfirm = { usedPassword, checkDuplicates ->
-                    dialogState.onConfirm(usedPassword, checkDuplicates)
-                    actions.onDismissDialog()
-                },
+                onConfirm = dialogState.onConfirm,
             )
         }
         is SettingsDialogState.IconList -> {
@@ -873,10 +798,7 @@ internal fun SettingsScreen(
                 title = dialogState.title,
                 items = dialogState.items,
                 onDismissRequest = actions.onDismissDialog,
-                onItemClick = { which ->
-                    actions.onDismissDialog()
-                    dialogState.onItemClick(which)
-                },
+                onItemClick = dialogState.onItemClick,
             )
         }
         is SettingsDialogState.ListSelection -> {
@@ -884,10 +806,7 @@ internal fun SettingsScreen(
                 title = dialogState.title,
                 items = dialogState.items,
                 onDismissRequest = actions.onDismissDialog,
-                onItemClick = { which ->
-                    actions.onDismissDialog()
-                    dialogState.onItemClick(which)
-                },
+                onItemClick = dialogState.onItemClick,
             )
         }
         is SettingsDialogState.Confirm -> {
@@ -907,10 +826,7 @@ internal fun SettingsScreen(
         is SettingsDialogState.EncryptDatabase -> {
             EncryptDatabaseDialog(
                 onDismissRequest = actions.onDismissDialog,
-                onContinue = { shouldEncrypt ->
-                    actions.onDismissDialog()
-                    dialogState.onContinue(shouldEncrypt)
-                },
+                onContinue = dialogState.onContinue,
             )
         }
         null -> {}

@@ -5,7 +5,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -13,6 +13,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiSelector
+import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.error.*
 import com.philkes.notallyx.core.common.extensions.*
 import com.philkes.notallyx.core.common.result.*
@@ -158,7 +159,9 @@ class WidgetTest : UiTestBase() {
             val appendedText = " Updated"
             val expectedUpdatedTitle = "$noteTitle2$appendedText"
 
-            composeTestRule.onNodeWithTag("EnterTitle").appendText(appendedText)
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.title))
+                .appendText(appendedText)
 
             // Exit EditNoteActivity to trigger save & widget update
             toolbarBackButton.perform(click())
@@ -215,7 +218,9 @@ class WidgetTest : UiTestBase() {
             val appendedText = " Updated"
             val expectedUpdatedTitle = "$noteTitle2$appendedText"
 
-            composeTestRule.onNodeWithTag("EnterTitle").appendText(appendedText)
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.title))
+                .appendText(appendedText)
 
             toolbarBackButton.perform(click())
 

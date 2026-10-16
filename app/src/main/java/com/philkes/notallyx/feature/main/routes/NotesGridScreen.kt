@@ -1,4 +1,4 @@
-package com.philkes.notallyx.feature.main
+package com.philkes.notallyx.feature.main.routes
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
@@ -25,11 +25,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
@@ -72,10 +69,7 @@ internal fun NotesGridScreen(
             OutlinedTextField(
                 value = searchKeyword,
                 onValueChange = onSearchKeywordChange,
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                        .testTag("EnterSearchKeyword"),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
                 placeholder = { Text(text = stringResource(R.string.search)) },
                 shape = RoundedCornerShape(24.dp),
                 colors =
@@ -93,19 +87,18 @@ internal fun NotesGridScreen(
                     selected = selectedFolder == Folder.NOTES,
                     onClick = { onFolderSelected(Folder.NOTES) },
                     label = { Text(text = stringResource(R.string.notes)) },
-                    modifier = Modifier.padding(end = 8.dp).testTag("NotesFilterChip"),
+                    modifier = Modifier.padding(end = 8.dp),
                 )
                 FilterChip(
                     selected = selectedFolder == Folder.DELETED,
                     onClick = { onFolderSelected(Folder.DELETED) },
                     label = { Text(text = stringResource(R.string.deleted)) },
-                    modifier = Modifier.padding(end = 8.dp).testTag("DeletedFilterChip"),
+                    modifier = Modifier.padding(end = 8.dp),
                 )
                 FilterChip(
                     selected = selectedFolder == Folder.ARCHIVED,
                     onClick = { onFolderSelected(Folder.ARCHIVED) },
                     label = { Text(text = stringResource(R.string.archived)) },
-                    modifier = Modifier.testTag("ArchivedFilterChip"),
                 )
             }
         }
@@ -145,7 +138,7 @@ internal fun NotesGridScreen(
             } else if (isGrid) {
                 LazyVerticalStaggeredGrid(
                     columns = StaggeredGridCells.Fixed(2),
-                    modifier = Modifier.fillMaxSize().semantics { testTagsAsResourceId = true },
+                    modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(4.dp),
                 ) {
                     items.forEachIndexed { index, item ->
@@ -163,7 +156,6 @@ internal fun NotesGridScreen(
                                     val isSelected = selectedNoteIds.contains(item.id)
                                     BaseNoteCard(
                                         baseNote = item,
-                                        modifier = Modifier.testTag("NoteCard_${item.id}"),
                                         config = displayConfig,
                                         imageRoot = imageRoot,
                                         isSelected = isSelected,
@@ -178,7 +170,7 @@ internal fun NotesGridScreen(
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize().semantics { testTagsAsResourceId = true },
+                    modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
                 ) {
                     items.forEachIndexed { index, item ->
@@ -205,7 +197,6 @@ internal fun NotesGridScreen(
                                     } else {
                                         BaseNoteCard(
                                             baseNote = item,
-                                            modifier = Modifier.testTag("NoteCard_${item.id}"),
                                             config = displayConfig,
                                             imageRoot = imageRoot,
                                             isSelected = isSelected,

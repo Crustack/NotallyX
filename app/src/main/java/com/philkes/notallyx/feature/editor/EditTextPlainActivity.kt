@@ -9,8 +9,13 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.findAllOccurrences
@@ -85,6 +90,9 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
 
     @Composable
     override fun RenderScreen() {
+        val canUndoState = changeHistory.canUndo.collectAsStateWithLifecycle(false)
+        val canRedoState = changeHistory.canRedo.collectAsStateWithLifecycle(false)
+
         val noteState =
             EditNoteState(
                 title = titleState.value,
@@ -96,8 +104,15 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
         EditNoteScreen(
             noteState = noteState,
             backgroundColor = Color(colorIntState.intValue),
+            canUndo = canUndoState.value,
+            canRedo = canRedoState.value,
             changeHandlers =
                 object : EditChangeHandlers {
+                    override fun onTitleChange(title: String) {
+                        titleState.value = title
+                        notallyModel.title = title
+                    }
+
                     override fun onBodyTextChange(bodyText: String) {
                         bodyTextState.value = bodyText
                         notallyModel.body.replace(0, notallyModel.body.length, bodyText)
@@ -112,7 +127,44 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
                     override fun onMoreOptionsClick() {
                         openMoreOptionsBottomSheet()
                     }
+
+                    override fun onUndoClick() {
+                        changeHistory.undo()
+                    }
+
+                    override fun onRedoClick() {
+                        changeHistory.redo()
+                    }
                 },
+            bottomLeftActions = {
+                IconButton(onClick = { convertToTextNote() }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.convert_to_text),
+                        contentDescription = stringResource(id = R.string.convert_to_text_note),
+                    )
+                }
+                IconButton(onClick = { originalFileUri.value?.let { saveToUri(it) } }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.save),
+                        contentDescription = stringResource(id = R.string.save),
+                    )
+                }
+                IconButton(
+                    onClick = {
+                        val intent =
+                            Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                                addCategory(Intent.CATEGORY_OPENABLE)
+                                type = "text/*"
+                            }
+                        saveAsActivityResultLauncher.launch(intent)
+                    }
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.save_as),
+                        contentDescription = stringResource(id = R.string.save_to_device),
+                    )
+                }
+            },
         )
     }
 
@@ -129,15 +181,7 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
     override fun setupAdditionalListeners() {}
 
     override fun initChangeHistory() {
-        changeHistory =
-            ChangeHistory().apply {
-                canUndo.collectIn(this@EditTextPlainActivity) { canUndo ->
-                    undo?.isEnabled = canUndo
-                }
-                canRedo.collectIn(this@EditTextPlainActivity) { canRedo ->
-                    redo?.isEnabled = canRedo
-                }
-            }
+        changeHistory = ChangeHistory()
     }
 
     private fun saveToUri(uri: Uri) {

@@ -96,6 +96,47 @@ class MainActivityViewModel(app: Application, val preferences: NotallyXPreferenc
         labelDao = database.getLabelDao()
     }
 
+    fun showColorPicker(
+        colors: Set<ColorString>,
+        currentColor: ColorString?,
+        onColorSelected: (selectedColor: ColorString) -> Unit,
+    ) {
+        activeDialog.value = MainActiveDialog.ColorPicker(colors, currentColor, onColorSelected)
+    }
+
+    fun showExportFormatDialog(onFormatSelected: (mimeType: ExportMimeType) -> Unit) {
+        activeDialog.value = MainActiveDialog.ExportFormat(ExportMimeType.entries, onFormatSelected)
+    }
+
+    fun showSelectLabelsDialog(
+        labels: Array<String>,
+        initialStates: Array<ToggleableState>,
+        onConfirm: (finalStates: Array<ToggleableState>) -> Unit,
+    ) {
+        activeDialog.value = MainActiveDialog.SelectLabels(labels, initialStates, onConfirm)
+    }
+
+    fun showConfirmDialog(
+        title: String? = null,
+        message: String,
+        positiveButtonText: String? = null,
+        negativeButtonText: String? = null,
+        onConfirm: () -> Unit,
+    ) {
+        activeDialog.value =
+            MainActiveDialog.Confirm(
+                title,
+                message,
+                positiveButtonText,
+                negativeButtonText,
+                onConfirm,
+            )
+    }
+
+    fun dismissDialog() {
+        activeDialog.value = null
+    }
+
     fun cleanupDatabase(onComplete: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             ConverterErrorReporter.enabled.set(false)

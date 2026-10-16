@@ -28,7 +28,7 @@ import com.philkes.notallyx.core.preference.withPrevious
 import com.philkes.notallyx.core.security.UnlockReceiver
 import com.philkes.notallyx.core.ui.extensions.setEnabledSecureFlag
 import com.philkes.notallyx.di.appModules
-import com.philkes.notallyx.feature.main.tab.AutoRemoveDeletedNotesWorker
+import com.philkes.notallyx.feature.main.routes.settings.AutoRemoveDeletedNotesWorker
 import com.philkes.notallyx.feature.migration.backup.AUTO_BACKUP_WORK_NAME
 import com.philkes.notallyx.feature.migration.backup.autoBackupOnSave
 import com.philkes.notallyx.feature.migration.backup.autoBackupOnSaveFileExists

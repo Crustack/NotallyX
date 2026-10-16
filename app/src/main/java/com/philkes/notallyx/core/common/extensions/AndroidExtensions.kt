@@ -47,10 +47,12 @@ import com.philkes.notallyx.data.model.extensions.toText
 import com.philkes.notallyx.feature.editor.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
 import com.philkes.notallyx.feature.editor.EditListActivity
 import com.philkes.notallyx.feature.editor.EditNoteActivity
+import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.migration.ExportMimeType
 import com.philkes.notallyx.feature.migration.backup.FILE_TIMESTAMP_FORMAT
 import com.philkes.notallyx.feature.migration.backup.LOG_DATE_FORMATTER
 import com.philkes.notallyx.feature.migration.imports.ImportResult
+import com.philkes.notallyx.navigation.NotallyNavKey
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
@@ -61,6 +63,7 @@ import java.io.PrintWriter
 import java.net.URLEncoder
 import java.text.DateFormat
 import java.util.Date
+import kotlinx.serialization.json.Json
 
 fun <T> createObserverSkipFirst(observer: Observer<T>): Observer<T> {
     return object : Observer<T> {
@@ -494,6 +497,16 @@ private fun Context.shareNote(title: String, body: CharSequence, imageUris: List
 fun Intent.embedIntentExtras() {
     val string = toUri(Intent.URI_INTENT_SCHEME)
     data = Uri.parse(string)
+}
+
+fun Intent.putNavKey(key: NotallyNavKey): Intent = apply {
+    putExtra(MainActivity.EXTRA_ROUTE_TO_OPEN, Json.encodeToString(NotallyNavKey.serializer(), key))
+}
+
+fun Intent.getNavKey(): NotallyNavKey? {
+    val json = getStringExtra(MainActivity.EXTRA_ROUTE_TO_OPEN) ?: return null
+    return runCatching { Json.decodeFromString(NotallyNavKey.serializer(), json) }
+        .getOrDefault(NotallyNavKey.Notes)
 }
 
 fun Context.getOpenNotePendingIntent(note: BaseNote) = getOpenNotePendingIntent(note.id, note.type)

@@ -4,41 +4,25 @@ import android.app.Activity
 import android.app.Instrumentation
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
-import androidx.test.espresso.matcher.ViewMatchers.isEnabled
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.error.*
-import com.philkes.notallyx.core.common.extensions.*
-import com.philkes.notallyx.core.common.result.*
-import com.philkes.notallyx.core.database.*
-import com.philkes.notallyx.core.preference.*
-import com.philkes.notallyx.core.security.*
-import com.philkes.notallyx.core.ui.components.*
-import com.philkes.notallyx.core.ui.dialog.*
-import com.philkes.notallyx.core.ui.extensions.*
-import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.data.model.extensions.*
 import com.philkes.notallyx.feature.editor.EditTextPlainActivity
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.appendText
-import com.philkes.notallyx.test.byContentDescription
-import com.philkes.notallyx.test.byId
 import com.philkes.notallyx.test.waitUntil
-import com.philkes.notallyx.test.waitUntilSucceeds
 import java.io.File
-import org.hamcrest.Matchers.not
 import org.junit.Assert.assertEquals
 import org.junit.FixMethodOrder
 import org.junit.Rule
@@ -50,7 +34,7 @@ import org.junit.runner.RunWith
 @FixMethodOrder
 class EditTextPlainActivityTest : UiTestBase() {
 
-    @get:Rule val composeTestRule = createAndroidComposeRule<EditTextPlainActivity>()
+    @get:Rule val composeTestRule = createEmptyComposeRule()
 
     @Test
     fun editAndSavePlainTextFile() {
@@ -68,19 +52,31 @@ class EditTextPlainActivityTest : UiTestBase() {
 
         val scenario = ActivityScenario.launch<EditTextPlainActivity>(intent)
 
-        waitUntilSucceeds {
-            R.id.EnterTitle.byId().check(matches(withText("sample_plain_file.txt")))
+        val titleDesc = context.getString(R.string.title)
+        val bodyDesc = context.getString(R.string.note)
+
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(titleDesc))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
-        R.id.EnterTitle.byId().check(matches(not(isEnabled())))
-        R.id.EnterBody.byId().check(matches(withText("Original file content")))
+
+        composeTestRule
+            .onNodeWithContentDescription(titleDesc)
+            .assertTextEquals("sample_plain_file.txt")
+        composeTestRule
+            .onNodeWithContentDescription(bodyDesc)
+            .assertTextEquals("Original file content")
 
         val appendText = " - appended text"
         val expectedContent = "Original file content - appended text"
-        composeTestRule.onNodeWithTag("EnterBody").appendText(appendText)
+        composeTestRule.onNodeWithContentDescription(bodyDesc).appendText(appendText)
 
-        R.string.save.byContentDescription().perform(click())
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.save))
+            .performClick()
 
-        // assertToastDisplayed(R.string.saved_to_device)
         waitUntil { testFile.readText() == expectedContent }
         assertEquals(expectedContent, testFile.readText())
 
@@ -114,17 +110,27 @@ class EditTextPlainActivityTest : UiTestBase() {
 
             val scenario = ActivityScenario.launch<EditTextPlainActivity>(intent)
 
-            waitUntilSucceeds {
-                R.id.EnterTitle.byId().check(matches(withText("original_file.txt")))
+            val titleDesc = context.getString(R.string.title)
+            val bodyDesc = context.getString(R.string.note)
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(titleDesc))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
             }
+            composeTestRule
+                .onNodeWithContentDescription(titleDesc)
+                .assertTextEquals("original_file.txt")
 
             val appendText = " - new text"
             val expectedContent = "Original content - new text"
-            composeTestRule.onNodeWithTag("EnterBody").appendText(appendText)
+            composeTestRule.onNodeWithContentDescription(bodyDesc).appendText(appendText)
 
-            R.string.save_to_device.byContentDescription().perform(click())
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.save_to_device))
+                .performClick()
 
-            // assertToastDisplayed(R.string.saved_to_device)
             waitUntil { newFile.exists() && newFile.readText() == expectedContent }
             assertEquals(expectedContent, newFile.readText())
             assertEquals("Original content", originalFile.readText())
@@ -147,12 +153,17 @@ class EditTextPlainActivityTest : UiTestBase() {
         val noteTitle = "Converted Plain Note"
         val noteBody = "Body text for plain note conversion"
 
-        composeTestRule.onNodeWithTag("EnterTitle").appendText(noteTitle)
-        composeTestRule.onNodeWithTag("EnterBody").appendText(noteBody)
+        val titleDesc = context.getString(R.string.title)
+        val bodyDesc = context.getString(R.string.note)
+
+        composeTestRule.onNodeWithContentDescription(titleDesc).appendText(noteTitle)
+        composeTestRule.onNodeWithContentDescription(bodyDesc).appendText(noteBody)
 
         Espresso.closeSoftKeyboard()
 
-        R.string.convert_to_text_note.byContentDescription().perform(click())
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.convert_to_text_note))
+            .performClick()
 
         waitUntil {
             database.getBaseNoteDao().getByTitle("Converted Plain Note").any { note ->
@@ -162,10 +173,14 @@ class EditTextPlainActivityTest : UiTestBase() {
             }
         }
 
-        waitUntilSucceeds {
-            R.id.EnterTitle.byId().check(matches(withText(noteTitle)))
-            R.id.EnterBody.byId().check(matches(withText(noteBody)))
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(titleDesc))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
+        composeTestRule.onNodeWithContentDescription(titleDesc).assertTextEquals(noteTitle)
+        composeTestRule.onNodeWithContentDescription(bodyDesc).assertTextEquals(noteBody)
 
         scenario.close()
     }

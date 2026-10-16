@@ -11,7 +11,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
@@ -33,12 +32,10 @@ internal fun ProgressDialog(
                 if (progress != null) {
                     LinearProgressIndicator(
                         progress = { progress },
-                        modifier = Modifier.fillMaxWidth().testTag("ProgressBar"),
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 } else {
-                    LinearProgressIndicator(
-                        modifier = Modifier.fillMaxWidth().testTag("ProgressBar")
-                    )
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 }
 
                 if (!message.isNullOrEmpty()) {
@@ -47,7 +44,6 @@ internal fun ProgressDialog(
                         text = message,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.testTag("Count"),
                     )
                 }
             }
