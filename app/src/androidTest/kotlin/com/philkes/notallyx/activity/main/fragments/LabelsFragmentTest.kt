@@ -1,10 +1,13 @@
 package com.philkes.notallyx.activity.main.fragments
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog as isComposeDialog
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -66,12 +69,12 @@ class LabelsFragmentTest : UiTestBase() {
         composeTestRule.waitUntil(5_000) {
             composeTestRule.onAllNodes(hasText("label")).fetchSemanticsNodes().size >= 2
         }
-        composeTestRule.onAllNodes(hasText("label")).onLast().assertIsDisplayed()
+        composeTestRule.onAllNodes(hasText("label")).onFirst().assertIsDisplayed()
 
         // Edit label
         composeTestRule
             .onAllNodes(hasContentDescription(context.getString(R.string.edit)))
-            .onLast()
+            .onFirst()
             .performClick()
 
         composeTestRule.onNode(hasSetTextAction()).performTextReplacement("label1")
@@ -80,7 +83,7 @@ class LabelsFragmentTest : UiTestBase() {
         composeTestRule.waitUntil(5_000) {
             composeTestRule.onAllNodes(hasText("label1")).fetchSemanticsNodes().isNotEmpty()
         }
-        composeTestRule.onAllNodes(hasText("label1")).onLast().assertIsDisplayed()
+        composeTestRule.onAllNodes(hasText("label1")).onFirst().assertIsDisplayed()
 
         // Add label by clicking toolbar Add button
         composeTestRule
@@ -93,15 +96,22 @@ class LabelsFragmentTest : UiTestBase() {
         composeTestRule.waitUntil(5_000) {
             composeTestRule.onAllNodes(hasText("label2")).fetchSemanticsNodes().isNotEmpty()
         }
-        composeTestRule.onAllNodes(hasText("label2")).onLast().assertIsDisplayed()
+        composeTestRule.onAllNodes(hasText("label2")).onFirst().assertIsDisplayed()
 
         // Delete label "label1"
         composeTestRule
             .onAllNodes(hasContentDescription(context.getString(R.string.delete)))
             .onLast()
             .performClick()
-        composeTestRule.onNodeWithText(context.getString(R.string.delete)).performClick()
+        composeTestRule
+            .onNode(
+                hasText(context.getString(R.string.delete)) and hasAnyAncestor(isComposeDialog())
+            )
+            .performClick()
 
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(hasText("label1")).fetchSemanticsNodes().isEmpty()
+        }
         composeTestRule.onNodeWithText("label1").assertDoesNotExist()
 
         scenario.close()
@@ -176,11 +186,11 @@ class LabelsFragmentTest : UiTestBase() {
             .onNodeWithContentDescription(context.getString(R.string.app_name))
             .performClick()
 
-        composeTestRule.onAllNodes(hasText("Work"))[0].assertIsDisplayed()
-        composeTestRule.onAllNodes(hasText("Personal"))[0].assertIsDisplayed()
+        composeTestRule.onAllNodes(hasText("Work")).onLast().assertIsDisplayed()
+        composeTestRule.onAllNodes(hasText("Personal")).onLast().assertIsDisplayed()
 
         // Click on "Work" label in navigation view
-        composeTestRule.onAllNodes(hasText("Work"))[0].performClick()
+        composeTestRule.onAllNodes(hasText("Work")).onLast().performClick()
 
         composeTestRule.waitUntil(5_000) {
             composeTestRule.onAllNodes(hasText("Work Note 1")).fetchSemanticsNodes().isNotEmpty()
@@ -194,7 +204,7 @@ class LabelsFragmentTest : UiTestBase() {
             .onNodeWithContentDescription(context.getString(R.string.app_name))
             .performClick()
 
-        composeTestRule.onAllNodes(hasText("Personal"))[0].performClick()
+        composeTestRule.onAllNodes(hasText("Personal")).onLast().performClick()
 
         composeTestRule.waitUntil(5_000) {
             composeTestRule

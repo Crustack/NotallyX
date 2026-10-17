@@ -17,6 +17,8 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -67,19 +69,7 @@ internal fun NotesGridScreen(
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         if (showSearchBar && onSearchKeywordChange != null) {
-            OutlinedTextField(
-                value = searchKeyword,
-                onValueChange = onSearchKeywordChange,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                placeholder = { Text(text = stringResource(R.string.search)) },
-                shape = RoundedCornerShape(24.dp),
-                colors =
-                    OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    ),
-                singleLine = true,
-            )
+            SearchBar(searchKeyword, onSearchKeywordChange)
         }
 
         if (selectedFolder != null && onFolderSelected != null) {
@@ -216,12 +206,55 @@ internal fun NotesGridScreen(
     }
 }
 
+@Composable
+private fun SearchBar(
+    searchKeyword: String,
+    onSearchKeywordChange: (String) -> Unit,
+) {
+    OutlinedTextField(
+        value = searchKeyword,
+        onValueChange = onSearchKeywordChange,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+        placeholder = { Text(text = stringResource(R.string.search)) },
+        leadingIcon = {
+            Image(
+                painter = painterResource(id = R.drawable.search),
+                contentDescription = stringResource(R.string.search),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurfaceVariant),
+                modifier = Modifier.size(20.dp),
+            )
+        },
+        trailingIcon = {
+            if (searchKeyword.isNotEmpty()) {
+                IconButton(onClick = { onSearchKeywordChange("") }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.close),
+                        contentDescription = stringResource(R.string.cancel),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        },
+        shape = RoundedCornerShape(24.dp),
+        colors =
+            OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+            ),
+        singleLine = true,
+    )
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun NotesGridScreenPreview() {
     NotallyXTheme {
         NotesGridScreen(
             items = SampleNotes.ALL,
+            showSearchBar = true,
+            onSearchKeywordChange = {},
+            selectedFolder = Folder.NOTES,
+            onFolderSelected = {},
             isGrid = true,
         )
     }
@@ -233,6 +266,10 @@ private fun NotesListScreenPreview() {
     NotallyXTheme {
         NotesGridScreen(
             items = SampleNotes.ALL,
+            showSearchBar = true,
+            onSearchKeywordChange = {},
+            selectedFolder = Folder.NOTES,
+            onFolderSelected = {},
             isGrid = false,
         )
     }

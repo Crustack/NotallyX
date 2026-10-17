@@ -23,6 +23,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyChild
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -717,7 +718,7 @@ fun ComposeTestRule.waitUntilSettingsValue(
     val context = InstrumentationRegistry.getInstrumentation().targetContext
     val titleText = context.getString(titleResId)
     val expectedText = context.getString(valueResId)
-    val matcher = hasText(titleText) and hasAnyDescendant(hasText(expectedText))
+    val matcher = hasAnyChild(hasText(titleText)) and hasAnyChild(hasText(expectedText))
     val endTime = System.currentTimeMillis() + timeoutMs
     while (System.currentTimeMillis() < endTime) {
         try {
@@ -750,7 +751,7 @@ fun ComposeTestRule.enableBiometricLock(encryptDb: Boolean = false) {
         waitUntil(10_000) { onAllNodes(hasText(encryptText)).fetchSemanticsNodes().isNotEmpty() }
         onNodeWithText(encryptText).performClick()
     }
-    onNodeWithText(context.getString(R.string.save)).performClick()
+    onNodeWithText(continueText).performClick()
 
     val expectedValueResId =
         if (encryptDb) R.string.biometric_lock_enabled_with_encryption else R.string.enabled
@@ -799,6 +800,7 @@ fun lockAndUnlockDevice() {
     device.sleep()
     SystemClock.sleep(2000)
     device.wakeUp()
+    device.executeShellCommand("wm dismiss-keyguard")
     device.pressMenu()
 }
 

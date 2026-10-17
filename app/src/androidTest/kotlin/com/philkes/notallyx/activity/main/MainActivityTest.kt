@@ -2,14 +2,21 @@ package com.philkes.notallyx.activity.main
 
 import android.app.Notification
 import android.util.Log
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog as isComposeDialog
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ActivityScenario
@@ -18,12 +25,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.feature.editor.refreshStatusBarPin
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.reminder.PinnedNotificationManager
 import com.philkes.notallyx.test.UiTestBase
+import com.philkes.notallyx.test.appendText
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.createListItem
 import com.philkes.notallyx.test.waitUntil
@@ -94,13 +103,17 @@ class MainActivityTest : UiTestBase() {
             .performClick()
 
         // 6. click the "label" twice to give both notes the "label" Label
-        composeTestRule.onNodeWithText("label").performClick()
-        composeTestRule.onNodeWithText("label").performClick()
+        composeTestRule
+            .onNode(hasText("label") and hasAnyAncestor(isComposeDialog()))
+            .performClick()
+        composeTestRule
+            .onNode(hasText("label") and hasAnyAncestor(isComposeDialog()))
+            .performClick()
 
         composeTestRule.onNodeWithText(context.getString(R.string.save)).performClick()
 
         composeTestRule.waitUntil(10_000) {
-            composeTestRule.onAllNodes(hasText("label")).fetchSemanticsNodes().size >= 2
+            composeTestRule.onAllNodes(hasText("label")).fetchSemanticsNodes().size >= 3
         }
         composeTestRule.onAllNodes(hasText("label"))[1].assertIsDisplayed()
 
@@ -247,8 +260,12 @@ class MainActivityTest : UiTestBase() {
         // 2. Open Search fragment
         composeTestRule.onNodeWithContentDescription(searchLabel).performClick()
 
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(searchLabel)).fetchSemanticsNodes().isNotEmpty()
+        }
+
         // 3. Type search keyword matching "Grocery"
-        composeTestRule.onNodeWithText(searchLabel).performTextInput("Grocery")
+        composeTestRule.onNode(hasText(searchLabel) and hasSetTextAction()).appendText("Grocery")
 
         // 4. Verify default "Notes" folder chip only shows normal notes
         composeTestRule.waitUntil(10_000) {
@@ -261,7 +278,13 @@ class MainActivityTest : UiTestBase() {
         composeTestRule.onNodeWithText("Deleted Note").assertDoesNotExist()
 
         // 5. Switch filter to "Archived" folder chip
-        composeTestRule.onNodeWithText(context.getString(R.string.archived)).performClick()
+        //        composeTestRule.onNode(context.getString(R.string.archived)).performClick()
+        composeTestRule
+            .onNode(
+                hasText(context.getString(R.string.archived)) and
+                    SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox)
+            )
+            .performClick()
         composeTestRule.waitUntil(10_000) {
             composeTestRule
                 .onAllNodes(hasText("Archived Note"))
@@ -274,7 +297,12 @@ class MainActivityTest : UiTestBase() {
         composeTestRule.onNodeWithText("Deleted Note").assertDoesNotExist()
 
         // 6. Switch filter to "Deleted" folder chip
-        composeTestRule.onNodeWithText(context.getString(R.string.deleted)).performClick()
+        composeTestRule
+            .onNode(
+                hasText(context.getString(R.string.deleted)) and
+                    SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox)
+            )
+            .performClick()
         composeTestRule.waitUntil(10_000) {
             composeTestRule
                 .onAllNodes(hasText("Deleted Note"))
@@ -287,7 +315,12 @@ class MainActivityTest : UiTestBase() {
         composeTestRule.onNodeWithText("Archived Note").assertDoesNotExist()
 
         // 7. Switch filter back to "Notes" folder chip
-        composeTestRule.onNodeWithText(context.getString(R.string.notes)).performClick()
+        composeTestRule
+            .onNode(
+                hasText(context.getString(R.string.notes)) and
+                    SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox)
+            )
+            .performClick()
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("Normal Note")).fetchSemanticsNodes().isNotEmpty() &&
                 composeTestRule.onAllNodes(hasText("Deleted Note")).fetchSemanticsNodes().isEmpty()
@@ -295,7 +328,9 @@ class MainActivityTest : UiTestBase() {
         composeTestRule.onNodeWithText("Normal Note").assertIsDisplayed()
 
         // 8. Search for keyword with no matches
-        composeTestRule.onNodeWithText(searchLabel).performTextReplacement("NonExistentKeyword")
+        composeTestRule
+            .onNode(hasText("Grocery") and hasSetTextAction())
+            .performTextReplacement("NonExistentKeyword")
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("Normal Note")).fetchSemanticsNodes().isEmpty()
         }
@@ -304,7 +339,9 @@ class MainActivityTest : UiTestBase() {
         composeTestRule.onNodeWithText("Deleted Note").assertDoesNotExist()
 
         // 9. Cancel search to return to main notes list
-        composeTestRule.onNodeWithContentDescription(cancelLabel).performClick()
+        composeTestRule
+            .onNode(hasContentDescription(cancelLabel) and hasTestTag(TestTags.NAVIGATION))
+            .performClick()
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("Work Meeting")).fetchSemanticsNodes().isNotEmpty()
         }
