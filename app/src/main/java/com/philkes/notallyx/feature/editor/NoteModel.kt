@@ -54,7 +54,7 @@ import com.philkes.notallyx.feature.reminder.RemindersActivity.Companion.NEW_REM
 import com.philkes.notallyx.feature.reminder.cancelPinAndReminders
 import com.philkes.notallyx.feature.reminder.cancelReminder
 import com.philkes.notallyx.feature.reminder.scheduleReminder
-import com.philkes.notallyx.feature.widget.WidgetProvider
+import com.philkes.notallyx.feature.widget.NoteWidget
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -351,7 +351,7 @@ open class NoteModel(
         withContext(Dispatchers.IO) {
             baseNoteDao?.delete(id) ?: throw DatabaseNotConnectedException()
         }
-        WidgetProvider.sendBroadcast(app, longArrayOf(id))
+        NoteWidget.sendBroadcast(app, longArrayOf(id))
         val attachments = ArrayList(images.value + files.value + audios.value)
         if (attachments.isNotEmpty()) {
             withContext(Dispatchers.IO) { app.deleteAttachments(attachments) }

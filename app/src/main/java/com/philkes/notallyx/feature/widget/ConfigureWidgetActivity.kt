@@ -26,8 +26,7 @@ class ConfigureWidgetActivity : PickNoteActivity() {
     override fun onNotePicked(note: BaseNote) {
         preferences.updateWidget(id, note.id, note.type)
 
-        val manager = AppWidgetManager.getInstance(this)
-        WidgetProvider.updateWidget(application, manager, id, note.id, note.type)
+        NoteWidget.updateWidget(application, id, note.id, note.type)
 
         val success = Intent()
         success.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)

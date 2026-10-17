@@ -159,7 +159,7 @@
         </activity>
 
         <receiver
-            android:name=".feature.widget.WidgetProvider"
+            android:name=".feature.widget.NoteWidgetReceiver"
             android:exported="false"
             android:label="@string/single_note_or_list">
 
@@ -181,10 +181,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
-
-        <service
-            android:name=".feature.widget.WidgetService"
-            android:permission="android.permission.BIND_REMOTEVIEWS" />
 
         <service
             android:name=".feature.media.audio.AudioRecordService"
