@@ -38,6 +38,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.extensions.plus
 import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.NotesSortBy
 import com.philkes.notallyx.core.preference.Theme
@@ -60,6 +61,7 @@ import com.philkes.notallyx.feature.editor.listitem.init
 import com.philkes.notallyx.feature.editor.screens.FileAttachmentPreviewChip
 import java.io.File
 import java.util.Date
+import kotlin.time.Duration.Companion.hours
 
 data class NoteCardDisplayConfig(
     val dateFormat: DateFormat = DateFormat.DD_MM_YY_GER,
@@ -379,7 +381,7 @@ object SampleNotes {
 
     val LIST_NOTE =
         BaseNote(
-            id = 0L,
+            id = 2L,
             type = Type.LIST,
             folder = Folder.NOTES,
             color = com.philkes.notallyx.data.model.Color.CLAY.toColorString(),
@@ -431,7 +433,7 @@ object SampleNotes {
 
     val RICH_TEXT_NOTE =
         BaseNote(
-            id = 0L,
+            id = 3L,
             type = Type.NOTE,
             folder = Folder.NOTES,
             color = BaseNote.COLOR_DEFAULT,
@@ -456,14 +458,14 @@ object SampleNotes {
                 ),
             audios = listOf(Audio("audio1.aac", 60000L, 1767355200000L)),
             reminders =
-                listOf(Reminder(id = 1L, dateTime = Date(1767441600000L), repetition = null)),
+                listOf(Reminder(id = 1L, dateTime = Date().plus(2.hours), repetition = null)),
             viewMode = NoteViewMode.EDIT,
             isPinnedToStatus = false,
         )
 
     val GENERATED_LIST_NOTE =
         BaseNote(
-            id = 0L,
+            id = 4L,
             type = Type.LIST,
             folder = Folder.NOTES,
             color = "#F8BBD0",
@@ -512,6 +514,8 @@ object SampleNotes {
             viewMode = NoteViewMode.EDIT,
             isPinnedToStatus = false,
         )
+
+    val ALL = listOf(LOREM_IPSUM_NOTE, LIST_NOTE, RICH_TEXT_NOTE, GENERATED_LIST_NOTE)
 }
 
 @Preview(showBackground = true, name = "Lorem Ipsum Note")

@@ -77,7 +77,7 @@ internal fun EncryptDatabaseDialog(
     )
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun EncryptDatabaseDialogPreview() {
     NotallyXTheme {

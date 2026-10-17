@@ -39,6 +39,8 @@ internal fun <T> SingleSelectionDialog(
     onDismissRequest: () -> Unit,
     onConfirm: (T) -> Unit,
     modifier: Modifier = Modifier,
+    confirmTextResId: Int = R.string.save,
+    dismissTextResId: Int = R.string.cancel,
 ) {
     var selected by remember { mutableStateOf(selectedItem) }
 
@@ -81,16 +83,16 @@ internal fun <T> SingleSelectionDialog(
                     onConfirm(selected)
                 }
             ) {
-                Text(stringResource(R.string.save))
+                Text(stringResource(confirmTextResId))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
+            TextButton(onClick = onDismissRequest) { Text(stringResource(dismissTextResId)) }
         },
     )
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun SingleSelectionDialogPreview() {
     NotallyXTheme {

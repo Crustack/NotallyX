@@ -191,7 +191,7 @@ internal fun <T> PreferenceEnumWithToggleDialog(
     )
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun PreferenceBooleanDialogPreview() {
     NotallyXTheme {
@@ -205,7 +205,7 @@ private fun PreferenceBooleanDialogPreview() {
     }
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun PreferenceEnumWithToggleDialogPreview() {
     NotallyXTheme {

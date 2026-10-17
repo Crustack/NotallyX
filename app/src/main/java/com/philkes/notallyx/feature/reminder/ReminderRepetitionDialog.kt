@@ -125,7 +125,7 @@ internal fun CustomRepetitionDialog(
     AlertDialog(
         modifier = modifier,
         onDismissRequest = onDismissRequest,
-        title = { Text(text = stringResource(R.string.custom)) },
+        title = { Text(text = stringResource(R.string.repetition_custom)) },
         text = {
             Column {
                 OutlinedTextField(
@@ -186,12 +186,12 @@ internal fun CustomRepetitionDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
+            TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.back)) }
         },
     )
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun ReminderRepetitionDialogPreview() {
     NotallyXTheme {
@@ -203,7 +203,7 @@ private fun ReminderRepetitionDialogPreview() {
     }
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun CustomRepetitionDialogPreview() {
     NotallyXTheme {

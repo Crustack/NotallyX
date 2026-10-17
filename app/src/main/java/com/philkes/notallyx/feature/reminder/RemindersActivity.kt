@@ -3,7 +3,6 @@ package com.philkes.notallyx.feature.reminder
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.widget.TimePicker
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +28,7 @@ import com.philkes.notallyx.feature.reminder.adapter.ReminderListener
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import java.util.TimeZone
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -50,7 +50,7 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
             NotallyXTheme(theme = preferences.theme.value) {
                 val remindersState = model.reminders.collectAsStateWithLifecycle(emptyList())
 
-                RemindersScreen(
+                NoteRemindersScreen(
                     reminders = remindersState.value,
                     dateFormat = preferences.dateFormatNoteView.value,
                     timeFormat = preferences.timeFormatNoteView.value,
@@ -60,6 +60,15 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
                     onDeleteReminder = { reminder -> delete(reminder) },
                     onBackClick = { finish() },
                     onDismissDialog = { dialogStateState.value = null },
+                    onDateSelected = { reminder, calendar, year, month, day ->
+                        handleDateSelected(reminder, calendar, year, month, day)
+                    },
+                    onTimeSelected = { reminder, calendar, hour, minute ->
+                        handleTimeSelected(reminder, calendar, hour, minute)
+                    },
+                    onTimePickerBack = { reminder, calendar ->
+                        showDatePickerDialog(reminder, calendar)
+                    },
                     onRepetitionOptionSelected = { reminder, calendar, selected ->
                         handleRepetitionOptionSelected(reminder, calendar, selected)
                     },
@@ -124,31 +133,53 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
             alsoCheckAlarmPermission = true,
             alarmPermissionResultLauncher = alarmPermissionActivityResultLauncher,
         ) {
-            DatePickerFragment(calendar?.time ?: reminder?.dateTime) { year, month, day ->
-                    val usedCalendar = calendar ?: reminder?.dateTime?.toCalendar() ?: now()
-                    usedCalendar.set(year, month, day)
-                    showTimePickerDialog(reminder, usedCalendar)
+            val usedCalendar = calendar ?: reminder?.dateTime?.toCalendar() ?: now()
+            val utcCalendar =
+                Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                    clear()
+                    set(
+                        usedCalendar.get(Calendar.YEAR),
+                        usedCalendar.get(Calendar.MONTH),
+                        usedCalendar.get(Calendar.DAY_OF_MONTH),
+                    )
                 }
-                .show(supportFragmentManager, "reminderDatePicker")
+            dialogStateState.value =
+                ReminderDialogState.DatePicker(
+                    reminder = reminder,
+                    calendar = usedCalendar,
+                    initialDateMillis = utcCalendar.timeInMillis,
+                )
         }
     }
 
-    private fun showTimePickerDialog(reminder: Reminder? = null, calendar: Calendar) {
-        TimePickerFragment(
-                calendar,
-                object : TimePickerListener {
-                    override fun onBack() {
-                        showDatePickerDialog(reminder, calendar)
-                    }
+    private fun handleDateSelected(
+        reminder: Reminder?,
+        calendar: Calendar,
+        year: Int,
+        month: Int,
+        day: Int,
+    ) {
+        calendar.set(year, month, day)
+        showTimePickerDialog(reminder, calendar)
+    }
 
-                    override fun onTimeSet(view: TimePicker?, hourOfDay: Int, minute: Int) {
-                        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
-                        calendar.set(Calendar.MINUTE, minute)
-                        showRepetitionDialog(reminder, calendar)
-                    }
-                },
+    private fun showTimePickerDialog(reminder: Reminder? = null, calendar: Calendar) {
+        dialogStateState.value =
+            ReminderDialogState.TimePicker(
+                reminder = reminder,
+                calendar = calendar,
             )
-            .show(supportFragmentManager, "reminderTimePicker")
+    }
+
+    private fun handleTimeSelected(
+        reminder: Reminder?,
+        calendar: Calendar,
+        hourOfDay: Int,
+        minute: Int,
+    ) {
+        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
+        calendar.set(Calendar.MINUTE, minute)
+        showRepetitionDialog(reminder, calendar)
     }
 
     private fun showRepetitionDialog(

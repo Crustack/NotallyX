@@ -105,7 +105,7 @@ internal fun ErrorDialog(
     )
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun ErrorDialogPreview() {
     NotallyXTheme {

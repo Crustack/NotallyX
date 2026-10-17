@@ -20,8 +20,6 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.Intents.intending
@@ -29,7 +27,6 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasType
-import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -171,9 +168,8 @@ class EditActivityTest : UiTestBase() {
     @Test
     fun reminders() {
         fun confirmDateAndTime() {
-            onView(withId(com.google.android.material.R.id.confirm_button)).perform(click())
-            onView(withId(com.google.android.material.R.id.material_timepicker_ok_button))
-                .perform(click())
+            composeTestRule.onNodeWithText(context.getString(R.string.next)).performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.next)).performClick()
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
@@ -259,9 +255,11 @@ class EditActivityTest : UiTestBase() {
         composeTestRule.onNodeWithText(context.getString(R.string.weeks)).performClick()
         composeTestRule.onNodeWithText(saveLabel).performClick()
 
+        val customRepetitionText =
+            "${context.getString(R.string.every)} 3 ${context.getString(R.string.weeks)}"
         composeTestRule.waitUntil(10_000) {
             composeTestRule
-                .onAllNodes(hasText(context.getString(R.string.yearly)))
+                .onAllNodes(hasText(customRepetitionText))
                 .fetchSemanticsNodes()
                 .isNotEmpty()
         }
@@ -274,9 +272,9 @@ class EditActivityTest : UiTestBase() {
             composeTestRule
                 .onAllNodes(hasContentDescription(remindersLabel))
                 .fetchSemanticsNodes()
-                .isNotEmpty()
+                .size >= 2
         }
-        composeTestRule.onNodeWithContentDescription(remindersLabel).assertIsDisplayed()
+        composeTestRule.onAllNodes(hasContentDescription(remindersLabel))[1].assertIsDisplayed()
 
         scenario.close()
     }

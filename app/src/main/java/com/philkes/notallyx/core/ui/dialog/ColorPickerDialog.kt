@@ -143,7 +143,7 @@ internal fun ColorPickerDialog(
     )
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun ColorPickerDialogPreview() {
     NotallyXTheme {

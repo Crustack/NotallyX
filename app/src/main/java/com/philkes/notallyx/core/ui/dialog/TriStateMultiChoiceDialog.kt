@@ -51,7 +51,7 @@ internal fun TriStateMultiChoiceDialog(
     )
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun TriStateMultiChoiceDialogPreview() {
     NotallyXTheme {

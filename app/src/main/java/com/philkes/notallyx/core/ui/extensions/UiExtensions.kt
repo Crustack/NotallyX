@@ -5,6 +5,7 @@ import android.app.Activity
 import android.app.AlarmManager
 import android.app.Dialog
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -479,21 +480,7 @@ private fun <T : Progress> StateFlow<T?>.setupProgressDialog(
     val preferences = NotallyXPreferences.getInstance(activity)
     val composeView = ComposeView(context)
     val dialog =
-        Dialog(context).apply {
-            requestWindowFeature(Window.FEATURE_NO_TITLE)
-            window?.setBackgroundDrawableResource(android.R.color.transparent)
-            setContentView(composeView)
-            setCancelable(false)
-            window?.decorView?.let { decorView ->
-                decorView.setViewTreeLifecycleOwner(viewLifecycleOwner)
-                if (viewLifecycleOwner is ViewModelStoreOwner) {
-                    decorView.setViewTreeViewModelStoreOwner(viewLifecycleOwner)
-                }
-                if (viewLifecycleOwner is SavedStateRegistryOwner) {
-                    decorView.setViewTreeSavedStateRegistryOwner(viewLifecycleOwner)
-                }
-            }
-        }
+        createComposeDialog(context, composeView, viewLifecycleOwner).apply { setCancelable(false) }
 
     viewLifecycleOwner.repeatOnLifecycleScope {
         collect { progress ->
@@ -542,12 +529,7 @@ fun Activity.checkNotificationPermission(
         if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
             if (shouldShowRequestPermissionRationale(permission)) {
                 val composeView = ComposeView(this)
-                val dialog =
-                    Dialog(this).apply {
-                        requestWindowFeature(Window.FEATURE_NO_TITLE)
-                        window?.setBackgroundDrawableResource(android.R.color.transparent)
-                        setContentView(composeView)
-                    }
+                val dialog = createComposeDialog(this, composeView)
                 val preferences = NotallyXPreferences.getInstance(this)
                 composeView.setContent {
                     NotallyXTheme(theme = preferences.theme.value) {
@@ -579,12 +561,7 @@ fun Activity.checkAlarmPermission(
             onSuccess()
         } else {
             val composeView = ComposeView(this)
-            val dialog =
-                Dialog(this).apply {
-                    requestWindowFeature(Window.FEATURE_NO_TITLE)
-                    window?.setBackgroundDrawableResource(android.R.color.transparent)
-                    setContentView(composeView)
-                }
+            val dialog = createComposeDialog(this, composeView)
             val preferences = NotallyXPreferences.getInstance(this)
             composeView.setContent {
                 NotallyXTheme(theme = preferences.theme.value) {
@@ -664,12 +641,7 @@ fun Context.displayEditLabelDialog(
     val activity = (this as? Activity) ?: return
     val preferences = NotallyXPreferences.getInstance(activity)
     val composeView = ComposeView(activity)
-    val dialog =
-        Dialog(activity).apply {
-            requestWindowFeature(Window.FEATURE_NO_TITLE)
-            window?.setBackgroundDrawableResource(android.R.color.transparent)
-            setContentView(composeView)
-        }
+    val dialog = createComposeDialog(activity, composeView)
 
     composeView.setContent {
         NotallyXTheme(theme = preferences.theme.value) {
@@ -999,10 +971,41 @@ fun createComposeDialog(
     composeView: ComposeView,
     lifecycleOwner: LifecycleOwner? = null,
 ): Dialog {
-    val owner = lifecycleOwner ?: (context as? LifecycleOwner)
-    val viewModelStoreOwner = owner as? ViewModelStoreOwner ?: (context as? ViewModelStoreOwner)
-    val savedStateRegistryOwner =
-        owner as? SavedStateRegistryOwner ?: (context as? SavedStateRegistryOwner)
+    var owner = lifecycleOwner
+    var currContext: Context? = context
+    while (owner == null && currContext != null) {
+        if (currContext is LifecycleOwner) {
+            owner = currContext
+        } else if (currContext is ContextWrapper) {
+            currContext = currContext.baseContext
+        } else {
+            currContext = null
+        }
+    }
+
+    var viewModelStoreOwner: ViewModelStoreOwner? = owner as? ViewModelStoreOwner
+    currContext = context
+    while (viewModelStoreOwner == null && currContext != null) {
+        if (currContext is ViewModelStoreOwner) {
+            viewModelStoreOwner = currContext
+        } else if (currContext is ContextWrapper) {
+            currContext = currContext.baseContext
+        } else {
+            currContext = null
+        }
+    }
+
+    var savedStateRegistryOwner: SavedStateRegistryOwner? = owner as? SavedStateRegistryOwner
+    currContext = context
+    while (savedStateRegistryOwner == null && currContext != null) {
+        if (currContext is SavedStateRegistryOwner) {
+            savedStateRegistryOwner = currContext
+        } else if (currContext is ContextWrapper) {
+            currContext = currContext.baseContext
+        } else {
+            currContext = null
+        }
+    }
 
     return Dialog(context).apply {
         requestWindowFeature(Window.FEATURE_NO_TITLE)

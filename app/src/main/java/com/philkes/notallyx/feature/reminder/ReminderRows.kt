@@ -21,9 +21,9 @@ import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
-/** Composable replacing recycler_reminder.xml layout. */
+/** Row for displaying a note reminder (inside note edit). */
 @Composable
-internal fun ReminderChipItem(
+internal fun NoteReminderRow(
     dateTimeText: String,
     repetitionText: String? = null,
     modifier: Modifier = Modifier,
@@ -84,9 +84,9 @@ internal fun ReminderChipItem(
     }
 }
 
-/** Composable replacing recycler_note_reminder.xml layout. */
+/** Row for displaying reminder in [RemindersScreen] */
 @Composable
-internal fun NoteReminderRow(
+internal fun ReminderRow(
     title: String,
     nextNotificationText: String,
     remindersCountText: String,
@@ -142,9 +142,9 @@ internal fun NoteReminderRow(
 
 @Preview(showBackground = true)
 @Composable
-private fun ReminderChipItemPreview() {
+private fun NoteReminderRowPreview() {
     NotallyXTheme {
-        ReminderChipItem(
+        NoteReminderRow(
             dateTimeText = "Tomorrow, 09:00 AM",
             repetitionText = "Repeats daily",
         )
@@ -153,9 +153,9 @@ private fun ReminderChipItemPreview() {
 
 @Preview(showBackground = true)
 @Composable
-private fun NoteReminderRowPreview() {
+private fun ReminderRowPreview() {
     NotallyXTheme {
-        NoteReminderRow(
+        ReminderRow(
             title = "Doctor Appointment",
             nextNotificationText = "In 2 hours",
             remindersCountText = "1",

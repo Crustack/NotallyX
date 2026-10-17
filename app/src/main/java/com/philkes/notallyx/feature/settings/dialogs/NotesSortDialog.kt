@@ -128,7 +128,7 @@ internal fun NotesSortDialog(
     )
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun NotesSortDialogPreview() {
     NotallyXTheme {
