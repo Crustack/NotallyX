@@ -115,3 +115,15 @@ private fun ChecklistItemRowPreview() {
         )
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+private fun ChecklistItemRowUncheckedPreview() {
+    NotallyXTheme {
+        ChecklistItemRow(
+            text = "Buy groceries",
+            isChecked = false,
+            onCheckedChange = {},
+        )
+    }
+}
