@@ -1,14 +1,12 @@
 package com.philkes.notallyx.feature.editor.listitem.sorting
 
-import androidx.recyclerview.widget.RecyclerView
 import com.philkes.notallyx.data.model.ListItem
 
 /**
- * Sort algorithm that only sorts by [ListItem.checkedTimestamp]. A children is always below it's
- * parent and above parents with a lower order.
+ * Sort algorithm that only sorts by [ListItem.checkedTimestamp]. A child is always below its parent
+ * and above parents with a lower order.
  */
-class ListItemCheckedTimestampSortCallback(adapter: RecyclerView.Adapter<*>?) :
-    ListItemParentSortCallback(adapter) {
+class ListItemCheckedTimestampSortCallback : ListItemParentSortCallback() {
 
     override fun compareItems(item1: ListItem, item2: ListItem): Int {
         return (item2.checkedTimestamp ?: 0L).compareTo(item1.checkedTimestamp ?: 0L)

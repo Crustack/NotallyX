@@ -15,7 +15,6 @@ import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.feature.editor.listitem.CheckedListItemAdapter
 import com.philkes.notallyx.feature.editor.listitem.sorting.ListItemCheckedTimestampSortCallback
 import com.philkes.notallyx.feature.editor.listitem.sorting.ListItemParentSortCallback
 import java.security.SecureRandom
@@ -429,11 +428,10 @@ val ListItemSort.isAutoSortChecked
         this in
             setOf(ListItemSort.AUTO_SORT_BY_CHECKED, ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
 
-fun ListItemSort.callback(adapterChecked: CheckedListItemAdapter) =
+fun ListItemSort.callback() =
     when (this) {
-        ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP ->
-            ListItemCheckedTimestampSortCallback(adapterChecked)
-        else -> ListItemParentSortCallback(adapterChecked)
+        ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP -> ListItemCheckedTimestampSortCallback()
+        else -> ListItemParentSortCallback()
     }
 
 enum class DefaultListNoteViewMode(override val textResId: Int) : StaticTextProvider {

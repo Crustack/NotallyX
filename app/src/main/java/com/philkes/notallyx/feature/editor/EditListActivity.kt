@@ -6,7 +6,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.recyclerview.widget.RecyclerView
 import com.philkes.notallyx.core.common.extensions.findAllOccurrences
 import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.preference.NotallyXPreferences
@@ -18,8 +17,6 @@ import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.feature.editor.bottomsheet.MoreListBottomSheet
-import com.philkes.notallyx.feature.editor.listitem.CheckedListItemAdapter
-import com.philkes.notallyx.feature.editor.listitem.ListItemAdapter
 import com.philkes.notallyx.feature.editor.listitem.ListManager
 import com.philkes.notallyx.feature.editor.listitem.init
 import com.philkes.notallyx.feature.editor.listitem.setItems
@@ -36,10 +33,8 @@ import kotlinx.coroutines.withContext
 
 class EditListActivity : EditActivity(Type.LIST) {
 
-    private var adapter: ListItemAdapter? = null
-    private var adapterChecked: CheckedListItemAdapter? = null
     private val items: MutableList<ListItem>
-        get() = notallyModel.items
+        get() = if (::listManager.isInitialized) listManager.items else notallyModel.items
 
     private var itemsChecked: SortedItemsList? = null
     private lateinit var listManager: ListManager
@@ -48,19 +43,25 @@ class EditListActivity : EditActivity(Type.LIST) {
     }
 
     override fun finish() {
-        notallyModel.setItems(items.toMutableList() + (itemsChecked?.toMutableList() ?: listOf()))
+        if (::listManager.isInitialized) {
+            notallyModel.setItems(
+                items.toMutableList() + (itemsChecked?.toMutableList() ?: listOf())
+            )
+        }
         super.finish()
     }
 
     override fun updateModel() {
         super.updateModel()
-        notallyModel.setItems(items.toMutableList() + (itemsChecked?.toMutableList() ?: listOf()))
+        if (::listManager.isInitialized) {
+            notallyModel.setItems(
+                items.toMutableList() + (itemsChecked?.toMutableList() ?: listOf())
+            )
+        }
     }
 
     override fun toggleCanEdit(mode: NoteViewMode) {
         super.toggleCanEdit(mode)
-        adapter?.viewMode = mode
-        adapterChecked?.viewMode = mode
     }
 
     override fun openMoreOptionsBottomSheet() {
@@ -82,7 +83,11 @@ class EditListActivity : EditActivity(Type.LIST) {
     override fun selectSearchResult(resultPos: Int) {}
 
     override fun configureUI() {
-        if (notallyModel.items.isEmpty()) {
+        if (
+            ::listManager.isInitialized &&
+                listManager.items.isEmpty() &&
+                (itemsChecked?.size() ?: 0) == 0
+        ) {
             listManager.add(pushChange = false)
         }
     }
@@ -102,13 +107,20 @@ class EditListActivity : EditActivity(Type.LIST) {
         }
         val canUndoState = changeHistory.canUndo.collectAsStateWithLifecycle(false)
         val canRedoState = changeHistory.canRedo.collectAsStateWithLifecycle(false)
+        val stackPointerState = changeHistory.stackPointer.collectAsStateWithLifecycle(-1)
         val viewModeState = notallyModel.viewMode.collectAsStateWithLifecycle(NoteViewMode.EDIT)
+
+        // Read stackPointerState to observe changeHistory state updates
+        stackPointerState.value
 
         val noteState =
             EditNoteState(
                 title = titleState.value,
-                items = notallyModel.items.filter { !it.checked },
-                checkedItems = notallyModel.items.filter { it.checked },
+                items =
+                    if (::listManager.isInitialized) listManager.items
+                    else notallyModel.items.filter { !it.checked },
+                checkedItems =
+                    itemsChecked?.toMutableList() ?: notallyModel.items.filter { it.checked },
                 createdTimestamp = notallyModel.timestamp,
                 modifiedTimestamp = notallyModel.modifiedTimestamp,
                 images = imagesState.value,
@@ -146,14 +158,76 @@ class EditListActivity : EditActivity(Type.LIST) {
                         notallyModel.title = title
                     }
 
+                    override fun onItemTextChange(item: ListItem, text: String) {
+                        val pos = listManager.items.indexOf(item)
+                        if (pos != -1) {
+                            listManager.changeText(pos, text, inCheckedList = false)
+                        } else {
+                            val checkedPos = itemsChecked?.toMutableList()?.indexOf(item) ?: -1
+                            if (checkedPos != -1) {
+                                listManager.changeText(checkedPos, text, inCheckedList = true)
+                            }
+                        }
+                    }
+
                     override fun onItemCheckedChange(item: ListItem, checked: Boolean) {
-                        val pos = notallyModel.items.indexOf(item)
-                        if (pos != -1) listManager.changeChecked(pos, checked, item.checked)
+                        val pos = listManager.items.indexOf(item)
+                        if (pos != -1) {
+                            listManager.changeChecked(pos, checked, item.checked)
+                        } else {
+                            val checkedPos = itemsChecked?.toMutableList()?.indexOf(item) ?: -1
+                            if (checkedPos != -1) {
+                                listManager.changeChecked(checkedPos, checked, inCheckedList = true)
+                            }
+                        }
                     }
 
                     override fun onItemDelete(item: ListItem) {
-                        val pos = notallyModel.items.indexOf(item)
-                        if (pos != -1) listManager.delete(pos, item.checked)
+                        val pos = listManager.items.indexOf(item)
+                        if (pos != -1) {
+                            listManager.delete(pos)
+                        } else {
+                            val checkedPos = itemsChecked?.toMutableList()?.indexOf(item) ?: -1
+                            if (checkedPos != -1) {
+                                listManager.delete(checkedPos, inCheckedList = true)
+                            }
+                        }
+                    }
+
+                    override fun onItemMove(fromIndex: Int, toIndex: Int) {
+                        if (
+                            fromIndex in listManager.items.indices &&
+                                toIndex in listManager.items.indices
+                        ) {
+                            listManager.move(fromIndex, toIndex)
+                        }
+                    }
+
+                    override fun onItemSwipeRight(item: ListItem) {
+                        val pos = listManager.items.indexOf(item)
+                        if (pos > 0 && !item.isChild) {
+                            listManager.changeIsChild(pos, isChild = true)
+                        }
+                    }
+
+                    override fun onItemSwipeLeft(item: ListItem) {
+                        val pos = listManager.items.indexOf(item)
+                        if (pos != -1 && item.isChild) {
+                            listManager.changeIsChild(pos, isChild = false)
+                        }
+                    }
+
+                    override fun onItemMoveFinish(item: ListItem) {
+                        val pos = listManager.items.indexOf(item)
+                        if (pos != -1) {
+                            listManager.finishMove(
+                                positionTo = pos,
+                                count = 1 + item.children.size,
+                                parentBefore = null,
+                                stateBefore = listManager.getState(),
+                                pushChange = true,
+                            )
+                        }
                     }
                 },
             clickHandlers =
@@ -211,54 +285,34 @@ class EditListActivity : EditActivity(Type.LIST) {
 
     override fun setStateFromModel(savedInstanceState: Bundle?) {
         super.setStateFromModel(savedInstanceState)
-        val dummyRecyclerView = RecyclerView(this)
-        val dummyScrollView = androidx.core.widget.NestedScrollView(this)
-        val elevation = resources.displayMetrics.density * 2
-        listManager =
-            ListManager(
-                dummyRecyclerView,
-                changeHistory,
-                preferences,
-                inputMethodManager,
-                { if (isInSearchMode()) endSearch() },
-                { _ ->
-                    if (isInSearchMode() && search.results.value > 0)
-                        updateSearchResults(search.query)
-                },
-                { items -> updateJumpButtonsVisibility(items) },
-            )
-        adapter =
-            ListItemAdapter(
-                colorInt,
-                notallyModel.textSize,
-                elevation,
-                preferences,
-                listManager,
-                false,
-                dummyScrollView,
-            )
         val initializedItems = notallyModel.items.init(true)
         if (preferences.autoSortByCheckedEnabled) {
             val (checkedItems, uncheckedItems) = initializedItems.splitByChecked()
-            adapter?.submitList(uncheckedItems.toMutableList())
-            adapterChecked =
-                CheckedListItemAdapter(
-                    colorInt,
-                    notallyModel.textSize,
-                    elevation,
-                    preferences,
-                    listManager,
-                    true,
-                    dummyScrollView,
-                )
             itemsChecked =
-                SortedItemsList(preferences.listItemSorting.value.callback(adapterChecked!!))
-                    .apply { setItems(checkedItems.toMutableList()) }
-            adapterChecked?.setList(itemsChecked!!)
+                SortedItemsList(preferences.listItemSorting.value.callback()).apply {
+                    setItems(checkedItems.toMutableList())
+                }
+            listManager =
+                ListManager(
+                    items = uncheckedItems.toMutableList(),
+                    itemsChecked = itemsChecked,
+                    changeHistory = changeHistory,
+                    preferences = preferences,
+                    endSearch = { if (isInSearchMode()) endSearch() },
+                    onItemSizeChanged = { count -> updateJumpButtonsVisibility(count) },
+                )
         } else {
-            adapter?.submitList(initializedItems.toMutableList())
+            itemsChecked = null
+            listManager =
+                ListManager(
+                    items = initializedItems.toMutableList(),
+                    itemsChecked = null,
+                    changeHistory = changeHistory,
+                    preferences = preferences,
+                    endSearch = { if (isInSearchMode()) endSearch() },
+                    onItemSizeChanged = { count -> updateJumpButtonsVisibility(count) },
+                )
         }
-        listManager.init(adapter!!, itemsChecked, adapterChecked)
     }
 
     override suspend fun highlightSearchResults(search: String): Int {

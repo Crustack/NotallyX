@@ -12,3 +12,13 @@ The set of type-safe `NavKey` definitions (`NotallyNavKey`) and corresponding Co
 ## Reminder Date & Time Pickers
 The Compose dialog components (`DatePickerDialog` and custom `TimePickerDialog` wrapping M3 `TimePicker`) integrated into `RemindersScreen` via `ReminderDialogState`, replacing legacy `DialogFragment` wrappers (`DatePickerFragment` and `TimePickerFragment`).
 
+## Checklist Item
+An individual item within a task list that contains a text body, a checked state, an optional completion timestamp, and can either be a top-level parent item or a single-level indented child item.
+
+## Parent Item
+A top-level checklist item that can contain child items. Its completion status automatically reflects whether all of its child items are completed.
+
+## Child Item
+An indented checklist item positioned beneath a parent item. A child item belongs to its preceding parent item.
+
+

@@ -118,8 +118,6 @@ import com.philkes.notallyx.feature.editor.EditActivityViewModel
 import com.philkes.notallyx.feature.editor.history.ChangeHistory
 import com.philkes.notallyx.feature.editor.history.changes.EditTextState
 import com.philkes.notallyx.feature.editor.history.changes.EditTextWithHistoryChange
-import com.philkes.notallyx.feature.editor.listitem.ListItemVH
-import com.philkes.notallyx.feature.editor.listitem.ListManager
 import com.philkes.notallyx.feature.labels.LabelsViewModel
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.migration.backup.NotesAndAttachments
@@ -320,46 +318,6 @@ val Int.toDp: Int
 
 val Float.toDpFloat: Int
     get() = (this * Resources.getSystem().displayMetrics.density + 0.5f).toInt()
-
-/**
- * Creates a TextWatcher for an EditText that is part of a list. Everytime the text is changed, a
- * Change is added to the ChangeHistory.
- *
- * @param positionGetter Function to determine the current position of the EditText in the list
- *   (e.g. the current absoluteAdapterPosition when using RecyclerViewer.Adapter)
- * @param onTextChanged optional text change handler. Returns whether or not the original change
- *   should be ignored or not.
- */
-fun EditText.createListTextWatcherWithHistory(
-    listManager: ListManager,
-    positionGetter: () -> Int,
-    onTextChanged: ((text: CharSequence, start: Int, count: Int) -> Boolean)? = null,
-) =
-    object : TextWatcher {
-        private var ignoreOriginalChange: Boolean = false
-        private lateinit var textBefore: Editable
-
-        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-            textBefore = text.clone()
-        }
-
-        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-            ignoreOriginalChange = onTextChanged?.invoke(s!!, start, count) ?: false
-        }
-
-        override fun afterTextChanged(s: Editable?) {
-            val textAfter = s!!.clone()
-            if (textAfter.hasNotChanged(textBefore)) {
-                return
-            }
-            if (!ignoreOriginalChange) {
-                listManager.changeText(
-                    positionGetter.invoke(),
-                    EditTextState(textAfter, selectionStart),
-                )
-            }
-        }
-    }
 
 fun StylableEditTextWithHistory.createTextWatcherWithHistory(
     changeHistory: ChangeHistory,
@@ -1157,18 +1115,6 @@ val RecyclerView.focusedViewHolder
             findViewHolderForAdapterPosition(position)
         }
     }
-
-fun RecyclerView.showKeyboardOnFocusedItem() {
-    (focusedViewHolder as? ListItemVH)?.let {
-        it.binding.root.context?.showKeyboard(it.binding.EditText)
-    }
-}
-
-fun RecyclerView.hideKeyboardOnFocusedItem() {
-    (focusedViewHolder as? ListItemVH)?.let {
-        it.binding.root.context?.hideKeyboard(it.binding.EditText)
-    }
-}
 
 fun MaterialAutoCompleteTextView.select(value: CharSequence) {
     setText(value, false)
