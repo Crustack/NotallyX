@@ -104,11 +104,16 @@ internal fun ChecklistItemRow(
         }
 
         if (showDragHandle) {
-            Icon(
-                painter = painterResource(id = R.drawable.drag_handle),
-                contentDescription = stringResource(R.string.drag_handle),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Box(
+                modifier = Modifier.padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.drag_handle),
+                    contentDescription = stringResource(R.string.drag_handle),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
 
         Checkbox(
