@@ -1,6 +1,7 @@
 package com.philkes.notallyx.feature.editor
 
 import android.os.Bundle
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -124,7 +125,7 @@ class EditListActivity : EditActivity(Type.LIST) {
                 type = notallyModel.type,
                 isPinnedToStatus = notallyModel.isPinnedToStatus,
             )
-
+        Log.d("TEST", "noteState: ${noteState.items.joinToString(", ") { it.body }}")
         val preferencesState =
             EditNotePreferences(
                 notesSortBy = preferences.notesSorting.value.sortedBy,

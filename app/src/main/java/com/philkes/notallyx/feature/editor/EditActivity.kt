@@ -10,10 +10,13 @@ import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
@@ -158,8 +161,13 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
             ComposeView(this).apply {
                 setContent {
                     NotallyXTheme(theme = preferences.theme.value) {
-                        RenderScreen()
-                        EditActivityDialogs()
+                        when (notallyModel.uiState) {
+                            UiState.Loading -> Box(modifier = Modifier.fillMaxSize()) {}
+                            UiState.Success -> {
+                                RenderScreen()
+                                EditActivityDialogs()
+                            }
+                        }
                     }
                 }
             }
@@ -168,11 +176,13 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
 
         initialiseBinding()
         initChangeHistory()
+        notallyModel.changeUiState(UiState.Loading)
         lifecycleScope.launch {
             val persistedId = savedInstanceState?.getLong("id")
             val selectedId = intent.getLongExtra(EXTRA_SELECTED_BASE_NOTE, 0L)
             val id = persistedId ?: selectedId
             loadNote(id, persistedId, savedInstanceState, true)
+            notallyModel.changeUiState(UiState.Success)
         }
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             try {
