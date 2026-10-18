@@ -103,6 +103,8 @@ class EditListActivity : EditActivity(Type.LIST) {
                 }
             }
 
+        val focusFirstItem = remember { notallyModel.isNewNote }
+
         val noteState =
             EditNoteState(
                 title = titleState.value,
@@ -251,6 +253,7 @@ class EditListActivity : EditActivity(Type.LIST) {
                         actionHandler.playAudio(audio)
                     }
                 },
+            focusFirstItem = focusFirstItem,
         )
     }
 

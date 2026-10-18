@@ -35,10 +35,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
@@ -70,6 +76,7 @@ import com.philkes.notallyx.feature.editor.formatting.TextFormattingState
 import com.philkes.notallyx.feature.media.audio.AudioItemRow
 import java.io.File
 import java.util.Date
+import kotlinx.coroutines.android.awaitFrame
 
 data class EditNoteState(
     val title: String = "",
@@ -669,8 +676,20 @@ internal fun EditListScreen(
     canRedo: Boolean = false,
     changeHandlers: EditChangeHandlers = object : EditChangeHandlers {},
     clickHandlers: EditClickHandlers = object : EditClickHandlers {},
+    focusFirstItem: Boolean = false,
 ) {
 
+    val focusRequester = remember { FocusRequester() }
+
+    var hasFocusedOnce by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(focusFirstItem) {
+        if (focusFirstItem && !hasFocusedOnce) {
+            hasFocusedOnce = true
+            awaitFrame() // Ensures layout pass is ready before requesting focus
+            focusRequester.requestFocus()
+        }
+    }
     EditScreen(
         noteState = noteState.copy(type = Type.LIST),
         modifier = modifier,
@@ -700,6 +719,7 @@ internal fun EditListScreen(
                     onDelete = { changeHandlers.onItemDelete(item) },
                     onSwipeRight = { changeHandlers.onItemSwipeRight(item) },
                     onSwipeLeft = { changeHandlers.onItemSwipeLeft(item) },
+                    focusRequester = if (index == 0) focusRequester else null,
                 )
             }
 
