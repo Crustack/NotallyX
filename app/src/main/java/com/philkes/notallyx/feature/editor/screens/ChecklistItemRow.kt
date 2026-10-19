@@ -1,5 +1,6 @@
 package com.philkes.notallyx.feature.editor.screens
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -22,12 +23,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -42,7 +48,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
@@ -75,6 +80,13 @@ fun createSwipeModifier(onSwipeRight: (() -> Unit), onSwipeLeft: (() -> Unit)): 
     }
 }
 
+enum class DragState {
+    NONE,
+    PARENT,
+    CHILD,
+    LAST_CHILD,
+}
+
 /** Composable replacing recycler_list_item.xml layout. */
 @Composable
 internal fun ChecklistItemRow(
@@ -90,16 +102,38 @@ internal fun ChecklistItemRow(
     onEnterKey: (() -> Unit)? = null,
     onBackspaceOnEmpty: (() -> Unit)? = null,
     onDelete: () -> Unit = {},
-    elevation: Dp = 0.dp,
+    onSwipeRight: (() -> Unit)? = null,
+    onSwipeLeft: (() -> Unit)? = null,
+    dragState: DragState = DragState.NONE,
 ) {
+    val swipeModifier =
+        if (onSwipeRight != null && onSwipeLeft != null) {
+            createSwipeModifier(onSwipeRight, onSwipeLeft)
+        } else Modifier
+
+    val shadowElevation by
+        animateDpAsState(
+            targetValue = if (dragState != DragState.NONE) 4.dp else 0.dp,
+            label = "shadowElevation",
+        )
+
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val borderModifier =
+        if (dragState != DragState.NONE) {
+            Modifier.drawWithContent {
+                drawContent()
+                drawDragHighlights(dragState, primaryColor)
+            }
+        } else Modifier
+
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().then(borderModifier),
         shape = RoundedCornerShape(0.dp),
-        shadowElevation = elevation, // Controls the depth of the shadow
+        shadowElevation = shadowElevation, // Controls the depth of the shadow
         color = MaterialTheme.colorScheme.surface, // Background color of the row
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+            modifier = Modifier.fillMaxWidth().then(swipeModifier).padding(vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (isChild) {
@@ -109,12 +143,7 @@ internal fun ChecklistItemRow(
             if (showDragHandle) {
                 Box(
                     modifier =
-                        Modifier.padding(
-                            start = 12.dp,
-                            end = 4.dp,
-                            top = 8.dp,
-                            bottom = 8.dp,
-                        ),
+                        Modifier.padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
@@ -204,6 +233,54 @@ internal fun ChecklistItemRow(
                 }
             }
         }
+    }
+}
+
+private fun ContentDrawScope.drawDragHighlights(
+    isDragging: DragState,
+    primaryColor: Color,
+) {
+    val strokeWidth = 1.5.dp.toPx()
+    val halfStroke = strokeWidth / 2f
+    val width = size.width
+    val height = size.height
+
+    val showTop = isDragging == DragState.PARENT
+    val showBottom = isDragging == DragState.LAST_CHILD
+    val showLeft = true
+    val showRight = true
+
+    if (showTop) {
+        drawLine(
+            color = primaryColor,
+            start = Offset(0f, halfStroke),
+            end = Offset(width, halfStroke),
+            strokeWidth = strokeWidth,
+        )
+    }
+    if (showBottom) {
+        drawLine(
+            color = primaryColor,
+            start = Offset(0f, height - halfStroke),
+            end = Offset(width, height - halfStroke),
+            strokeWidth = strokeWidth,
+        )
+    }
+    if (showLeft) {
+        drawLine(
+            color = primaryColor,
+            start = Offset(halfStroke, 0f),
+            end = Offset(halfStroke, height),
+            strokeWidth = strokeWidth,
+        )
+    }
+    if (showRight) {
+        drawLine(
+            color = primaryColor,
+            start = Offset(width - halfStroke, 0f),
+            end = Offset(width - halfStroke, height),
+            strokeWidth = strokeWidth,
+        )
     }
 }
 

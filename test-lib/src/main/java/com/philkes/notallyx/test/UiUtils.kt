@@ -17,6 +17,7 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.widget.EditText
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -34,6 +35,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextInputSelection
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.text.TextRange
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso
@@ -190,6 +192,63 @@ fun atPosition(position: Int, itemMatcher: Matcher<View>): Matcher<View> {
 }
 
 /**
+ * Drags the receiver [SemanticsNodeInteraction] to a position directly below [targetNode].
+ *
+ * @param targetNode The destination node reference.
+ * @param verticalOffset Extra spacing in pixels to place the drop point below the target's bottom edge (default: 20px).
+ * @param holdDurationMillis Time to hold before dragging (required for long-press drag detectors; default: 600ms).
+ * @param dragDurationMillis Duration over which the move motion occurs (default: 500ms).
+ */
+fun SemanticsNodeInteraction.dragAndDropTo(
+    targetNode: SemanticsNodeInteraction,
+    verticalOffset: Float = 20f,
+    holdDurationMillis: Long = 600L,
+    steps: Int = 30,
+    settleDelayMillis: Long = 200L
+): SemanticsNodeInteraction {
+    val sourceBounds = fetchSemanticsNode().boundsInRoot
+    val targetBounds = targetNode.fetchSemanticsNode().boundsInRoot
+
+    val sourceCenter = sourceBounds.center
+    val isMovingDown = targetBounds.center.y > sourceCenter.y
+
+    // Target below the bottom edge when moving down, or above the top edge when moving up
+    val targetY = if (isMovingDown) {
+        targetBounds.bottom + verticalOffset
+    } else {
+        targetBounds.top - verticalOffset
+    }
+
+    val destinationPoint = Offset(
+        x = targetBounds.center.x,
+        y = targetY
+    )
+
+    val totalDelta = destinationPoint - sourceCenter
+    val stepDelta = totalDelta / steps.toFloat()
+
+    performTouchInput {
+        down(center)
+        if (holdDurationMillis > 0) {
+            advanceEventTime(holdDurationMillis)
+        }
+
+        var currentOffset = center
+        repeat(steps) {
+            currentOffset += stepDelta
+            moveTo(currentOffset)
+            advanceEventTime(16) // ~60fps frame delta
+        }
+
+        if (settleDelayMillis > 0) {
+            advanceEventTime(settleDelayMillis)
+        }
+
+        up()
+    }
+
+    return this
+}/**
  * Finds the parent item views matching [sourceSelector] and [targetSelector], extracts their
  * sibling @+id/DragHandle views, and delegates to [dragAndDrop].
  *

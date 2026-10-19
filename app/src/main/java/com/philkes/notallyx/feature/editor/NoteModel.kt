@@ -43,6 +43,7 @@ import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.deepCopy
 import com.philkes.notallyx.data.model.extensions.attachmentsDifferFrom
+import com.philkes.notallyx.feature.editor.listitem.init
 import com.philkes.notallyx.feature.migration.backup.checkBackupOnSave
 import com.philkes.notallyx.feature.migration.backup.importAudio
 import com.philkes.notallyx.feature.migration.backup.importFile
@@ -320,7 +321,7 @@ open class NoteModel(
                 body = baseNote.body.applySpans(baseNote.spans)
 
                 items.clear()
-                items.addAll(baseNote.items)
+                items.addAll(baseNote.items.init())
 
                 images.value = baseNote.images
                 files.value = baseNote.files

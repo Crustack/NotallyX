@@ -1,7 +1,5 @@
 package com.philkes.notallyx.feature.editor.screens
 
-import android.util.Log
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -77,8 +75,7 @@ import com.philkes.notallyx.feature.editor.formatting.TextFormattingBarActions
 import com.philkes.notallyx.feature.editor.formatting.TextFormattingState
 import com.philkes.notallyx.feature.editor.listitem.dragContainer
 import com.philkes.notallyx.feature.editor.listitem.draggableModifier
-import com.philkes.notallyx.feature.editor.listitem.rememberDragDropState
-import com.philkes.notallyx.feature.editor.listitem.removeWithChildren
+import com.philkes.notallyx.feature.editor.listitem.rememberListItemDragDropState
 import com.philkes.notallyx.feature.media.audio.AudioItemRow
 import java.io.File
 import java.util.Date
@@ -127,6 +124,8 @@ internal interface EditChangeHandlers {
     fun onItemSwipeRight(item: ListItem) {}
 
     fun onItemSwipeLeft(item: ListItem) {}
+
+    fun onItemMove(fromIndex: Int, toIndex: Int, originalItem: ListItem? = null) {}
 }
 
 internal typealias EditNoteChangeHandlers = EditChangeHandlers
@@ -697,15 +696,10 @@ internal fun EditListScreen(
 
     // Drag and Drop
     val listState = rememberLazyListState()
-    Log.d("TEST", "listItems: ${noteState.items.joinToString(", ") { it.body }}")
-    var listItems by remember { mutableStateOf(noteState.items) }
     val dragDropState =
-        rememberDragDropState(listState) { fromIndex, toIndex ->
-            Log.d("TEST", "listItems: ${listItems.joinToString(", ") { it.body }}")
-            Log.d("TEST", "from: $fromIndex, to: $toIndex")
-            val updatedList = listItems.toMutableList()
-            val removed = updatedList.removeWithChildren(fromIndex)
-            updatedList.addAll(toIndex, removed)
+        rememberListItemDragDropState(listState, noteState.items) { fromIndex, toIndex, originalItem
+            ->
+            changeHandlers.onItemMove(fromIndex, toIndex, originalItem)
         }
 
     EditScreen(
@@ -731,11 +725,26 @@ internal fun EditListScreen(
                     val onSwipeRight = { changeHandlers.onItemSwipeRight(item) }
                     val onSwipeLeft = { changeHandlers.onItemSwipeLeft(item) }
                     val swipeModifier =
-                        if (onSwipeRight != null && onSwipeLeft != null) {
+                        if (
+                            dragDropState.draggingItemIndex == null &&
+                                onSwipeRight != null &&
+                                onSwipeLeft != null
+                        ) {
                             createSwipeModifier(onSwipeRight, onSwipeLeft)
                         } else Modifier
-                    val isDragging = index == dragDropState.draggingItemIndex
-                    val elevation by animateDpAsState(if (isDragging) 4.dp else 1.dp)
+                    val draggingIndex = dragDropState.draggingItemIndex
+                    val isItemInDragGroup = dragDropState.isItemOrChildDragging(index)
+                    val isNextInGroup =
+                        index + 1 < noteState.items.size &&
+                            dragDropState.isItemOrChildDragging(index + 1)
+                    val dragState =
+                        when {
+                            !isItemInDragGroup -> DragState.NONE
+                            index == draggingIndex -> DragState.PARENT
+                            isItemInDragGroup && !isNextInGroup -> DragState.LAST_CHILD
+                            else -> DragState.CHILD
+                        }
+
                     ChecklistItemRow(
                         modifier =
                             Modifier.then(swipeModifier)
@@ -762,7 +771,7 @@ internal fun EditListScreen(
                         },
                         onDelete = { changeHandlers.onItemDelete(item) },
                         focusRequester = if (item.id == itemToFocusId) focusRequester else null,
-                        elevation = elevation,
+                        dragState = dragState,
                     )
                 }
             }
