@@ -1,5 +1,6 @@
 package com.philkes.notallyx.feature.editor.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -440,41 +442,53 @@ private fun EditScreenImageSection(
                         contentDescription = imageAttachment.originalName,
                         contentScale = ContentScale.Crop,
                         modifier =
-                            Modifier.fillMaxWidth().height(200.dp).clickable {
+                            Modifier.fillMaxWidth().height(400.dp).clickable {
                                 onImageClick(imageAttachment)
                             },
                     )
                 } else {
                     ImagePreviewCard(
                         onClick = { onImageClick(imageAttachment) },
-                        modifier = Modifier.fillMaxWidth().height(200.dp),
+                        modifier = Modifier.fillMaxWidth().height(250.dp),
                     )
                 }
             } else {
                 ImagePreviewCard(
                     onClick = { onImageClick(imageAttachment) },
-                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    modifier = Modifier.fillMaxWidth().height(250.dp),
                 )
             }
         }
 
         if (images.size > 1) {
             Surface(
-                shape = RoundedCornerShape(4.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 modifier =
-                    Modifier.align(Alignment.TopEnd).padding(8.dp).clickable {
+                    Modifier.align(Alignment.TopEnd).padding(12.dp).clickable {
                         val currentImage =
                             images.getOrNull(pagerState.currentPage) ?: images.first()
                         onImageClick(currentImage)
                     },
             ) {
-                Text(
-                    text = images.size.toString(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.add_images),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "${pagerState.currentPage + 1}/${images.size}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             }
         }
     }
@@ -1163,7 +1177,12 @@ private fun EditNoteScreenPreview() {
                                 localName = "sample_image.png",
                                 originalName = "Sample Image.png",
                                 mimeType = "image/png",
-                            )
+                            ),
+                            FileAttachment(
+                                localName = "sample_image2.png",
+                                originalName = "Sample Image2.png",
+                                mimeType = "image/png",
+                            ),
                         ),
                     files =
                         listOf(

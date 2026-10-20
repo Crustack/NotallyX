@@ -61,7 +61,11 @@ import com.philkes.notallyx.feature.editor.listitem.init
 import com.philkes.notallyx.feature.editor.screens.FileAttachmentPreviewChip
 import java.io.File
 import java.util.Date
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 data class NoteCardDisplayConfig(
     val dateFormat: DateFormat = DateFormat.DD_MM_YY_GER,
@@ -356,6 +360,8 @@ private fun parseNoteColor(colorHex: String): Color {
 }
 
 object SampleNotes {
+    private val date = Instant.parse("2026-01-02T12:00:00Z")
+
     val LOREM_IPSUM_NOTE =
         BaseNote(
             id = 0L,
@@ -364,8 +370,8 @@ object SampleNotes {
             color = BaseNote.COLOR_DEFAULT,
             title = "Lorem Ipsum Note",
             pinned = false,
-            timestamp = 1767355200000L,
-            modifiedTimestamp = 1767355200000L,
+            timestamp = date.toEpochMilliseconds(),
+            modifiedTimestamp = date.plus(10.minutes).toEpochMilliseconds(),
             labels = emptyList(),
             body =
                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
@@ -387,8 +393,8 @@ object SampleNotes {
             color = com.philkes.notallyx.data.model.Color.CLAY.toColorString(),
             title = "Shopping List",
             pinned = false,
-            timestamp = 1767355200000L,
-            modifiedTimestamp = 1767355200000L,
+            timestamp = date.plus(1.days).toEpochMilliseconds(),
+            modifiedTimestamp = date.plus(1.days).plus(1.minutes).toEpochMilliseconds(),
             labels = emptyList(),
             body = "",
             spans = emptyList(),
@@ -439,8 +445,8 @@ object SampleNotes {
             color = BaseNote.COLOR_DEFAULT,
             title = "Note with Everything",
             pinned = false,
-            timestamp = 1767355200000L,
-            modifiedTimestamp = 1767355200000L,
+            timestamp = date.plus(2.days).toEpochMilliseconds(),
+            modifiedTimestamp = date.plus(2.days).plus(1.minutes).toEpochMilliseconds(),
             labels = listOf("Work", "Personal", "Important", "Ideas", "Project"),
             body =
                 "This note contains multiple attachments, labels, and a reminder to demonstrate full UI card features.",
@@ -471,8 +477,8 @@ object SampleNotes {
             color = "#F8BBD0",
             title = "List 1",
             pinned = false,
-            timestamp = 1767351600000L,
-            modifiedTimestamp = 1767351600000L,
+            timestamp = date.plus(3.days).toEpochMilliseconds(),
+            modifiedTimestamp = date.plus(3.days).plus(1.minutes).toEpochMilliseconds(),
             labels = emptyList(),
             body = "",
             spans = emptyList(),
@@ -494,7 +500,8 @@ object SampleNotes {
                     ),
                     ListItem(
                         "Item2",
-                        checked = false,
+                        checked = true,
+                        checkedTimestamp = date.plus(3.days).plus(30.seconds).toEpochMilliseconds(),
                         isChild = false,
                         order = 2,
                         children = mutableListOf(),

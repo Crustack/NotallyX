@@ -20,12 +20,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
+import com.philkes.notallyx.core.ui.views.TestTags
 
 /** Composable replacing preference_seekbar.xml layout. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,6 +78,7 @@ internal fun SeekBarPreferenceRow(
                     SliderDefaults.Thumb(
                         interactionSource = interactionSource,
                         enabled = enabled,
+                        modifier = Modifier.testTag("${TestTags.THUMB}_$title"),
                     )
                     if (isInteracting) {
                         Surface(

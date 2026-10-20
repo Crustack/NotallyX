@@ -42,6 +42,7 @@ internal fun DateTimeFormatDialog(
 
     var dateExpanded by remember { mutableStateOf(false) }
     var timeExpanded by remember { mutableStateOf(false) }
+    println("DEBUG_DIALOG: DateTimeFormatDialog composing!")
 
     AlertDialog(
         modifier = modifier,

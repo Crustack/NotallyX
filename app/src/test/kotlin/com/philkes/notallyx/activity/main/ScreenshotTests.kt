@@ -6,32 +6,27 @@ import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
 import android.os.SystemClock
-import android.view.MotionEvent
-import android.view.View
-import androidx.annotation.IdRes
-import androidx.compose.foundation.ScrollState
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import androidx.core.widget.NestedScrollView
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.compose.ui.test.performTouchInput
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
-import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasType
-import androidx.test.espresso.matcher.RootMatchers.isDialog
-import androidx.test.espresso.matcher.ViewMatchers.isRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.dropbox.differ.SimpleImageComparator
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
@@ -39,21 +34,14 @@ import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.RoborazziRule
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.error.*
-import com.philkes.notallyx.core.common.extensions.*
-import com.philkes.notallyx.core.common.result.*
-import com.philkes.notallyx.core.database.*
-import com.philkes.notallyx.core.preference.*
-import com.philkes.notallyx.core.security.*
-import com.philkes.notallyx.core.ui.components.*
-import com.philkes.notallyx.core.ui.dialog.*
-import com.philkes.notallyx.core.ui.extensions.*
-import com.philkes.notallyx.core.ui.views.*
+import com.philkes.notallyx.core.common.extensions.getCurrentImagesDirectory
+import com.philkes.notallyx.core.common.extensions.putNavKey
+import com.philkes.notallyx.core.ui.components.SampleNotes
+import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.ShadowContextImplMedia
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.Reminder
-import com.philkes.notallyx.data.model.extensions.*
 import com.philkes.notallyx.feature.editor.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
 import com.philkes.notallyx.feature.editor.EditNoteActivity
 import com.philkes.notallyx.feature.main.MainActivity
@@ -158,7 +146,8 @@ class ScreenshotTests {
             }
             ShadowLooper.idleMainLooper()
 
-            onView(isRoot())
+            composeTestRule
+                .onRoot()
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/editNote/00_initial.png"
                 )
@@ -170,7 +159,8 @@ class ScreenshotTests {
                 .performTextInput("Test Body")
             ShadowLooper.idleMainLooper()
 
-            onView(isRoot())
+            composeTestRule
+                .onRoot()
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/editNote/01_title_and_body.png"
                 )
@@ -193,7 +183,8 @@ class ScreenshotTests {
                 .performClick()
             ShadowLooper.idleMainLooper()
 
-            onView(isRoot())
+            composeTestRule
+                .onRoot()
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/editNote/02_text_formatting.png"
                 )
@@ -209,8 +200,8 @@ class ScreenshotTests {
                 .performClick()
             ShadowLooper.idleMainLooper()
 
-            onView(isRoot())
-                .inRoot(isDialog())
+            composeTestRule
+                .onNode(isDialog())
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/editNote/03_more_options.png"
                 )
@@ -224,8 +215,8 @@ class ScreenshotTests {
                 .performClick()
             ShadowLooper.idleMainLooper()
 
-            onView(isRoot())
-                .inRoot(isDialog())
+            composeTestRule
+                .onNode(isDialog())
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/editNote/04_add_menu.png"
                 )
@@ -296,90 +287,150 @@ class ScreenshotTests {
 
                 ShadowLooper.idleMainLooper()
 
-                onView(isRoot())
+                composeTestRule
+                    .onRoot()
                     .captureRoboImage(
                         "${ScreenshotTests::class.java.simpleName}/editNote/05_added_image.png"
                     )
+
+                composeTestRule
+                    .onNodeWithContentDescription(context.getString(R.string.back))
+                    .performClick()
+
+                ShadowLooper.idleMainLooper()
             } finally {
                 Intents.release()
             }
         }
+
+        ActivityScenario.launch(MainActivity::class.java).use {
+            ShadowLooper.idleMainLooper()
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Test Title", substring = true))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            ShadowLooper.idleMainLooper()
+
+            composeTestRule
+                .onNode(hasText("Test Title", substring = true))
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/editNote/06_updated_card.png"
+                )
+        }
     }
 
     @Test
-    fun settings() = runTest {
+    fun settings() {
         val intent = Intent(context, MainActivity::class.java).putNavKey(NotallyNavKey.Settings)
-        ActivityScenario.launch<MainActivity>(intent).use { scenario ->
-            onView(isRoot())
+        ActivityScenario.launch<MainActivity>(intent).use {
+            ShadowLooper.idleMainLooper()
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(
+                        hasText(context.getString(R.string.date_format_note_view), substring = true)
+                    )
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+
+            composeTestRule
+                .onRoot()
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/settings/00_initial.png"
                 )
-            val scrollCount =
-                scenario.scrollAndScreenshotScrollView(
-                    R.id.NestedScrollView,
-                    {
-                        "${ScreenshotTests::class.java.simpleName}/settings/${"%02d".format(it)}_settings_scroll.png"
-                    },
-                )
+
+            var imageCount = 1
 
             // 1. Click Date Time Format Note View setting and capture dialog screenshot
             composeTestRule
                 .onNodeWithText(context.getString(R.string.date_format_note_view), substring = true)
-                .performScrollTo()
                 .performClick()
+            composeTestRule.mainClock.advanceTimeByFrame()
             ShadowLooper.idleMainLooper()
-            onView(isRoot())
-                .inRoot(isDialog())
+            composeTestRule
+                .onNode(isDialog())
                 .captureRoboImage(
-                    "${ScreenshotTests::class.java.simpleName}/settings/${"%02d".format(scrollCount)}_dialog_date_time_format.png"
+                    "${ScreenshotTests::class.java.simpleName}/settings/${"%02d".format(imageCount++)}_dialog_date_time_format.png"
                 )
-            Espresso.pressBack()
-            ShadowLooper.idleMainLooper()
+
+            composeTestRule.onNodeWithText(context.getString(R.string.save)).performClick()
 
             // 2. Scroll to top and touch down on Text Size slider to capture screenshot while
             // dragging
-            scenario.onActivity { activity ->
-                val composeView = activity.findViewById<View>(android.R.id.content)
-                if (composeView != null) {
-                    val x = composeView.width / 2f
-                    val y = 380f // Position of TextSize slider in top section
-                    val downTime = SystemClock.uptimeMillis()
-                    val event =
-                        MotionEvent.obtain(
-                            downTime,
-                            downTime,
-                            MotionEvent.ACTION_DOWN,
-                            x,
-                            y,
-                            0,
-                        )
-                    composeView.dispatchTouchEvent(event)
-                }
-            }
-            ShadowLooper.idleMainLooper()
-            onView(isRoot())
-                .captureRoboImage(
-                    "${ScreenshotTests::class.java.simpleName}/settings/${"%02d".format(scrollCount + 1)}_slider_dragging.png"
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.text_size_note_editor))
+                .performScrollTo()
+            val textSizeSliderThumb =
+                composeTestRule.onNode(
+                    matcher =
+                        hasTestTag(
+                            "${TestTags.THUMB}_${context.getString(R.string.text_size_note_editor)}"
+                        ),
+                    useUnmergedTree = true,
                 )
-            scenario.onActivity { activity ->
-                val composeView = activity.findViewById<View>(android.R.id.content)
-                if (composeView != null) {
-                    val x = composeView.width / 2f
-                    val y = 380f
-                    val downTime = SystemClock.uptimeMillis()
-                    val event =
-                        MotionEvent.obtain(
-                            downTime,
-                            downTime + 100,
-                            MotionEvent.ACTION_UP,
-                            x,
-                            y,
-                            0,
-                        )
-                    composeView.dispatchTouchEvent(event)
-                }
+            textSizeSliderThumb.performTouchInput {
+                down(center)
+                moveBy(Offset(200f, 0f))
             }
-            ShadowLooper.idleMainLooper()
+            composeTestRule
+                .onRoot()
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/settings/${"%02d".format(imageCount++)}_slider_dragging.png"
+                )
+            textSizeSliderThumb.performTouchInput { up() }
+            composeTestRule.waitForIdle()
+
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.start_view), substring = true)
+                .performScrollTo()
+            composeTestRule
+                .onRoot()
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/settings/${"%02d".format(imageCount++)}_start_view_scroll.png"
+                )
+
+            composeTestRule
+                .onNodeWithText(
+                    context.getString(R.string.labels_hidden_in_overview_title),
+                    substring = true,
+                )
+                .performScrollTo()
+            composeTestRule
+                .onRoot()
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/settings/${"%02d".format(imageCount++)}_hide_labels_scroll.png"
+                )
+
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.auto_backup_on_save), substring = true)
+                .performScrollTo()
+            composeTestRule
+                .onRoot()
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/settings/${"%02d".format(imageCount++)}_backup_on_save_scroll.png"
+                )
+
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.disallow_screenshots), substring = true)
+                .performScrollTo()
+            composeTestRule
+                .onRoot()
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/settings/${"%02d".format(imageCount++)}_disallow_screenshots_scroll.png"
+                )
+
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.send_feedback), substring = true)
+                .performScrollTo()
+            composeTestRule
+                .onRoot()
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/settings/${"%02d".format(imageCount++)}_send_feedback_scroll.png"
+                )
         }
     }
 
@@ -395,7 +446,8 @@ class ScreenshotTests {
                 .onNodeWithContentDescription(context.getString(R.string.app_name))
                 .performClick()
             ShadowLooper.idleMainLooper()
-            onView(isRoot())
+            composeTestRule
+                .onRoot()
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/navigationDrawer/00_initial.png"
                 )
@@ -414,7 +466,7 @@ class ScreenshotTests {
     //                putExtra(EXTRA_DESTINATION_TO_OPEN, NotallyNavKey.Labels.toString())
     //            }
     //        ActivityScenario.launch<MainActivity>(intent).use { scenario ->
-    //            onView(isRoot())
+    //            composeTestRule.onRoot()
     //
     // .captureRoboImage("${ScreenshotTests::class.java.simpleName}/labels/00_initial.png")
     //
@@ -442,7 +494,7 @@ class ScreenshotTests {
     //                    .onPositionView(1, withId(R.id.LabelText))
     //                    .check(matches(withText("Label Foo")))
     //            }
-    //            onView(isRoot())
+    //            composeTestRule.onRoot()
     //                .captureRoboImage(
     //                    "${ScreenshotTests::class.java.simpleName}/labels/02_edit_label_saved.png"
     //                )
@@ -454,7 +506,7 @@ class ScreenshotTests {
     //            R.id.MainListView.byId()
     //                .onPositionView(0, withId(R.id.VisibilityButton))
     //                .perform(click())
-    //            onView(isRoot())
+    //            composeTestRule.onRoot()
     //                .captureRoboImage(
     //
     // "${ScreenshotTests::class.java.simpleName}/labels/03_label_visibility_toggled.png"
@@ -478,7 +530,7 @@ class ScreenshotTests {
     //                    .onPositionView(2, withId(R.id.LabelText))
     //                    .check(matches(withText("Label2")))
     //            }
-    //            onView(isRoot())
+    //            composeTestRule.onRoot()
     //                .captureRoboImage(
     //                    "${ScreenshotTests::class.java.simpleName}/labels/05_deleted_label.png"
     //                )
@@ -502,7 +554,7 @@ class ScreenshotTests {
     //                    .onPositionView(0, withId(R.id.LabelText))
     //                    .check(matches(withText("Label New")))
     //            }
-    //            onView(isRoot())
+    //            composeTestRule.onRoot()
     //                .captureRoboImage(
     //                    "${ScreenshotTests::class.java.simpleName}/labels/07_label_added.png"
     //                )
@@ -549,7 +601,8 @@ class ScreenshotTests {
         val intent = Intent(context, MainActivity::class.java).putNavKey(NotallyNavKey.Reminders)
         ActivityScenario.launch<MainActivity>(intent).use {
             ShadowLooper.idleMainLooper()
-            onView(isRoot())
+            composeTestRule
+                .onRoot()
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/reminders/00_initial.png"
                 )
@@ -595,7 +648,8 @@ class ScreenshotTests {
             }
 
             // 1. Capture the entire list view
-            onView(isRoot())
+            composeTestRule
+                .onRoot()
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/notesOverview/00_notes_overview_list.png"
                 )
@@ -610,162 +664,5 @@ class ScreenshotTests {
                     )
             }
         }
-    }
-
-    /**
-     * Scrolls through a ScrollView or NestedScrollView in step increments equal to a fraction of
-     * its visible height and captures a Roborazzi screenshot at each step.
-     *
-     * @param scrollViewId The resource ID of the ScrollView/NestedScrollView.
-     * @param folderPath The directory/file prefix for saved screenshots (e.g.,
-     *   "settings/overview").
-     * @param stepRatio The percentage of visible height to scroll per step (default 0.8 = 80%).
-     * @return The number of screenshots taken.
-     */
-    fun ActivityScenario<*>.scrollAndScreenshotScrollView(
-        @IdRes scrollViewId: Int,
-        screenshotNameFunction: (Int) -> String,
-        stepRatio: Float = 0.8f,
-    ): Int {
-        var totalHeight = 0
-        var viewportHeight = 0
-        var composeScrollState: ScrollState? = null
-
-        // Measure view dimensions on the main thread
-        onActivity { activity ->
-            val scrollView =
-                activity.findViewById<View>(scrollViewId)
-                    ?: activity.findViewById<View>(android.R.id.content)
-
-            val state = composeScrollState
-            if (state != null) {
-                viewportHeight = scrollView?.height ?: 0
-                totalHeight = viewportHeight + state.maxValue
-            } else {
-                val child =
-                    when (scrollView) {
-                        is NestedScrollView -> scrollView.getChildAt(0)
-                        is android.widget.ScrollView -> scrollView.getChildAt(0)
-                        is android.view.ViewGroup ->
-                            if (scrollView.childCount > 0) scrollView.getChildAt(0) else null
-                        else -> null
-                    }
-
-                totalHeight = child?.height ?: 0
-                viewportHeight = scrollView?.height ?: 0
-            }
-        }
-
-        ShadowLooper.idleMainLooper()
-        val scrollState = composeScrollState
-        if (scrollState != null) {
-            val maxScrollY = scrollState.maxValue
-            if (maxScrollY <= 0 || maxScrollY == Int.MAX_VALUE) {
-                onView(isRoot()).captureRoboImage(screenshotNameFunction(0))
-                return 1
-            }
-
-            val stepPixels =
-                (if (viewportHeight > 0) (viewportHeight * stepRatio).toInt() else 800)
-                    .coerceAtLeast(1)
-            var currentY = 0
-            var stepIndex = 0
-
-            while (currentY < maxScrollY) {
-                val scrollY = currentY
-                onActivity { runBlocking { scrollState.scrollTo(scrollY) } }
-                ShadowLooper.idleMainLooper()
-
-                onView(isRoot()).captureRoboImage(screenshotNameFunction(stepIndex))
-
-                currentY += stepPixels
-                stepIndex++
-            }
-
-            if ((currentY - stepPixels) < maxScrollY) {
-                onActivity { runBlocking { scrollState.scrollTo(maxScrollY) } }
-                ShadowLooper.idleMainLooper()
-                onView(isRoot()).captureRoboImage(screenshotNameFunction(stepIndex))
-                stepIndex++
-            }
-
-            return stepIndex
-        }
-
-        // Handle empty or zero-height views
-        if (viewportHeight <= 0 || totalHeight <= viewportHeight) {
-            onView(isRoot()).captureRoboImage(screenshotNameFunction(0))
-            return 1
-        }
-
-        val stepPixels = (viewportHeight * stepRatio).toInt().coerceAtLeast(1)
-        val maxScrollY = totalHeight - viewportHeight
-
-        var currentY = 0
-        var stepIndex = 0
-
-        while (currentY < maxScrollY) {
-            val scrollY = currentY
-            onActivity { activity ->
-                activity.findViewById<View>(scrollViewId)?.scrollTo(0, scrollY)
-            }
-            ShadowLooper.idleMainLooper()
-
-            onView(isRoot()).captureRoboImage(screenshotNameFunction(stepIndex))
-
-            currentY += stepPixels
-            stepIndex++
-        }
-
-        // Capture the final bottom state if not reached exactly
-        if ((currentY - stepPixels) < maxScrollY) {
-            onActivity { activity ->
-                activity.findViewById<View>(scrollViewId)?.scrollTo(0, maxScrollY)
-            }
-            ShadowLooper.idleMainLooper()
-            onView(isRoot()).captureRoboImage(screenshotNameFunction(stepIndex))
-            stepIndex++
-        }
-        return stepIndex
-    }
-
-    private fun ActivityScenario<*>.scrollAndScreenshotRecyclerView(
-        @IdRes recyclerViewId: Int = R.id.MainListView,
-        screenshotNameFunction: (Int) -> String,
-        step: Int = 4,
-    ): Int {
-        var totalItems = 0
-        var screenshotCounter = 0
-
-        onActivity { activity ->
-            val recyclerView = activity.findViewById<RecyclerView>(recyclerViewId)
-            totalItems = recyclerView?.adapter?.itemCount ?: 0
-        }
-
-        if (totalItems == 0) {
-            ShadowLooper.idleMainLooper()
-            onView(isRoot()).captureRoboImage(screenshotNameFunction(0))
-            return 1
-        }
-
-        val positionsToCapture = (0 until totalItems step step).toMutableList()
-        val lastIndex = totalItems - 1
-        if (lastIndex > 0 && lastIndex % step != 0) {
-            positionsToCapture.add(lastIndex)
-        }
-
-        for (position in positionsToCapture) {
-            onActivity { activity ->
-                val recyclerView = activity.findViewById<RecyclerView>(recyclerViewId)
-                (recyclerView?.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(
-                    position,
-                    0,
-                )
-            }
-            ShadowLooper.idleMainLooper()
-            onView(isRoot()).captureRoboImage(screenshotNameFunction(screenshotCounter++))
-        }
-
-        return screenshotCounter
     }
 }

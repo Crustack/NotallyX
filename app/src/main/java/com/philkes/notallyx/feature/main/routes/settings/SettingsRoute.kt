@@ -842,6 +842,7 @@ fun SettingsRoute(
                     )
             },
             onDateFormatNoteViewClick = {
+                println("DEBUG_ROUTE: onDateFormatNoteViewClick invoked!")
                 activeDialogState =
                     SettingsDialogState.DateTimeFormat(
                         initialDate = settingsViewModel.preferences.dateFormatNoteView.value,
