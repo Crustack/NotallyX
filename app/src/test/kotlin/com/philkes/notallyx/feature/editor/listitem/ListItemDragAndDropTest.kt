@@ -449,4 +449,72 @@ class ListItemDragAndDropTest {
         assertEquals(DragState.NONE, state2)
         assertFalse(isLast2)
     }
+
+    @Test
+    fun `test dragging B with child C between D and E when getItems updates asynchronously like Compose rememberUpdatedState`() {
+        val itemA = createListItem(id = 0, body = "A", isChild = false)
+        val itemC = createListItem(id = 2, body = "C", isChild = true)
+        val itemB =
+            createListItem(id = 1, body = "B", isChild = false, children = mutableListOf(itemC))
+        val itemD = createListItem(id = 3, body = "D", isChild = false)
+        val itemE = createListItem(id = 4, body = "E", isChild = false)
+        val itemF = createListItem(id = 5, body = "F", isChild = false)
+
+        val backingItems = mutableListOf(itemA, itemB, itemC, itemD, itemE, itemF)
+        initChildren(backingItems)
+        var composedSnapshot: List<ListItem> = backingItems.toList()
+
+        val moves = mutableListOf<Triple<Int, Int, ListItem>>()
+        val dragDropState =
+            ListItemDragDropState(
+                state = lazyListState,
+                scope = testScope,
+                getItems = { composedSnapshot },
+                onMove = { from, to, orig ->
+                    moves.add(Triple(from, to, orig))
+                    backingItems.moveWithChildren(from, to, orig)
+                    // Simulate rememberUpdatedState: composedSnapshot is NOT updated synchronously
+                    // inside onMove, only on the next recomposition after onDrag finishes.
+                },
+            )
+
+        mockVisibleItems(composedSnapshot)
+
+        // 1. Start drag on B (index 1, y offset 150)
+        dragDropState.onDragStart(Offset(0f, 150f))
+        assertEquals(1, dragDropState.draggingItemIndex)
+
+        // 2. Drag B down over C (index 2, y = 250) -> own child, should not move
+        dragDropState.onDrag(Offset(0f, 100f))
+        assertEquals(0, moves.size)
+        assertEquals(1, dragDropState.draggingItemIndex)
+
+        // 3. Drag B down over D (index 3, y = 350) -> moves [B, C] below D (between D and E)
+        dragDropState.onDrag(Offset(0f, 100f))
+        assertEquals(1, moves.size)
+        assertEquals(1, moves[0].first)
+        assertEquals(3, moves[0].second)
+
+        // Simulate Compose recomposition after onDrag
+        composedSnapshot = backingItems.toList()
+        mockVisibleItems(composedSnapshot)
+
+        // List is now: A (0), D (1), B (2), C (3), E (4), F (5)
+        assertEquals(listOf("A", "D", "B", "C", "E", "F"), composedSnapshot.map { it.body })
+
+        // B must be the dragged item at index 2 (NOT index 3 / C!)
+        assertEquals(2, dragDropState.draggingItemIndex)
+        assertFalse(dragDropState.isItemOrChildDragging(1)) // D is NOT dragging
+        assertTrue(dragDropState.isItemOrChildDragging(2)) // B IS dragging
+        assertTrue(dragDropState.isItemOrChildDragging(3)) // C IS dragging as child of B
+        assertFalse(dragDropState.isItemOrChildDragging(4)) // E is NOT dragging
+
+        val (stateB, isLastB) = getDragStateAndIsLastChild(2, composedSnapshot, dragDropState)
+        assertEquals(DragState.PARENT, stateB)
+        assertFalse(isLastB)
+
+        val (stateC, isLastC) = getDragStateAndIsLastChild(3, composedSnapshot, dragDropState)
+        assertEquals(DragState.CHILD, stateC)
+        assertTrue(isLastC)
+    }
 }

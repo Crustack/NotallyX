@@ -19,6 +19,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeRight
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.intent.Intents
@@ -416,13 +417,18 @@ class EditActivityTest : UiTestBase() {
                 composeTestRule.onAllNodes(hasText("2")).fetchSemanticsNodes().isNotEmpty()
             }
 
-            // Click image to open ViewImageActivity
+            // Swipe left on image pager in EditScreen to select 2nd image
+            composeTestRule.onNodeWithContentDescription("Image Pager").performTouchInput {
+                swipeLeft()
+            }
+
+            // Click image to open ViewImageActivity - should open at 2nd image
             composeTestRule.onNodeWithText("2").performClick()
 
             composeTestRule.waitUntil(10_000) {
-                composeTestRule.onAllNodes(hasText("1 / 2")).fetchSemanticsNodes().isNotEmpty()
+                composeTestRule.onAllNodes(hasText("2 / 2")).fetchSemanticsNodes().isNotEmpty()
             }
-            composeTestRule.onNodeWithText("1 / 2").assertIsDisplayed()
+            composeTestRule.onNodeWithText("2 / 2").assertIsDisplayed()
 
             // Test save image button in ViewImageActivity
             composeTestRule
@@ -434,13 +440,13 @@ class EditActivityTest : UiTestBase() {
                 savedFile.exists() && (savedFile.length() > 0),
             )
 
-            // Scroll to 2nd image in ViewImageActivity and check 2 / 2
-            composeTestRule.onNode(hasScrollAction()).performTouchInput { swipeLeft() }
+            // Scroll to 1st image in ViewImageActivity and check 1 / 2
+            composeTestRule.onNode(hasScrollAction()).performTouchInput { swipeRight() }
 
             composeTestRule.waitUntil(10_000) {
-                composeTestRule.onAllNodes(hasText("2 / 2")).fetchSemanticsNodes().isNotEmpty()
+                composeTestRule.onAllNodes(hasText("1 / 2")).fetchSemanticsNodes().isNotEmpty()
             }
-            composeTestRule.onNodeWithText("2 / 2").assertIsDisplayed()
+            composeTestRule.onNodeWithText("1 / 2").assertIsDisplayed()
 
             Espresso.pressBack()
 
@@ -794,8 +800,13 @@ class EditActivityTest : UiTestBase() {
     @Test
     fun search() {
         val noteTitle = "Search Test Note"
+        val padding = "Line of filler text in the note.\n".repeat(25)
         val noteBody =
-            "The quick brown fox jumps over the lazy dog. Fox is fast. Another fox is near."
+            "The quick brown fox jumps over the lazy dog.\n" +
+                padding +
+                "Fox is fast in the middle.\n" +
+                padding +
+                "Another fox is near at the bottom."
         val note = createBaseNote(title = noteTitle, body = noteBody)
         runBlocking { database.getBaseNoteDao().insert(note) }
 
@@ -827,32 +838,42 @@ class EditActivityTest : UiTestBase() {
         // Enter search query into search bar
         composeTestRule.onNodeWithContentDescription(searchLabel).performTextInput("fox")
 
-        // Check occurrence indicator displays "1/3"
+        // Check occurrence indicator displays "1/3" and first match line is displayed
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("1/3")).fetchSemanticsNodes().isNotEmpty()
         }
         composeTestRule.onNodeWithText("1/3").assertIsDisplayed()
+        composeTestRule.onNodeWithText("The quick brown fox", substring = true).assertIsDisplayed()
 
-        // Jump to next occurrence -> "2/3"
+        // Jump to next occurrence -> "2/3" and verify scrolled to middle match
         composeTestRule.onNodeWithContentDescription(nextLabel).performClick()
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("2/3")).fetchSemanticsNodes().isNotEmpty()
         }
         composeTestRule.onNodeWithText("2/3").assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText("Fox is fast in the middle", substring = true)
+            .assertIsDisplayed()
 
-        // Jump to next occurrence -> "3/3"
+        // Jump to next occurrence -> "3/3" and verify scrolled to bottom match
         composeTestRule.onNodeWithContentDescription(nextLabel).performClick()
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("3/3")).fetchSemanticsNodes().isNotEmpty()
         }
         composeTestRule.onNodeWithText("3/3").assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText("Another fox is near at the bottom", substring = true)
+            .assertIsDisplayed()
 
-        // Jump to previous occurrence -> "2/3"
+        // Jump to previous occurrence -> "2/3" and verify scrolled back to middle match
         composeTestRule.onNodeWithContentDescription(prevLabel).performClick()
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("2/3")).fetchSemanticsNodes().isNotEmpty()
         }
         composeTestRule.onNodeWithText("2/3").assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText("Fox is fast in the middle", substring = true)
+            .assertIsDisplayed()
 
         // Close search mode
         composeTestRule.onNodeWithContentDescription(backLabel).performClick()

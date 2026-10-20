@@ -1,6 +1,7 @@
 package com.philkes.notallyx.feature.editor.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -22,8 +23,13 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -31,6 +37,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -48,12 +55,14 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
@@ -389,8 +398,25 @@ private fun EditScreenImageSection(
     onImageClick: (FileAttachment) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        images.forEach { imageAttachment ->
+    if (images.isEmpty()) return
+
+    val pagerState = rememberPagerState(pageCount = { images.size })
+
+    LaunchedEffect(images.size) {
+        if (images.isNotEmpty() && pagerState.currentPage >= images.size) {
+            pagerState.scrollToPage(images.size - 1)
+        }
+    }
+
+    Box(modifier = modifier.fillMaxWidth()) {
+        HorizontalPager(
+            state = pagerState,
+            modifier =
+                Modifier.fillMaxWidth().height(200.dp).semantics {
+                    contentDescription = "Image Pager"
+                },
+        ) { page ->
+            val imageAttachment = images.getOrNull(page) ?: return@HorizontalPager
             val imageFile =
                 remember(imageAttachment, mediaRoot) {
                     if (mediaRoot != null && imageAttachment.localName.isNotEmpty()) {
@@ -412,14 +438,43 @@ private fun EditScreenImageSection(
                     Image(
                         bitmap = bitmap.asImageBitmap(),
                         contentDescription = imageAttachment.originalName,
+                        contentScale = ContentScale.Crop,
                         modifier =
-                            Modifier.fillMaxWidth()
-                                .height(200.dp)
-                                .padding(horizontal = 16.dp, vertical = 4.dp)
-                                .clip(MaterialTheme.shapes.medium)
-                                .clickable { onImageClick(imageAttachment) },
+                            Modifier.fillMaxWidth().height(200.dp).clickable {
+                                onImageClick(imageAttachment)
+                            },
+                    )
+                } else {
+                    ImagePreviewCard(
+                        onClick = { onImageClick(imageAttachment) },
+                        modifier = Modifier.fillMaxWidth().height(200.dp),
                     )
                 }
+            } else {
+                ImagePreviewCard(
+                    onClick = { onImageClick(imageAttachment) },
+                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                )
+            }
+        }
+
+        if (images.size > 1) {
+            Surface(
+                shape = RoundedCornerShape(4.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                modifier =
+                    Modifier.align(Alignment.TopEnd).padding(8.dp).clickable {
+                        val currentImage =
+                            images.getOrNull(pagerState.currentPage) ?: images.first()
+                        onImageClick(currentImage)
+                    },
+            ) {
+                Text(
+                    text = images.size.toString(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                )
             }
         }
     }
@@ -456,6 +511,7 @@ internal fun EditScreen(
     modifier: Modifier = Modifier,
     preferences: EditNotePreferences = EditNotePreferences(),
     searchState: SearchState = SearchState(),
+    scrollState: ScrollState = rememberScrollState(),
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     canUndo: Boolean = false,
     canRedo: Boolean = false,
@@ -600,7 +656,17 @@ internal fun EditScreen(
             }
         },
     ) { innerPadding ->
-        Column(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(bottom = 16.dp)) {
+        val columnModifier =
+            if (noteState.type != Type.LIST) {
+                Modifier.fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(innerPadding)
+                    .padding(bottom = 16.dp)
+            } else {
+                Modifier.fillMaxSize().padding(innerPadding).padding(bottom = 16.dp)
+            }
+
+        Column(modifier = columnModifier) {
             // Image Preview
             if (noteState.images.isNotEmpty()) {
                 EditScreenImageSection(
@@ -754,11 +820,29 @@ internal fun EditNoteScreen(
         }
     },
 ) {
+    val scrollState = rememberScrollState()
+    var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+
+    LaunchedEffect(searchState.isActive, searchState.query, searchState.resultPos) {
+        if (
+            searchState.isActive && searchState.query.isNotEmpty() && searchState.resultsCount > 0
+        ) {
+            val occurrences = noteState.bodyText.findAllOccurrences(searchState.query)
+            val selectedRange = occurrences.getOrNull(searchState.resultPos)
+            if (selectedRange != null && textLayoutResult != null) {
+                val line = textLayoutResult!!.getLineForOffset(selectedRange.first)
+                val lineTop = textLayoutResult!!.getLineTop(line).toInt()
+                scrollState.animateScrollTo(lineTop)
+            }
+        }
+    }
+
     EditScreen(
         noteState = noteState,
         modifier = modifier,
         preferences = preferences,
         searchState = searchState,
+        scrollState = scrollState,
         backgroundColor = backgroundColor,
         canUndo = canUndo,
         canRedo = canRedo,
@@ -784,6 +868,7 @@ internal fun EditNoteScreen(
             BasicTextField(
                 value = noteState.bodyText,
                 onValueChange = { changeHandlers.onBodyTextChange(it) },
+                onTextLayout = { textLayoutResult = it },
                 visualTransformation = visualTransformation,
                 modifier =
                     Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp).semantics {
@@ -866,6 +951,27 @@ internal fun EditListScreen(
 
     // Drag and Drop
     val listState = rememberLazyListState()
+
+    LaunchedEffect(searchState.isActive, searchState.query, searchState.resultPos) {
+        if (
+            searchState.isActive && searchState.query.isNotEmpty() && searchState.resultsCount > 0
+        ) {
+            var remaining = searchState.resultPos
+            var matchedIndex = -1
+            for ((index, item) in noteState.items.withIndex()) {
+                val count = item.body.findAllOccurrences(searchState.query).size
+                if (remaining < count) {
+                    matchedIndex = index
+                    break
+                }
+                remaining -= count
+            }
+            if (matchedIndex != -1) {
+                listState.animateScrollToItem(matchedIndex)
+            }
+        }
+    }
+
     val dragDropState =
         rememberListItemDragDropState(listState, noteState.items) { fromIndex, toIndex, originalItem
             ->
@@ -916,6 +1022,18 @@ internal fun EditListScreen(
                             else -> DragState.CHILD
                         }
 
+                    val itemVisualTransformation =
+                        if (searchState.isActive && searchState.query.isNotEmpty()) {
+                            createSearchHighlightListItemTransformation(
+                                noteState,
+                                index,
+                                searchState,
+                                item,
+                            )
+                        } else {
+                            VisualTransformation.None
+                        }
+
                     ChecklistItemRow(
                         modifier =
                             Modifier.then(swipeModifier)
@@ -929,6 +1047,7 @@ internal fun EditListScreen(
                         },
                         isChecked = item.checked,
                         isChild = item.isChild,
+                        visualTransformation = itemVisualTransformation,
                         onCheckedChange = { checked ->
                             changeHandlers.onItemCheckedChange(item, checked)
                         },
@@ -998,6 +1117,31 @@ internal fun EditListScreen(
                 }
             }
         },
+    )
+}
+
+@Composable
+private fun createSearchHighlightListItemTransformation(
+    noteState: EditNoteState,
+    index: Int,
+    searchState: SearchState,
+    item: ListItem,
+): SearchHighlightVisualTransformation {
+    val priorCount =
+        noteState.items.take(index).sumOf { it.body.findAllOccurrences(searchState.query).size }
+    val countInThisItem = item.body.findAllOccurrences(searchState.query).size
+    val selectedInThisItem =
+        if (
+            searchState.resultPos >= priorCount &&
+                searchState.resultPos < priorCount + countInThisItem
+        ) {
+            searchState.resultPos - priorCount
+        } else {
+            -1
+        }
+    return SearchHighlightVisualTransformation(
+        query = searchState.query,
+        selectedIndex = selectedInThisItem,
     )
 }
 

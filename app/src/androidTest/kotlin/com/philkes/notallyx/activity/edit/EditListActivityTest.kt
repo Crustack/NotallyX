@@ -31,9 +31,13 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.test.UiTestBase
+import com.philkes.notallyx.test.createBaseNote
+import com.philkes.notallyx.test.createListItem
 import com.philkes.notallyx.test.dragAndDropTo
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
 import org.junit.FixMethodOrder
 import org.junit.Rule
@@ -535,6 +539,98 @@ class EditListActivityTest : UiTestBase() {
         assertIsParent("Parent E", "Parent B")
         assertIsParent("Parent B", "Parent B")
         assertIsChild("Child C", "Parent B")
+
+        scenario.close()
+    }
+
+    @Test
+    fun search() {
+        val noteTitle = "Search List Note"
+        val itemsList = mutableListOf(createListItem("The quick brown fox"))
+        for (i in 1..15) {
+            itemsList.add(createListItem("Filler item $i"))
+        }
+        itemsList.add(createListItem("Fox is fast in the middle"))
+        for (i in 16..30) {
+            itemsList.add(createListItem("Filler item $i"))
+        }
+        itemsList.add(createListItem("Another fox is near at the bottom"))
+
+        val note =
+            createBaseNote(
+                title = noteTitle,
+                type = Type.LIST,
+                items = itemsList,
+            )
+        runBlocking { database.getBaseNoteDao().insert(note) }
+
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        val searchLabel = context.getString(R.string.search)
+        val nextLabel = context.getString(R.string.next)
+        val prevLabel = context.getString(R.string.previous)
+        val backLabel = context.getString(R.string.back)
+
+        // Wait for MainActivity to display the list note
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        // Open existing list note
+        composeTestRule.onNodeWithText(noteTitle).performClick()
+
+        // Wait for EditListActivity to load
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(searchLabel))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        // Click search action in top bar
+        composeTestRule.onNodeWithContentDescription(searchLabel).performClick()
+
+        // Enter search query into search bar
+        composeTestRule.onNodeWithContentDescription(searchLabel).performTextInput("fox")
+
+        // Check occurrence indicator displays "1/3" and first item is displayed
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("1/3")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("1/3").assertIsDisplayed()
+        composeTestRule.onNodeWithText("The quick brown fox", substring = true).assertIsDisplayed()
+
+        // Jump to next occurrence -> "2/3" and verify scrolled to middle item
+        composeTestRule.onNodeWithContentDescription(nextLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("2/3")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("2/3").assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText("Fox is fast in the middle", substring = true)
+            .assertIsDisplayed()
+
+        // Jump to next occurrence -> "3/3" and verify scrolled to bottom item
+        composeTestRule.onNodeWithContentDescription(nextLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("3/3")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("3/3").assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText("Another fox is near at the bottom", substring = true)
+            .assertIsDisplayed()
+
+        // Jump to previous occurrence -> "2/3" and verify scrolled back to middle item
+        composeTestRule.onNodeWithContentDescription(prevLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("2/3")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("2/3").assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText("Fox is fast in the middle", substring = true)
+            .assertIsDisplayed()
+
+        // Close search mode
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
 
         scenario.close()
     }

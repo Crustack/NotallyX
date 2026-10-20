@@ -207,7 +207,7 @@ fun SemanticsNodeInteraction.dragAndDropTo(
     holdDurationMillis: Long = 600L,
     dragDurationMillis: Long = 500L,
     steps: Int = 30,
-    settleDelayMillis: Long = 200L
+    settleDelayMillis: Long = 200L,
 ): SemanticsNodeInteraction {
     val sourceBounds = fetchSemanticsNode().boundsInRoot
     val targetBounds = targetNode.fetchSemanticsNode().boundsInRoot
@@ -215,48 +215,55 @@ fun SemanticsNodeInteraction.dragAndDropTo(
     val sourceCenter = sourceBounds.center
 
     val isDraggingDown = targetBounds.center.y > sourceCenter.y
-    val targetY = if (isDraggingDown) {
-        targetBounds.bottom + verticalOffset
-    } else {
-        targetBounds.top - verticalOffset
-    }
+    val targetY =
+        if (isDraggingDown) {
+            targetBounds.bottom + verticalOffset
+        } else {
+            targetBounds.top - verticalOffset
+        }
 
-    val destinationPoint = Offset(
-        x = targetBounds.center.x,
-        y = targetY
-    )
+    val destinationPoint = Offset(x = sourceCenter.x, y = targetY)
 
     val totalDelta = destinationPoint - sourceCenter
     val stepDelta = totalDelta / steps.toFloat()
     val stepDurationMillis = if (steps > 0) dragDurationMillis / steps else 0L
 
-    performTouchInput {
-        down(center)
-        if (holdDurationMillis > 0) {
-            advanceEventTime(holdDurationMillis)
-            SystemClock.sleep(holdDurationMillis)
-        }
+    performTouchInput { down(center) }
+    fetchSemanticsNode()
 
-        var currentOffset = center
-        repeat(steps) {
-            currentOffset += stepDelta
-            moveTo(currentOffset)
-            if (stepDurationMillis > 0) {
-                advanceEventTime(stepDurationMillis)
-                SystemClock.sleep(stepDurationMillis)
+    if (holdDurationMillis > 0) {
+        val holdSteps = 6
+        val holdStepDuration = holdDurationMillis / holdSteps
+        repeat(holdSteps) {
+            performTouchInput { moveBy(Offset.Zero, delayMillis = holdStepDuration) }
+            fetchSemanticsNode()
+            if (holdStepDuration > 0) {
+                SystemClock.sleep(holdStepDuration)
             }
         }
-
-        if (settleDelayMillis > 0) {
-            advanceEventTime(settleDelayMillis)
-            SystemClock.sleep(settleDelayMillis)
-        }
-
-        up()
     }
 
+    repeat(steps) {
+        performTouchInput { moveBy(stepDelta, delayMillis = stepDurationMillis) }
+        fetchSemanticsNode()
+        if (stepDurationMillis > 0) {
+            SystemClock.sleep(stepDurationMillis)
+        }
+    }
+
+    if (settleDelayMillis > 0) {
+        performTouchInput { moveBy(Offset.Zero, delayMillis = settleDelayMillis) }
+        fetchSemanticsNode()
+        SystemClock.sleep(settleDelayMillis)
+    }
+
+    performTouchInput { up() }
+    fetchSemanticsNode()
+
     return this
-}/**
+}
+
+/**
  * Finds the parent item views matching [sourceSelector] and [targetSelector], extracts their
  * sibling @+id/DragHandle views, and delegates to [dragAndDrop].
  *
