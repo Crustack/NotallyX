@@ -103,9 +103,12 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                 bottomAction = bottomActionState.value,
             )
 
+        val searchState = this.searchState
+
         EditNoteScreen(
             noteState = noteState,
             preferences = preferencesState,
+            searchState = searchState,
             backgroundColor = Color(colorIntState.intValue),
             canUndo = canUndoState.value,
             canRedo = canRedoState.value,
@@ -120,6 +123,13 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                     override fun onBodyTextChange(bodyText: String) {
                         bodyTextState.value = bodyText
                         notallyModel.body.replace(0, notallyModel.body.length, bodyText)
+                        if (isSearchActiveState.value) {
+                            updateSearchResults(searchQueryState.value)
+                        }
+                    }
+
+                    override fun onSearchQueryChange(query: String) {
+                        this@EditNoteActivity.onSearchQueryChange(query)
                     }
                 },
             clickHandlers =
@@ -224,6 +234,18 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
 
                     override fun onAudioClick(audio: Audio) {
                         actionHandler.playAudio(audio)
+                    }
+
+                    override fun onNextSearchResult() {
+                        this@EditNoteActivity.onNextSearchResult()
+                    }
+
+                    override fun onPrevSearchResult() {
+                        this@EditNoteActivity.onPrevSearchResult()
+                    }
+
+                    override fun onCloseSearch() {
+                        this@EditNoteActivity.endSearch()
                     }
                 },
         )

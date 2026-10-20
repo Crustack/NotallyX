@@ -50,6 +50,7 @@ import com.philkes.notallyx.data.model.extensions.generateBaseNote
 import com.philkes.notallyx.feature.editor.bottomsheet.ActionSelectionBottomSheet
 import com.philkes.notallyx.feature.editor.bottomsheet.MoreNoteBottomSheet
 import com.philkes.notallyx.feature.editor.history.ChangeHistory
+import com.philkes.notallyx.feature.editor.screens.SearchState
 import com.philkes.notallyx.feature.main.MainActivity.Companion.EXTRA_DISPLAYED_LABEL
 import com.philkes.notallyx.feature.widget.NoteWidget
 import kotlinx.coroutines.Dispatchers
@@ -81,6 +82,20 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
     protected val isFormattingMenuVisible = mutableStateOf(false)
     protected val labelsState = mutableStateOf<List<String>>(emptyList())
     protected val colorIntState = mutableIntStateOf(0)
+
+    protected val isSearchActiveState = mutableStateOf(false)
+    protected val searchQueryState = mutableStateOf("")
+    protected val searchResultPosState = mutableIntStateOf(0)
+    protected val searchResultsCountState = mutableIntStateOf(0)
+
+    val searchState: SearchState
+        get() =
+            SearchState(
+                isActive = isSearchActiveState.value,
+                query = searchQueryState.value,
+                resultsCount = searchResultsCountState.intValue,
+                resultPos = searchResultPosState.intValue,
+            )
 
     fun updateLabels(labels: List<String>) {
         labelsState.value = labels
@@ -312,17 +327,30 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
     protected fun updateSearchResults(query: String) {
         val amountBefore = search.results.value
         searchJob?.cancel()
+        if (query.isEmpty()) {
+            searchResultsCountState.intValue = 0
+            searchResultPosState.intValue = 0
+            search.setResults(0)
+            search.setResultPos(0)
+            return
+        }
         searchJob = lifecycleScope.launch {
             val amount = highlightSearchResults(query)
+            searchResultsCountState.intValue = amount
             search.setResults(amount)
             if (amount > 0) {
-                search.setResultPos(
+                val newPos =
                     when {
                         amountBefore < 1 -> 0
                         search.resultPos.value >= amount -> amount - 1
                         else -> search.resultPos.value
                     }
-                )
+                searchResultPosState.intValue = newPos
+                search.setResultPos(newPos)
+                selectSearchResult(newPos)
+            } else {
+                searchResultPosState.intValue = 0
+                search.setResultPos(0)
             }
         }
     }
@@ -331,15 +359,52 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
 
     abstract fun selectSearchResult(resultPos: Int)
 
-    fun startSearch() {}
-
-    protected fun isInSearchMode(): Boolean = search.query.isNotEmpty()
-
-    protected fun updateJumpButtonsVisibility(manualSize: Int? = null) {}
-
-    protected fun endSearch() {
+    open fun startSearch() {
+        isSearchActiveState.value = true
+        searchQueryState.value = ""
+        searchResultsCountState.intValue = 0
+        searchResultPosState.intValue = 0
         search = Search()
     }
+
+    open fun endSearch() {
+        isSearchActiveState.value = false
+        searchQueryState.value = ""
+        searchResultsCountState.intValue = 0
+        searchResultPosState.intValue = 0
+        search = Search()
+    }
+
+    open fun onSearchQueryChange(query: String) {
+        searchQueryState.value = query
+        search.query = query
+        updateSearchResults(query)
+    }
+
+    open fun onNextSearchResult() {
+        val total = searchResultsCountState.intValue
+        if (total > 0) {
+            val nextPos = (searchResultPosState.intValue + 1) % total
+            searchResultPosState.intValue = nextPos
+            search.setResultPos(nextPos)
+            selectSearchResult(nextPos)
+        }
+    }
+
+    open fun onPrevSearchResult() {
+        val total = searchResultsCountState.intValue
+        if (total > 0) {
+            val current = searchResultPosState.intValue
+            val prevPos = if (current > 0) current - 1 else total - 1
+            searchResultPosState.intValue = prevPos
+            search.setResultPos(prevPos)
+            selectSearchResult(prevPos)
+        }
+    }
+
+    protected fun isInSearchMode(): Boolean = isSearchActiveState.value || search.query.isNotEmpty()
+
+    protected fun updateJumpButtonsVisibility(manualSize: Int? = null) {}
 
     protected open fun initBottomMenu() {}
 

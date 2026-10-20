@@ -135,6 +135,8 @@ class EditListActivity : EditActivity(Type.LIST) {
                 bottomAction = bottomActionState.value,
             )
 
+        val searchState = this.searchState
+
         fun applyListChange(action: () -> Unit) {
             val oldList = notallyModel.items.cloneList()
             action()
@@ -154,6 +156,7 @@ class EditListActivity : EditActivity(Type.LIST) {
         EditListScreen(
             noteState = noteState,
             preferences = preferencesState,
+            searchState = searchState,
             backgroundColor = Color(colorIntState.intValue),
             canUndo = canUndoState.value,
             canRedo = canRedoState.value,
@@ -162,6 +165,10 @@ class EditListActivity : EditActivity(Type.LIST) {
                     override fun onTitleChange(title: String) {
                         titleState.value = title
                         notallyModel.title = title
+                    }
+
+                    override fun onSearchQueryChange(query: String) {
+                        this@EditListActivity.onSearchQueryChange(query)
                     }
 
                     override fun onItemTextChange(item: ListItem, text: String) {
@@ -272,6 +279,18 @@ class EditListActivity : EditActivity(Type.LIST) {
 
                     override fun onAudioClick(audio: Audio) {
                         actionHandler.playAudio(audio)
+                    }
+
+                    override fun onNextSearchResult() {
+                        this@EditListActivity.onNextSearchResult()
+                    }
+
+                    override fun onPrevSearchResult() {
+                        this@EditListActivity.onPrevSearchResult()
+                    }
+
+                    override fun onCloseSearch() {
+                        this@EditListActivity.endSearch()
                     }
                 },
             focusFirstItem = focusFirstItem,
