@@ -153,6 +153,66 @@ class ListItemDragAndDropTest {
     }
 
     @Test
+    fun `test dragging parent item with children down 1 position when trailing items exist moves parent only 1 position down`() {
+        val childA1 = createListItem(id = 1, body = "Child A1", isChild = true)
+        val parentA =
+            createListItem(
+                id = 0,
+                body = "Parent A",
+                isChild = false,
+                children = mutableListOf(childA1),
+            )
+        val parentB = createListItem(id = 2, body = "Parent B", isChild = false)
+        val parentC = createListItem(id = 3, body = "Parent C", isChild = false)
+
+        val items = mutableListOf(parentA, childA1, parentB, parentC)
+        initChildren(items)
+
+        val moves = mutableListOf<Triple<Int, Int, ListItem>>()
+        val dragDropState =
+            ListItemDragDropState(
+                state = lazyListState,
+                scope = testScope,
+                getItems = { items },
+                onMove = { from, to, orig ->
+                    moves.add(Triple(from, to, orig))
+                    items.moveWithChildren(from, to, orig)
+                },
+            )
+
+        mockVisibleItems(items)
+
+        // 1. Start drag on Parent A (index 0)
+        dragDropState.onDragStart(Offset(0f, 50f))
+
+        // 2. Drag Parent A down over Parent B (index 2)
+        dragDropState.onDrag(Offset(0f, 200f))
+
+        assertEquals(1, moves.size)
+        assertEquals(0, moves[0].first)
+        assertEquals(2, moves[0].second)
+
+        // Verify Parent A and Child A1 moved ONLY 1 position down (Parent B is now before Parent A,
+        // Parent C is still after Child A1)
+        assertEquals(listOf("Parent B", "Parent A", "Child A1", "Parent C"), items.map { it.body })
+        assertEquals(1, dragDropState.draggingItemIndex)
+
+        // 3. Update visible items info after move to reflect new indices
+        mockVisibleItems(items)
+
+        // 4. Drag Parent A further down over Parent C (index 3, middleOffset 350)
+        dragDropState.onDrag(Offset(0f, 100f))
+
+        assertEquals(2, moves.size)
+        assertEquals(1, moves[1].first)
+        assertEquals(3, moves[1].second)
+
+        // Verify Parent A moved past Parent C as well
+        assertEquals(listOf("Parent B", "Parent C", "Parent A", "Child A1"), items.map { it.body })
+        assertEquals(2, dragDropState.draggingItemIndex)
+    }
+
+    @Test
     fun `test dragging child item over another item calls onMove`() {
         val childA1 = createListItem(id = 1, body = "Child A1", isChild = true)
         val parentA =

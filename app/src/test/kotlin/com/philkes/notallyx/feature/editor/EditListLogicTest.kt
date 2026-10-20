@@ -301,6 +301,27 @@ class EditListLogicTest {
     }
 
     @Test
+    fun `test moveWithChildren when moving parent with children down 1 position with trailing items`() {
+        val parentA = createListItem(body = "Parent A", checked = false, isChild = false, id = 0)
+        val childA1 = createListItem(body = "Child A1", checked = false, isChild = true, id = 1)
+        val childA2 = createListItem(body = "Child A2", checked = false, isChild = true, id = 2)
+        val parentB = createListItem(body = "Parent B", checked = false, isChild = false, id = 3)
+        val parentC = createListItem(body = "Parent C", checked = false, isChild = false, id = 4)
+        val items =
+            mutableListOf(parentA, childA1, childA2, parentB, parentC).init().toMutableList()
+
+        // Move Parent A (index 0, with 2 children) down over Parent B (index 3)
+        items.moveWithChildren(0, 3)
+
+        // Parent A + children should move only 1 position down (after Parent B, before Parent C)
+        assertEquals(
+            listOf("Parent B", "Parent A", "Child A1", "Child A2", "Parent C"),
+            items.map { it.body },
+        )
+        items.forEachIndexed { index, item -> assertEquals(index, item.order) }
+    }
+
+    @Test
     fun `test dragging parent item under child converts it to child and moving further to top-level restores it as parent using originalItem`() {
         val parentA = createListItem(body = "Parent A", checked = false, isChild = false, id = 0)
         val childA1 = createListItem(body = "Child A1", checked = false, isChild = true, id = 1)

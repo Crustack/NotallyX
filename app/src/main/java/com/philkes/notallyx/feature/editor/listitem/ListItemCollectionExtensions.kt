@@ -167,7 +167,13 @@ fun MutableList<ListItem>.moveWithChildren(
 
     removeAll(removed)
 
-    val targetIndex = toIndex.coerceIn(0, size)
+    val targetIndex =
+        if (fromIndex < toIndex) {
+            (toIndex - removed.size + 1).coerceIn(0, size)
+        } else {
+            toIndex.coerceIn(0, size)
+        }
+
     addAll(targetIndex, removed)
 
     val movedItem = removed.first()

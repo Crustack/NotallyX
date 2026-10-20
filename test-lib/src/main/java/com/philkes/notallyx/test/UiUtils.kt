@@ -192,17 +192,20 @@ fun atPosition(position: Int, itemMatcher: Matcher<View>): Matcher<View> {
 }
 
 /**
- * Drags the receiver [SemanticsNodeInteraction] to a position directly below [targetNode].
+ * Drags the receiver [SemanticsNodeInteraction] to a position relative to [targetNode].
  *
  * @param targetNode The destination node reference.
- * @param verticalOffset Extra spacing in pixels to place the drop point below the target's bottom edge (default: 20px).
+ * @param verticalOffset Extra spacing in pixels to place the drop point beyond the target's edge (default: 20px).
  * @param holdDurationMillis Time to hold before dragging (required for long-press drag detectors; default: 600ms).
- * @param dragDurationMillis Duration over which the move motion occurs (default: 500ms).
+ * @param dragDurationMillis Total duration over which the drag motion occurs (default: 500ms).
+ * @param steps Number of intermediate steps for the drag motion (default: 30).
+ * @param settleDelayMillis Time to hold at the destination before releasing (default: 200ms).
  */
 fun SemanticsNodeInteraction.dragAndDropTo(
     targetNode: SemanticsNodeInteraction,
     verticalOffset: Float = 20f,
     holdDurationMillis: Long = 600L,
+    dragDurationMillis: Long = 500L,
     steps: Int = 30,
     settleDelayMillis: Long = 200L
 ): SemanticsNodeInteraction {
@@ -210,10 +213,9 @@ fun SemanticsNodeInteraction.dragAndDropTo(
     val targetBounds = targetNode.fetchSemanticsNode().boundsInRoot
 
     val sourceCenter = sourceBounds.center
-    val isMovingDown = targetBounds.center.y > sourceCenter.y
 
-    // Target below the bottom edge when moving down, or above the top edge when moving up
-    val targetY = if (isMovingDown) {
+    val isDraggingDown = targetBounds.center.y > sourceCenter.y
+    val targetY = if (isDraggingDown) {
         targetBounds.bottom + verticalOffset
     } else {
         targetBounds.top - verticalOffset
@@ -226,22 +228,28 @@ fun SemanticsNodeInteraction.dragAndDropTo(
 
     val totalDelta = destinationPoint - sourceCenter
     val stepDelta = totalDelta / steps.toFloat()
+    val stepDurationMillis = if (steps > 0) dragDurationMillis / steps else 0L
 
     performTouchInput {
         down(center)
         if (holdDurationMillis > 0) {
             advanceEventTime(holdDurationMillis)
+            SystemClock.sleep(holdDurationMillis)
         }
 
         var currentOffset = center
         repeat(steps) {
             currentOffset += stepDelta
             moveTo(currentOffset)
-            advanceEventTime(16) // ~60fps frame delta
+            if (stepDurationMillis > 0) {
+                advanceEventTime(stepDurationMillis)
+                SystemClock.sleep(stepDurationMillis)
+            }
         }
 
         if (settleDelayMillis > 0) {
             advanceEventTime(settleDelayMillis)
+            SystemClock.sleep(settleDelayMillis)
         }
 
         up()
