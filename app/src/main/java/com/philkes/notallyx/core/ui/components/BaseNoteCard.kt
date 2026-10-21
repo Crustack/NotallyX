@@ -43,7 +43,6 @@ import com.philkes.notallyx.core.common.extensions.isPreview
 import com.philkes.notallyx.core.common.extensions.plus
 import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.NotesSortBy
-import com.philkes.notallyx.core.preference.Theme
 import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.core.preference.displayBodySize
 import com.philkes.notallyx.core.preference.displaySmallerSize
@@ -196,6 +195,8 @@ internal fun BaseNoteCard(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement =
+                            androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp),
                     ) {
                         FileAttachmentPreviewChip(fileName = baseNote.files[0].originalName)
                         if (baseNote.files.size > 1) {
@@ -249,6 +250,9 @@ internal fun BaseNoteCard(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.padding(vertical = 2.dp),
                                 ) {
+                                    if (item.isChild) {
+                                        Spacer(modifier = Modifier.width(13.dp))
+                                    }
                                     Icon(
                                         painter =
                                             painterResource(
@@ -390,7 +394,7 @@ object SampleNotes {
             pinned = false,
             timestamp = date.toEpochMilliseconds(),
             modifiedTimestamp = date.plus(10.minutes).toEpochMilliseconds(),
-            labels = emptyList(),
+            labels = listOf("Label1"),
             body =
                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
             spans = emptyList(),
@@ -435,7 +439,7 @@ object SampleNotes {
                     ListItem(
                         "Call mom",
                         checked = false,
-                        isChild = false,
+                        isChild = true,
                         order = 2,
                         children = mutableListOf(),
                     ),
@@ -497,7 +501,7 @@ object SampleNotes {
             pinned = false,
             timestamp = date.plus(3.days).toEpochMilliseconds(),
             modifiedTimestamp = date.plus(3.days).plus(1.minutes).toEpochMilliseconds(),
-            labels = emptyList(),
+            labels = listOf("Label1"),
             body = "",
             spans = emptyList(),
             items =
@@ -568,15 +572,8 @@ private fun GeneratedListNotePreview() {
 }
 
 @Preview(showBackground = true, name = "Lorem Ipsum Note")
+@Preview(name = "Dark Mode", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun LoremIpsumNoteSelectedPreview() {
     NotallyXTheme { BaseNoteCard(baseNote = SampleNotes.LOREM_IPSUM_NOTE, isSelected = true) }
-}
-
-@Preview(showBackground = true, name = "Lorem Ipsum Note")
-@Composable
-private fun LoremIpsumNoteSelectedDarkPreview() {
-    NotallyXTheme(theme = Theme.DARK) {
-        BaseNoteCard(baseNote = SampleNotes.LOREM_IPSUM_NOTE, isSelected = true)
-    }
 }

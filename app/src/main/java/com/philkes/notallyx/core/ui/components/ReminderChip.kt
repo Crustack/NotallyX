@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +32,8 @@ import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Reminder
+import com.philkes.notallyx.data.model.Repetition
+import com.philkes.notallyx.data.model.RepetitionTimeUnit
 import com.philkes.notallyx.data.model.extensions.findNextNotificationDate
 import com.philkes.notallyx.data.model.extensions.haveAnyRepetition
 import java.util.Date
@@ -60,49 +64,54 @@ internal fun ReminderChip(
 
     val remindersLabel = stringResource(id = R.string.reminders)
 
-    Surface(
-        onClick = onClick ?: {},
-        enabled = onClick != null,
-        shape = CircleShape,
-        color =
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isElapsed) 0.5f else 1.0f),
-        modifier = modifier.semantics { contentDescription = remindersLabel },
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+        Surface(
+            onClick = onClick ?: {},
+            enabled = onClick != null,
+            shape = CircleShape,
+            color =
+                MaterialTheme.colorScheme.surfaceVariant.copy(
+                    alpha = if (isElapsed) 0.5f else 1.0f
+                ),
+            modifier = modifier.semantics { contentDescription = remindersLabel },
         ) {
-            Icon(
-                painter = painterResource(id = R.drawable.notifications),
-                contentDescription = null,
-                tint =
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                        alpha = if (isElapsed) 0.5f else 1.0f
-                    ),
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = formattedDate,
-                fontSize = textSize.displaySmallerSize.sp,
-                style = MaterialTheme.typography.labelSmall,
-                textDecoration = if (isElapsed) TextDecoration.LineThrough else TextDecoration.None,
-                color =
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                        alpha = if (isElapsed) 0.5f else 1.0f
-                    ),
-            )
-            if (hasRepetition) {
-                Spacer(modifier = Modifier.width(6.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.repetition),
+                    painter = painterResource(id = R.drawable.notifications),
                     contentDescription = null,
                     tint =
                         MaterialTheme.colorScheme.onSurfaceVariant.copy(
                             alpha = if (isElapsed) 0.5f else 1.0f
                         ),
-                    modifier = Modifier.size(14.dp),
+                    modifier = Modifier.size(18.dp),
                 )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = formattedDate,
+                    fontSize = textSize.displaySmallerSize.sp,
+                    style = MaterialTheme.typography.labelSmall,
+                    textDecoration =
+                        if (isElapsed) TextDecoration.LineThrough else TextDecoration.None,
+                    color =
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                            alpha = if (isElapsed) 0.5f else 1.0f
+                        ),
+                )
+                if (hasRepetition) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(
+                        painter = painterResource(id = R.drawable.repetition),
+                        contentDescription = null,
+                        tint =
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                alpha = if (isElapsed) 0.5f else 1.0f
+                            ),
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
             }
         }
     }
@@ -129,7 +138,7 @@ internal fun ReminderChip(
 
 @Preview(showBackground = true)
 @Composable
-private fun ReminderChipListPreview() {
+private fun ReminderChipPreview() {
     NotallyXTheme {
         ReminderChip(
             reminders =
@@ -137,21 +146,9 @@ private fun ReminderChipListPreview() {
                     Reminder(
                         id = 1L,
                         dateTime = Date(System.currentTimeMillis() + 86400000L),
-                        repetition = null,
+                        repetition = Repetition(1, RepetitionTimeUnit.DAYS),
                     )
                 ),
-            dateFormat = DateFormat.DD_MM_YY_GER,
-            timeFormat = TimeFormat.TWENTY_FOUR_H,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ReminderChipBaseNotePreview() {
-    NotallyXTheme {
-        ReminderChip(
-            baseNote = SampleNotes.RICH_TEXT_NOTE,
             dateFormat = DateFormat.DD_MM_YY_GER,
             timeFormat = TimeFormat.TWENTY_FOUR_H,
         )
