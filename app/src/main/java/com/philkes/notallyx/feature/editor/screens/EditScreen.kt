@@ -1,6 +1,6 @@
 package com.philkes.notallyx.feature.editor.screens
 
-import androidx.compose.foundation.BorderStroke
+import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -29,7 +28,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,7 +37,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -72,10 +69,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.findAllOccurrences
+import com.philkes.notallyx.core.common.extensions.isPreview
 import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.preference.NotesSortBy
 import com.philkes.notallyx.core.preference.TimeFormat
+import com.philkes.notallyx.core.ui.components.ImageCountChip
 import com.philkes.notallyx.core.ui.components.LabelChip
 import com.philkes.notallyx.core.ui.components.ReminderChip
 import com.philkes.notallyx.core.ui.extensions.format
@@ -359,18 +358,6 @@ private fun ActionIconButton(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun ActionIconButtonPreview() {
-    NotallyXTheme {
-        ActionIconButton(
-            iconResId = R.drawable.search,
-            contentDescription = "Search",
-            onClick = {},
-        )
-    }
-}
-
 @Composable
 private fun FileAttachmentPreviewChip(
     fileName: String,
@@ -418,79 +405,72 @@ private fun EditScreenImageSection(
                     contentDescription = "Image Pager"
                 },
         ) { page ->
-            val imageAttachment = images.getOrNull(page) ?: return@HorizontalPager
-            val imageFile =
-                remember(imageAttachment, mediaRoot) {
-                    if (mediaRoot != null && imageAttachment.localName.isNotEmpty()) {
-                        File(mediaRoot, imageAttachment.localName)
-                    } else null
-                }
-
-            if (imageFile?.exists() == true) {
-                val bitmap =
-                    remember(imageFile) {
-                        try {
-                            android.graphics.BitmapFactory.decodeFile(imageFile.absolutePath)
-                        } catch (e: Exception) {
-                            null
-                        }
-                    }
-
-                if (bitmap != null) {
-                    Image(
-                        bitmap = bitmap.asImageBitmap(),
-                        contentDescription = imageAttachment.originalName,
-                        contentScale = ContentScale.Crop,
-                        modifier =
-                            Modifier.fillMaxWidth().height(400.dp).clickable {
-                                onImageClick(imageAttachment)
-                            },
-                    )
-                } else {
-                    ImagePreviewCard(
-                        onClick = { onImageClick(imageAttachment) },
-                        modifier = Modifier.fillMaxWidth().height(250.dp),
-                    )
-                }
-            } else {
-                ImagePreviewCard(
-                    onClick = { onImageClick(imageAttachment) },
-                    modifier = Modifier.fillMaxWidth().height(250.dp),
-                )
-            }
+            AttachedImages(images, page, mediaRoot, onImageClick)
         }
 
         if (images.size > 1) {
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier =
-                    Modifier.align(Alignment.TopEnd).padding(12.dp).clickable {
-                        val currentImage =
-                            images.getOrNull(pagerState.currentPage) ?: images.first()
-                        onImageClick(currentImage)
-                    },
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.add_images),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "${pagerState.currentPage + 1}/${images.size}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+            ImageCountChip(images, pagerState, onImageClick)
+        }
+    }
+}
+
+@Composable
+private fun AttachedImages(
+    images: List<FileAttachment>,
+    page: Int,
+    mediaRoot: File?,
+    onImageClick: (FileAttachment) -> Unit,
+) {
+    val imageAttachment = images.getOrNull(page) ?: return
+    val imageFile =
+        remember(imageAttachment, mediaRoot) {
+            if (mediaRoot != null && imageAttachment.localName.isNotEmpty()) {
+                File(mediaRoot, imageAttachment.localName)
+            } else null
+        }
+
+    if (isPreview()) {
+        Image(
+            painter = painterResource(id = R.drawable.cat),
+            contentDescription = imageAttachment.originalName,
+            contentScale = ContentScale.Crop,
+            modifier =
+                Modifier.fillMaxWidth().height(400.dp).clickable { onImageClick(imageAttachment) },
+        )
+        return
+    }
+
+    if (imageFile?.exists() == true) {
+        val bitmap =
+            remember(imageFile) {
+                try {
+                    BitmapFactory.decodeFile(imageFile.absolutePath)
+                } catch (e: Exception) {
+                    null
                 }
             }
+
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = imageAttachment.originalName,
+                contentScale = ContentScale.Crop,
+                modifier =
+                    Modifier.fillMaxWidth().height(400.dp).clickable {
+                        onImageClick(imageAttachment)
+                    },
+            )
+        } else {
+            ImagePreviewCard(
+                onClick = { onImageClick(imageAttachment) },
+                modifier = Modifier.fillMaxWidth().height(250.dp),
+            )
         }
+    } else {
+        ImagePreviewCard(
+            onClick = { onImageClick(imageAttachment) },
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+        )
     }
 }
 
@@ -1244,6 +1224,7 @@ private fun EditListScreenPreview() {
                     items =
                         listOf(
                             ListItem(
+                                id = 0,
                                 body = "Fresh Organic Apples",
                                 checked = false,
                                 isChild = false,
@@ -1251,6 +1232,7 @@ private fun EditListScreenPreview() {
                                 children = mutableListOf(),
                             ),
                             ListItem(
+                                id = 1,
                                 body = "Almond Milk (Unsweetened)",
                                 checked = false,
                                 isChild = false,
@@ -1258,6 +1240,7 @@ private fun EditListScreenPreview() {
                                 children = mutableListOf(),
                             ),
                             ListItem(
+                                id = 2,
                                 body = "Whole Grain Bread",
                                 checked = false,
                                 isChild = false,
@@ -1268,6 +1251,7 @@ private fun EditListScreenPreview() {
                     checkedItems =
                         listOf(
                             ListItem(
+                                id = 3,
                                 body = "Greek Yogurt",
                                 checked = true,
                                 isChild = false,
@@ -1275,6 +1259,7 @@ private fun EditListScreenPreview() {
                                 children = mutableListOf(),
                             ),
                             ListItem(
+                                id = 4,
                                 body = "Avocados",
                                 checked = true,
                                 isChild = false,
