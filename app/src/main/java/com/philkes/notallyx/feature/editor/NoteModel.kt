@@ -382,7 +382,9 @@ open class NoteModel(
                     }
                 )
             }
-            originalNote = note.deepCopy()
+            this@NoteModel.id = id
+            isNewNote = false
+            originalNote = note.copy(id = id).deepCopy()
             return@withContext id
         }
     }

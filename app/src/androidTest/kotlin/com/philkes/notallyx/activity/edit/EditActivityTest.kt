@@ -427,7 +427,7 @@ class EditActivityTest : UiTestBase() {
             composeTestRule.onNodeWithText(context.getString(R.string.add_images)).performClick()
 
             composeTestRule.waitUntil(10_000) {
-                composeTestRule.onAllNodes(hasText("2")).fetchSemanticsNodes().isNotEmpty()
+                composeTestRule.onAllNodes(hasText("1/2")).fetchSemanticsNodes().isNotEmpty()
             }
 
             // Swipe left on image pager in EditScreen to select 2nd image
@@ -436,7 +436,7 @@ class EditActivityTest : UiTestBase() {
             }
 
             // Click image to open ViewImageActivity - should open at 2nd image
-            composeTestRule.onNodeWithText("2").performClick()
+            composeTestRule.onNodeWithText("2/2").performClick()
 
             composeTestRule.waitUntil(10_000) {
                 composeTestRule.onAllNodes(hasText("2 / 2")).fetchSemanticsNodes().isNotEmpty()

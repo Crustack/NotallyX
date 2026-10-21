@@ -153,10 +153,16 @@ class NotesFragmentViewModel(app: Application, preferences: NotallyXPreferences)
         viewModelScope.launch(Dispatchers.IO) { dao.updateColor(oldColor, newColor) }
     }
 
-    fun updateBaseNoteLabels(labels: List<String>, id: Long) {
+    fun updateBaseNotesLabels(notesLabels: List<Pair<Long, List<String>>>) {
         val dao = baseNoteDao ?: return
         actionMode.close(true)
-        viewModelScope.launch(Dispatchers.IO) { dao.updateLabels(id, labels) }
+        viewModelScope.launch(Dispatchers.IO) {
+            notesLabels.forEach { (id, labels) -> dao.updateLabels(id, labels) }
+        }
+    }
+
+    fun updateBaseNoteLabels(labels: List<String>, id: Long) {
+        updateBaseNotesLabels(listOf(id to labels))
     }
 
     suspend fun deleteSelectedBaseNotes(): Collection<BaseNote> {
@@ -364,7 +370,7 @@ class NotesFragmentViewModel(app: Application, preferences: NotallyXPreferences)
         onNavigateToLabels: () -> Unit,
         onShowDialog: (Array<String>, Collection<BaseNote>) -> Unit,
     ) {
-        val baseNotes = actionMode.selectedNotes.values
+        val baseNotes = actionMode.selectedNotes.values.toList()
         viewModelScope.launch {
             val labels = getAllLabels()
             if (labels.isNotEmpty()) {

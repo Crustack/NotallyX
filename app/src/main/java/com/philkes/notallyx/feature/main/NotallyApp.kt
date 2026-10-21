@@ -173,7 +173,7 @@ fun NotallyApp(
                                                     labels[index]
                                                 } else null
                                             }
-                                        baseNotes.forEach { baseNote ->
+                                        val updatedNotes = baseNotes.map { baseNote ->
                                             val noteLabels = baseNote.labels.toMutableList()
                                             checkedLabels.forEach { checkedLabel ->
                                                 if (!noteLabels.contains(checkedLabel)) {
@@ -183,12 +183,9 @@ fun NotallyApp(
                                             uncheckedLabels.forEach { uncheckedLabel ->
                                                 noteLabels.remove(uncheckedLabel)
                                             }
-                                            notallyFragmentModel.updateBaseNoteLabels(
-                                                noteLabels,
-                                                baseNote.id,
-                                            )
+                                            baseNote.id to noteLabels
                                         }
-                                        notallyFragmentModel.actionMode.close(true)
+                                        notallyFragmentModel.updateBaseNotesLabels(updatedNotes)
                                     },
                                 )
                             },
