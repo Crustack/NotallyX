@@ -105,6 +105,11 @@ internal sealed interface ReminderDialogState {
         val formattedDateTime: String,
         val repetitionText: String,
     ) : ReminderDialogState
+
+    data class Rationale(
+        val message: String,
+        val onConfirm: () -> Unit,
+    ) : ReminderDialogState
 }
 
 /** Screen to show notes with their reminders */
@@ -392,6 +397,18 @@ private fun NoteRemindersDialogs(
                         valInt,
                         unitEnum,
                     )
+                },
+            )
+        }
+        is ReminderDialogState.Rationale -> {
+            ConfirmDialog(
+                message = dialogState.message,
+                positiveButtonText = stringResource(R.string.continue_),
+                negativeButtonText = stringResource(R.string.cancel),
+                onDismissRequest = onDismissDialog,
+                onConfirm = {
+                    onDismissDialog()
+                    dialogState.onConfirm()
                 },
             )
         }

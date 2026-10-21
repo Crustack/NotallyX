@@ -2,7 +2,6 @@ package com.philkes.notallyx.core.common.extensions
 
 // import com.philkes.notallyx.BuildConfig
 import android.app.Activity
-import android.app.Dialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -12,7 +11,6 @@ import android.content.ClipboardManager
 import android.content.ContentResolver
 import android.content.Context
 import android.content.ContextWrapper
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
@@ -24,9 +22,7 @@ import android.webkit.MimeTypeMap
 import androidx.annotation.ColorInt
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
@@ -35,12 +31,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import com.philkes.notallyx.BuildConfig
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.preference.NotallyXPreferences
-import com.philkes.notallyx.core.ui.dialog.ErrorDialog
-import com.philkes.notallyx.core.ui.extensions.createComposeDialog
 import com.philkes.notallyx.core.ui.extensions.getQuantityString
 import com.philkes.notallyx.core.ui.extensions.showToast
-import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.core.ui.views.LengthFilterWithToast
 import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
 import com.philkes.notallyx.data.model.BaseNote
@@ -190,45 +182,6 @@ private fun PrintWriter.printBuildInfos(timeString: String) {
     this.println("Android : " + Build.VERSION.SDK_INT)
 }
 
-@Deprecated(
-    "Use StateFlow/State flags and render ErrorDialog declaratively inside Composable screen"
-)
-fun Fragment.showErrorDialog(
-    throwable: Throwable,
-    titleResId: Int,
-    message: String,
-    originalStacktrace: String? = null,
-    neutralButtonTextResId: Int? = null,
-    neutralButtonClickListener: DialogInterface.OnClickListener? = null,
-) {
-    val composeView = ComposeView(requireContext())
-    val dialog = createComposeDialog(requireContext(), composeView, viewLifecycleOwner)
-    val preferences =
-        NotallyXPreferences.getInstance(
-            requireActivity() as? ContextWrapper ?: ContextWrapper(requireActivity())
-        )
-
-    composeView.setContent {
-        NotallyXTheme(theme = preferences.theme.value) {
-            ErrorDialog(
-                title = stringResource(titleResId),
-                message = message,
-                details = originalStacktrace ?: throwable.stackTraceToString(),
-                neutralButtonText = neutralButtonTextResId?.let { stringResource(it) },
-                onNeutralButtonClick =
-                    neutralButtonClickListener?.let { listener ->
-                        {
-                            dialog.dismiss()
-                            listener.onClick(dialog, DialogInterface.BUTTON_NEUTRAL)
-                        }
-                    },
-                onDismissRequest = { dialog.dismiss() },
-            )
-        }
-    }
-    dialog.show()
-}
-
 fun Activity.openNote(noteId: Long, noteType: Type, clearBackStack: Boolean = false) {
     val activity =
         when (noteType) {
@@ -241,44 +194,6 @@ fun Activity.openNote(noteId: Long, noteType: Type, clearBackStack: Boolean = fa
     }
     intent.putExtra(EXTRA_SELECTED_BASE_NOTE, noteId)
     startActivity(intent)
-}
-
-@Deprecated(
-    "Use StateFlow/State flags and render ErrorDialog declaratively inside Composable screen"
-)
-fun Activity.showErrorDialog(
-    throwable: Throwable,
-    titleResId: Int,
-    message: String,
-    originalStacktrace: String? = null,
-    neutralButtonTextResId: Int? = null,
-    neutralButtonClickListener: DialogInterface.OnClickListener? = null,
-): Dialog? {
-    val composeView = ComposeView(this)
-    val dialog = createComposeDialog(this, composeView)
-    val preferences =
-        NotallyXPreferences.getInstance(this as? ContextWrapper ?: ContextWrapper(this))
-
-    composeView.setContent {
-        NotallyXTheme(theme = preferences.theme.value) {
-            ErrorDialog(
-                title = stringResource(titleResId),
-                message = message,
-                details = originalStacktrace ?: throwable.stackTraceToString(),
-                neutralButtonText = neutralButtonTextResId?.let { stringResource(it) },
-                onNeutralButtonClick =
-                    neutralButtonClickListener?.let { listener ->
-                        {
-                            dialog.dismiss()
-                            listener.onClick(dialog, DialogInterface.BUTTON_NEUTRAL)
-                        }
-                    },
-                onDismissRequest = { dialog.dismiss() },
-            )
-        }
-    }
-    dialog.show()
-    return dialog
 }
 
 val Activity.isInLandscapeMode

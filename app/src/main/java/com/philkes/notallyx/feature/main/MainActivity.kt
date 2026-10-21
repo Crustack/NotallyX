@@ -55,7 +55,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 class MainActivity : LockedActivity<ComposeBinding>() {
 
     private val notallyFragmentModel: NotesFragmentViewModel by viewModel()
-    private val mainActivityViewModel: MainActivityViewModel by viewModel()
+    val mainActivityViewModel: MainActivityViewModel by viewModel()
 
     private lateinit var exportFileActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var exportNotesActivityResultLauncher: ActivityResultLauncher<Intent>
@@ -102,6 +102,14 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                     checkNotificationPermission(
                         NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
                         alsoCheckAlarmPermission = false,
+                        onShowRationale = { msgResId, onConfirm ->
+                            mainActivityViewModel.activeDialog.value =
+                                MainActiveDialog.Confirm(
+                                    message = getString(msgResId),
+                                    positiveButtonText = getString(R.string.continue_),
+                                    onConfirm = onConfirm,
+                                )
+                        },
                     ) {
                         notallyFragmentModel.pinBaseNotesToStatusBar(
                             this@MainActivity,

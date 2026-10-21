@@ -578,6 +578,18 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
                     },
                 )
             }
+            is EditorDialogState.PermissionRationale -> {
+                ConfirmDialog(
+                    message = stringResource(dialogState.messageResId),
+                    positiveButtonText = stringResource(R.string.continue_),
+                    negativeButtonText = stringResource(R.string.cancel),
+                    onDismissRequest = { notallyModel.activeDialog.value = null },
+                    onConfirm = {
+                        dialogState.onConfirm()
+                        notallyModel.activeDialog.value = null
+                    },
+                )
+            }
             is EditorDialogState.RejectionConfirm -> {
                 ConfirmDialog(
                     message = stringResource(dialogState.msgResId),

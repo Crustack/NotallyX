@@ -24,7 +24,6 @@ import com.philkes.notallyx.data.model.RepetitionTimeUnit
 import com.philkes.notallyx.data.model.extensions.toCalendar
 import com.philkes.notallyx.data.model.extensions.toText
 import com.philkes.notallyx.feature.editor.NoteModel
-import com.philkes.notallyx.feature.reminder.adapter.ReminderListener
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -32,7 +31,7 @@ import java.util.TimeZone
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
+class RemindersActivity : LockedActivity<ComposeBinding>() {
 
     private lateinit var alarmPermissionActivityResultLauncher: ActivityResultLauncher<Intent>
     private val model: NoteModel by viewModel()
@@ -56,8 +55,8 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
                     timeFormat = preferences.timeFormatNoteView.value,
                     dialogState = dialogStateState.value,
                     onAddReminderClick = { showDatePickerDialog() },
-                    onEditReminder = { reminder -> edit(reminder) },
-                    onDeleteReminder = { reminder -> delete(reminder) },
+                    onEditReminder = { reminder -> showDatePickerDialog(reminder) },
+                    onDeleteReminder = { reminder -> confirmDeletion(reminder) },
                     onBackClick = { finish() },
                     onDismissDialog = { dialogStateState.value = null },
                     onDateSelected = { reminder, calendar, year, month, day ->
@@ -101,6 +100,10 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
                 checkNotificationPermission(
                     REQUEST_NOTIFICATION_PERMISSION_REQUEST_CODE,
                     alsoCheckAlarmPermission = true,
+                    onShowRationale = { msgResId, onConfirm ->
+                        dialogStateState.value =
+                            ReminderDialogState.Rationale(getString(msgResId), onConfirm)
+                    },
                 ) {}
             }
         }
@@ -118,7 +121,13 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
                     grantResults.isNotEmpty() &&
                         grantResults[0] == PackageManager.PERMISSION_GRANTED
                 ) {
-                    checkAlarmPermission(alarmPermissionActivityResultLauncher) {
+                    checkAlarmPermission(
+                        alarmPermissionActivityResultLauncher,
+                        onShowRationale = { msgResId, onConfirm ->
+                            dialogStateState.value =
+                                ReminderDialogState.Rationale(getString(msgResId), onConfirm)
+                        },
+                    ) {
                         showDatePickerDialog(selectedReminder)
                     }
                 }
@@ -132,6 +141,10 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
             REQUEST_NOTIFICATION_PERMISSION_ON_OPEN_REQUEST_CODE,
             alsoCheckAlarmPermission = true,
             alarmPermissionResultLauncher = alarmPermissionActivityResultLauncher,
+            onShowRationale = { msgResId, onConfirm ->
+                dialogStateState.value =
+                    ReminderDialogState.Rationale(getString(msgResId), onConfirm)
+            },
         ) {
             val usedCalendar = calendar ?: reminder?.dateTime?.toCalendar() ?: now()
             val utcCalendar =
@@ -380,14 +393,6 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
         } else {
             lifecycleScope.launch { model.addReminder(updatedReminder) }
         }
-    }
-
-    override fun delete(reminder: Reminder) {
-        confirmDeletion(reminder)
-    }
-
-    override fun edit(reminder: Reminder) {
-        showDatePickerDialog(reminder)
     }
 
     companion object {
