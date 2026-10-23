@@ -307,11 +307,15 @@ abstract class NotesFragment : Fragment(), ItemListener {
         model.preferences.notesSorting.value.createCallback(adapter)
     }
 
+    /** Called after the adapter has applied a result list. */
+    protected open fun onNotesSubmitted(items: List<Item>) {}
+
     private fun setupObserver() {
         viewLifecycleOwner.repeatOnLifecycleScope {
             launch {
                 getFlow().collect { list ->
                     notesAdapter?.submitList(list)
+                    onNotesSubmitted(list)
                     binding?.ImageView?.isVisible = list.isEmpty()
                 }
             }

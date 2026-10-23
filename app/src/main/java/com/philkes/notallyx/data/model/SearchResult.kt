@@ -34,6 +34,16 @@ class SearchResult(
 
     private val searchParams = MutableStateFlow<SearchParams?>(null)
 
+    private data class CompletedSearch(val params: SearchParams, val items: List<Item>)
+
+    @Volatile private var completedSearch: CompletedSearch? = null
+
+    /**
+     * Verify both the request and the list actually submitted to the adapter, including debounce.
+     */
+    fun isCurrentResult(items: List<Item>): Boolean =
+        completedSearch?.let { it.params == searchParams.value && it.items == items } == true
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -51,8 +61,12 @@ class SearchResult(
                     baseNoteDao
                         .getByKeyword(params.keyword, params.folder, params.label)
                         .map { transform(it) }
-                        .onEach { _isLoading.value = false }
+                        .onEach {
+                            completedSearch = CompletedSearch(params, it)
+                            _isLoading.value = false
+                        }
                         .catch {
+                            completedSearch = CompletedSearch(params, emptyList())
                             _isLoading.value = false
                             context.log(TAG, throwable = it)
                             emit(emptyList())

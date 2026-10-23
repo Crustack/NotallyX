@@ -429,4 +429,6 @@
     <string name="yearly">每年</string>
     <string name="years">年數</string>
     <string name="your_notes_associated">不會刪除與此標籤相關的筆記</string>
+    <string name="jump_to_date">跳至日期</string>
+    <string name="no_notes_to_jump_to">目前清單中沒有筆記</string>
 </resources>

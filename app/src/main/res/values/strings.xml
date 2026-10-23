@@ -434,4 +434,6 @@
     <string name="yearly">Yearly</string>
     <string name="years">Years</string>
     <string name="your_notes_associated">Your notes attached to this label will not be deleted</string>
+    <string name="jump_to_date">Jump to date</string>
+    <string name="no_notes_to_jump_to">There are no notes in the current list</string>
 </resources>

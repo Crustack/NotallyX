@@ -1,0 +1,65 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960"
+    android:tint="?attr/colorControlNormal">
+
+    <!-- Calendar -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="
+            M200,800
+            Q167,800 143.5,776.5
+            Q120,753 120,720
+            L120,240
+            Q120,207 143.5,183.5
+            Q167,160 200,160
+            L240,160
+            L240,80
+            L320,80
+            L320,160
+            L560,160
+            L560,80
+            L640,80
+            L640,160
+            L680,160
+            Q713,160 736.5,183.5
+            Q760,207 760,240
+            L760,484
+            Q740,481 720,481
+            Q700,481 680,484
+            L680,400
+            L200,400
+            L200,720
+            L480,720
+            Q480,760 494,800
+            Z
+            M200,320
+            L680,320
+            L680,240
+            L200,240
+            Z" />
+
+    <!-- Search magnifying glass: lens -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@android:color/white"
+        android:strokeWidth="72"
+        android:pathData="
+            M690,590
+            A100,100 0,1 1,690 790
+            A100,100 0,1 1,690 590
+            Z" />
+
+    <!-- Search magnifying glass: handle -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@android:color/white"
+        android:strokeWidth="72"
+        android:strokeLineCap="round"
+        android:pathData="
+            M763,763
+            L854,854" />
+
+</vector>

@@ -429,4 +429,6 @@
     <string name="yearly">一年</string>
     <string name="years">年</string>
     <string name="your_notes_associated">不会删除与此标签相关联的笔记</string>
+    <string name="jump_to_date">跳转到日期</string>
+    <string name="no_notes_to_jump_to">当前列表中没有笔记</string>
 </resources>
