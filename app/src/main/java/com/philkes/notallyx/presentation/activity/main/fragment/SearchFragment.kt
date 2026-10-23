@@ -174,9 +174,12 @@ class SearchFragment : NotesFragment() {
         val sortBy = model.preferences.notesSorting.value.sortedBy
         val position =
             items.findDateJumpPosition(date) { item ->
-                (item as? BaseNote)?.let {
-                    if (sortBy == NotesSortBy.MODIFIED_DATE) it.modifiedTimestamp else it.timestamp
-                }
+                (item as? BaseNote)
+                    ?.takeUnless { it.pinned }
+                    ?.let {
+                        if (sortBy == NotesSortBy.MODIFIED_DATE) it.modifiedTimestamp
+                        else it.timestamp
+                    }
             }
         pendingDateJump = null
         if (position == null) {
