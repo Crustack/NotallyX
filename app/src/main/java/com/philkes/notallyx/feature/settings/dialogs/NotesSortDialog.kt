@@ -114,6 +114,7 @@ internal fun NotesSortDialog(
         confirmButton = {
             TextButton(
                 onClick = {
+                    onDismissRequest()
                     onConfirm(
                         NotesSort(sortedBy = selectedSortBy, sortDirection = selectedSortDirection)
                     )

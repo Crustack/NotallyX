@@ -78,6 +78,7 @@ internal fun ErrorScreen(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Spacer(modifier = Modifier.height(12.dp))
             Icon(
                 painter = painterResource(id = R.drawable.error),
                 contentDescription = null,

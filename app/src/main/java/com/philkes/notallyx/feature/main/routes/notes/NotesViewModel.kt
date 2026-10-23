@@ -25,15 +25,16 @@ class NotesViewModel(app: Application, preferences: NotallyXPreferences) :
         combine(
                 databaseStateFlow,
                 preferences.labelsHidden.flow,
-            ) { database, labelsHidden ->
-                Pair(database, labelsHidden)
+                preferences.notesSorting.flow,
+            ) { database, labelsHidden, notesSorting ->
+                Triple(database, labelsHidden, notesSorting)
             }
-            .flatMapLatest { (database, labelsHidden) ->
+            .flatMapLatest { (database, labelsHidden, notesSorting) ->
                 database?.getBaseNoteDao()?.getByFolder(Folder.NOTES)?.map { list ->
                     val filtered = list.filter { baseNote ->
                         baseNote.labels.none { labelsHidden.contains(it) }
                     }
-                    app.createItemsFromNotes(filtered)
+                    app.createItemsFromNotes(filtered, notesSorting)
                 } ?: flowOf(emptyList())
             }
             .stateIn(
