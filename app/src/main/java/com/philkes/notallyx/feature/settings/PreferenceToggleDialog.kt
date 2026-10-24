@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
@@ -160,12 +161,19 @@ internal fun <T> PreferenceEnumWithToggleDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .toggleable(
+                                value = toggleState,
+                                onValueChange = { toggleState = it },
+                                role = Role.Checkbox,
+                            )
+                            .padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(
                         checked = toggleState,
-                        onCheckedChange = { toggleState = it },
+                        onCheckedChange = null,
                     )
                     Text(
                         text = toggleLabel,

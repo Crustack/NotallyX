@@ -39,7 +39,6 @@ import com.philkes.notallyx.core.common.extensions.getLastExceptionLog
 import com.philkes.notallyx.core.common.extensions.getLogFile
 import com.philkes.notallyx.core.common.extensions.getUriForFile
 import com.philkes.notallyx.core.common.extensions.openExternalMediaFolder
-import com.philkes.notallyx.core.common.extensions.putNavKey
 import com.philkes.notallyx.core.common.extensions.reportBug
 import com.philkes.notallyx.core.common.extensions.viewLogs
 import com.philkes.notallyx.core.common.extensions.wrapWithChooser
@@ -72,7 +71,6 @@ import com.philkes.notallyx.feature.settings.SettingsDialogState
 import com.philkes.notallyx.feature.settings.SettingsScreen
 import com.philkes.notallyx.feature.settings.SettingsViewModel
 import com.philkes.notallyx.feature.settings.createFromPreferences
-import com.philkes.notallyx.navigation.NotallyNavKey
 import com.philkes.notallyx.scheduleAutoRemoveOldDeletedNotes
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -386,15 +384,6 @@ fun SettingsRoute(
                         settingsViewModel.preferences.useDynamicColors,
                         useDynamicColors,
                     )
-                    val packageManager = context.packageManager
-                    val intent = packageManager.getLaunchIntentForPackage(context.packageName)
-                    val componentName = intent!!.component
-                    val mainIntent =
-                        Intent.makeRestartActivityTask(componentName)
-                            .putNavKey(NotallyNavKey.Settings)
-                    mainIntent.setPackage(context.packageName)
-                    context.startActivity(mainIntent)
-                    Runtime.getRuntime().exit(0)
                 },
             )
     }
