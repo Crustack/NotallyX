@@ -1,6 +1,9 @@
 package com.philkes.notallyx.activity.main
 
+import android.app.Activity
+import android.app.Instrumentation
 import android.app.Notification
+import android.content.Intent
 import android.util.Log
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -22,6 +25,11 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.Intents.intended
+import androidx.test.espresso.intent.Intents.intending
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.NotallyXApplication
@@ -32,10 +40,13 @@ import com.philkes.notallyx.core.preference.NotesView
 import com.philkes.notallyx.core.preference.SortDirection
 import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.model.BaseNote
+import com.philkes.notallyx.data.model.Color
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
+import com.philkes.notallyx.data.model.toColorString
 import com.philkes.notallyx.feature.editor.refreshStatusBarPin
 import com.philkes.notallyx.feature.main.MainActivity
+import com.philkes.notallyx.feature.migration.ExportMimeType
 import com.philkes.notallyx.feature.reminder.PinnedNotificationManager
 import com.philkes.notallyx.navigation.NotallyNavKey
 import com.philkes.notallyx.test.UiTestBase
@@ -52,6 +63,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.hamcrest.CoreMatchers.allOf
+import org.hamcrest.CoreMatchers.`is`
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.FixMethodOrder
@@ -147,6 +160,407 @@ class MainActivityTest : UiTestBase() {
         composeTestRule.onAllNodes(hasText("label"))[2].assertIsDisplayed()
 
         scenario.close()
+    }
+
+    @Test
+    fun moreOptions() {
+        // 1. Prepare test data: 3 notes
+        val note1 =
+            createBaseNote(
+                title = "Note 1",
+                body = "Body 1",
+                timestamp = 3000L,
+                modifiedTimestamp = 3000L,
+            )
+        val note2 =
+            createBaseNote(
+                title = "Note 2",
+                body = "Body 2",
+                timestamp = 2000L,
+                modifiedTimestamp = 2000L,
+            )
+        val note3 =
+            createBaseNote(
+                title = "Note 3",
+                body = "Body 3",
+                timestamp = 1000L,
+                modifiedTimestamp = 1000L,
+            )
+        runBlocking {
+            database.clearAllTables()
+            database.getBaseNoteDao().insert(listOf(note1, note2, note3))
+        }
+
+        Intents.init()
+        try {
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(
+                            `is`(Intent.EXTRA_INTENT),
+                            hasAction(Intent.ACTION_OPEN_DOCUMENT_TREE),
+                        ),
+                    )
+                )
+                .respondWith(Instrumentation.ActivityResult(Activity.RESULT_CANCELED, null))
+
+            val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+            val moreOptionsLabel = context.getString(R.string.tap_for_more_options)
+            val cancelLabel = context.getString(R.string.cancel)
+            val selectAllLabel = context.getString(R.string.select_all)
+            val saveLabel = context.getString(R.string.save)
+
+            // 1. Test onClose()
+            composeTestRule.onNodeWithText("Note 1").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("Note 2").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("2").assertIsDisplayed()
+
+            composeTestRule.onNodeWithContentDescription(cancelLabel).performClick()
+            composeTestRule.onNodeWithText("2").assertDoesNotExist()
+
+            // 2. Test onSelectAll()
+            composeTestRule.onNodeWithText("Note 1").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("Note 2").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("2").assertIsDisplayed()
+
+            composeTestRule.onNodeWithContentDescription(selectAllLabel).performClick()
+            composeTestRule.onNodeWithText("3").assertIsDisplayed()
+
+            // 3. Test onPin() (Pin all notes)
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.pin))
+                .performClick()
+            waitUntil(10_000) {
+                runBlocking { database.getBaseNoteDao().getAll().all { it.pinned } }
+            }
+
+            // Unpin the selected notes
+            composeTestRule.onNodeWithText("Note 1").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("Note 2").performTouchInput { longClick() }
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.unpin))
+                .performClick()
+            waitUntil(10_000) {
+                runBlocking {
+                    val all = database.getBaseNoteDao().getAll()
+                    all.filter { it.title in listOf("Note 1", "Note 2") }.none { it.pinned }
+                }
+            }
+
+            // 4. Test overflow menu and verify onShare is NOT displayed for multiple selected notes
+            composeTestRule.onNodeWithText("Note 1").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("Note 2").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("2").assertIsDisplayed()
+
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.share)).assertDoesNotExist()
+
+            // 5. Test onChangeColor()
+            composeTestRule.onNodeWithText(context.getString(R.string.change_color)).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(Color.CORAL.toColorString()))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithContentDescription(Color.CORAL.toColorString()).performClick()
+            composeTestRule.onNodeWithText(saveLabel).performClick()
+
+            waitUntil(10_000) {
+                runBlocking {
+                    val notes = database.getBaseNoteDao().getAll()
+                    notes
+                        .filter { it.title in listOf("Note 1", "Note 2") }
+                        .all { it.color == Color.CORAL.toColorString() }
+                }
+            }
+
+            // 6. Test onPinToStatus() (pin to status bar and unpin)
+            composeTestRule.onNodeWithText("Note 1").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("Note 2").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("2").assertIsDisplayed()
+
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.pin_to_status_bar))
+                .performClick()
+
+            waitUntil(10_000) {
+                val pinned = PinnedNotificationManager.getPinnedNotifications(context)
+                pinned.size >= 2
+            }
+
+            composeTestRule.onNodeWithText("Note 1").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("Note 2").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("2").assertIsDisplayed()
+
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.unpin_from_status_bar))
+                .performClick()
+
+            waitUntil(10_000) {
+                PinnedNotificationManager.getPinnedNotifications(context).isEmpty()
+            }
+
+            // 7. Test onDuplicate()
+            composeTestRule.onNodeWithText("Note 1").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("Note 2").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("2").assertIsDisplayed()
+
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.duplicate)).performClick()
+
+            val copySuffix = context.getString(R.string.copy)
+            val copyNote1 = "Note 1 ($copySuffix)"
+            val copyNote2 = "Note 2 ($copySuffix)"
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(copyNote1))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty() &&
+                    composeTestRule
+                        .onAllNodes(hasText(copyNote2))
+                        .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                        .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(copyNote1).assertIsDisplayed()
+            composeTestRule.onNodeWithText(copyNote2).assertIsDisplayed()
+
+            // 8. Test onExport()
+            composeTestRule.onNodeWithText("Note 1").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("Note 2").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("2").assertIsDisplayed()
+
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.export)).performClick()
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(ExportMimeType.TXT.name))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(ExportMimeType.TXT.name).performClick()
+
+            intended(
+                allOf(
+                    hasAction(Intent.ACTION_CHOOSER),
+                    hasExtra(
+                        `is`(Intent.EXTRA_INTENT),
+                        hasAction(Intent.ACTION_OPEN_DOCUMENT_TREE),
+                    ),
+                )
+            )
+
+            // 9. Test onArchive()
+            if (
+                composeTestRule
+                    .onAllNodes(hasText("2"))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isEmpty()
+            ) {
+                composeTestRule.onNodeWithText("Note 1").performTouchInput { longClick() }
+                composeTestRule.onNodeWithText("Note 2").performTouchInput { longClick() }
+            }
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.archive)).performClick()
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Note 1"))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isEmpty() &&
+                    composeTestRule
+                        .onAllNodes(hasText("Note 2"))
+                        .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                        .isEmpty()
+            }
+            composeTestRule.onNodeWithText("Note 1").assertDoesNotExist()
+            composeTestRule.onNodeWithText("Note 2").assertDoesNotExist()
+
+            // 10. Test onRestore() from Archived folder
+            composeTestRule.navigateTo(NotallyNavKey.Archived)
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Note 1"))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty() &&
+                    composeTestRule
+                        .onAllNodes(hasText("Note 2"))
+                        .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                        .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("Note 1").assertIsDisplayed()
+            composeTestRule.onNodeWithText("Note 2").assertIsDisplayed()
+
+            composeTestRule.onNodeWithText("Note 1").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("Note 2").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("2").assertIsDisplayed()
+
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.unarchive))
+                .performClick()
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Note 1"))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isEmpty() &&
+                    composeTestRule
+                        .onAllNodes(hasText("Note 2"))
+                        .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                        .isEmpty()
+            }
+            composeTestRule.onNodeWithText("Note 1").assertDoesNotExist()
+            composeTestRule.onNodeWithText("Note 2").assertDoesNotExist()
+
+            // 11. Test onDelete() in Notes folder
+            composeTestRule.navigateTo(NotallyNavKey.Notes)
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Note 1"))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty() &&
+                    composeTestRule
+                        .onAllNodes(hasText("Note 2"))
+                        .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                        .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("Note 1").assertIsDisplayed()
+            composeTestRule.onNodeWithText("Note 2").assertIsDisplayed()
+
+            composeTestRule.onNodeWithText("Note 1").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("Note 2").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("2").assertIsDisplayed()
+
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.delete))
+                .performClick()
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Note 1"))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isEmpty() &&
+                    composeTestRule
+                        .onAllNodes(hasText("Note 2"))
+                        .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                        .isEmpty()
+            }
+            composeTestRule.onNodeWithText("Note 1").assertDoesNotExist()
+            composeTestRule.onNodeWithText("Note 2").assertDoesNotExist()
+
+            // 12. In Deleted folder: test onRestore() for Note 1 and Note 2
+            composeTestRule.navigateTo(NotallyNavKey.Deleted)
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Note 1"))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty() &&
+                    composeTestRule
+                        .onAllNodes(hasText("Note 2"))
+                        .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                        .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("Note 1").assertIsDisplayed()
+            composeTestRule.onNodeWithText("Note 2").assertIsDisplayed()
+
+            composeTestRule.onNodeWithText("Note 1").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("Note 2").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("2").assertIsDisplayed()
+
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.restore))
+                .performClick()
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Note 1"))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isEmpty() &&
+                    composeTestRule
+                        .onAllNodes(hasText("Note 2"))
+                        .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                        .isEmpty()
+            }
+            composeTestRule.onNodeWithText("Note 1").assertDoesNotExist()
+            composeTestRule.onNodeWithText("Note 2").assertDoesNotExist()
+
+            // 13. In Notes folder: delete Note 1 and Note 2 again, then test onDeleteForever() in
+            // Deleted folder
+            composeTestRule.navigateTo(NotallyNavKey.Notes)
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Note 1"))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty() &&
+                    composeTestRule
+                        .onAllNodes(hasText("Note 2"))
+                        .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                        .isNotEmpty()
+            }
+
+            composeTestRule.onNodeWithText("Note 1").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("Note 2").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("2").assertIsDisplayed()
+
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.delete))
+                .performClick()
+
+            composeTestRule.navigateTo(NotallyNavKey.Deleted)
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Note 1"))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty() &&
+                    composeTestRule
+                        .onAllNodes(hasText("Note 2"))
+                        .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                        .isNotEmpty()
+            }
+
+            composeTestRule.onNodeWithText("Note 1").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("Note 2").performTouchInput { longClick() }
+            composeTestRule.onNodeWithText("2").assertIsDisplayed()
+
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.delete_forever))
+                .performClick()
+
+            composeTestRule
+                .onNode(
+                    hasText(context.getString(R.string.delete)) and
+                        hasAnyAncestor(isComposeDialog())
+                )
+                .performClick()
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Note 1"))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isEmpty() &&
+                    composeTestRule
+                        .onAllNodes(hasText("Note 2"))
+                        .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                        .isEmpty()
+            }
+            composeTestRule.onNodeWithText("Note 1").assertDoesNotExist()
+            composeTestRule.onNodeWithText("Note 2").assertDoesNotExist()
+
+            waitUntil(10_000) {
+                runBlocking {
+                    val all = database.getBaseNoteDao().getAll()
+                    all.none { it.title in listOf("Note 1", "Note 2") }
+                }
+            }
+
+            scenario.close()
+        } finally {
+            Intents.release()
+        }
     }
 
     @Test
