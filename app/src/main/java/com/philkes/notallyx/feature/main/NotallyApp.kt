@@ -27,6 +27,7 @@ import com.philkes.notallyx.core.ui.dialog.TriStateMultiChoiceDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
+import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.feature.editor.EditListActivity
 import com.philkes.notallyx.feature.editor.EditNoteActivity
 import com.philkes.notallyx.feature.labels.LabelsViewModel
@@ -55,7 +56,7 @@ fun NotallyApp(
     onStartViewChanged: (Boolean) -> Unit,
     onPrepareNewNoteIntent: (Intent) -> Intent,
     onNoteClick: (BaseNote, Int) -> Unit,
-    onNoteLongClick: (BaseNote, Int) -> Unit,
+    onNoteLongClick: (BaseNote, Int, List<Item>) -> Unit,
     onReminderClick: (BaseNote) -> Unit,
     onExportNotes: (ExportMimeType) -> Unit,
     onMoveSelectedNotes: (Folder) -> Unit,

@@ -49,6 +49,7 @@ import com.philkes.notallyx.core.ui.extensions.createItemsFromNotes
 import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.BaseNote
+import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Repetition
 import com.philkes.notallyx.data.model.RepetitionTimeUnit
@@ -120,7 +121,7 @@ fun RemindersScreen(
     isGrid: Boolean,
     displayConfig: NoteCardDisplayConfig,
     onNoteClick: (BaseNote, Int) -> Unit,
-    onNoteLongClick: (BaseNote, Int) -> Unit,
+    onNoteLongClick: (BaseNote, Int, List<Item>) -> Unit,
     onReminderClick: (BaseNote, Int) -> Unit,
     modifier: Modifier = Modifier,
     initialFilterMode: FilterOptions = FilterOptions.UPCOMING,
@@ -177,7 +178,7 @@ private fun RemindersScreenPreview() {
             isGrid = false,
             displayConfig = NoteCardDisplayConfig(),
             onNoteClick = { _, _ -> },
-            onNoteLongClick = { _, _ -> },
+            onNoteLongClick = { _, _, _ -> },
             onReminderClick = { _, _ -> },
         )
     }

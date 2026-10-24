@@ -66,7 +66,7 @@ internal fun NotesGridScreen(
     isLoading: Boolean = false,
     displayConfig: NoteCardDisplayConfig = NoteCardDisplayConfig(),
     onNoteClick: (BaseNote, Int) -> Unit = { _, _ -> },
-    onNoteLongClick: (BaseNote, Int) -> Unit = { _, _ -> },
+    onNoteLongClick: (BaseNote, Int, List<Item>) -> Unit = { _, _, _ -> },
     onReminderClick: (BaseNote, Int) -> Unit = { _, _ -> },
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -153,7 +153,7 @@ internal fun NotesGridScreen(
                                         imageRoot = imageRoot,
                                         isSelected = isSelected,
                                         onClick = { onNoteClick(item, index) },
-                                        onLongClick = { onNoteLongClick(item, index) },
+                                        onLongClick = { onNoteLongClick(item, index, items) },
                                         onReminderClick = { onReminderClick(item, index) },
                                     )
                                 }
@@ -194,7 +194,7 @@ internal fun NotesGridScreen(
                                             imageRoot = imageRoot,
                                             isSelected = isSelected,
                                             onClick = { onNoteClick(item, index) },
-                                            onLongClick = { onNoteLongClick(item, index) },
+                                            onLongClick = { onNoteLongClick(item, index, items) },
                                             onReminderClick = { onReminderClick(item, index) },
                                         )
                                     }
