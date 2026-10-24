@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -19,7 +20,7 @@ import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 internal fun LabelChip(
     text: String,
     modifier: Modifier = Modifier,
-    textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    textColor: Color = LocalContentColor.current,
     borderColor: Color = MaterialTheme.colorScheme.outline,
     onClick: (() -> Unit)? = null,
 ) {
