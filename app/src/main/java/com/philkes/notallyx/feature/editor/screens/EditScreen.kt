@@ -1265,7 +1265,6 @@ private fun EditNoteScreenPreview() {
                     )
                 ),
             canUndo = true,
-            canRedo = false,
         )
     }
 }
@@ -1359,7 +1358,6 @@ private fun EditListScreenPreview() {
                                 repetition = null,
                             )
                         ),
-                    pinned = false,
                     type = Type.LIST,
                 ),
             preferences =

@@ -189,7 +189,6 @@ private fun PlayAudioScreenPreview() {
         PlayAudioScreen(
             currentPosition = 30000L,
             duration = 120000L,
-            isPlaying = false,
         )
     }
 }

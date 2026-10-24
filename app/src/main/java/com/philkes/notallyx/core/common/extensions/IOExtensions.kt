@@ -360,7 +360,7 @@ fun Context.deleteAttachments(
 ) {
     if (attachments.isNotEmpty()) {
         (progress as? MutableStateFlow<Progress?>)?.value =
-            DeleteAttachmentProgress(0, attachments.size)
+            DeleteAttachmentProgress(total = attachments.size)
         val imageRoot = getExternalImagesDirectory()
         val audioRoot = getExternalAudioDirectory()
         val fileRoot = getExternalFilesDirectory()

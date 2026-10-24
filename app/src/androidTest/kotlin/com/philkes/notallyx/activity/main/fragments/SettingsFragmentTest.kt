@@ -255,7 +255,7 @@ class SettingsFragmentTest : UiTestBase() {
                 .insert(createBaseNote(title = "Test", body = "Body", labels = listOf("label")))
             database.checkpoint()
             preferences.backupsFolder.save(backupPath.toString())
-            preferences.periodicBackups.save(PeriodicBackup(1, 1))
+            preferences.periodicBackups.save(PeriodicBackup(maxBackups = 1))
             preferences.backupOnSave.save(false)
         }
         intending(

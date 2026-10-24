@@ -225,7 +225,6 @@ fun SettingsRoute(
                     if (shouldEncrypt && activity != null) {
                         AuthenticatorProvider.instance.authenticate(
                             activity,
-                            isForDecrypt = false,
                             onSuccess = { cipher ->
                                 requireNotNull(cipher) { "Missing cipher for biometric encryption" }
                                 DatabaseTransitionActivity.start(
@@ -603,7 +602,6 @@ fun SettingsRoute(
                                 appCtx.getString(R.string.import_backup),
                             ),
                         positiveButtonText = appCtx.getString(android.R.string.ok),
-                        negativeButtonText = "",
                     )
                 return
             }

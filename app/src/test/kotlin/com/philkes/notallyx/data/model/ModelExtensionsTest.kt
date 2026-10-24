@@ -111,7 +111,7 @@ class ModelExtensionsTest {
                 "Body",
                 listOf(SpanRepresentation(0, 10, bold = true)),
                 mutableListOf(
-                    createListItem("Item1", true, false),
+                    createListItem("Item1", true),
                     createListItem("Item2", true, true),
                 ),
                 listOf(FileAttachment("localImage", "originalImage", "image/jpeg")),

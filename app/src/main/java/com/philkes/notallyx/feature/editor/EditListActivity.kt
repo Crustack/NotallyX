@@ -39,14 +39,6 @@ class EditListActivity : EditActivity(Type.LIST) {
         super.finish()
     }
 
-    override fun updateModel() {
-        super.updateModel()
-    }
-
-    override fun toggleCanEdit(mode: NoteViewMode) {
-        super.toggleCanEdit(mode)
-    }
-
     override fun openMoreOptionsBottomSheet() {
         val prefs = NotallyXPreferences.getInstance(this@EditListActivity)
         val topActions = prefs.getSafeEditNoteActivityTopActions()

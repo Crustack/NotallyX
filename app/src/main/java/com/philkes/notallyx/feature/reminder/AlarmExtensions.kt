@@ -104,6 +104,5 @@ private fun Context.createReminderAlarmIntent(noteId: Long, reminderId: Long): P
 }
 
 fun Context.canScheduleAlarms() =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
         getSystemService<AlarmManager>()?.canScheduleExactAlarms() == true
-    } else true

@@ -428,7 +428,7 @@ fun TextFieldValue.addOrUpdateLink(
         buildAnnotatedString(newText, finalStyles.normalize(), finalAnnotations)
     return copy(
         annotatedString = newAnnotatedString,
-        selection = androidx.compose.ui.text.TextRange(newEnd),
+        selection = TextRange(newEnd),
     )
 }
 
@@ -1038,11 +1038,11 @@ fun Context.getQuantityStringPlain(id: Int, quantity: Int): String {
 
 @ColorInt
 fun @receiver:ColorInt Int.withAlpha(alpha: Float): Int {
-    return android.graphics.Color.argb(
+    return Color.argb(
         (255 * alpha).toInt(),
-        android.graphics.Color.red(this),
-        android.graphics.Color.green(this),
-        android.graphics.Color.blue(this),
+        Color.red(this),
+        Color.green(this),
+        Color.blue(this),
     )
 }
 
@@ -1151,7 +1151,7 @@ fun Context.restartApplication(
 fun Context.extractColor(color: String): Int {
     return when (color) {
         BaseNote.COLOR_DEFAULT -> return getColorFromAttr(R.attr.colorSurface)
-        else -> android.graphics.Color.parseColor(color)
+        else -> Color.parseColor(color)
     }
 }
 

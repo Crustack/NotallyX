@@ -72,7 +72,7 @@ class GoogleKeepImporter : ExternalImporter {
                 }
                 .toList()
         val total = noteFiles.size
-        progress?.value = ImportProgress(0, total, stage = ImportStage.IMPORT_NOTES)
+        progress?.value = ImportProgress(total = total, stage = ImportStage.IMPORT_NOTES)
         var counter = 1
         val baseNotes =
             noteFiles
@@ -104,7 +104,6 @@ class GoogleKeepImporter : ExternalImporter {
             parseBodyAndSpansFromHtml(
                 googleKeepNote.textContentHtml,
                 paragraphsAsNewLine = true,
-                brTagsAsNewLine = true,
             )
 
         val images =

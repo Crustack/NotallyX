@@ -13,7 +13,7 @@ import javax.crypto.Cipher
 import javax.crypto.SecretKey
 import javax.crypto.spec.IvParameterSpec
 
-class FakeBiometricAuthenticator() : BiometricAuthenticator, KoinComponent {
+class FakeBiometricAuthenticator : BiometricAuthenticator, KoinComponent {
     var cipher: Cipher? = null
     var shouldSucceed: Boolean = true
     var iv: ByteArray? = null

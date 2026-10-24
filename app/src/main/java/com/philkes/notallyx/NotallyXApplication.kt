@@ -188,10 +188,7 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
     }
 
     private fun folderChanged(folderBefore: String?, folderAfter: String): Boolean {
-        if (folderBefore == null || folderAfter == EMPTY_PATH) {
-            return false
-        }
-        return folderBefore != folderAfter
+        return !(folderBefore == null || folderAfter == EMPTY_PATH) && folderBefore != folderAfter
     }
 
     internal fun restorePinnedNotifications() {

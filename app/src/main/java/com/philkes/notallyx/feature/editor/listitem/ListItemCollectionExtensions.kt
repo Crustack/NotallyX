@@ -269,7 +269,7 @@ fun List<ListItem>.checkItem(
     now: Long = uniqueCurrentMillis(),
 ) {
     if (!item.isChild) {
-        item.check(checked, checkChildren = true)
+        item.check(checked)
     } else {
         item.checked = checked
         item.checkedTimestamp = if (checked) now else null

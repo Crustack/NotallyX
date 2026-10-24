@@ -788,7 +788,6 @@ internal fun SettingsScreen(
                 title = stringResource(R.string.backup_password),
                 initialText = dialogState.initialPassword,
                 message = stringResource(R.string.import_backup_password_hint),
-                initialCheckDuplicates = true,
                 onDismissRequest = actions.onDismissDialog,
                 onConfirm = dialogState.onConfirm,
             )
