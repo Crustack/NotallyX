@@ -15,6 +15,7 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog as isComposeDialog
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -38,8 +39,8 @@ import com.philkes.notallyx.core.preference.NotesSort
 import com.philkes.notallyx.core.preference.NotesSortBy
 import com.philkes.notallyx.core.preference.NotesView
 import com.philkes.notallyx.core.preference.SortDirection
+import com.philkes.notallyx.core.ui.extensions.sortWith
 import com.philkes.notallyx.core.ui.views.TestTags
-import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Color
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
@@ -795,22 +796,22 @@ class MainActivityTest : UiTestBase() {
 
     @Test
     fun sortNotesOrderDialog() {
-        // 1. Pre-fill database with test notes
+        // 1. Pre-fill database with test notes designed to test all sorting criteria distinctly
         val note1 =
             createBaseNote(
                 title = "Alpha Note",
                 body = "Body 1",
-                timestamp = 1000L,
+                timestamp = 2000L,
                 modifiedTimestamp = 3000L,
-                color = BaseNote.COLOR_DEFAULT,
+                color = "#222222",
             )
         val note2 =
             createBaseNote(
                 title = "Beta Note",
                 body = "Body 2",
-                timestamp = 2000L,
+                timestamp = 1000L,
                 modifiedTimestamp = 1000L,
-                color = "#FFFF00",
+                color = "#333333",
             )
         val note3 =
             createBaseNote(
@@ -818,100 +819,98 @@ class MainActivityTest : UiTestBase() {
                 body = "Body 3",
                 timestamp = 3000L,
                 modifiedTimestamp = 2000L,
-                color = "#FF0000",
+                color = "#111111",
             )
-        runBlocking { database.getBaseNoteDao().insert(listOf(note1, note2, note3)) }
+        val testNotes = listOf(note1, note2, note3)
+        runBlocking {
+            database.clearAllTables()
+            database.getBaseNoteDao().insert(testNotes)
+        }
 
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        val notesSortedByLabel = context.getString(R.string.notes_sorted_by)
-        val titleLabel = context.getString(R.string.title)
-        val ascendingLabel = context.getString(R.string.ascending)
-        val descendingLabel = context.getString(R.string.descending)
-        val saveLabel = context.getString(R.string.save)
+        val testCases =
+            listOf(
+                NotesSort(NotesSortBy.TITLE, SortDirection.ASC) to
+                    listOf("Alpha Note", "Beta Note", "Gamma Note"),
+                NotesSort(NotesSortBy.TITLE, SortDirection.DESC) to
+                    listOf("Gamma Note", "Beta Note", "Alpha Note"),
+                NotesSort(NotesSortBy.CREATION_DATE, SortDirection.ASC) to
+                    listOf("Beta Note", "Alpha Note", "Gamma Note"),
+                NotesSort(NotesSortBy.CREATION_DATE, SortDirection.DESC) to
+                    listOf("Gamma Note", "Alpha Note", "Beta Note"),
+                NotesSort(NotesSortBy.MODIFIED_DATE, SortDirection.ASC) to
+                    listOf("Beta Note", "Gamma Note", "Alpha Note"),
+                NotesSort(NotesSortBy.MODIFIED_DATE, SortDirection.DESC) to
+                    listOf("Alpha Note", "Gamma Note", "Beta Note"),
+                NotesSort(NotesSortBy.COLOR, SortDirection.ASC) to
+                    listOf("Gamma Note", "Alpha Note", "Beta Note"),
+                NotesSort(NotesSortBy.COLOR, SortDirection.DESC) to
+                    listOf("Beta Note", "Alpha Note", "Gamma Note"),
+            )
 
-        // 2. Navigate to Settings screen
-        composeTestRule.navigateTo(NotallyNavKey.Settings)
+        assertEquals(NotesSortBy.entries.toSet(), testCases.map { it.first.sortedBy }.toSet())
 
-        // 3. Open NotesSortDialog
-        composeTestRule.onNodeWithText(notesSortedByLabel).performScrollTo().performClick()
-
-        // 4. Select Title and Ascending in dialog
-        composeTestRule
-            .onNode(hasText(titleLabel) and hasAnyAncestor(isComposeDialog()))
-            .performClick()
-        composeTestRule
-            .onNode(hasText(ascendingLabel) and hasAnyAncestor(isComposeDialog()))
-            .performClick()
-        composeTestRule
-            .onNode(hasText(saveLabel) and hasAnyAncestor(isComposeDialog()))
-            .performClick()
-
-        // 5. Verify preferences and settings UI state
-        composeTestRule.waitUntilSettingsValue(
-            R.string.notes_sorted_by,
-            "$titleLabel ($ascendingLabel)",
-        )
-        assertEquals(
-            NotesSort(sortedBy = NotesSortBy.TITLE, sortDirection = SortDirection.ASC),
-            preferences.notesSorting.value,
-        )
-
-        // 6. Return to Notes main screen and verify items are ordered Title Ascending (Alpha < Beta
-        // < Gamma)
-        composeTestRule.navigateTo(NotallyNavKey.Notes)
-        composeTestRule.waitUntil(10_000) {
-            composeTestRule.onAllNodes(hasText("Alpha Note")).fetchSemanticsNodes().isNotEmpty()
+        testCases.forEach { (notesSort, expectedTitles) ->
+            assertEquals(expectedTitles, testNotes.sortWith(notesSort).map { it.title })
+            testNotesSort(notesSort, expectedTitles)
         }
-        val alphaY =
-            composeTestRule.onNodeWithText("Alpha Note").fetchSemanticsNode().positionInRoot.y
-        val betaY =
-            composeTestRule.onNodeWithText("Beta Note").fetchSemanticsNode().positionInRoot.y
-        val gammaY =
-            composeTestRule.onNodeWithText("Gamma Note").fetchSemanticsNode().positionInRoot.y
-        assertTrue("Alpha ($alphaY) should be above Beta ($betaY)", alphaY < betaY)
-        assertTrue("Beta ($betaY) should be above Gamma ($gammaY)", betaY < gammaY)
-
-        // 7. Return to Settings, re-open dialog and change to Title and Descending
-        composeTestRule.navigateTo(NotallyNavKey.Settings)
-        composeTestRule.onNodeWithText(notesSortedByLabel).performScrollTo().performClick()
-
-        composeTestRule
-            .onNode(hasText(titleLabel) and hasAnyAncestor(isComposeDialog()))
-            .performClick()
-        composeTestRule
-            .onNode(hasText(descendingLabel) and hasAnyAncestor(isComposeDialog()))
-            .performClick()
-        composeTestRule
-            .onNode(hasText(saveLabel) and hasAnyAncestor(isComposeDialog()))
-            .performClick()
-
-        // 8. Verify updated preferences
-        composeTestRule.waitUntilSettingsValue(
-            R.string.notes_sorted_by,
-            "$titleLabel ($descendingLabel)",
-        )
-        assertEquals(
-            NotesSort(sortedBy = NotesSortBy.TITLE, sortDirection = SortDirection.DESC),
-            preferences.notesSorting.value,
-        )
-
-        // 9. Return to Notes main screen and verify items are ordered Title Descending (Gamma <
-        // Beta < Alpha)
-        composeTestRule.navigateTo(NotallyNavKey.Notes)
-        composeTestRule.waitUntil(10_000) {
-            composeTestRule.onAllNodes(hasText("Gamma Note")).fetchSemanticsNodes().isNotEmpty()
-        }
-        val alphaY2 =
-            composeTestRule.onNodeWithText("Alpha Note").fetchSemanticsNode().positionInRoot.y
-        val betaY2 =
-            composeTestRule.onNodeWithText("Beta Note").fetchSemanticsNode().positionInRoot.y
-        val gammaY2 =
-            composeTestRule.onNodeWithText("Gamma Note").fetchSemanticsNode().positionInRoot.y
-        assertTrue("Gamma ($gammaY2) should be above Beta ($betaY2)", gammaY2 < betaY2)
-        assertTrue("Beta ($betaY2) should be above Alpha ($alphaY2)", betaY2 < alphaY2)
 
         scenario.close()
+    }
+
+    private fun testNotesSort(notesSort: NotesSort, expectedTitles: List<String>) {
+        composeTestRule.navigateTo(NotallyNavKey.Settings)
+        composeTestRule.setNotesSort(notesSort)
+        composeTestRule.navigateTo(NotallyNavKey.Notes)
+        composeTestRule.assertNotesOrder(expectedTitles)
+    }
+
+    private fun ComposeTestRule.setNotesSort(notesSort: NotesSort) {
+        val notesSortedByLabel = context.getString(R.string.notes_sorted_by)
+        val saveLabel = context.getString(R.string.save)
+
+        onNodeWithText(notesSortedByLabel).performScrollTo().performClick()
+
+        onNode(
+                hasText(context.getString(notesSort.sortedBy.textResId)) and
+                    hasAnyAncestor(isComposeDialog())
+            )
+            .performClick()
+        onNode(
+                hasText(context.getString(notesSort.sortDirection.textResId)) and
+                    hasAnyAncestor(isComposeDialog())
+            )
+            .performClick()
+        onNode(hasText(saveLabel) and hasAnyAncestor(isComposeDialog())).performClick()
+
+        waitUntilSettingsValue(
+            R.string.notes_sorted_by,
+            notesSort.getText(context),
+        )
+        assertEquals(notesSort, preferences.notesSorting.value)
+    }
+
+    private fun ComposeTestRule.assertNotesOrder(expectedTitles: List<String>) {
+        waitUntil(10_000) {
+            val yCoords = expectedTitles.map { title ->
+                onAllNodes(hasText(title))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .firstOrNull()
+                    ?.positionInRoot
+                    ?.y
+            }
+            yCoords.all { it != null } && yCoords.zipWithNext().all { (y1, y2) -> y1!! < y2!! }
+        }
+        val yCoordsWithTitle = expectedTitles.map { title ->
+            title to onNodeWithText(title).fetchSemanticsNode().positionInRoot.y
+        }
+        yCoordsWithTitle.zipWithNext().forEach { (first, second) ->
+            assertTrue(
+                "${first.first} (${first.second}) should be above ${second.first} (${second.second})",
+                first.second < second.second,
+            )
+        }
     }
 
     @Test
