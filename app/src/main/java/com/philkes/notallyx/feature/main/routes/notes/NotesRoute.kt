@@ -13,7 +13,7 @@ import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.feature.main.routes.NotesGridScreen
-import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel.Companion.CURRENT_LABEL_EMPTY
+import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel.Companion.CURRENT_LABEL_EMPTY
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -24,18 +24,18 @@ fun NotesRoute(
     onReminderClick: (BaseNote) -> Unit,
     modifier: Modifier = Modifier,
     notesViewModel: NotesViewModel = koinViewModel(),
-    notallyFragmentModel: NotesFragmentViewModel = koinViewModel(),
-    preferences: NotallyXPreferences = notallyFragmentModel.preferences,
+    notallyRouteModel: NotesRouteViewModel = koinViewModel(),
+    preferences: NotallyXPreferences = notallyRouteModel.preferences,
 ) {
     val items by notesViewModel.baseNotes.collectAsStateWithLifecycle(emptyList())
     val selectedIds by
-        notallyFragmentModel.actionMode.selectedIdsFlow.collectAsStateWithLifecycle(emptySet())
+        notallyRouteModel.actionMode.selectedIdsFlow.collectAsStateWithLifecycle(emptySet())
     val notesView by
         preferences.notesView.flow.collectAsStateWithLifecycle(preferences.notesView.value)
 
     LaunchedEffect(Unit) {
-        notallyFragmentModel.setFolder(Folder.NOTES)
-        notallyFragmentModel.currentLabel = CURRENT_LABEL_EMPTY
+        notallyRouteModel.setFolder(Folder.NOTES)
+        notallyRouteModel.currentLabel = CURRENT_LABEL_EMPTY
     }
 
     NotesGridScreen(
@@ -44,7 +44,7 @@ fun NotesRoute(
         selectedNoteIds = selectedIds,
         displayConfig = displayConfig,
         backgroundResId = R.drawable.notebook,
-        imageRoot = notallyFragmentModel.imageRoot,
+        imageRoot = notallyRouteModel.imageRoot,
         onNoteClick = onNoteClick,
         onNoteLongClick = onNoteLongClick,
         onReminderClick = { note, _ -> onReminderClick(note) },

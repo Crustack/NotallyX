@@ -40,9 +40,9 @@ import com.philkes.notallyx.feature.editor.EditListActivity
 import com.philkes.notallyx.feature.editor.EditNoteActionHandler
 import com.philkes.notallyx.feature.editor.EditNoteActivity
 import com.philkes.notallyx.feature.editor.handleRejection
-import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel
-import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel.Companion.CURRENT_LABEL_EMPTY
-import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel.Companion.CURRENT_LABEL_NONE
+import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel
+import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel.Companion.CURRENT_LABEL_EMPTY
+import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel.Companion.CURRENT_LABEL_NONE
 import com.philkes.notallyx.feature.migration.ExportMimeType
 import com.philkes.notallyx.feature.migration.backup.DatabaseTransitionActivity
 import com.philkes.notallyx.feature.migration.backup.exportNotes
@@ -55,7 +55,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : LockedActivity<ComposeBinding>() {
 
-    private val notallyFragmentModel: NotesFragmentViewModel by viewModel()
+    private val notallyRouteModel: NotesRouteViewModel by viewModel()
     val mainActivityViewModel: MainActivityViewModel by viewModel()
 
     private lateinit var exportFileActivityResultLauncher: ActivityResultLauncher<Intent>
@@ -64,12 +64,12 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     private val currentNavKeyFlow = MutableStateFlow<NotallyNavKey>(NotallyNavKey.Notes)
     private val currentTitleFlow = MutableStateFlow("")
 
-    private var isStartViewFragment = false
+    private var isStartViewRoute = false
     private var lastSelectedNotePosition = -1
     private val actionModeCancelCallback =
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                notallyFragmentModel.actionMode.close(true)
+                notallyRouteModel.actionMode.close(true)
             }
         }
 
@@ -92,7 +92,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                 activity = this@MainActivity,
                 currentNavKeyFlow = currentNavKeyFlow,
                 currentTitleFlow = currentTitleFlow,
-                onStartViewChanged = { isStartView -> isStartViewFragment = isStartView },
+                onStartViewChanged = { isStartView -> isStartViewRoute = isStartView },
                 onPrepareNewNoteIntent = { intent -> prepareNewNoteIntent(intent) },
                 onNoteClick = { note, pos -> handleNoteClick(note, pos) },
                 onNoteLongClick = { note, pos, items -> handleNoteLongClick(note, pos, items) },
@@ -112,7 +112,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                                 )
                         },
                     ) {
-                        notallyFragmentModel.pinBaseNotesToStatusBar(
+                        notallyRouteModel.pinBaseNotesToStatusBar(
                             this@MainActivity,
                             true,
                         )
@@ -121,14 +121,14 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                 onShowToast = { resId -> showToast(resId) },
                 migrationProgressState = migrationProgressState,
                 mainActivityViewModel = mainActivityViewModel,
-                notallyFragmentModel = notallyFragmentModel,
+                notallyRouteModel = notallyRouteModel,
             )
         }
 
         repeatOnLifecycleScope {
             launch { preferences.alwaysShowSearchBar.flow.collect { invalidateOptionsMenu() } }
             launch {
-                notallyFragmentModel.actionMode.enabled.collect { enabled ->
+                notallyRouteModel.actionMode.enabled.collect { enabled ->
                     if (!enabled) {
                         lastSelectedNotePosition = -1
                     }
@@ -160,11 +160,11 @@ class MainActivity : LockedActivity<ComposeBinding>() {
             this,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    if (notallyFragmentModel.actionMode.enabled.value) {
+                    if (notallyRouteModel.actionMode.enabled.value) {
                         return
                     }
                     if (
-                        !isStartViewFragment &&
+                        !isStartViewRoute &&
                             !intent.getBooleanExtra(EXTRA_SKIP_START_VIEW_ON_BACK, false)
                     ) {
                         navigateToStartView()
@@ -184,7 +184,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     }
 
     private fun handleNoteClick(note: BaseNote, position: Int) {
-        if (notallyFragmentModel.actionMode.isEnabled()) {
+        if (notallyRouteModel.actionMode.isEnabled()) {
             handleNoteSelection(note.id, position, note)
         } else {
             val intent =
@@ -203,7 +203,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
         position: Int,
         items: List<Item> = emptyList(),
     ) {
-        val selectedNotes = notallyFragmentModel.actionMode.selectedNotes
+        val selectedNotes = notallyRouteModel.actionMode.selectedNotes
         if (selectedNotes.isNotEmpty()) {
             val anchorPosition =
                 if (
@@ -227,9 +227,9 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                         .mapNotNull { pos -> items.getOrNull(pos) as? BaseNote }
                         .filter { !selectedNotes.contains(it.id) }
                 if (notesToAdd.isNotEmpty()) {
-                    notallyFragmentModel.actionMode.add(notesToAdd)
+                    notallyRouteModel.actionMode.add(notesToAdd)
                 } else if (!selectedNotes.contains(note.id)) {
-                    notallyFragmentModel.actionMode.add(note.id, note)
+                    notallyRouteModel.actionMode.add(note.id, note)
                 }
                 lastSelectedNotePosition = position
             } else {
@@ -241,23 +241,23 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     }
 
     private fun handleNoteSelection(id: Long, position: Int, baseNote: BaseNote) {
-        if (notallyFragmentModel.actionMode.selectedNotes.contains(id)) {
-            notallyFragmentModel.actionMode.remove(id)
-            if (notallyFragmentModel.actionMode.isEmpty()) {
+        if (notallyRouteModel.actionMode.selectedNotes.contains(id)) {
+            notallyRouteModel.actionMode.remove(id)
+            if (notallyRouteModel.actionMode.isEmpty()) {
                 lastSelectedNotePosition = -1
             }
         } else {
-            notallyFragmentModel.actionMode.add(id, baseNote)
+            notallyRouteModel.actionMode.add(id, baseNote)
             lastSelectedNotePosition = position
         }
     }
 
     private fun handleReminderClick(note: BaseNote) {
-        if (notallyFragmentModel.actionMode.isEnabled()) {
-            if (notallyFragmentModel.actionMode.selectedNotes.contains(note.id)) {
-                notallyFragmentModel.actionMode.remove(note.id)
+        if (notallyRouteModel.actionMode.isEnabled()) {
+            if (notallyRouteModel.actionMode.selectedNotes.contains(note.id)) {
+                notallyRouteModel.actionMode.remove(note.id)
             } else {
-                notallyFragmentModel.actionMode.add(note.id, note)
+                notallyRouteModel.actionMode.add(note.id, note)
             }
             return
         }
@@ -280,8 +280,8 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                     grantResults.isNotEmpty() &&
                         grantResults[0] == PackageManager.PERMISSION_GRANTED
                 ) {
-                    val baseNotes = notallyFragmentModel.actionMode.selectedNotes.values
-                    notallyFragmentModel.pinBaseNotesToStatusBar(
+                    val baseNotes = notallyRouteModel.actionMode.selectedNotes.values
+                    notallyRouteModel.pinBaseNotesToStatusBar(
                         this@MainActivity,
                         baseNotes.any { !it.isPinnedToStatus },
                     )
@@ -349,7 +349,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     }
 
     private fun prepareNewNoteIntent(intent: Intent): Intent {
-        val currentLabel = notallyFragmentModel.currentLabel
+        val currentLabel = notallyRouteModel.currentLabel
         if (
             !currentLabel.isNullOrEmpty() &&
                 currentLabel != CURRENT_LABEL_EMPTY &&
@@ -365,7 +365,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
                     result.data?.data?.let { uri ->
-                        notallyFragmentModel.exportSelectedNoteToFile(uri, binding.root)
+                        notallyRouteModel.exportSelectedNoteToFile(uri, binding.root)
                     }
                 }
             }
@@ -373,16 +373,16 @@ class MainActivity : LockedActivity<ComposeBinding>() {
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
                     result.data?.data?.let { uri ->
-                        notallyFragmentModel.exportSelectedNotesToFolder(uri, binding.root)
+                        notallyRouteModel.exportSelectedNotesToFolder(uri, binding.root)
                     }
                 }
             }
     }
 
     internal fun exportSelectedNotes(mimeType: ExportMimeType) {
-        notallyFragmentModel.selectedExportMimeType = mimeType
+        notallyRouteModel.selectedExportMimeType = mimeType
         exportNotes(
-            notallyFragmentModel.actionMode.selectedNotes.values,
+            notallyRouteModel.actionMode.selectedNotes.values,
             mimeType,
             exportFileActivityResultLauncher,
             exportNotesActivityResultLauncher,
@@ -390,17 +390,15 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     }
 
     private fun moveSelectedNotes(folderTo: Folder) {
-        if (
-            notallyFragmentModel.actionMode.isLoading() || notallyFragmentModel.actionMode.isEmpty()
-        ) {
+        if (notallyRouteModel.actionMode.isLoading() || notallyRouteModel.actionMode.isEmpty()) {
             return
         }
         try {
-            notallyFragmentModel.actionMode.setLoading(true)
-            val folderFrom = notallyFragmentModel.actionMode.getFirstNote().folder
+            notallyRouteModel.actionMode.setLoading(true)
+            val folderFrom = notallyRouteModel.actionMode.getFirstNote().folder
             val ids =
-                notallyFragmentModel.moveBaseNotes(folderTo) {
-                    notallyFragmentModel.actionMode.setLoading(false)
+                notallyRouteModel.moveBaseNotes(folderTo) {
+                    notallyRouteModel.actionMode.setLoading(false)
                 }
             Snackbar.make(
                     binding.root,
@@ -408,11 +406,11 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                     Snackbar.LENGTH_SHORT,
                 )
                 .apply {
-                    setAction(R.string.undo) { notallyFragmentModel.moveBaseNotes(ids, folderFrom) }
+                    setAction(R.string.undo) { notallyRouteModel.moveBaseNotes(ids, folderFrom) }
                 }
                 .show()
         } catch (_: Exception) {
-            notallyFragmentModel.actionMode.setLoading(false)
+            notallyRouteModel.actionMode.setLoading(false)
         }
     }
 
@@ -421,9 +419,9 @@ class MainActivity : LockedActivity<ComposeBinding>() {
             message = getString(R.string.delete_selected_notes),
             positiveButtonText = getString(R.string.delete),
             onConfirm = {
-                val removedNotes = notallyFragmentModel.actionMode.selectedNotes.values.toList()
+                val removedNotes = notallyRouteModel.actionMode.selectedNotes.values.toList()
                 lifecycleScope.launch {
-                    val deletedNotes = notallyFragmentModel.deleteSelectedBaseNotes()
+                    val deletedNotes = notallyRouteModel.deleteSelectedBaseNotes()
                     Snackbar.make(
                             binding.root,
                             getQuantityString(
@@ -433,9 +431,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                             Snackbar.LENGTH_SHORT,
                         )
                         .apply {
-                            setAction(R.string.undo) {
-                                notallyFragmentModel.saveNotes(removedNotes)
-                            }
+                            setAction(R.string.undo) { notallyRouteModel.saveNotes(removedNotes) }
                             addCallback(
                                 object : Snackbar.Callback() {
                                     override fun onDismissed(
@@ -445,7 +441,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                                         if (event != DISMISS_EVENT_ACTION) {
                                             deleteAttachments(
                                                 deletedNotes,
-                                                notallyFragmentModel.progress,
+                                                notallyRouteModel.progress,
                                             )
                                         }
                                     }
@@ -464,9 +460,9 @@ class MainActivity : LockedActivity<ComposeBinding>() {
             !preferences.alwaysShowSearchBar.value &&
                 !ACTIVITES_WITHOUT_SEARCH.contains(currentNavKey)
         ) {
-            val isInSearchFragment = currentNavKey is NotallyNavKey.Search
-            val iconRes = if (isInSearchFragment) R.drawable.close else R.drawable.search
-            val titleRes = if (isInSearchFragment) R.string.cancel else R.string.search
+            val isInSearchRoute = currentNavKey is NotallyNavKey.Search
+            val iconRes = if (isInSearchRoute) R.drawable.close else R.drawable.search
+            val titleRes = if (isInSearchRoute) R.string.cancel else R.string.search
 
             menu
                 .add(Menu.NONE, ACTION_SEARCH, Menu.NONE, titleRes)
@@ -486,7 +482,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     }
 
     companion object {
-        const val EXTRA_ROUTE_TO_OPEN = "notallyx.intent.extra.FRAGMENT_TO_OPEN"
+        const val EXTRA_ROUTE_TO_OPEN = "notallyx.intent.extra.EXTRA_TO_OPEN"
         const val EXTRA_SKIP_START_VIEW_ON_BACK = "notallyx.intent.extra.SKIP_START_VIEW_ON_BACK"
         const val EXTRA_DISPLAYED_LABEL = "notallyx.intent.extra.DISPLAYED_LABEL"
         private const val ACTION_SEARCH = 1001

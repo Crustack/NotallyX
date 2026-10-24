@@ -9,7 +9,7 @@ import com.philkes.notallyx.feature.main.MainActivityViewModel
 import com.philkes.notallyx.feature.main.routes.archived.ArchivedViewModel
 import com.philkes.notallyx.feature.main.routes.deleted.DeletedViewModel
 import com.philkes.notallyx.feature.main.routes.labels.UnlabeledViewModel
-import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel
+import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel
 import com.philkes.notallyx.feature.main.routes.notes.NotesViewModel
 import com.philkes.notallyx.feature.main.routes.settings.AutoRemoveDeletedNotesWorker
 import com.philkes.notallyx.feature.reminder.RemindersViewModel
@@ -21,7 +21,7 @@ import org.koin.dsl.module
 val featureModule = module {
     workerOf(::AutoRemoveDeletedNotesWorker)
     viewModelOf(::MainActivityViewModel)
-    viewModelOf(::NotesFragmentViewModel)
+    viewModelOf(::NotesRouteViewModel)
     viewModelOf(::NotesViewModel)
     viewModelOf(::ArchivedViewModel)
     viewModelOf(::DeletedViewModel)

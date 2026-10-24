@@ -36,8 +36,8 @@ In NotallyX, instrumented UI tests rely directly on Jetpack Compose UI Testing (
 
 * **Inherit from `UiTestBase`**: All UI test classes extend `UiTestBase`, which automatically handles context wrapping, database access, preference initialization, back button access, and runtime permission granting (`POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM`).
 * **Compose Test Rules**:
-  * Use `createEmptyComposeRule()` when launching activities manually via `ActivityScenario.launch(...)` (e.g., `EditActivityTest`, `LabelsFragmentTest`).
-  * Use `createAndroidComposeRule<MainActivity>()` when testing screens or fragments hosted directly by `MainActivity` (e.g., `SettingsFragmentTest`).
+  * Use `createEmptyComposeRule()` when launching activities manually via `ActivityScenario.launch(...)` (e.g., `EditActivityTest`, `LabelsRouteTest`).
+  * Use `createAndroidComposeRule<MainActivity>()` when testing screens or fragments hosted directly by `MainActivity` (e.g., `SettingsRouteTest`).
 * **Asynchronous Wait Helpers**: Use `composeTestRule.waitUntil(timeoutMs) { condition }` or global `waitUntil(timeoutMs) { condition }` to poll until asynchronous Room, StateFlow, or UI state changes complete.
 
 ```kotlin
@@ -85,7 +85,7 @@ class FeatureFragmentTest : UiTestBase() {
 
 ### 1. Matching Nodes with Localized String Resources
 
-Always look up strings dynamically through `context.getString(R.string.*)` rather than hardcoding raw UI string values. This ensures tests stay resilient against localization updates and matches existing tests like `EditActivityTest` and `SettingsFragmentTest`.
+Always look up strings dynamically through `context.getString(R.string.*)` rather than hardcoding raw UI string values. This ensures tests stay resilient against localization updates and matches existing tests like `EditActivityTest` and `SettingsRouteTest`.
 
 ```kotlin
 val takeNoteLabel = context.getString(R.string.take_note)
@@ -175,7 +175,7 @@ R.string.pin.byContentDescription()
 
 ### 3. Intercepting Chooser / Intent Activity Results
 
-When testing features that trigger system file pickers or export/import intents (e.g. export settings in `SettingsFragmentTest`), use Espresso `Intents`:
+When testing features that trigger system file pickers or export/import intents (e.g. export settings in `SettingsRouteTest`), use Espresso `Intents`:
 
 ```kotlin
 Intents.init()
@@ -287,7 +287,7 @@ composeTestRule.waitUntil(10_000) {
 
 ### 2. Specialized Settings Wait Helper (`waitUntilSettingsValue`)
 
-For settings changes in `SettingsFragmentTest`:
+For settings changes in `SettingsRouteTest`:
 
 ```kotlin
 composeTestRule.waitUntilSettingsValue(R.string.always_show_search_bar, R.string.enabled)
@@ -370,7 +370,7 @@ class CreateNoteTest : UiTestBase() {
 
 ### Template 2: Fragment / Hosted Screen Test (`createAndroidComposeRule<MainActivity>`)
 
-*Baseline from `SettingsFragmentTest.kt`*
+*Baseline from `SettingsRouteTest.kt`*
 
 ```kotlin
 package com.philkes.notallyx.activity.main.fragments

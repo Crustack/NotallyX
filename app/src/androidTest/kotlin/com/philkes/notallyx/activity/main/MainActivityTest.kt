@@ -701,7 +701,7 @@ class MainActivityTest : UiTestBase() {
         val searchLabel = context.getString(R.string.search)
         val cancelLabel = context.getString(R.string.cancel)
 
-        // 2. Open Search fragment
+        // 2. Open Search Route
         composeTestRule.onNodeWithContentDescription(searchLabel).performClick()
 
         composeTestRule.waitUntil(10_000) {

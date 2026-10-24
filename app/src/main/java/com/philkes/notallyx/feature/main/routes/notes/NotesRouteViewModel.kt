@@ -44,7 +44,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class NotesFragmentViewModel(app: Application, preferences: NotallyXPreferences) :
+class NotesRouteViewModel(app: Application, preferences: NotallyXPreferences) :
     BaseViewModel(app, preferences) {
 
     lateinit var selectedExportMimeType: ExportMimeType
@@ -411,7 +411,7 @@ class NotesFragmentViewModel(app: Application, preferences: NotallyXPreferences)
     }
 
     companion object {
-        private const val TAG = "NotallyFragmentViewModel"
+        private const val TAG = "NotallyRouteViewModel"
 
         const val CURRENT_LABEL_EMPTY = ""
         val CURRENT_LABEL_NONE: String? = null

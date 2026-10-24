@@ -57,8 +57,8 @@ import com.philkes.notallyx.core.ui.dialog.IconListItem
 import com.philkes.notallyx.core.ui.dialog.SelectionItem
 import com.philkes.notallyx.core.ui.extensions.setEnabledSecureFlag
 import com.philkes.notallyx.core.ui.extensions.showToast
-import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel
-import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel.Companion.CURRENT_LABEL_EMPTY
+import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel
+import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel.Companion.CURRENT_LABEL_EMPTY
 import com.philkes.notallyx.feature.migration.backup.DatabaseAction
 import com.philkes.notallyx.feature.migration.backup.DatabaseTransitionActivity
 import com.philkes.notallyx.feature.migration.backup.exportPreferences
@@ -83,11 +83,11 @@ import org.koin.androidx.compose.koinViewModel
 fun SettingsRoute(
     modifier: Modifier = Modifier,
     settingsViewModel: SettingsViewModel = koinViewModel(),
-    notallyFragmentModel: NotesFragmentViewModel = koinViewModel(),
+    notallyRouteModel: NotesRouteViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    LaunchedEffect(Unit) { notallyFragmentModel.currentLabel = CURRENT_LABEL_EMPTY }
+    LaunchedEffect(Unit) { notallyRouteModel.currentLabel = CURRENT_LABEL_EMPTY }
 
     var activeDialogState by remember { mutableStateOf<SettingsDialogState?>(null) }
     var selectedImportSource by remember { mutableStateOf<ImportSource?>(null) }
