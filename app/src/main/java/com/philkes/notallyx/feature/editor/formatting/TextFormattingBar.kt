@@ -1,9 +1,23 @@
 package com.philkes.notallyx.feature.editor.formatting
 
+import android.graphics.Typeface
+import android.text.Spanned
+import android.text.style.CharacterStyle
+import android.text.style.StrikethroughSpan
+import android.text.style.StyleSpan
+import android.text.style.TypefaceSpan
+import android.text.style.URLSpan
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -16,6 +30,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
@@ -28,6 +47,88 @@ data class TextFormattingState(
     val isMonospace: Boolean = false,
     val isLink: Boolean = false,
 )
+
+fun AnnotatedString.getFormattingState(start: Int, end: Int): TextFormattingState {
+    if (start >= end) return TextFormattingState()
+    var isBold = false
+    var isItalic = false
+    var isStrikethrough = false
+    var isMonospace = false
+    var isLink = false
+
+    spanStyles.forEach { range ->
+        if (range.start < end && range.end > start) {
+            val style = range.item
+            if (
+                style.fontWeight == FontWeight.Bold ||
+                    (style.fontWeight != null && style.fontWeight!!.weight >= 700)
+            ) {
+                isBold = true
+            }
+            if (style.fontStyle == FontStyle.Italic) {
+                isItalic = true
+            }
+            if (style.textDecoration?.contains(TextDecoration.LineThrough) == true) {
+                isStrikethrough = true
+            }
+            if (style.fontFamily == FontFamily.Monospace) {
+                isMonospace = true
+            }
+        }
+    }
+    getStringAnnotations("URL", start, end).forEach { range ->
+        if (range.start < end && range.end > start) {
+            isLink = true
+        }
+    }
+    return TextFormattingState(
+        isBold = isBold,
+        isItalic = isItalic,
+        isStrikethrough = isStrikethrough,
+        isMonospace = isMonospace,
+        isLink = isLink,
+    )
+}
+
+fun Spanned.getFormattingState(start: Int, end: Int): TextFormattingState {
+    if (start >= end) return TextFormattingState()
+    val spans = getSpans(start, end, CharacterStyle::class.java)
+    var isBold = false
+    var isItalic = false
+    var isStrikethrough = false
+    var isMonospace = false
+    var isLink = false
+    for (span in spans) {
+        val sStart = getSpanStart(span)
+        val sEnd = getSpanEnd(span)
+        if (sStart < end && sEnd > start) {
+            when (span) {
+                is StyleSpan -> {
+                    if (span.style == Typeface.BOLD || span.style == Typeface.BOLD_ITALIC) {
+                        isBold = true
+                    }
+                    if (span.style == Typeface.ITALIC || span.style == Typeface.BOLD_ITALIC) {
+                        isItalic = true
+                    }
+                }
+                is StrikethroughSpan -> isStrikethrough = true
+                is TypefaceSpan -> {
+                    if (span.family.equals("monospace", ignoreCase = true)) {
+                        isMonospace = true
+                    }
+                }
+                is URLSpan -> isLink = true
+            }
+        }
+    }
+    return TextFormattingState(
+        isBold = isBold,
+        isItalic = isItalic,
+        isStrikethrough = isStrikethrough,
+        isMonospace = isMonospace,
+        isLink = isLink,
+    )
+}
 
 data class TextFormattingBarActions(
     val onBoldClick: () -> Unit = {},
@@ -54,7 +155,14 @@ fun TextFormattingBar(
         tonalElevation = 0.dp,
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .windowInsetsPadding(
+                        WindowInsets.ime
+                            .union(WindowInsets.navigationBars)
+                            .only(WindowInsetsSides.Bottom)
+                    )
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(

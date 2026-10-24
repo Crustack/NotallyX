@@ -12,9 +12,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.philkes.notallyx.R
@@ -40,6 +42,7 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
     private var searchResultIndices: List<Pair<Int, Int>>? = null
     private lateinit var saveAsActivityResultLauncher: ActivityResultLauncher<Intent>
     private val originalFileUri = MutableStateFlow<Uri?>(null)
+    private val bodyValueState = mutableStateOf(TextFieldValue())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (intent.action == Intent.ACTION_VIEW && intent.data != null) {
@@ -80,7 +83,7 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
         if (search.isEmpty()) {
             return 0
         }
-        val text = notallyModel.body.toString()
+        val text = notallyModel.body.text
         val occurrences = withContext(Dispatchers.Default) { text.findAllOccurrences(search) }
         searchResultIndices = occurrences
         return searchResultIndices!!.size
@@ -97,7 +100,7 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
         val noteState =
             EditNoteState(
                 title = titleState.value,
-                bodyText = bodyTextState.value,
+                bodyValue = bodyValueState.value,
                 createdTimestamp = notallyModel.timestamp,
                 modifiedTimestamp = notallyModel.modifiedTimestamp,
             )
@@ -115,9 +118,9 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
                         notallyModel.title = title
                     }
 
-                    override fun onBodyTextChange(bodyText: String) {
-                        bodyTextState.value = bodyText
-                        notallyModel.body.replace(0, notallyModel.body.length, bodyText)
+                    override fun onBodyValueChange(bodyValue: TextFieldValue) {
+                        bodyValueState.value = bodyValue
+                        notallyModel.body = bodyValue
                         if (isSearchActiveState.value) {
                             updateSearchResults(searchQueryState.value)
                         }
@@ -193,7 +196,7 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
 
     override fun setStateFromModel(savedInstanceState: Bundle?) {
         super.setStateFromModel(savedInstanceState)
-        bodyTextState.value = notallyModel.body.toString()
+        bodyValueState.value = notallyModel.body
         titleState.value = notallyModel.title
     }
 
@@ -212,7 +215,7 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
                     val outputStream =
                         contentResolver.openOutputStream(uri)
                             ?: throw IOException("Failed to open output stream for URI: $uri")
-                    outputStream.use { it.write(notallyModel.body.toString().toByteArray()) }
+                    outputStream.use { it.write(notallyModel.body.text.toByteArray()) }
                 }
                 originalFileUri.value = uri
                 showToast(R.string.saved_to_device)
