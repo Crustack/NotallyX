@@ -538,7 +538,17 @@ open class NoteModel(
     suspend fun convertTo(noteType: Type) {
         when (noteType) {
             Type.NOTE -> {
-                val text = items.joinToString(separator = "\n") { it.body }
+                val anyCheckedOrChild = items.any { it.checked || it.isChild }
+                val text =
+                    if (anyCheckedOrChild) {
+                        items.joinToString(separator = "\n") { item ->
+                            val indent = if (item.isChild) "    " else ""
+                            val check = if (item.checked) "[x]" else "[ ]"
+                            "$indent- $check ${item.body}"
+                        }
+                    } else {
+                        items.joinToString(separator = "\n") { it.body }
+                    }
                 body =
                     TextFieldValue(
                         annotatedString = AnnotatedString(text),
@@ -552,12 +562,15 @@ open class NoteModel(
                 val listSyntaxRegex =
                     text.findListSyntaxRegex(checkContains = true, plainNewLineAllowed = true)
                 if (listSyntaxRegex != null) {
-                    setItems(text.extractListItems(listSyntaxRegex))
+                    setItems(text.extractListItems(listSyntaxRegex).init())
                 } else {
                     setItems(
-                        text.lines().mapIndexed { idx, itemText ->
-                            ListItem(itemText, false, false, idx, mutableListOf())
-                        }
+                        text
+                            .lines()
+                            .mapIndexed { idx, itemText ->
+                                ListItem(itemText, false, false, idx, mutableListOf())
+                            }
+                            .init()
                     )
                 }
                 type = Type.LIST

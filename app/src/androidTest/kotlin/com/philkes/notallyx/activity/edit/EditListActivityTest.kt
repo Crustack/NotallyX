@@ -2,6 +2,7 @@ package com.philkes.notallyx.activity.edit
 
 import android.util.Log
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsFocused
@@ -33,6 +34,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.preference.ListItemSort
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.test.UiTestBase
@@ -1119,6 +1121,166 @@ class EditListActivityTest : UiTestBase() {
 
         assertIsAbove("Item 2", "Parent 1")
         assertIsAbove("Parent 1", "Item 3")
+
+        scenario.close()
+    }
+
+    @Test
+    fun noteStructureConversionFidelity() {
+        preferences.listItemSorting.save(ListItemSort.NO_AUTO_SORT)
+
+        val noteTitle = "Conversion Fidelity Note"
+        val itemsList =
+            listOf(
+                createListItem(
+                    body = "Parent 1",
+                    checked = false,
+                    isChild = false,
+                    order = 0,
+                    id = 0,
+                ),
+                createListItem(
+                    body = "Child 1.1",
+                    checked = true,
+                    isChild = true,
+                    order = 1,
+                    id = 1,
+                ),
+                createListItem(
+                    body = "Child 1.2",
+                    checked = false,
+                    isChild = true,
+                    order = 2,
+                    id = 2,
+                ),
+                createListItem(
+                    body = "Parent 2",
+                    checked = true,
+                    isChild = false,
+                    order = 3,
+                    id = 3,
+                ),
+            )
+        val note =
+            createBaseNote(
+                title = noteTitle,
+                type = Type.LIST,
+                items = itemsList,
+            )
+        runBlocking { database.getBaseNoteDao().insert(note) }
+
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        val moreOptionsLabel = context.getString(R.string.tap_for_more_options)
+        val convertToTextLabel = context.getString(R.string.convert_to_text_note)
+        val convertToListLabel = context.getString(R.string.convert_to_list_note)
+        val noteBodyLabel = context.getString(R.string.note)
+        val backLabel = context.getString(R.string.back)
+
+        // 1. Open the list note from MainActivity
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(noteTitle).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(itemNode("Parent 1")).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // 2. Verify initial list note hierarchy and checked state in EditListActivity
+        assertIsParent("Parent 1", "Parent 1")
+        assertIsChild("Child 1.1", "Parent 1")
+        assertIsChild("Child 1.2", "Parent 1")
+        assertIsParent("Parent 2", "Parent 1")
+
+        composeTestRule.onNode(itemCheckbox("Parent 1")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Child 1.1")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNode(itemCheckbox("Child 1.2")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Parent 2")).scrollToIfNeeded().assertIsOn()
+
+        // 3. Convert List Note -> Text Note
+        composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText(convertToTextLabel))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(convertToTextLabel).performClick()
+
+        // Wait until EditNoteActivity is active and note body is displayed
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(noteBodyLabel))
+                .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                .isNotEmpty()
+        }
+
+        // 4. Verify text body preserves Markdown checklist formatting with indentation and
+        // checkmarks
+        val expectedMarkdownBody =
+            listOf(
+                    "- [ ] Parent 1",
+                    "    - [x] Child 1.1",
+                    "    - [ ] Child 1.2",
+                    "- [x] Parent 2",
+                )
+                .joinToString("\n")
+        composeTestRule
+            .onNodeWithContentDescription(noteBodyLabel)
+            .assert(hasText(expectedMarkdownBody))
+
+        // 5. Convert Text Note -> List Note
+        composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText(convertToListLabel))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(convertToListLabel).performClick()
+
+        // Wait until EditListActivity is active and list items are displayed
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(itemNode("Parent 1"))
+                .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                .isNotEmpty()
+        }
+
+        // 6. Verify full structural fidelity: hierarchy, ordering, and checked status preserved
+        assertIsParent("Parent 1", "Parent 1")
+        assertIsChild("Child 1.1", "Parent 1")
+        assertIsChild("Child 1.2", "Parent 1")
+        assertIsParent("Parent 2", "Parent 1")
+
+        assertIsAbove("Parent 1", "Child 1.1")
+        assertIsAbove("Child 1.1", "Child 1.2")
+        assertIsAbove("Child 1.2", "Parent 2")
+
+        composeTestRule.onNode(itemCheckbox("Parent 1")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Child 1.1")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNode(itemCheckbox("Child 1.2")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Parent 2")).scrollToIfNeeded().assertIsOn()
+
+        // 7. Exit to MainActivity and re-open to verify persistent fidelity in Room DB
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(noteTitle).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(itemNode("Parent 1")).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        assertIsParent("Parent 1", "Parent 1")
+        assertIsChild("Child 1.1", "Parent 1")
+        assertIsChild("Child 1.2", "Parent 1")
+        assertIsParent("Parent 2", "Parent 1")
+
+        composeTestRule.onNode(itemCheckbox("Parent 1")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Child 1.1")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNode(itemCheckbox("Child 1.2")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Parent 2")).scrollToIfNeeded().assertIsOn()
 
         scenario.close()
     }
