@@ -17,7 +17,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiSelector
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.model.Color
 import com.philkes.notallyx.data.model.Type
+import com.philkes.notallyx.data.model.toColorString
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.widget.ConfigureWidgetActivity
 import com.philkes.notallyx.feature.widget.NoteWidget
@@ -60,7 +62,12 @@ class WidgetTest : UiTestBase() {
                     database
                         .getBaseNoteDao()
                         .insert(
-                            createBaseNote(title = noteTitle2, body = "Body 2", type = Type.NOTE)
+                            createBaseNote(
+                                title = noteTitle2,
+                                body = "Body 2",
+                                type = Type.NOTE,
+                                color = Color.CORAL.toColorString(),
+                            )
                         )
                 Pair(id1, id2)
             }

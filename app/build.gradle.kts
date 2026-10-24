@@ -396,6 +396,8 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
     implementation(libs.androidx.glance.appwidget)
+    debugImplementation(libs.androidx.glance.appwidgetPreview)
+    debugImplementation(libs.androidx.glance.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     // Koin

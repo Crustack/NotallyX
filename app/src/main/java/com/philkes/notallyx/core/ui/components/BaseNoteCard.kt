@@ -530,8 +530,8 @@ object SampleNotes {
                     ),
                     ListItem(
                         "Item3",
-                        checked = false,
-                        isChild = false,
+                        checked = true,
+                        isChild = true,
                         order = 3,
                         children = mutableListOf(),
                     ),
