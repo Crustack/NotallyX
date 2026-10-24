@@ -36,6 +36,7 @@ import com.philkes.notallyx.core.ui.dialog.ColorPickerDialog
 import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.dialog.DualTextInputDialog
 import com.philkes.notallyx.core.ui.dialog.ErrorDialog
+import com.philkes.notallyx.core.ui.dialog.LinkOptionsDialog
 import com.philkes.notallyx.core.ui.dialog.ListDialog
 import com.philkes.notallyx.core.ui.dialog.ProgressDialog
 import com.philkes.notallyx.core.ui.dialog.TextInputDialog
@@ -652,6 +653,17 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
                         },
                     )
                 }
+            }
+            is EditorDialogState.LinkOptions -> {
+                LinkOptionsDialog(
+                    url = dialogState.url,
+                    displayText = dialogState.displayText,
+                    isNoteUrl = dialogState.isNoteUrl,
+                    onOpen = dialogState.onOpen,
+                    onEdit = dialogState.onEdit,
+                    onRemove = dialogState.onRemove,
+                    onDismissRequest = { notallyModel.activeDialog.value = null },
+                )
             }
             null -> {}
         }

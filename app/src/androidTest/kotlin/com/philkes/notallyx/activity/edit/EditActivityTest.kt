@@ -7,10 +7,12 @@ import android.content.ClipData
 import android.content.Intent
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog as isComposeDialog
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -50,6 +52,7 @@ import com.philkes.notallyx.feature.migration.ExportMimeType
 import com.philkes.notallyx.feature.reminder.PinnedNotificationManager
 import com.philkes.notallyx.navigation.NotallyNavKey
 import com.philkes.notallyx.test.UiTestBase
+import com.philkes.notallyx.test.assertSubtextHasLink
 import com.philkes.notallyx.test.assertSubtextHasNoFormatting
 import com.philkes.notallyx.test.assertSubtextHasStrikethrough
 import com.philkes.notallyx.test.assertSubtextIsBold
@@ -57,6 +60,7 @@ import com.philkes.notallyx.test.assertSubtextIsItalic
 import com.philkes.notallyx.test.assertSubtextIsMonospace
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.navigateTo
+import com.philkes.notallyx.test.performClickOnSubtext
 import com.philkes.notallyx.test.waitUntil
 import java.io.File
 import kotlinx.coroutines.runBlocking
@@ -173,10 +177,17 @@ class EditActivityTest : UiTestBase() {
             .performClick()
 
         // Select and format "amet" as link
-        //        bodyNode.performTextInputSelection(TextRange(22, 26))
-        //        composeTestRule
-        //            .onNodeWithContentDescription(context.getString(R.string.link))
-        //            .performClick()
+        bodyNode.performTextInputSelection(TextRange(22, 26))
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.link))
+            .performClick()
+        val linkUrl = "https://example.com"
+        composeTestRule
+            .onAllNodes(hasSetTextAction() and hasAnyAncestor(isComposeDialog()))[1]
+            .performTextInput(linkUrl)
+        composeTestRule
+            .onNode(hasText(context.getString(R.string.save)) and hasAnyAncestor(isComposeDialog()))
+            .performClick()
 
         // Select "consectetur", format as bold and then clear formatting
         bodyNode.performTextInputSelection(TextRange(28, 39))
@@ -193,8 +204,36 @@ class EditActivityTest : UiTestBase() {
             .assertSubtextIsItalic("ipsum")
             .assertSubtextHasStrikethrough("dolor")
             .assertSubtextIsMonospace("sit")
-            //            .assertSubtextHasLink("amet")
+            .assertSubtextHasLink("amet", linkUrl)
             .assertSubtextHasNoFormatting("consectetur")
+
+        // Click on the text that has the link to open options dialog
+        bodyNode.performClickOnSubtext("amet")
+
+        // In options dialog, click "Edit Link"
+        composeTestRule
+            .onNode(
+                hasText(context.getString(R.string.edit_link)) and hasAnyAncestor(isComposeDialog())
+            )
+            .performClick()
+
+        // Edit link and display text
+        val updatedText = "amet updated"
+        val updatedUrl = "https://updated-example.com"
+        composeTestRule
+            .onAllNodes(hasSetTextAction() and hasAnyAncestor(isComposeDialog()))[0]
+            .performTextReplacement(updatedText)
+        composeTestRule
+            .onAllNodes(hasSetTextAction() and hasAnyAncestor(isComposeDialog()))[1]
+            .performTextReplacement(updatedUrl)
+        composeTestRule
+            .onNode(hasText(context.getString(R.string.save)) and hasAnyAncestor(isComposeDialog()))
+            .performClick()
+
+        // Assert text changed and link is updated
+        bodyNode
+            .assert(hasText(updatedText, substring = true))
+            .assertSubtextHasLink(updatedText, updatedUrl)
 
         scenario.close()
     }

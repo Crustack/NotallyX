@@ -1,12 +1,5 @@
 package com.philkes.notallyx.feature.editor.formatting
 
-import android.graphics.Typeface
-import android.text.Spanned
-import android.text.style.CharacterStyle
-import android.text.style.StrikethroughSpan
-import android.text.style.StyleSpan
-import android.text.style.TypefaceSpan
-import android.text.style.URLSpan
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -79,46 +72,6 @@ fun AnnotatedString.getFormattingState(start: Int, end: Int): TextFormattingStat
     getStringAnnotations("URL", start, end).forEach { range ->
         if (range.start < end && range.end > start) {
             isLink = true
-        }
-    }
-    return TextFormattingState(
-        isBold = isBold,
-        isItalic = isItalic,
-        isStrikethrough = isStrikethrough,
-        isMonospace = isMonospace,
-        isLink = isLink,
-    )
-}
-
-fun Spanned.getFormattingState(start: Int, end: Int): TextFormattingState {
-    if (start >= end) return TextFormattingState()
-    val spans = getSpans(start, end, CharacterStyle::class.java)
-    var isBold = false
-    var isItalic = false
-    var isStrikethrough = false
-    var isMonospace = false
-    var isLink = false
-    for (span in spans) {
-        val sStart = getSpanStart(span)
-        val sEnd = getSpanEnd(span)
-        if (sStart < end && sEnd > start) {
-            when (span) {
-                is StyleSpan -> {
-                    if (span.style == Typeface.BOLD || span.style == Typeface.BOLD_ITALIC) {
-                        isBold = true
-                    }
-                    if (span.style == Typeface.ITALIC || span.style == Typeface.BOLD_ITALIC) {
-                        isItalic = true
-                    }
-                }
-                is StrikethroughSpan -> isStrikethrough = true
-                is TypefaceSpan -> {
-                    if (span.family.equals("monospace", ignoreCase = true)) {
-                        isMonospace = true
-                    }
-                }
-                is URLSpan -> isLink = true
-            }
         }
     }
     return TextFormattingState(

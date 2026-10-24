@@ -7,7 +7,6 @@ import android.net.Uri
 import android.text.Html
 import android.util.Base64
 import androidx.core.content.IntentCompat
-import androidx.core.text.toHtml
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.decodeToBitmap
 import com.philkes.notallyx.core.common.extensions.getFileName
@@ -17,6 +16,7 @@ import com.philkes.notallyx.core.database.Converters
 import com.philkes.notallyx.core.ui.extensions.applySpans
 import com.philkes.notallyx.core.ui.extensions.getQuantityStringPlain
 import com.philkes.notallyx.core.ui.extensions.showToast
+import com.philkes.notallyx.core.ui.extensions.toHtml
 import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
 import com.philkes.notallyx.data.dao.NoteIdReminder
 import com.philkes.notallyx.data.model.BaseNote

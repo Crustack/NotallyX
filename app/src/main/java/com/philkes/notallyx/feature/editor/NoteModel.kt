@@ -2,18 +2,10 @@ package com.philkes.notallyx.feature.editor
 
 import android.app.Application
 import android.content.Intent
-import android.graphics.Typeface
 import android.net.Uri
-import android.text.Spanned
-import android.text.style.CharacterStyle
-import android.text.style.StrikethroughSpan
-import android.text.style.StyleSpan
-import android.text.style.TypefaceSpan
-import android.text.style.URLSpan
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.core.text.getSpans
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.R
@@ -30,10 +22,9 @@ import com.philkes.notallyx.core.database.DatabaseNotConnectedException
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.preference.TextSizeSp
-import com.philkes.notallyx.core.ui.extensions.applySpans
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.core.ui.extensions.toAnnotatedString
-import com.philkes.notallyx.core.ui.extensions.toSpanned
+import com.philkes.notallyx.core.ui.extensions.toSpanRepresentations
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
@@ -42,7 +33,6 @@ import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Reminder
-import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.deepCopy
 import com.philkes.notallyx.data.model.extensions.attachmentsDifferFrom
@@ -104,6 +94,15 @@ sealed interface EditorDialogState {
         val isNoteUrl: Boolean,
         val onConfirm: (urlAfter: String?, displayTextAfter: String) -> Unit,
         val onDismiss: () -> Unit = {},
+    ) : EditorDialogState
+
+    data class LinkOptions(
+        val url: String,
+        val displayText: String,
+        val isNoteUrl: Boolean,
+        val onOpen: () -> Unit,
+        val onEdit: () -> Unit,
+        val onRemove: () -> Unit,
     ) : EditorDialogState
 }
 
@@ -326,7 +325,7 @@ open class NoteModel(
 
                 setLabels(baseNote.labels)
 
-                val annotated = baseNote.body.applySpans(baseNote.spans).toAnnotatedString()
+                val annotated = baseNote.body.toAnnotatedString(baseNote.spans)
                 body =
                     TextFieldValue(
                         annotatedString = annotated,
@@ -442,7 +441,7 @@ open class NoteModel(
     }
 
     fun getBaseNote(): BaseNote {
-        val spans = getFilteredSpans(body.annotatedString.toSpanned())
+        val spans = body.annotatedString.toSpanRepresentations()
         val body = this.body.text
         val nonEmptyItems = this.items.filter { item -> item.body.isNotEmpty() }
         return BaseNote(
@@ -465,68 +464,6 @@ open class NoteModel(
             viewMode.value,
             isPinnedToStatus,
         )
-    }
-
-    private fun getFilteredSpans(spanned: Spanned): ArrayList<SpanRepresentation> {
-        val representations = LinkedHashSet<SpanRepresentation>()
-        spanned.getSpans<CharacterStyle>().forEach { span ->
-            val end = spanned.getSpanEnd(span)
-            val start = spanned.getSpanStart(span)
-            val representation =
-                SpanRepresentation(start, end, false, false, null, false, false, false)
-
-            when (span) {
-                is StyleSpan -> {
-                    representation.bold = span.style == Typeface.BOLD
-                    representation.italic = span.style == Typeface.ITALIC
-                }
-
-                is URLSpan -> {
-                    representation.link = true
-                    representation.linkData = span.url
-                }
-                is TypefaceSpan -> representation.monospace = span.family == "monospace"
-                is StrikethroughSpan -> representation.strikethrough = true
-            }
-
-            if (representation.isNotUseless()) {
-                representations.add(representation)
-            }
-        }
-        return getFilteredRepresentations(ArrayList(representations))
-    }
-
-    private fun getFilteredRepresentations(
-        representations: ArrayList<SpanRepresentation>
-    ): ArrayList<SpanRepresentation> {
-        representations.forEachIndexed { index, representation ->
-            val match = representations.find { spanRepresentation ->
-                spanRepresentation.isEqualInSize(representation)
-            }
-            if (match != null && representations.indexOf(match) != index) {
-                if (match.bold) {
-                    representation.bold = true
-                }
-                if (match.link) {
-                    representation.link = true
-                    representation.linkData = match.linkData
-                }
-                if (match.italic) {
-                    representation.italic = true
-                }
-                if (match.monospace) {
-                    representation.monospace = true
-                }
-                if (match.strikethrough) {
-                    representation.strikethrough = true
-                }
-                val copy = ArrayList(representations)
-                copy[index] = representation
-                copy.remove(match)
-                return getFilteredRepresentations(copy)
-            }
-        }
-        return representations
     }
 
     suspend fun removeReminder(reminder: Reminder) {

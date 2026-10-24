@@ -9,55 +9,37 @@ import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.content.res.Resources
 import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.PorterDuff
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.text.Editable
-import android.text.InputType
 import android.text.Spannable
-import android.text.SpannableStringBuilder
-import android.text.Spanned
-import android.text.TextWatcher
 import android.text.style.CharacterStyle
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
-import android.text.style.SuggestionSpan
 import android.text.style.TypefaceSpan
 import android.text.style.URLSpan
 import android.util.TypedValue
-import android.view.ContextThemeWrapper
-import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.View.GONE
-import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.view.Window
 import android.view.WindowManager
-import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.CompoundButton
-import android.widget.EditText
-import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
 import androidx.appcompat.content.res.AppCompatResources
-import androidx.appcompat.widget.AppCompatTextView
 import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -67,13 +49,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.drawable.DrawableCompat
-import androidx.core.text.getSpans
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.marginBottom
-import androidx.core.view.marginTop
-import androidx.core.view.setPadding
-import androidx.core.view.updatePadding
-import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -82,10 +58,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.card.MaterialCardView
-import com.google.android.material.checkbox.MaterialCheckBox
-import com.google.android.material.chip.Chip
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.shape.RelativeCornerSize
 import com.google.android.material.shape.RoundedCornerTreatment
@@ -100,17 +72,11 @@ import com.philkes.notallyx.core.preference.NotesSort
 import com.philkes.notallyx.core.preference.NotesSortBy
 import com.philkes.notallyx.core.preference.SortDirection
 import com.philkes.notallyx.core.preference.TimeFormat
-import com.philkes.notallyx.core.ui.views.StylableEditTextWithHistory
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Header
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.SpanRepresentation
-import com.philkes.notallyx.data.model.extensions.findNextNotificationDate
-import com.philkes.notallyx.data.model.extensions.haveAnyRepetition
-import com.philkes.notallyx.feature.editor.history.ChangeHistory
-import com.philkes.notallyx.feature.editor.history.changes.EditTextState
-import com.philkes.notallyx.feature.editor.history.changes.EditTextWithHistoryChange
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.main.sorting.compareColor
 import com.philkes.notallyx.feature.main.sorting.compareCreated
@@ -122,43 +88,62 @@ import java.util.Date
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import me.zhanghai.android.fastscroll.FastScrollNestedScrollView
 import me.zhanghai.android.fastscroll.FastScrollerBuilder
 import me.zhanghai.android.fastscroll.PopupStyles
 
-/**
- * For some reason, this method crashes sometimes with an IndexOutOfBoundsException that I've not
- * been able to replicate. When this happens, to prevent the entire app from crashing and becoming
- * unusable, the exception is suppressed.
- */
-fun String.applySpans(representations: List<SpanRepresentation>): Editable {
-    val editable = Editable.Factory.getInstance().newEditable(this)
-    representations.forEach { (start, end, bold, link, linkData, italic, monospace, strikethrough)
-        ->
-        try {
-            if (bold) {
-                editable.setSpan(createBoldSpan(), start, end)
-            }
-            if (italic) {
-                editable.setSpan(StyleSpan(Typeface.ITALIC), start, end)
-            }
-            if (link) {
-                val url = linkData ?: getUrl(start, end)
-                editable.setSpan(URLSpan(url), start, end)
-            }
-            if (monospace) {
-                editable.setSpan(TypefaceSpan("monospace"), start, end)
-            }
-            if (strikethrough) {
-                editable.setSpan(StrikethroughSpan(), start, end)
-            }
-        } catch (exception: Exception) {
-            exception.printStackTrace()
-        }
+fun AnnotatedString.Builder.setSpan(style: SpanStyle, start: Int, end: Int) {
+    val s = start.coerceIn(0, length)
+    val e = end.coerceIn(0, length)
+    if (s < e) {
+        addStyle(style, s, e)
     }
-    return editable
 }
 
+fun AnnotatedString.Builder.setSpan(tag: String, annotation: String, start: Int, end: Int) {
+    val s = start.coerceIn(0, length)
+    val e = end.coerceIn(0, length)
+    if (s < e) {
+        addStringAnnotation(tag, annotation, s, e)
+    }
+}
+
+fun String.applySpans(representations: List<SpanRepresentation>): AnnotatedString {
+    val builder = AnnotatedString.Builder(this)
+    val textLength = length
+    for (span in representations) {
+        val start = span.start
+        val end = span.end
+
+        if (span.bold) {
+            builder.setSpan(SpanStyle(fontWeight = FontWeight.Bold), start, end)
+        }
+        if (span.italic) {
+            builder.setSpan(SpanStyle(fontStyle = FontStyle.Italic), start, end)
+        }
+        if (span.strikethrough) {
+            builder.setSpan(SpanStyle(textDecoration = TextDecoration.LineThrough), start, end)
+        }
+        if (span.monospace) {
+            builder.setSpan(SpanStyle(fontFamily = FontFamily.Monospace), start, end)
+        }
+        if (span.link) {
+            val url =
+                span.linkData ?: getUrl(start.coerceIn(0, textLength), end.coerceIn(0, textLength))
+            builder.setSpan("URL", url, start, end)
+            builder.setSpan(
+                SpanStyle(
+                    color = ComposeColor.Blue,
+                    textDecoration = TextDecoration.Underline,
+                ),
+                start,
+                end,
+            )
+        }
+    }
+    return builder.toAnnotatedString()
+}
+
+@Deprecated("Legacy Bold StyleSpan for old views")
 fun createBoldSpan() =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         StyleSpan(Typeface.BOLD, FontWeight.Bold.weight)
@@ -220,99 +205,33 @@ fun CharacterStyle.cloneSpan(): CharacterStyle =
         else -> this
     }
 
-fun Editable.replaceSmart(newText: CharSequence) {
-    val oldText = this.toString()
-    if (oldText == newText.toString()) return
-    var start = 0
-    while (start < oldText.length && start < newText.length && oldText[start] == newText[start]) {
-        start++
-    }
-    var oldEnd = oldText.length
-    var newEnd = newText.length
-    while (oldEnd > start && newEnd > start && oldText[oldEnd - 1] == newText[newEnd - 1]) {
-        oldEnd--
-        newEnd--
-    }
-    replace(start, oldEnd, newText.subSequence(start, newEnd))
-}
+fun String.toAnnotatedString(spans: List<SpanRepresentation>): AnnotatedString = applySpans(spans)
 
-fun Spanned.toAnnotatedString(): AnnotatedString {
-    val builder = AnnotatedString.Builder(this.toString())
-    val spans = getSpans(0, length, CharacterStyle::class.java)
-    for (span in spans) {
-        val start = getSpanStart(span).coerceIn(0, length)
-        val end = getSpanEnd(span).coerceIn(0, length)
-        if (start >= end) continue
-
-        when (span) {
-            is StyleSpan -> {
-                val isBold = span.style == Typeface.BOLD || span.style == Typeface.BOLD_ITALIC
-                val isItalic = span.style == Typeface.ITALIC || span.style == Typeface.BOLD_ITALIC
-
-                if (isBold) {
-                    builder.addStyle(SpanStyle(fontWeight = FontWeight.Bold), start, end)
-                }
-                if (isItalic) {
-                    builder.addStyle(SpanStyle(fontStyle = FontStyle.Italic), start, end)
-                }
-            }
-            is StrikethroughSpan -> {
-                builder.addStyle(SpanStyle(textDecoration = TextDecoration.LineThrough), start, end)
-            }
-            is TypefaceSpan -> {
-                if (span.family.equals("monospace", ignoreCase = true)) {
-                    builder.addStyle(SpanStyle(fontFamily = FontFamily.Monospace), start, end)
-                }
-            }
-            is URLSpan -> {
-                span.url?.let { url ->
-                    builder.addStringAnnotation("URL", url, start, end)
-                    builder.addStyle(
-                        SpanStyle(
-                            color = ComposeColor.Blue,
-                            textDecoration = TextDecoration.Underline,
-                        ),
-                        start,
-                        end,
-                    )
-                }
-            }
-        }
-    }
-    return builder.toAnnotatedString()
-}
-
-fun AnnotatedString.toSpannableStringBuilder(): SpannableStringBuilder {
-    val builder = SpannableStringBuilder(text)
+fun AnnotatedString.toSpanRepresentations(): ArrayList<SpanRepresentation> {
+    val representations = mutableListOf<SpanRepresentation>()
     spanStyles.forEach { range ->
         val start = range.start.coerceIn(0, text.length)
         val end = range.end.coerceIn(0, text.length)
         if (start < end) {
             val style = range.item
-            if (
+            val isBold =
                 style.fontWeight == FontWeight.Bold ||
                     (style.fontWeight != null && style.fontWeight!!.weight >= 700)
-            ) {
-                builder.setSpan(createBoldSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            }
-            if (style.fontStyle == FontStyle.Italic) {
-                builder.setSpan(
-                    StyleSpan(Typeface.ITALIC),
-                    start,
-                    end,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+            val isItalic = style.fontStyle == FontStyle.Italic
+            val isMonospace = style.fontFamily == FontFamily.Monospace
+            val isStrikethrough = style.textDecoration?.contains(TextDecoration.LineThrough) == true
+
+            if (isBold || isItalic || isMonospace || isStrikethrough) {
+                representations.add(
+                    SpanRepresentation(
+                        start = start,
+                        end = end,
+                        bold = isBold,
+                        italic = isItalic,
+                        monospace = isMonospace,
+                        strikethrough = isStrikethrough,
+                    )
                 )
-            }
-            if (style.fontFamily == FontFamily.Monospace) {
-                builder.setSpan(
-                    TypefaceSpan("monospace"),
-                    start,
-                    end,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
-                )
-            }
-            if (style.textDecoration?.contains(TextDecoration.LineThrough) == true) {
-                builder.setSpan(StrikethroughSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             }
         }
     }
@@ -320,124 +239,633 @@ fun AnnotatedString.toSpannableStringBuilder(): SpannableStringBuilder {
         val start = range.start.coerceIn(0, text.length)
         val end = range.end.coerceIn(0, text.length)
         if (start < end) {
-            builder.setSpan(URLSpan(range.item), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            representations.add(
+                SpanRepresentation(
+                    start = start,
+                    end = end,
+                    link = true,
+                    linkData = range.item,
+                )
+            )
         }
     }
-    return builder
+    return representations.mergeEqualRanges().apply {
+        sortWith(compareBy({ it.start }, { it.end }))
+    }
 }
 
-fun AnnotatedString.toSpanned(): Spanned = toSpannableStringBuilder()
+fun List<SpanRepresentation>.mergeEqualRanges(): ArrayList<SpanRepresentation> {
+    val map = LinkedHashMap<Pair<Int, Int>, SpanRepresentation>()
+    for (rep in this) {
+        val key = Pair(rep.start, rep.end)
+        val existing = map[key]
+        if (existing == null) {
+            map[key] = rep.copy()
+        } else {
+            if (rep.bold) existing.bold = true
+            if (rep.italic) existing.italic = true
+            if (rep.monospace) existing.monospace = true
+            if (rep.strikethrough) existing.strikethrough = true
+            if (rep.link) {
+                existing.link = true
+                existing.linkData = rep.linkData ?: existing.linkData
+            }
+        }
+    }
+    return ArrayList(map.values)
+}
 
-fun TextFieldValue.toggleBold(): TextFieldValue {
+fun TextFieldValue.toggleBold(): TextFieldValue =
+    toggleSpanStyle(
+        predicate = { it.fontWeight == FontWeight.Bold || (it.fontWeight?.weight ?: 0) >= 700 },
+        removeModifier = { it.withoutBold() },
+        createStyle = { SpanStyle(fontWeight = FontWeight.Bold) },
+    )
+
+fun TextFieldValue.toggleItalic(): TextFieldValue =
+    toggleSpanStyle(
+        predicate = { it.fontStyle == FontStyle.Italic },
+        removeModifier = { it.withoutItalic() },
+        createStyle = { SpanStyle(fontStyle = FontStyle.Italic) },
+    )
+
+fun TextFieldValue.toggleStrikethrough(): TextFieldValue =
+    toggleSpanStyle(
+        predicate = { it.textDecoration?.contains(TextDecoration.LineThrough) == true },
+        removeModifier = { it.withoutStrikethrough() },
+        createStyle = { SpanStyle(textDecoration = TextDecoration.LineThrough) },
+    )
+
+fun TextFieldValue.toggleMonospace(): TextFieldValue =
+    toggleSpanStyle(
+        predicate = { it.fontFamily == FontFamily.Monospace },
+        removeModifier = { it.withoutMonospace() },
+        createStyle = { SpanStyle(fontFamily = FontFamily.Monospace) },
+    )
+
+private fun TextFieldValue.toggleSpanStyle(
+    predicate: (SpanStyle) -> Boolean,
+    removeModifier: (SpanStyle) -> SpanStyle?,
+    createStyle: () -> SpanStyle,
+): TextFieldValue {
     val start = selection.min
     val end = selection.max
     if (start >= end) return this
-    val builder = annotatedString.toSpannableStringBuilder()
-    val existingBold =
-        builder.getSpans(start, end, StyleSpan::class.java).filter {
-            it.style == Typeface.BOLD || it.style == Typeface.BOLD_ITALIC
-        }
-    val coversAll = existingBold.any {
-        builder.getSpanStart(it) <= start && builder.getSpanEnd(it) >= end
-    }
-    if (coversAll) {
-        builder.removeSelectionFromSpans(start, end, existingBold)
-    } else {
-        builder.setSpan(createBoldSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-    }
-    return copy(annotatedString = builder.toAnnotatedString())
-}
 
-fun TextFieldValue.toggleItalic(): TextFieldValue {
-    val start = selection.min
-    val end = selection.max
-    if (start >= end) return this
-    val builder = annotatedString.toSpannableStringBuilder()
-    val existingItalic =
-        builder.getSpans(start, end, StyleSpan::class.java).filter {
-            it.style == Typeface.ITALIC || it.style == Typeface.BOLD_ITALIC
-        }
-    val coversAll = existingItalic.any {
-        builder.getSpanStart(it) <= start && builder.getSpanEnd(it) >= end
-    }
-    if (coversAll) {
-        builder.removeSelectionFromSpans(start, end, existingItalic)
-    } else {
-        builder.setSpan(StyleSpan(Typeface.ITALIC), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-    }
-    return copy(annotatedString = builder.toAnnotatedString())
-}
+    val text = annotatedString.text
+    val coversAll = annotatedString.isFormatCovered(start, end, predicate)
+    val currentStyles = annotatedString.spanStyles
+    val updatedStyles = currentStyles.removeStyleRange(start, end, removeModifier)
 
-fun TextFieldValue.toggleStrikethrough(): TextFieldValue {
-    val start = selection.min
-    val end = selection.max
-    if (start >= end) return this
-    val builder = annotatedString.toSpannableStringBuilder()
-    val existing = builder.getSpans(start, end, StrikethroughSpan::class.java).toList()
-    val coversAll = existing.any {
-        builder.getSpanStart(it) <= start && builder.getSpanEnd(it) >= end
-    }
-    if (coversAll) {
-        builder.removeSelectionFromSpans(start, end, existing)
-    } else {
-        builder.setSpan(StrikethroughSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-    }
-    return copy(annotatedString = builder.toAnnotatedString())
-}
-
-fun TextFieldValue.toggleMonospace(): TextFieldValue {
-    val start = selection.min
-    val end = selection.max
-    if (start >= end) return this
-    val builder = annotatedString.toSpannableStringBuilder()
-    val existing =
-        builder.getSpans(start, end, TypefaceSpan::class.java).filter {
-            it.family.equals("monospace", ignoreCase = true)
+    val finalStyles =
+        if (coversAll) {
+            updatedStyles
+        } else {
+            updatedStyles + AnnotatedString.Range(createStyle(), start, end)
         }
-    val coversAll = existing.any {
-        builder.getSpanStart(it) <= start && builder.getSpanEnd(it) >= end
-    }
-    if (coversAll) {
-        builder.removeSelectionFromSpans(start, end, existing)
-    } else {
-        builder.setSpan(TypefaceSpan("monospace"), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-    }
-    return copy(annotatedString = builder.toAnnotatedString())
+
+    val urlAnnotations = annotatedString.getStringAnnotations("URL", 0, text.length)
+    val newAnnotatedString = buildAnnotatedString(text, finalStyles.normalize(), urlAnnotations)
+    return copy(annotatedString = newAnnotatedString)
 }
 
 fun TextFieldValue.clearFormatting(): TextFieldValue {
     val start = selection.min
     val end = selection.max
-    val builder = annotatedString.toSpannableStringBuilder()
-    if (start < end) {
-        builder.removeSelectionFromSpans(start, end)
-    } else {
-        builder.clearSpans()
-    }
-    return copy(annotatedString = builder.toAnnotatedString())
-}
+    val text = annotatedString.text
 
-private fun Spannable.setSpan(span: Any, start: Int, end: Int) {
-    if (end <= length) {
-        setSpan(span, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-    } else setSpan(span, start, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-}
-
-fun EditText.setOnNextAction(onNext: () -> Unit) {
-    setRawInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES)
-
-    setOnKeyListener { v, keyCode, event ->
-        if (event.action == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER) {
-            onNext()
-            return@setOnKeyListener true
-        } else return@setOnKeyListener false
+    if (start >= end) {
+        return copy(annotatedString = AnnotatedString(text))
     }
 
-    setOnEditorActionListener { v, actionId, event ->
-        if (actionId == EditorInfo.IME_ACTION_NEXT) {
-            onNext()
-            return@setOnEditorActionListener true
-        } else return@setOnEditorActionListener false
+    val updatedStyles = annotatedString.spanStyles.removeStyleRange(start, end) { null }
+    val currentUrls = annotatedString.getStringAnnotations("URL", 0, text.length)
+    val updatedUrls = currentUrls.removeAnnotationRange(start, end)
+
+    val newAnnotatedString = buildAnnotatedString(text, updatedStyles.normalize(), updatedUrls)
+    return copy(annotatedString = newAnnotatedString)
+}
+
+fun TextFieldValue.addOrUpdateLink(
+    url: String,
+    displayText: String = "",
+    range: TextRange? = null,
+): TextFieldValue {
+    val start = range?.min ?: selection.min
+    val end = range?.max ?: selection.max
+    val currentText = annotatedString.text
+    val textToUse =
+        when {
+            displayText.isNotEmpty() -> displayText
+            start < end -> currentText.substring(start, end)
+            else -> url
+        }
+
+    val newText = currentText.substring(0, start) + textToUse + currentText.substring(end)
+    val newEnd = start + textToUse.length
+    val delta = textToUse.length - (end - start)
+
+    val updatedStyles =
+        annotatedString.spanStyles.removeStyleRange(start, end) { style ->
+            val hasBlue = style.color == ComposeColor.Blue
+            val hasUnderline = style.textDecoration?.contains(TextDecoration.Underline) == true
+            if (hasBlue || hasUnderline) {
+                val newColor = if (hasBlue) ComposeColor.Unspecified else style.color
+                val newDecoration =
+                    if (hasUnderline) {
+                        if (style.textDecoration?.contains(TextDecoration.LineThrough) == true) {
+                            TextDecoration.LineThrough
+                        } else null
+                    } else style.textDecoration
+                if (
+                    newColor == ComposeColor.Unspecified &&
+                        newDecoration == null &&
+                        style.fontWeight == null &&
+                        style.fontStyle == null &&
+                        style.fontFamily == null
+                ) {
+                    null
+                } else {
+                    style.copy(color = newColor, textDecoration = newDecoration)
+                }
+            } else {
+                style
+            }
+        }
+    val updatedAnnotations =
+        annotatedString
+            .getStringAnnotations("URL", 0, currentText.length)
+            .removeAnnotationRange(start, end)
+
+    val shiftedStyles = updatedStyles.mapNotNull { r ->
+        val s = if (r.start >= end) r.start + delta else r.start
+        val e = if (r.end >= end) r.end + delta else r.end
+        if (s in 0..newText.length && e in 0..newText.length && s < e) {
+            AnnotatedString.Range(r.item, s, e)
+        } else null
+    }
+    val shiftedAnnotations = updatedAnnotations.mapNotNull { r ->
+        val s = if (r.start >= end) r.start + delta else r.start
+        val e = if (r.end >= end) r.end + delta else r.end
+        if (s in 0..newText.length && e in 0..newText.length && s < e) {
+            AnnotatedString.Range(r.item, s, e)
+        } else null
+    }
+
+    val finalStyles =
+        shiftedStyles +
+            AnnotatedString.Range(
+                SpanStyle(
+                    color = ComposeColor.Blue,
+                    textDecoration = TextDecoration.Underline,
+                ),
+                start,
+                newEnd,
+            )
+    val finalAnnotations = shiftedAnnotations + AnnotatedString.Range(url, start, newEnd)
+
+    val newAnnotatedString =
+        buildAnnotatedString(newText, finalStyles.normalize(), finalAnnotations)
+    return copy(
+        annotatedString = newAnnotatedString,
+        selection = androidx.compose.ui.text.TextRange(newEnd),
+    )
+}
+
+fun TextFieldValue.removeLink(range: TextRange): TextFieldValue {
+    val start = range.min
+    val end = range.max
+    if (start >= end) return this
+
+    val text = annotatedString.text
+    val currentUrls = annotatedString.getStringAnnotations("URL", 0, text.length)
+    val updatedUrls = currentUrls.removeAnnotationRange(start, end)
+
+    val updatedStyles =
+        annotatedString.spanStyles.removeStyleRange(start, end) { style ->
+            val hasBlue = style.color == ComposeColor.Blue
+            val hasUnderline = style.textDecoration?.contains(TextDecoration.Underline) == true
+            if (hasBlue || hasUnderline) {
+                val newColor = if (hasBlue) ComposeColor.Unspecified else style.color
+                val newDecoration =
+                    if (hasUnderline) {
+                        if (style.textDecoration?.contains(TextDecoration.LineThrough) == true) {
+                            TextDecoration.LineThrough
+                        } else null
+                    } else style.textDecoration
+                if (
+                    newColor == ComposeColor.Unspecified &&
+                        newDecoration == null &&
+                        style.fontWeight == null &&
+                        style.fontStyle == null &&
+                        style.fontFamily == null
+                ) {
+                    null
+                } else {
+                    style.copy(color = newColor, textDecoration = newDecoration)
+                }
+            } else {
+                style
+            }
+        }
+
+    val newAnnotatedString = buildAnnotatedString(text, updatedStyles.normalize(), updatedUrls)
+    return copy(annotatedString = newAnnotatedString)
+}
+
+fun TextFieldValue.preserveStylesFrom(previousValue: TextFieldValue): TextFieldValue {
+    val oldAnnotated = previousValue.annotatedString
+    val oldText = oldAnnotated.text
+    val newText = this.text
+
+    if (
+        annotatedString.spanStyles.isNotEmpty() ||
+            annotatedString.getStringAnnotations("URL", 0, newText.length).isNotEmpty()
+    ) {
+        return this
+    }
+
+    if (
+        oldAnnotated.spanStyles.isEmpty() &&
+            oldAnnotated.getStringAnnotations("URL", 0, oldText.length).isEmpty()
+    ) {
+        return this
+    }
+
+    if (newText == oldText) {
+        val preserved =
+            buildAnnotatedString(
+                newText,
+                oldAnnotated.spanStyles,
+                oldAnnotated.getStringAnnotations("URL", 0, oldText.length),
+            )
+        return copy(annotatedString = preserved)
+    }
+
+    // When text changed, calculate the difference and shift/adjust styles
+    var prefixLen = 0
+    while (
+        prefixLen < oldText.length &&
+            prefixLen < newText.length &&
+            oldText[prefixLen] == newText[prefixLen]
+    ) {
+        prefixLen++
+    }
+
+    var suffixLen = 0
+    while (
+        suffixLen < (oldText.length - prefixLen) &&
+            suffixLen < (newText.length - prefixLen) &&
+            oldText[oldText.length - 1 - suffixLen] == newText[newText.length - 1 - suffixLen]
+    ) {
+        suffixLen++
+    }
+
+    val oldEditStart = prefixLen
+    val oldEditEnd = oldText.length - suffixLen
+    val newEditEnd = newText.length - suffixLen
+    val delta = newText.length - oldText.length
+
+    val newStyles = mutableListOf<AnnotatedString.Range<SpanStyle>>()
+    for (range in oldAnnotated.spanStyles) {
+        val adjusted =
+            adjustRange(
+                range.start,
+                range.end,
+                oldEditStart,
+                oldEditEnd,
+                newEditEnd,
+                delta,
+                newText.length,
+            )
+        if (adjusted != null) {
+            newStyles.add(AnnotatedString.Range(range.item, adjusted.first, adjusted.second))
+        }
+    }
+
+    val newUrls = mutableListOf<AnnotatedString.Range<String>>()
+    for (range in oldAnnotated.getStringAnnotations("URL", 0, oldText.length)) {
+        val adjusted =
+            adjustRange(
+                range.start,
+                range.end,
+                oldEditStart,
+                oldEditEnd,
+                newEditEnd,
+                delta,
+                newText.length,
+            )
+        if (adjusted != null) {
+            newUrls.add(AnnotatedString.Range(range.item, adjusted.first, adjusted.second))
+        }
+    }
+
+    val updatedAnnotatedString = buildAnnotatedString(newText, newStyles.normalize(), newUrls)
+    return copy(annotatedString = updatedAnnotatedString)
+}
+
+private fun adjustRange(
+    start: Int,
+    end: Int,
+    oldEditStart: Int,
+    oldEditEnd: Int,
+    newEditEnd: Int,
+    delta: Int,
+    maxLength: Int,
+): Pair<Int, Int>? {
+    val newStart: Int
+    val newEnd: Int
+
+    when {
+        // Span is entirely before the edit
+        end <= oldEditStart -> {
+            newStart = start
+            newEnd = end
+        }
+        // Span is entirely after the edit
+        start >= oldEditEnd -> {
+            newStart = start + delta
+            newEnd = end + delta
+        }
+        // Edit is entirely within the span
+        start < oldEditStart && end > oldEditEnd -> {
+            newStart = start
+            newEnd = end + delta
+        }
+        // Span is entirely within the replaced/deleted edit
+        start >= oldEditStart && end <= oldEditEnd -> {
+            return null
+        }
+        // Edit overlaps the end of the span
+        start < oldEditStart -> {
+            newStart = start
+            newEnd = oldEditStart
+        }
+        // Edit overlaps the start of the span
+        else -> {
+            newStart = newEditEnd
+            newEnd = end + delta
+        }
+    }
+
+    val clampedStart = newStart.coerceIn(0, maxLength)
+    val clampedEnd = newEnd.coerceIn(0, maxLength)
+    return if (clampedStart < clampedEnd) Pair(clampedStart, clampedEnd) else null
+}
+
+fun AnnotatedString.isFormatCovered(
+    start: Int,
+    end: Int,
+    predicate: (SpanStyle) -> Boolean,
+): Boolean {
+    if (start >= end) return false
+    for (i in start until end) {
+        val covered = spanStyles.any { it.start <= i && it.end > i && predicate(it.item) }
+        if (!covered) return false
+    }
+    return true
+}
+
+fun List<AnnotatedString.Range<SpanStyle>>.removeStyleRange(
+    selStart: Int,
+    selEnd: Int,
+    transform: (SpanStyle) -> SpanStyle?,
+): List<AnnotatedString.Range<SpanStyle>> {
+    val result = mutableListOf<AnnotatedString.Range<SpanStyle>>()
+    for (range in this) {
+        val rStart = range.start
+        val rEnd = range.end
+        val style = range.item
+
+        when {
+            selEnd <= rStart || selStart >= rEnd -> {
+                result.add(range)
+            }
+            selStart <= rStart && selEnd >= rEnd -> {
+                val modified = transform(style)
+                if (modified != null) {
+                    result.add(AnnotatedString.Range(modified, rStart, rEnd))
+                }
+            }
+            selStart > rStart && selEnd < rEnd -> {
+                result.add(AnnotatedString.Range(style, rStart, selStart))
+                val modified = transform(style)
+                if (modified != null) {
+                    result.add(AnnotatedString.Range(modified, selStart, selEnd))
+                }
+                result.add(AnnotatedString.Range(style, selEnd, rEnd))
+            }
+            selStart <= rStart && selEnd < rEnd -> {
+                val modified = transform(style)
+                if (modified != null) {
+                    result.add(AnnotatedString.Range(modified, rStart, selEnd))
+                }
+                result.add(AnnotatedString.Range(style, selEnd, rEnd))
+            }
+            else -> {
+                result.add(AnnotatedString.Range(style, rStart, selStart))
+                val modified = transform(style)
+                if (modified != null) {
+                    result.add(AnnotatedString.Range(modified, selStart, rEnd))
+                }
+            }
+        }
+    }
+    return result
+}
+
+fun List<AnnotatedString.Range<String>>.removeAnnotationRange(
+    selStart: Int,
+    selEnd: Int,
+): List<AnnotatedString.Range<String>> {
+    val result = mutableListOf<AnnotatedString.Range<String>>()
+    for (range in this) {
+        val rStart = range.start
+        val rEnd = range.end
+        val item = range.item
+
+        when {
+            selEnd <= rStart || selStart >= rEnd -> result.add(range)
+            selStart <= rStart && selEnd >= rEnd -> {}
+            selStart > rStart && selEnd < rEnd -> {
+                result.add(AnnotatedString.Range(item, rStart, selStart))
+                result.add(AnnotatedString.Range(item, selEnd, rEnd))
+            }
+            selStart <= rStart && selEnd < rEnd -> {
+                result.add(AnnotatedString.Range(item, selEnd, rEnd))
+            }
+            else -> {
+                result.add(AnnotatedString.Range(item, rStart, selStart))
+            }
+        }
+    }
+    return result
+}
+
+fun List<AnnotatedString.Range<SpanStyle>>.normalize(): List<AnnotatedString.Range<SpanStyle>> {
+    if (size <= 1) return this
+    val grouped = this.filter { it.start < it.end }.groupBy { it.item }
+    val result = mutableListOf<AnnotatedString.Range<SpanStyle>>()
+    for ((style, ranges) in grouped) {
+        val sorted = ranges.sortedBy { it.start }
+        var current: AnnotatedString.Range<SpanStyle>? = null
+        for (range in sorted) {
+            if (current == null) {
+                current = range
+            } else if (current.end >= range.start) {
+                current = AnnotatedString.Range(style, current.start, maxOf(current.end, range.end))
+            } else {
+                result.add(current)
+                current = range
+            }
+        }
+        if (current != null) {
+            result.add(current)
+        }
+    }
+    return result.sortedBy { it.start }
+}
+
+fun SpanStyle.withoutBold(): SpanStyle? {
+    val weight = fontWeight
+    if (weight == null || weight.weight < 700) return this
+    val newStyle = copy(fontWeight = null)
+    return if (newStyle.hasAnyStyle()) newStyle else null
+}
+
+fun SpanStyle.withoutItalic(): SpanStyle? {
+    if (fontStyle == null) return this
+    val newStyle = copy(fontStyle = null)
+    return if (newStyle.hasAnyStyle()) newStyle else null
+}
+
+fun SpanStyle.withoutMonospace(): SpanStyle? {
+    if (fontFamily == null) return this
+    val newStyle = copy(fontFamily = null)
+    return if (newStyle.hasAnyStyle()) newStyle else null
+}
+
+fun SpanStyle.withoutStrikethrough(): SpanStyle? {
+    val decoration = textDecoration ?: return this
+    if (!decoration.contains(TextDecoration.LineThrough)) return this
+    val hasUnderline = decoration.contains(TextDecoration.Underline)
+    val newDecoration = if (hasUnderline) TextDecoration.Underline else null
+    val newStyle = copy(textDecoration = newDecoration)
+    return if (newStyle.hasAnyStyle()) newStyle else null
+}
+
+private fun SpanStyle.hasAnyStyle(): Boolean {
+    return fontWeight != null ||
+        fontStyle != null ||
+        textDecoration != null ||
+        fontFamily != null ||
+        color != ComposeColor.Unspecified ||
+        background != ComposeColor.Unspecified ||
+        fontSize != androidx.compose.ui.unit.TextUnit.Unspecified ||
+        letterSpacing != androidx.compose.ui.unit.TextUnit.Unspecified ||
+        shadow != null
+}
+
+fun buildAnnotatedString(
+    text: String,
+    spanStyles: List<AnnotatedString.Range<SpanStyle>>,
+    urlAnnotations: List<AnnotatedString.Range<String>> = emptyList(),
+): AnnotatedString {
+    val builder = AnnotatedString.Builder(text)
+    for (range in spanStyles) {
+        val s = range.start.coerceIn(0, text.length)
+        val e = range.end.coerceIn(0, text.length)
+        if (s < e) {
+            builder.addStyle(range.item, s, e)
+        }
+    }
+    for (range in urlAnnotations) {
+        val s = range.start.coerceIn(0, text.length)
+        val e = range.end.coerceIn(0, text.length)
+        if (s < e) {
+            builder.addStringAnnotation("URL", range.item, s, e)
+        }
+    }
+    return builder.toAnnotatedString()
+}
+
+fun AnnotatedString.toHtml(): String {
+    if (text.isEmpty()) return ""
+
+    val sortedStyles = spanStyles.filter { it.start < it.end }
+    val sortedUrls = getStringAnnotations("URL", 0, text.length).filter { it.start < it.end }
+
+    val lines = text.split('\n')
+    val sb = StringBuilder()
+    var lineStart = 0
+
+    for (line in lines) {
+        val lineEnd = lineStart + line.length
+        sb.append("<p dir=\"ltr\">")
+        if (line.isEmpty()) {
+            sb.append("<br>")
+        } else {
+            val boundaries = java.util.TreeSet<Int>()
+            boundaries.add(lineStart)
+            boundaries.add(lineEnd)
+            for (range in sortedStyles) {
+                if (range.start in lineStart..lineEnd) boundaries.add(range.start)
+                if (range.end in lineStart..lineEnd) boundaries.add(range.end)
+            }
+            for (range in sortedUrls) {
+                if (range.start in lineStart..lineEnd) boundaries.add(range.start)
+                if (range.end in lineStart..lineEnd) boundaries.add(range.end)
+            }
+
+            var curr = lineStart
+            for (boundary in boundaries) {
+                if (boundary > curr) {
+                    val segmentText = text.substring(curr, boundary)
+                    val activeStyles =
+                        sortedStyles.filter { it.start < boundary && it.end > curr }.map { it.item }
+                    val activeUrl =
+                        sortedUrls.firstOrNull { it.start < boundary && it.end > curr }?.item
+
+                    val isBold = activeStyles.any {
+                        it.fontWeight == FontWeight.Bold || (it.fontWeight?.weight ?: 0) >= 700
+                    }
+                    val isItalic = activeStyles.any { it.fontStyle == FontStyle.Italic }
+                    val isStrike = activeStyles.any {
+                        it.textDecoration?.contains(TextDecoration.LineThrough) == true
+                    }
+                    val isMonospace = activeStyles.any { it.fontFamily == FontFamily.Monospace }
+
+                    var formatted = segmentText.escapeHtml()
+                    if (isMonospace) formatted = "<tt>$formatted</tt>"
+                    if (isStrike) formatted = "<s>$formatted</s>"
+                    if (isItalic) formatted = "<i>$formatted</i>"
+                    if (isBold) formatted = "<b>$formatted</b>"
+                    if (activeUrl != null) formatted = "<a href=\"$activeUrl\">$formatted</a>"
+
+                    sb.append(formatted)
+                    curr = boundary
+                }
+            }
+        }
+        sb.append("</p>")
+        lineStart = lineEnd + 1
+    }
+
+    return sb.toString()
+}
+
+private fun String.escapeHtml(): String {
+    return buildString(length) {
+        for (c in this@escapeHtml) {
+            when (c) {
+                '&' -> append("&amp;")
+                '<' -> append("&lt;")
+                '>' -> append("&gt;")
+                '"' -> append("&quot;")
+                '\'' -> append("&#39;")
+                else -> append(c)
+            }
+        }
     }
 }
 
@@ -460,105 +888,11 @@ fun Menu.add(
     return menuItem
 }
 
-fun ViewGroup.addIconButton(
-    title: Int,
-    drawable: Int,
-    colorInt: Int,
-    marginStart: Int = 10,
-    onLongClick: View.OnLongClickListener? = null,
-    onClick: View.OnClickListener? = null,
-): ImageButton {
-    val view =
-        ImageButton(ContextThemeWrapper(context, R.style.AppTheme)).apply {
-            setImageResource(drawable)
-            val titleText = context.getString(title)
-            contentDescription = titleText
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                tooltipText = titleText
-            }
-            val outValue = TypedValue()
-            context.theme.resolveAttribute(android.R.attr.actionBarItemBackground, outValue, true)
-            setBackgroundResource(outValue.resourceId)
-            setOnLongClickListener(onLongClick)
-            setOnClickListener(onClick)
-
-            scaleType = ImageView.ScaleType.FIT_CENTER
-            adjustViewBounds = true
-            layoutParams =
-                LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                    )
-                    .apply { setMargins(marginStart.toDp, marginTop, 0, marginBottom) }
-            setPadding(8.toDp)
-            setControlsContrastColorForAllViews(colorInt)
-        }
-    addView(view)
-    return view
-}
-
-fun TextView.displayFormattedTimestamp(
-    timestamp: Long?,
-    dateFormat: DateFormat,
-    timeFormat: TimeFormat,
-    prefixResId: Int? = null,
-) {
-    if ((dateFormat != DateFormat.NONE || timeFormat != TimeFormat.NONE) && timestamp != null) {
-        visibility = View.VISIBLE
-        text =
-            "${prefixResId?.let { getString(it) } ?: ""} ${Date(timestamp).format(dateFormat, timeFormat)}"
-                .trim()
-    } else visibility = View.GONE
-}
-
-fun TextView.setTextSizeSp(textSizeSp: Float) {
-    setTextSize(TypedValue.COMPLEX_UNIT_SP, textSizeSp)
-}
-
 val Int.toDp: Int
     get() = (this * Resources.getSystem().displayMetrics.density + 0.5f).toInt()
 
 val Float.toDpFloat: Int
     get() = (this * Resources.getSystem().displayMetrics.density + 0.5f).toInt()
-
-fun StylableEditTextWithHistory.createTextWatcherWithHistory(
-    changeHistory: ChangeHistory,
-    onTextChanged: ((text: CharSequence, start: Int, count: Int) -> Unit)? = null,
-    updateModel: (text: Editable) -> Unit,
-) =
-    object : TextWatcher {
-        private lateinit var stateBefore: EditTextState
-
-        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-            stateBefore = EditTextState(getTextClone(), selectionStart)
-        }
-
-        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-            onTextChanged?.invoke(s!!, start, count)
-        }
-
-        override fun afterTextChanged(s: Editable?) {
-            val textAfter = requireNotNull(s, { "afterTextChanged: Editable is null" }).clone()
-            if (textAfter.hasNotChanged(stateBefore.getEditableText())) {
-                return
-            }
-            updateModel.invoke(textAfter)
-            changeHistory.push(
-                EditTextWithHistoryChange(
-                    this@createTextWatcherWithHistory,
-                    stateBefore,
-                    EditTextState(textAfter, selectionStart),
-                    updateModel,
-                )
-            )
-        }
-    }
-
-fun Editable.hasNotChanged(before: Editable): Boolean {
-    return toString() == before.toString() && getSpans<SuggestionSpan>().isNotEmpty()
-}
-
-fun Editable.clone(): Editable = Editable.Factory.getInstance().newEditable(this)
 
 fun View.getString(id: Int, vararg formatArgs: String): String {
     return context.resources.getString(id, *formatArgs)
@@ -727,130 +1061,7 @@ fun Context.getColorFromAttr(@AttrRes attr: Int): Int {
     }
 }
 
-fun View.setControlsContrastColorForAllViews(
-    @ColorInt backgroundColor: Int,
-    overwriteBackground: Boolean = true,
-) {
-    val controlsColor = context.getContrastFontColor(backgroundColor)
-    setControlsColorForAllViews(controlsColor, backgroundColor, overwriteBackground)
-}
-
 var counter = 0
-
-fun View.setControlsColorForAllViews(
-    @ColorInt controlsColor: Int,
-    @ColorInt backgroundColor: Int,
-    overwriteBackground: Boolean = true,
-) {
-    if (this is ViewGroup) {
-        for (i in 0 until childCount) {
-            val child = getChildAt(i)
-            child.setControlsColorForAllViews(
-                controlsColor,
-                backgroundColor,
-                overwriteBackground,
-            ) // Recursive call for nested layouts
-        }
-        if (this is MaterialCardView) {
-            checkedIconTint = ColorStateList.valueOf(controlsColor)
-            val colorStateList =
-                ColorStateList(
-                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                    intArrayOf(controlsColor, controlsColor.withAlpha(0.3f)),
-                )
-            setStrokeColor(colorStateList)
-        }
-        if (this is FastScrollNestedScrollView) {
-            this.addFastScroll(context, controlsColor)
-        }
-    } else {
-        val controlsStateList =
-            ColorStateList(
-                arrayOf(
-                    intArrayOf(android.R.attr.state_enabled),
-                    intArrayOf(-android.R.attr.state_enabled),
-                ),
-                intArrayOf(controlsColor, controlsColor.withAlpha(0.3f)),
-            )
-        if (this is Chip) {
-            setTextColor(controlsStateList)
-            setLinkTextColor(controlsStateList)
-            val chipColor = backgroundColor.getSlightContrastColor()
-            chipBackgroundColor = ColorStateList.valueOf(chipColor)
-            chipIconTint = controlsStateList
-            chipStrokeColor = controlsStateList
-            closeIconTint = controlsStateList
-            checkedIconTint = controlsStateList
-            return
-        }
-        if (this is TextView) {
-            setCompoundDrawableTint(controlsColor)
-            setTextColor(controlsStateList)
-            setLinkTextColor(controlsStateList)
-            if (isTextSelectable || this is EditText) {
-                val highlight = controlsColor.withAlpha(0.4f)
-                setHintTextColor(highlight)
-                highlightColor = highlight
-                setSelectionHandleColor(controlsColor.withAlpha(0.8f))
-            }
-        }
-        if (this is CompoundButton) {
-            buttonTintList = controlsStateList
-        }
-        if (this is MaterialButton) {
-            iconTint = controlsStateList
-        }
-        if (this is ImageButton) {
-            imageTintList = controlsStateList
-        }
-        if (this is MaterialCheckBox) {
-            buttonIconTintList = ColorStateList.valueOf(backgroundColor)
-        }
-        if (overwriteBackground) {
-            backgroundTintList = ColorStateList.valueOf(controlsColor)
-        }
-    }
-}
-
-fun TextView.setSelectionHandleColor(@ColorInt color: Int) {
-    try {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            textSelectHandleLeft?.withTint(color)?.let { setTextSelectHandleLeft(it) }
-            textSelectHandleRight?.withTint(color)?.let { setTextSelectHandleRight(it) }
-            textSelectHandle?.withTint(color)?.let { setTextSelectHandle(it) }
-            textCursorDrawable?.let { DrawableCompat.setTint(it, color) }
-        } else {
-            setSelectHandleColor(color)
-        }
-    } catch (_: Exception) {}
-}
-
-/**
- * This uses light-graylisted Android APIs. Verified that it works in devices running APIs 21
- * and 28. Source: https://gist.github.com/carranca/7e3414622ad7fc6ef375c8cd8dc840c9
- */
-private fun TextView.setSelectHandleColor(@ColorInt color: Int) {
-    // Retrieve a reference to this text field's android.widget.Editor
-    val editor = getEditor()
-
-    handles.forEach {
-        // Retrieve the field pointing to the drawable currently being used for the select handle
-        val resourceField = TextView::class.java.getDeclaredField(it.resourceFieldName)
-        resourceField.isAccessible = true
-
-        // Retrieve the drawable resource from that field
-        val drawableId = resourceField.getInt(this)
-        val drawable = ContextCompat.getDrawable(context, drawableId)
-
-        // Apply a filter on that drawable with the desired colour
-        drawable?.setColorFilter(color, PorterDuff.Mode.SRC_IN)
-
-        // Override the drawable being used by the Editor with our coloured drawable
-        val selectHandleField = editor.javaClass.getDeclaredField(it.selectHandleFieldName)
-        selectHandleField.isAccessible = true
-        selectHandleField.set(editor, drawable)
-    }
-}
 
 private class HandleDescriptor(val resourceFieldName: String, val selectHandleFieldName: String)
 
@@ -869,22 +1080,6 @@ private val handles =
             selectHandleFieldName = "mSelectHandleRight",
         ),
     )
-
-private fun TextView.getEditor(): Any {
-    val editorField = TextView::class.java.getDeclaredField("mEditor")
-    editorField.isAccessible = true
-    return editorField.get(this)
-}
-
-fun TextView.setCompoundDrawableTint(@ColorInt color: Int) {
-    compoundDrawablesRelative.forEach { drawable ->
-        drawable?.let { DrawableCompat.setTint(DrawableCompat.wrap(it), color) }
-    }
-    compoundDrawables.forEach { drawable ->
-        drawable?.let { DrawableCompat.setTint(DrawableCompat.wrap(it), color) }
-    }
-    (background as? MaterialShapeDrawable)?.setStrokeTint(color)
-}
 
 fun Drawable.withTint(@ColorInt color: Int): Drawable {
     val oldDrawable = DrawableCompat.unwrap<Drawable>(this)
@@ -1019,54 +1214,6 @@ val RecyclerView.focusedViewHolder
 
 fun MaterialAutoCompleteTextView.select(value: CharSequence) {
     setText(value, false)
-}
-
-fun Context.createTextView(textResId: Int, padding: Int = 16.toDp): TextView {
-    return AppCompatTextView(this).apply {
-        setText(textResId)
-        TextViewCompat.setTextAppearance(
-            this,
-            android.R.style.TextAppearance_Material_DialogWindowTitle,
-        )
-        updatePadding(padding, padding, padding, padding)
-        maxLines = Integer.MAX_VALUE
-        ellipsize = null
-    }
-}
-
-fun Chip.setupReminderChip(
-    baseNote: BaseNote,
-    dateFormat: DateFormat,
-    timeFormat: TimeFormat,
-    textSize: Float? = null,
-) {
-    val now = Date(System.currentTimeMillis())
-    val mostRecentNotificationDate =
-        baseNote.reminders.findNextNotificationDate()
-            ?: baseNote.reminders.maxOfOrNull { it.dateTime }
-    if (mostRecentNotificationDate == null) {
-        this.visibility = GONE
-        return
-    }
-    this.apply {
-        visibility = VISIBLE
-        text = mostRecentNotificationDate.format(dateFormat, timeFormat, ensureFullFormat = true)
-        textSize?.let {
-            setTextSizeSp(it)
-            chipIconSize =
-                TypedValue.applyDimension(
-                    TypedValue.COMPLEX_UNIT_SP,
-                    it + 4,
-                    resources.displayMetrics,
-                )
-        }
-        setCloseIconVisible(baseNote.reminders.haveAnyRepetition())
-        val isElapsed = mostRecentNotificationDate < now
-        alpha = if (isElapsed) 0.5f else 1.0f
-        paintFlags =
-            if (isElapsed) paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
-            else paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
-    }
 }
 
 fun Context.exportedText(notesAndAttachments: NotesAndAttachments) =

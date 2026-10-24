@@ -3,11 +3,11 @@ package com.philkes.notallyx.feature.editor
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.text.style.URLSpan
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.philkes.notallyx.R
@@ -16,7 +16,10 @@ import com.philkes.notallyx.core.common.extensions.findAllOccurrences
 import com.philkes.notallyx.core.common.extensions.openNote
 import com.philkes.notallyx.core.common.extensions.wrapWithChooser
 import com.philkes.notallyx.core.preference.EditAction
+import com.philkes.notallyx.core.ui.extensions.addOrUpdateLink
 import com.philkes.notallyx.core.ui.extensions.clearFormatting
+import com.philkes.notallyx.core.ui.extensions.preserveStylesFrom
+import com.philkes.notallyx.core.ui.extensions.removeLink
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.core.ui.extensions.toggleBold
 import com.philkes.notallyx.core.ui.extensions.toggleItalic
@@ -171,8 +174,9 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                         if (bodyValue.selection.min != bodyValue.selection.max) {
                             isFormattingMenuVisible.value = true
                         }
-                        bodyValueState.value = bodyValue
-                        notallyModel.body = bodyValue
+                        val updatedValue = bodyValue.preserveStylesFrom(bodyValueState.value)
+                        bodyValueState.value = updatedValue
+                        notallyModel.body = updatedValue
                     }
 
                     override fun onSearchQueryChange(query: String) {
@@ -242,6 +246,18 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                         applyOrToggleMonospace()
                     }
 
+                    override fun onLinkClick() {
+                        showLinkDialog()
+                    }
+
+                    override fun onLinkClicked(
+                        url: String,
+                        displayText: String,
+                        range: TextRange,
+                    ) {
+                        showLinkOptionsDialog(url, displayText, range)
+                    }
+
                     override fun onClearFormattingClick() {
                         clearFormatting()
                     }
@@ -278,33 +294,89 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
         bodyValueState.value = notallyModel.body
     }
 
-    private fun openLink(span: URLSpan) {
-        span.url?.let {
-            if (it.isNoteUrl()) {
-                span.navigateToNote()
-            } else {
-                openLink(span.url)
+    private fun showLinkDialog() {
+        val selection = bodyValueState.value.selection
+        val min = selection.min
+        val max = selection.max
+        val hasSelection = min < max
+        val selectedText = if (hasSelection) bodyValueState.value.text.substring(min, max) else ""
+        val existingUrl =
+            if (hasSelection) {
+                bodyValueState.value.annotatedString
+                    .getStringAnnotations("URL", min, max)
+                    .firstOrNull()
+                    ?.item ?: ""
+            } else ""
+
+        val isNoteUrl = existingUrl.isNoteUrl()
+        val range = if (hasSelection) TextRange(min, max) else null
+        notallyModel.activeDialog.value =
+            EditorDialogState.EditLink(
+                urlBefore = existingUrl,
+                displayTextBefore = selectedText,
+                isNoteUrl = isNoteUrl,
+                onConfirm = { urlAfter, displayTextAfter ->
+                    if (urlAfter != null) {
+                        applyLink(urlAfter, displayTextAfter, range)
+                    }
+                },
+            )
+    }
+
+    private fun showLinkOptionsDialog(url: String, displayText: String, range: TextRange) {
+        val isNoteUrl = url.isNoteUrl()
+        notallyModel.activeDialog.value =
+            EditorDialogState.LinkOptions(
+                url = url,
+                displayText = displayText,
+                isNoteUrl = isNoteUrl,
+                onOpen = { openLink(url) },
+                onEdit = {
+                    notallyModel.activeDialog.value =
+                        EditorDialogState.EditLink(
+                            urlBefore = url,
+                            displayTextBefore = displayText,
+                            isNoteUrl = isNoteUrl,
+                            onConfirm = { urlAfter, displayTextAfter ->
+                                if (urlAfter != null) {
+                                    applyLink(urlAfter, displayTextAfter, range)
+                                }
+                            },
+                        )
+                },
+                onRemove = { removeLink(range) },
+            )
+    }
+
+    private fun applyLink(url: String, displayText: String, range: TextRange? = null) {
+        val updated = bodyValueState.value.addOrUpdateLink(url, displayText, range)
+        bodyValueState.value = updated
+        notallyModel.body = updated
+    }
+
+    private fun removeLink(range: TextRange) {
+        val updated = bodyValueState.value.removeLink(range)
+        bodyValueState.value = updated
+        notallyModel.body = updated
+    }
+
+    private fun openLink(url: String) {
+        if (url.isNoteUrl()) {
+            openNote(url.getNoteIdFromUrl(), url.getNoteTypeFromUrl())
+        } else {
+            val uri = Uri.parse(url)
+            val intent = Intent(Intent.ACTION_VIEW, uri).wrapWithChooser(this)
+            try {
+                startActivity(intent)
+            } catch (exception: Exception) {
+                showToast(R.string.cant_open_link)
             }
         }
     }
 
-    private fun copyLink(span: URLSpan) {
-        copyToClipBoard(span.url)
+    private fun copyLink(url: String) {
+        copyToClipBoard(url)
         showToast(R.string.copied_link)
-    }
-
-    private fun openLink(url: String) {
-        val uri = Uri.parse(url)
-        val intent = Intent(Intent.ACTION_VIEW, uri).wrapWithChooser(this)
-        try {
-            startActivity(intent)
-        } catch (exception: Exception) {
-            showToast(R.string.cant_open_link)
-        }
-    }
-
-    private fun URLSpan.navigateToNote() {
-        openNote(this.url.getNoteIdFromUrl(), this.url.getNoteTypeFromUrl())
     }
 
     companion object {

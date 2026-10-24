@@ -7,9 +7,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
-import android.text.SpannableStringBuilder
-import android.text.Spanned
-import android.text.style.URLSpan
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -33,8 +30,6 @@ import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.ui.extensions.checkNotificationPermission
 import com.philkes.notallyx.core.ui.extensions.showToast
-import com.philkes.notallyx.core.ui.extensions.toAnnotatedString
-import com.philkes.notallyx.core.ui.extensions.toSpannableStringBuilder
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.ColorString
@@ -78,7 +73,7 @@ class NoteActionHandler(
     lateinit var pickNoteNewActivityResultLauncher: ActivityResultLauncher<Intent>
     lateinit var pickNoteUpdateActivityResultLauncher: ActivityResultLauncher<Intent>
 
-    lateinit var selectedSpan: URLSpan
+    var selectedLinkRange: TextRange? = null
 
     fun setupActivityResultLaunchers() {
         recordAudioActivityResultLauncher =
@@ -230,19 +225,33 @@ class NoteActionHandler(
                                     },
                                 )
                                 .getPickedNoteData()
-                        val builder =
-                            SpannableStringBuilder(
-                                notallyModel.body.annotatedString.toSpannableStringBuilder()
-                            )
-                        val spanStart = builder.getSpanStart(selectedSpan)
-                        val spanEnd = builder.getSpanEnd(selectedSpan)
-                        if (spanStart != -1 && spanEnd != -1) {
-                            builder.removeSpan(selectedSpan)
-                            builder.setSpan(
-                                URLSpan(url),
-                                spanStart,
-                                spanEnd,
-                                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                        val range = selectedLinkRange
+                        if (range != null && range.min < range.max) {
+                            val start = range.min
+                            val end = range.max
+                            val builder = AnnotatedString.Builder(notallyModel.body.text)
+                            notallyModel.body.annotatedString.spanStyles.forEach { sRange ->
+                                builder.addStyle(sRange.item, sRange.start, sRange.end)
+                            }
+                            notallyModel.body.annotatedString
+                                .getStringAnnotations("URL", 0, notallyModel.body.text.length)
+                                .filterNot { it.start == start && it.end == end }
+                                .forEach { uRange ->
+                                    builder.addStringAnnotation(
+                                        "URL",
+                                        uRange.item,
+                                        uRange.start,
+                                        uRange.end,
+                                    )
+                                }
+                            builder.addStringAnnotation("URL", url, start, end)
+                            builder.addStyle(
+                                SpanStyle(
+                                    color = ComposeColor.Blue,
+                                    textDecoration = TextDecoration.Underline,
+                                ),
+                                start,
+                                end,
                             )
                             val newAnnotatedString = builder.toAnnotatedString()
                             notallyModel.body =
@@ -499,8 +508,8 @@ class NoteActionHandler(
         linkNote(pickNoteNewActivityResultLauncher)
     }
 
-    fun updateNoteLink(span: URLSpan) {
-        selectedSpan = span
+    fun updateNoteLink(range: TextRange) {
+        selectedLinkRange = range
         linkNote(pickNoteUpdateActivityResultLauncher)
     }
 

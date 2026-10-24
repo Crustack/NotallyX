@@ -6,6 +6,9 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,6 +48,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -54,6 +58,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -63,6 +69,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
@@ -310,6 +317,8 @@ internal interface EditClickHandlers {
     fun onMonospaceClick() {}
 
     fun onLinkClick() {}
+
+    fun onLinkClicked(url: String, displayText: String, range: TextRange) {}
 
     fun onClearFormattingClick() {}
 
@@ -856,15 +865,57 @@ internal fun EditNoteScreen(
                 }
 
             val bodyValue = noteState.bodyValue
+            val currentBodyValue by rememberUpdatedState(bodyValue)
+            val currentClickHandlers by rememberUpdatedState(clickHandlers)
             BasicTextField(
                 value = bodyValue,
                 onValueChange = { changeHandlers.onBodyValueChange(it) },
                 onTextLayout = { textLayoutResult = it },
                 visualTransformation = visualTransformation,
+                // TODO: user should be able to click anywhere in the are to focus the textfield
                 modifier =
-                    Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp).semantics {
-                        contentDescription = bodyDesc
-                    },
+                    Modifier.fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 8.dp)
+                        .pointerInput(Unit) {
+                            awaitEachGesture {
+                                val down = awaitFirstDown(pass = PointerEventPass.Initial)
+                                val up = waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                                if (
+                                    up != null &&
+                                        (up.position - down.position).getDistance() <
+                                            viewConfiguration.touchSlop
+                                ) {
+                                    textLayoutResult?.let { layout ->
+                                        val offset = layout.getOffsetForPosition(up.position)
+                                        val annotated = currentBodyValue.annotatedString
+                                        val urlAnnotations =
+                                            annotated.getStringAnnotations(
+                                                "URL",
+                                                0,
+                                                annotated.length,
+                                            )
+                                        val link = urlAnnotations.firstOrNull {
+                                            offset in it.start until it.end ||
+                                                (offset == it.end &&
+                                                    offset > it.start &&
+                                                    layout
+                                                        .getBoundingBox(it.end - 1)
+                                                        .contains(up.position))
+                                        }
+                                        if (link != null) {
+                                            val displayText =
+                                                annotated.text.substring(link.start, link.end)
+                                            currentClickHandlers.onLinkClicked(
+                                                link.item,
+                                                displayText,
+                                                TextRange(link.start, link.end),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .semantics { contentDescription = bodyDesc },
                 textStyle =
                     MaterialTheme.typography.bodyLarge.copy(
                         color = MaterialTheme.colorScheme.onSurface
