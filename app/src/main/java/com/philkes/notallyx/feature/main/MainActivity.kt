@@ -37,8 +37,8 @@ import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.feature.editor.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
 import com.philkes.notallyx.feature.editor.EditListActivity
+import com.philkes.notallyx.feature.editor.EditNoteActionHandler
 import com.philkes.notallyx.feature.editor.EditNoteActivity
-import com.philkes.notallyx.feature.editor.NoteActionHandler
 import com.philkes.notallyx.feature.editor.handleRejection
 import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel
 import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel.Companion.CURRENT_LABEL_EMPTY
@@ -102,7 +102,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                 onDeleteSelectedNotesForever = { deleteSelectedNotesForever() },
                 onRequestNotificationPermission = {
                     checkNotificationPermission(
-                        NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
+                        EditNoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
                         onShowRationale = { msgResId, onConfirm ->
                             mainActivityViewModel.activeDialog.value =
                                 MainActiveDialog.Confirm(
@@ -275,7 +275,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
-            NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS -> {
+            EditNoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS -> {
                 if (
                     grantResults.isNotEmpty() &&
                         grantResults[0] == PackageManager.PERMISSION_GRANTED

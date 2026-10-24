@@ -3,7 +3,9 @@ package com.philkes.notallyx.activity.edit
 import android.util.Log
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasAnyDescendant
@@ -631,6 +633,492 @@ class EditListActivityTest : UiTestBase() {
 
         // Close search mode
         composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+
+        scenario.close()
+    }
+
+    @Test
+    fun moreListOptionsCheckAndClearAll() {
+        val noteTitle = "Checklist Management Note"
+        val itemsList =
+            listOf(
+                createListItem(
+                    body = "Shopping List",
+                    checked = false,
+                    isChild = false,
+                    order = 0,
+                    id = 0,
+                ),
+                createListItem(
+                    body = "Apples",
+                    checked = false,
+                    isChild = true,
+                    order = 1,
+                    id = 1,
+                ),
+                createListItem(
+                    body = "Bananas",
+                    checked = true,
+                    isChild = true,
+                    order = 2,
+                    id = 2,
+                ),
+                createListItem(
+                    body = "Cherries",
+                    checked = false,
+                    isChild = false,
+                    order = 3,
+                    id = 3,
+                ),
+                createListItem(
+                    body = "Dates",
+                    checked = true,
+                    isChild = false,
+                    order = 4,
+                    id = 4,
+                ),
+            )
+        val note =
+            createBaseNote(
+                title = noteTitle,
+                type = Type.LIST,
+                items = itemsList,
+            )
+        runBlocking { database.getBaseNoteDao().insert(note) }
+
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        val moreOptionsLabel = context.getString(R.string.tap_for_more_options)
+        val checkAllLabel = context.getString(R.string.check_all_items)
+        val uncheckAllLabel = context.getString(R.string.uncheck_all_items)
+        val deleteCheckedLabel = context.getString(R.string.delete_checked_items)
+        val undoLabel = context.getString(R.string.undo)
+        val backLabel = context.getString(R.string.back)
+
+        // 1. Wait for note to appear in MainActivity and open it
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(noteTitle).performClick()
+
+        // Wait for list items to display
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(itemNode("Shopping List")).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // Verify initial toggleable states:
+        // "Shopping List", "Apples", "Cherries" are unchecked
+        // "Bananas", "Dates" are checked
+        composeTestRule.onNode(itemCheckbox("Shopping List")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Cherries")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNode(itemCheckbox("Dates")).scrollToIfNeeded().assertIsOn()
+
+        // 2. Open More Options BottomSheet and click "Check all items"
+        composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(checkAllLabel)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(checkAllLabel).performClick()
+
+        // Verify all items are now checked
+        composeTestRule.waitUntil(10_000) {
+            try {
+                composeTestRule
+                    .onNode(itemCheckbox("Shopping List"))
+                    .scrollToIfNeeded()
+                    .assertIsOn()
+                composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().assertIsOn()
+                composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().assertIsOn()
+                composeTestRule.onNode(itemCheckbox("Cherries")).scrollToIfNeeded().assertIsOn()
+                composeTestRule.onNode(itemCheckbox("Dates")).scrollToIfNeeded().assertIsOn()
+                true
+            } catch (_: Throwable) {
+                false
+            }
+        }
+        composeTestRule.onNode(itemCheckbox("Shopping List")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNode(itemCheckbox("Cherries")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNode(itemCheckbox("Dates")).scrollToIfNeeded().assertIsOn()
+
+        // 3. Open More Options BottomSheet and click "Uncheck all items"
+        composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(uncheckAllLabel)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(uncheckAllLabel).performClick()
+
+        // Verify all items are now unchecked
+        composeTestRule.waitUntil(10_000) {
+            try {
+                composeTestRule
+                    .onNode(itemCheckbox("Shopping List"))
+                    .scrollToIfNeeded()
+                    .assertIsOff()
+                composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().assertIsOff()
+                composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().assertIsOff()
+                composeTestRule.onNode(itemCheckbox("Cherries")).scrollToIfNeeded().assertIsOff()
+                composeTestRule.onNode(itemCheckbox("Dates")).scrollToIfNeeded().assertIsOff()
+                true
+            } catch (_: Throwable) {
+                false
+            }
+        }
+        composeTestRule.onNode(itemCheckbox("Shopping List")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Cherries")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Dates")).scrollToIfNeeded().assertIsOff()
+
+        // 4. Check "Cherries" and "Dates", then delete checked items
+        composeTestRule.onNode(itemCheckbox("Cherries")).scrollToIfNeeded().performClick()
+        composeTestRule.onNode(itemCheckbox("Dates")).scrollToIfNeeded().performClick()
+        composeTestRule.onNode(itemCheckbox("Cherries")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNode(itemCheckbox("Dates")).scrollToIfNeeded().assertIsOn()
+
+        composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText(deleteCheckedLabel))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(deleteCheckedLabel).performClick()
+
+        // Verify "Cherries" and "Dates" are deleted, while "Shopping List", "Apples", "Bananas"
+        // remain
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(itemNode("Cherries")).fetchSemanticsNodes().isEmpty() &&
+                composeTestRule.onAllNodes(itemNode("Dates")).fetchSemanticsNodes().isEmpty()
+        }
+        composeTestRule.onNode(itemCheckbox("Shopping List")).scrollToIfNeeded().assertIsDisplayed()
+        composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().assertIsDisplayed()
+        composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().assertIsDisplayed()
+
+        // 5. Click Undo to restore deleted items
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(itemNode("Cherries")).fetchSemanticsNodes().isNotEmpty() &&
+                composeTestRule.onAllNodes(itemNode("Dates")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNode(itemCheckbox("Cherries")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNode(itemCheckbox("Dates")).scrollToIfNeeded().assertIsOn()
+
+        // 6. Return back to MainActivity and verify list note was saved
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(noteTitle).assertIsDisplayed()
+
+        scenario.close()
+    }
+
+    @Test
+    fun multiStepUndoAndRedoDeepStack() {
+        val noteTitle = "Deep Undo Redo Checklist Note"
+        val itemsList =
+            listOf(
+                createListItem(
+                    body = "Item 1",
+                    checked = false,
+                    isChild = false,
+                    order = 0,
+                    id = 0,
+                ),
+                createListItem(
+                    body = "Item 2",
+                    checked = false,
+                    isChild = false,
+                    order = 1,
+                    id = 1,
+                ),
+                createListItem(
+                    body = "Item 3",
+                    checked = false,
+                    isChild = false,
+                    order = 2,
+                    id = 2,
+                ),
+            )
+        val note =
+            createBaseNote(
+                title = noteTitle,
+                type = Type.LIST,
+                items = itemsList,
+            )
+        runBlocking { database.getBaseNoteDao().insert(note) }
+
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        val undoLabel = context.getString(R.string.undo)
+        val redoLabel = context.getString(R.string.redo)
+        val addItemLabel = context.getString(R.string.add_item)
+        val backLabel = context.getString(R.string.back)
+
+        // 1. Open the list note
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(noteTitle).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(itemNode("Item 1")).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // Initial state assertions: both undo and redo are disabled
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsNotEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
+
+        // Step 1: Add a new item "Item 4"
+        composeTestRule.onNodeWithText(addItemLabel).scrollToIfNeeded().performClick()
+        composeTestRule.onNode(hasText("") and hasSetTextAction()).performTextInput("Item 4")
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(itemNode("Item 4")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
+
+        // Step 2: Check "Item 1"
+        composeTestRule.onNode(itemCheckbox("Item 1")).scrollToIfNeeded().performClick()
+        composeTestRule.onNode(itemCheckbox("Item 1")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+
+        // Step 3: Check "Item 4"
+        composeTestRule.onNode(itemCheckbox("Item 4")).scrollToIfNeeded().performClick()
+        composeTestRule.onNode(itemCheckbox("Item 4")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+
+        // Step 4: Check "Item 2"
+        composeTestRule.onNode(itemCheckbox("Item 2")).scrollToIfNeeded().performClick()
+        composeTestRule.onNode(itemCheckbox("Item 2")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
+
+        // --- Deep Multi-Step Undo ---
+        // Undo 1: Reverts checking "Item 2"
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        composeTestRule.onNode(itemCheckbox("Item 2")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Undo 2: Reverts checking "Item 4"
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        composeTestRule.onNode(itemCheckbox("Item 4")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Undo 3: Reverts checking "Item 1"
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        composeTestRule.onNode(itemCheckbox("Item 1")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Undo 4: Reverts typing "Item 4" text (leaving empty item)
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(itemNode("Item 4")).fetchSemanticsNodes().isEmpty()
+        }
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Undo 5: Reverts adding the empty item (item completely removed)
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        // Entire undo stack is now empty!
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsNotEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // --- Deep Multi-Step Redo ---
+        // Redo 1: Restores the added item (empty item)
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Redo 2: Restores text "Item 4"
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(itemNode("Item 4")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Redo 3: Re-checks "Item 1"
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        composeTestRule.onNode(itemCheckbox("Item 1")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Redo 4: Re-checks "Item 4"
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        composeTestRule.onNode(itemCheckbox("Item 4")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Redo 5: Re-checks "Item 2"
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        composeTestRule.onNode(itemCheckbox("Item 2")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        // Entire redo stack is now exhausted!
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
+
+        // --- Test: Modification after undoing clears redo stack ---
+        // Undo checking "Item 2"
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        composeTestRule.onNode(itemCheckbox("Item 2")).scrollToIfNeeded().assertIsOff()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Perform a new modification: Check "Item 3"
+        composeTestRule.onNode(itemCheckbox("Item 3")).scrollToIfNeeded().performClick()
+        composeTestRule.onNode(itemCheckbox("Item 3")).scrollToIfNeeded().assertIsOn()
+
+        // Verify redo stack was cleared: Redo button must now be disabled!
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+
+        // Leaving note and re-entering to verify persistence
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(noteTitle).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(itemNode("Item 1")).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // Verify state is preserved: Item 1 and Item 3 and Item 4 are checked; Item 2 is unchecked
+        composeTestRule.onNode(itemCheckbox("Item 1")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNode(itemCheckbox("Item 3")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNode(itemCheckbox("Item 4")).scrollToIfNeeded().assertIsOn()
+        composeTestRule.onNode(itemCheckbox("Item 2")).scrollToIfNeeded().assertIsOff()
+
+        scenario.close()
+    }
+
+    @Test
+    fun undoAndRedoIndentationAndReordering() {
+        val noteTitle = "Undo Indent and Reorder Note"
+        val itemsList =
+            listOf(
+                createListItem(
+                    body = "Parent 1",
+                    checked = false,
+                    isChild = false,
+                    order = 0,
+                    id = 0,
+                ),
+                createListItem(
+                    body = "Item 2",
+                    checked = false,
+                    isChild = false,
+                    order = 1,
+                    id = 1,
+                ),
+                createListItem(
+                    body = "Item 3",
+                    checked = false,
+                    isChild = false,
+                    order = 2,
+                    id = 2,
+                ),
+            )
+        val note =
+            createBaseNote(
+                title = noteTitle,
+                type = Type.LIST,
+                items = itemsList,
+            )
+        runBlocking { database.getBaseNoteDao().insert(note) }
+
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        val undoLabel = context.getString(R.string.undo)
+        val redoLabel = context.getString(R.string.redo)
+        val backLabel = context.getString(R.string.back)
+
+        // 1. Open the list note
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(noteTitle).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(itemNode("Parent 1")).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // Verify initial alignment and order
+        assertIsParent("Parent 1", "Parent 1")
+        assertIsParent("Item 2", "Parent 1")
+        assertIsParent("Item 3", "Parent 1")
+        assertIsAbove("Parent 1", "Item 2")
+        assertIsAbove("Item 2", "Item 3")
+
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsNotEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
+
+        // 2. Indent "Item 2" to make it a child of "Parent 1"
+        composeTestRule.swipeItemRight("Item 2")
+        assertIsChild("Item 2", "Parent 1")
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
+
+        // 3. Undo indentation -> "Item 2" returns to parent alignment
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        assertIsParent("Item 2", "Parent 1")
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // 4. Redo indentation -> "Item 2" becomes a child again
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        assertIsChild("Item 2", "Parent 1")
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
+
+        // 5. Unindent "Item 2" back to parent
+        composeTestRule.swipeItemLeft("Item 2")
+        assertIsParent("Item 2", "Parent 1")
+
+        // 6. Undo unindentation -> "Item 2" is child again
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        assertIsChild("Item 2", "Parent 1")
+
+        // 7. Redo unindentation -> "Item 2" is parent again
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        assertIsParent("Item 2", "Parent 1")
+
+        // 8. Reorder items: Drag "Item 2" above "Parent 1" (adjacent swap)
+        composeTestRule.dragAndDropItem("Item 2", "Parent 1")
+        composeTestRule.waitForIdle()
+
+        // Assert reordered items: Item 2 -> Parent 1 -> Item 3
+        assertIsAbove("Item 2", "Parent 1")
+        assertIsAbove("Parent 1", "Item 3")
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+
+        // 9. Undo reordering -> original order restored: Parent 1 -> Item 2 -> Item 3
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        composeTestRule.waitForIdle()
+        assertIsAbove("Parent 1", "Item 2")
+        assertIsAbove("Item 2", "Item 3")
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // 10. Redo reordering -> moved order restored: Item 2 -> Parent 1 -> Item 3
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        composeTestRule.waitForIdle()
+        assertIsAbove("Item 2", "Parent 1")
+        assertIsAbove("Parent 1", "Item 3")
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
+
+        // 11. Exit and re-enter to ensure persistence
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(noteTitle).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(itemNode("Parent 1")).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        assertIsAbove("Item 2", "Parent 1")
+        assertIsAbove("Parent 1", "Item 3")
 
         scenario.close()
     }

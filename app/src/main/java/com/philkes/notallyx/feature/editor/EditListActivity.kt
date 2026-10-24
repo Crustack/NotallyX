@@ -9,7 +9,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.philkes.notallyx.core.common.extensions.findAllOccurrences
+import com.philkes.notallyx.core.common.extensions.uniqueCurrentMillis
 import com.philkes.notallyx.core.preference.EditAction
+import com.philkes.notallyx.core.preference.EditListAction
 import com.philkes.notallyx.core.preference.ListItemSort
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.data.model.Audio
@@ -17,11 +19,11 @@ import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.feature.editor.bottomsheet.MoreListBottomSheet
 import com.philkes.notallyx.feature.editor.history.changes.ListItemsChange
 import com.philkes.notallyx.feature.editor.listitem.checkItem
 import com.philkes.notallyx.feature.editor.listitem.cloneList
 import com.philkes.notallyx.feature.editor.listitem.initChildren
+import com.philkes.notallyx.feature.editor.listitem.initOrders
 import com.philkes.notallyx.feature.editor.listitem.moveWithChildren
 import com.philkes.notallyx.feature.editor.listitem.removeWithChildren
 import com.philkes.notallyx.feature.editor.listitem.splitByChecked
@@ -35,6 +37,52 @@ import kotlinx.coroutines.withContext
 
 class EditListActivity : EditActivity(Type.LIST) {
 
+    private val itemsVersionState = mutableIntStateOf(0)
+
+    fun applyListChange(action: () -> Unit) {
+        val oldList = notallyModel.items.cloneList()
+        action()
+        initChildren(notallyModel.items)
+        val newList = notallyModel.items.cloneList()
+        changeHistory.push(
+            ListItemsChange(
+                notallyModel = notallyModel,
+                oldItems = oldList,
+                newItems = newList,
+                onItemsUpdated = { itemsVersionState.intValue++ },
+            )
+        )
+        itemsVersionState.intValue++
+    }
+
+    fun handleListAction(action: EditListAction) {
+        when (action) {
+            EditListAction.CHECK_ALL -> {
+                applyListChange {
+                    val now = uniqueCurrentMillis()
+                    notallyModel.items.forEach { item ->
+                        item.checked = true
+                        item.checkedTimestamp = now
+                    }
+                }
+            }
+            EditListAction.UNCHECK_ALL -> {
+                applyListChange {
+                    notallyModel.items.forEach { item ->
+                        item.checked = false
+                        item.checkedTimestamp = null
+                    }
+                }
+            }
+            EditListAction.DELETE_CHECKED -> {
+                applyListChange {
+                    notallyModel.items.removeAll { it.checked }
+                    initOrders(notallyModel.items)
+                }
+            }
+        }
+    }
+
     override fun finish() {
         super.finish()
     }
@@ -44,14 +92,8 @@ class EditListActivity : EditActivity(Type.LIST) {
         val topActions = prefs.getSafeEditNoteActivityTopActions()
         val bottomAction = prefs.editNoteActivityBottomAction.value
 
-        MoreListBottomSheet(
-                notallyModel,
-                colorInt,
-                actionHandler,
-                topActions,
-                bottomAction,
-            )
-            .show(supportFragmentManager, MoreListBottomSheet.TAG)
+        notallyModel.activeBottomSheet.value =
+            EditorBottomSheetState.MoreList(topActions, bottomAction)
     }
 
     override fun selectSearchResult(resultPos: Int) {}
@@ -65,7 +107,6 @@ class EditListActivity : EditActivity(Type.LIST) {
         val audiosState = notallyModel.audios.collectAsStateWithLifecycle(emptyList())
         val remindersState = notallyModel.reminders.collectAsStateWithLifecycle(emptyList())
 
-        val itemsVersionState = remember { mutableIntStateOf(0) }
         val topActionsState = remember {
             mutableStateOf(preferences.getSafeEditNoteActivityTopActions())
         }
@@ -128,22 +169,6 @@ class EditListActivity : EditActivity(Type.LIST) {
             )
 
         val searchState = this.searchState
-
-        fun applyListChange(action: () -> Unit) {
-            val oldList = notallyModel.items.cloneList()
-            action()
-            initChildren(notallyModel.items)
-            val newList = notallyModel.items.cloneList()
-            changeHistory.push(
-                ListItemsChange(
-                    notallyModel = notallyModel,
-                    oldItems = oldList,
-                    newItems = newList,
-                    onItemsUpdated = { itemsVersionState.intValue++ },
-                )
-            )
-            itemsVersionState.intValue++
-        }
 
         EditListScreen(
             noteState = noteState,

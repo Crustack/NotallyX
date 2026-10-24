@@ -11,11 +11,13 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -50,7 +52,12 @@ import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.extensions.generateBaseNote
+import com.philkes.notallyx.feature.editor.bottomsheet.ActionModalBottomSheet
 import com.philkes.notallyx.feature.editor.bottomsheet.ActionSelectionBottomSheet
+import com.philkes.notallyx.feature.editor.bottomsheet.AddBottomSheet
+import com.philkes.notallyx.feature.editor.bottomsheet.AddNoteBottomSheet
+import com.philkes.notallyx.feature.editor.bottomsheet.ExportBottomSheet
+import com.philkes.notallyx.feature.editor.bottomsheet.MoreListBottomSheet
 import com.philkes.notallyx.feature.editor.bottomsheet.MoreNoteBottomSheet
 import com.philkes.notallyx.feature.editor.history.ChangeHistory
 import com.philkes.notallyx.feature.editor.screens.SearchState
@@ -69,7 +76,9 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
     protected var search = Search()
 
     internal val notallyModel: EditActivityViewModel by viewModel()
-    protected val actionHandler: NoteActionHandler by lazy { NoteActionHandler(this, notallyModel) }
+    protected val actionHandler: EditNoteActionHandler by lazy {
+        EditNoteActionHandler(this, notallyModel)
+    }
 
     internal lateinit var changeHistory: ChangeHistory
     protected var undo: View? = null
@@ -183,6 +192,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
                             UiState.Success -> {
                                 RenderScreen()
                                 EditActivityDialogs()
+                                EditActivityBottomSheets()
                             }
                         }
                     }
@@ -299,7 +309,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
                     actionHandler.startRecordAudioActivity()
                 } else handleRejection(R.string.to_record_audio)
             }
-            NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS -> {
+            EditNoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS -> {
                 if (
                     grantResults.isNotEmpty() &&
                         grantResults[0] == PackageManager.PERMISSION_GRANTED
@@ -414,8 +424,8 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
         val topActions = preferences.getSafeEditNoteActivityTopActions()
         val bottomAction = preferences.editNoteActivityBottomAction.value
 
-        MoreNoteBottomSheet(notallyModel, colorInt, actionHandler, topActions, bottomAction)
-            .show(supportFragmentManager, MoreNoteBottomSheet.TAG)
+        notallyModel.activeBottomSheet.value =
+            EditorBottomSheetState.MoreNote(topActions, bottomAction)
     }
 
     protected fun openActionSelectionBottomSheet(
@@ -437,9 +447,9 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
         }
         val selectableActions = (listOf(action) + availableActions).distinct()
 
-        ActionSelectionBottomSheet(
+        notallyModel.activeBottomSheet.value =
+            EditorBottomSheetState.ActionSelection(
                 actions = selectableActions,
-                model = notallyModel,
                 oldAction = action,
                 title = getString(R.string.swap_action),
                 onReset = {
@@ -455,7 +465,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
                         onUpdateBottomAction(NotallyXPreferences.DEFAULT_EDIT_NOTE_BOTTOM_ACTION)
                     }
                 },
-                color = colorInt,
                 onActionSelected = { selectedAction ->
                     if (isTopAction) {
                         val updated = topActions.toMutableList()
@@ -470,7 +479,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
                     }
                 },
             )
-            .show(supportFragmentManager, ActionSelectionBottomSheet.TAG)
     }
 
     fun updateToggleViewMode() {}
@@ -663,6 +671,110 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
                     onEdit = dialogState.onEdit,
                     onRemove = dialogState.onRemove,
                     onDismissRequest = { notallyModel.activeDialog.value = null },
+                )
+            }
+            null -> {}
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    protected fun EditActivityBottomSheets() {
+        val activeBottomSheet by notallyModel.activeBottomSheet.collectAsStateWithLifecycle()
+        val sheetColor = if (colorIntState.intValue != 0) Color(colorIntState.intValue) else null
+
+        when (val sheetState = activeBottomSheet) {
+            is EditorBottomSheetState.MoreNote -> {
+                MoreNoteBottomSheet(
+                    model = notallyModel,
+                    actionHandler = actionHandler,
+                    topActions = sheetState.topActions,
+                    bottomAction = sheetState.bottomAction,
+                    backgroundColor = sheetColor,
+                    onDismissRequest = {
+                        if (notallyModel.activeBottomSheet.value == sheetState) {
+                            notallyModel.activeBottomSheet.value = null
+                        }
+                    },
+                )
+            }
+            is EditorBottomSheetState.MoreList -> {
+                MoreListBottomSheet(
+                    model = notallyModel,
+                    actionHandler = actionHandler,
+                    topActions = sheetState.topActions,
+                    bottomAction = sheetState.bottomAction,
+                    backgroundColor = sheetColor,
+                    onDismissRequest = {
+                        if (notallyModel.activeBottomSheet.value == sheetState) {
+                            notallyModel.activeBottomSheet.value = null
+                        }
+                    },
+                )
+            }
+            is EditorBottomSheetState.AddNote -> {
+                AddNoteBottomSheet(
+                    actionHandler = actionHandler,
+                    backgroundColor = sheetColor,
+                    onDismissRequest = {
+                        if (notallyModel.activeBottomSheet.value == sheetState) {
+                            notallyModel.activeBottomSheet.value = null
+                        }
+                    },
+                )
+            }
+            is EditorBottomSheetState.Add -> {
+                AddBottomSheet(
+                    actionHandler = actionHandler,
+                    backgroundColor = sheetColor,
+                    onDismissRequest = {
+                        if (notallyModel.activeBottomSheet.value == sheetState) {
+                            notallyModel.activeBottomSheet.value = null
+                        }
+                    },
+                )
+            }
+            is EditorBottomSheetState.Export -> {
+                ExportBottomSheet(
+                    backgroundColor = sheetColor,
+                    onExport = sheetState.onExport,
+                    onDismissRequest = {
+                        if (notallyModel.activeBottomSheet.value == sheetState) {
+                            notallyModel.activeBottomSheet.value = null
+                        }
+                    },
+                )
+            }
+            is EditorBottomSheetState.ActionSelection -> {
+                ActionSelectionBottomSheet(
+                    actions = sheetState.actions,
+                    model = notallyModel,
+                    oldAction = sheetState.oldAction,
+                    title = sheetState.title,
+                    onReset = sheetState.onReset,
+                    backgroundColor = sheetColor,
+                    onDismissRequest = {
+                        if (notallyModel.activeBottomSheet.value == sheetState) {
+                            notallyModel.activeBottomSheet.value = null
+                        }
+                    },
+                    onActionSelected = { selectedAction ->
+                        sheetState.onActionSelected(selectedAction)
+                        notallyModel.activeBottomSheet.value = null
+                    },
+                )
+            }
+            is EditorBottomSheetState.Custom -> {
+                ActionModalBottomSheet(
+                    actions = sheetState.actions,
+                    title = sheetState.title,
+                    onReset = sheetState.onReset,
+                    backgroundColor = sheetColor,
+                    onDismissRequest = {
+                        if (notallyModel.activeBottomSheet.value == sheetState) {
+                            notallyModel.activeBottomSheet.value = null
+                        }
+                    },
                 )
             }
             null -> {}
