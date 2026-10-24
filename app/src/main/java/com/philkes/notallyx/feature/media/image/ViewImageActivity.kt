@@ -121,6 +121,13 @@ class ViewImageActivity : AppCompatActivity() {
             }
     }
 
+    override fun finish() {
+        val resultIntent = Intent()
+        resultIntent.putExtra(EXTRA_DELETED_IMAGES, deletedImages)
+        setResult(RESULT_OK, resultIntent)
+        super.finish()
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.apply {

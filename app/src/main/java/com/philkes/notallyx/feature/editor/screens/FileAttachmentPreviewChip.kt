@@ -1,6 +1,7 @@
 package com.philkes.notallyx.feature.editor.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,14 +34,19 @@ internal fun FileAttachmentPreviewChip(
     modifier: Modifier = Modifier,
     showIcon: Boolean = true,
     onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
 ) {
     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
         Surface(
-            onClick = onClick ?: {},
-            enabled = onClick != null,
             shape = RoundedCornerShape(20),
             color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.05f),
-            modifier = modifier,
+            modifier =
+                if (onClick != null || onLongClick != null) {
+                    modifier.combinedClickable(
+                        onClick = onClick ?: {},
+                        onLongClick = onLongClick,
+                    )
+                } else modifier,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         ) {
             Row(
