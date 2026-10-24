@@ -16,10 +16,12 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextInputSelection
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.text.TextRange
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.intent.Intents
@@ -48,6 +50,12 @@ import com.philkes.notallyx.feature.migration.ExportMimeType
 import com.philkes.notallyx.feature.reminder.PinnedNotificationManager
 import com.philkes.notallyx.navigation.NotallyNavKey
 import com.philkes.notallyx.test.UiTestBase
+import com.philkes.notallyx.test.assertSubtextHasLink
+import com.philkes.notallyx.test.assertSubtextHasNoFormatting
+import com.philkes.notallyx.test.assertSubtextHasStrikethrough
+import com.philkes.notallyx.test.assertSubtextIsBold
+import com.philkes.notallyx.test.assertSubtextIsItalic
+import com.philkes.notallyx.test.assertSubtextIsMonospace
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.navigateTo
 import com.philkes.notallyx.test.waitUntil
@@ -132,30 +140,62 @@ class EditActivityTest : UiTestBase() {
         composeTestRule.onNodeWithContentDescription(takeNoteLabel).performClick()
 
         val text = "Lorem ipsum dolor sit amet, consectetur adipiscing."
+        val bodyNode = composeTestRule.onNodeWithContentDescription(bodyLabel)
 
-        composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput(text)
+        bodyNode.performTextInput(text)
 
         // Open formatting bar
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.edit))
             .performClick()
 
-        // Formatting controls
+        // Select and format "Lorem" as bold
+        bodyNode.performTextInputSelection(TextRange(0, 5))
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.bold))
+            .performClick()
+
+        // Select and format "ipsum" as italic
+        bodyNode.performTextInputSelection(TextRange(6, 11))
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.italic))
+            .performClick()
+
+        // Select and format "dolor" as strikethrough
+        bodyNode.performTextInputSelection(TextRange(12, 17))
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.strikethrough))
+            .performClick()
+
+        // Select and format "sit" as monospace
+        bodyNode.performTextInputSelection(TextRange(18, 21))
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.monospace))
+            .performClick()
+
+        // Select and format "amet" as link
+        bodyNode.performTextInputSelection(TextRange(22, 26))
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.link))
+            .performClick()
+
+        // Select "consectetur", format as bold and then clear formatting
+        bodyNode.performTextInputSelection(TextRange(28, 39))
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.bold))
             .performClick()
         composeTestRule
-            .onNodeWithContentDescription(context.getString(R.string.italic))
-            .performClick()
-        composeTestRule
-            .onNodeWithContentDescription(context.getString(R.string.strikethrough))
-            .performClick()
-        composeTestRule
-            .onNodeWithContentDescription(context.getString(R.string.monospace))
-            .performClick()
-        composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.clear_formatting))
             .performClick()
+
+        // Validate formatting worked
+        bodyNode
+            .assertSubtextIsBold("Lorem")
+            .assertSubtextIsItalic("ipsum")
+            .assertSubtextHasStrikethrough("dolor")
+            .assertSubtextIsMonospace("sit")
+            .assertSubtextHasLink("amet")
+            .assertSubtextHasNoFormatting("consectetur")
 
         scenario.close()
     }

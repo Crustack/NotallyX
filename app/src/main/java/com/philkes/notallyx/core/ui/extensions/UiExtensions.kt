@@ -54,6 +54,7 @@ import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatTextView
+import androidx.compose.ui.text.font.FontWeight
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.core.graphics.ColorUtils
@@ -152,7 +153,7 @@ fun String.applySpans(representations: List<SpanRepresentation>): Editable {
 
 fun createBoldSpan() =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        StyleSpan(Typeface.BOLD, 700)
+        StyleSpan(Typeface.BOLD, FontWeight.Bold.weight)
     } else {
         StyleSpan(Typeface.BOLD)
     }
