@@ -613,7 +613,6 @@ suspend fun ContextWrapper.importFile(
     proposedMimeType: String? = null,
 ): Pair<FileAttachment?, FileError?> {
     val filesRoot = getCurrentFilesDirectory()
-    requireNotNull(filesRoot) { "filesRoot is null" }
     return importFile(uri, filesRoot, FileType.ANY, proposedMimeType = proposedMimeType)
 }
 
@@ -622,7 +621,6 @@ suspend fun ContextWrapper.importImage(
     proposedMimeType: String? = null,
 ): Pair<FileAttachment?, FileError?> {
     val imagesRoot = getCurrentImagesDirectory()
-    requireNotNull(imagesRoot) { "imagesRoot is null" }
     return importFile(uri, imagesRoot, FileType.IMAGE, proposedMimeType = proposedMimeType)
 }
 
@@ -633,7 +631,6 @@ suspend fun ContextWrapper.importAudio(original: File, deleteOriginalFile: Boole
         and audio recording
         */
         val audioRoot = getCurrentAudioDirectory()
-        requireNotNull(audioRoot) { "audioRoot is null" }
 
         /*
         If we have reached this point, an SD card (emulated or real) exists and audioRoot

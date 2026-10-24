@@ -172,7 +172,7 @@ fun generateNotes(batchIdx: Int, date: Date): List<BaseNote> =
             files =
                 if ((batchIdx + 1) % 5 == 0)
                     (0..batchIdx).map {
-                        FileAttachment("File ${batchIdx}", "file${batchIdx}", MIME_TYPE_JSON)
+                        FileAttachment("File $batchIdx", "file${batchIdx}", MIME_TYPE_JSON)
                     }
                 else mutableListOf(),
             images =

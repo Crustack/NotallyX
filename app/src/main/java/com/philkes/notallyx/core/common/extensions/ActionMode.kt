@@ -52,13 +52,6 @@ class ActionMode {
         }
     }
 
-    fun updateSelected(availableItemIds: List<Long>?) {
-        selectedNotes.keys
-            .filter { availableItemIds?.contains(it) == false }
-            .forEach { selectedNotes.remove(it) }
-        refresh()
-    }
-
     fun setLoading(loading: Boolean) {
         this.loading.value = loading
     }

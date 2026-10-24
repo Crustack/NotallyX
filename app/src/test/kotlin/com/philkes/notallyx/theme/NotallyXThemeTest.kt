@@ -24,9 +24,9 @@ class NotallyXThemeTest {
     @Test
     fun testColorDefinitionsMatchXmlValues() {
         assertThat(MdThemePrimary).isEqualTo(Color(0xFF7285D0))
-        assertThat(ContainerLight).isEqualTo(androidx.compose.ui.graphics.Color(0xFFFAF8FF))
-        assertThat(ContainerDark).isEqualTo(androidx.compose.ui.graphics.Color(0xFF1A1B21))
-        assertThat(ContainerSuperDark).isEqualTo(androidx.compose.ui.graphics.Color(0xFF000000))
+        assertThat(ContainerLight).isEqualTo(Color(0xFFFAF8FF))
+        assertThat(ContainerDark).isEqualTo(Color(0xFF1A1B21))
+        assertThat(ContainerSuperDark).isEqualTo(Color(0xFF000000))
     }
 
     @Test

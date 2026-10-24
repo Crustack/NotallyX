@@ -203,7 +203,7 @@ private fun Element.isBold(): Boolean {
     val style = attr("style")
     return if (style.contains("font-weight")) {
         val fontWeight: String = style.split("font-weight:")[1].split(";")[0].trim()
-        return fontWeight.toInt() > 400 // Google Keep normal text has fontWeight 400
+        fontWeight.toInt() > 400 // Google Keep normal text has fontWeight 400
     } else false
 }
 
