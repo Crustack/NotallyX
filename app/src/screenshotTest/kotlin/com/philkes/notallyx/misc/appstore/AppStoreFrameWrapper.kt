@@ -25,15 +25,11 @@ import kotlin.time.Instant
 @Preview(
     name = "en-US",
     locale = "en",
-    widthDp = 572,
-    heightDp = 1024,
     showBackground = true,
 )
 @Preview(
     name = "de-DE",
     locale = "de",
-    widthDp = 572,
-    heightDp = 1024,
     showBackground = true,
 )
 annotation class MarketingPreview
@@ -79,7 +75,7 @@ object MarketingSampleData {
         )
 
     val FORMATTING_BODY =
-        "This is a bold text.\nThis is italic text.\nThis is strikethrough text.\nAnd this is a code block in monospace font."
+        "This is a bold text.\nThis is italic text.\nThis is strikethrough text.\nAnd this is a code block in monospace font.\nhttps://github.com/Crustack/NotallyX"
 
     val FORMATTING_SPANS =
         listOf(
@@ -87,6 +83,12 @@ object MarketingSampleData {
             SpanRepresentation(start = 21, end = 41, italic = true),
             SpanRepresentation(start = 42, end = 69, strikethrough = true),
             SpanRepresentation(start = 70, end = 113, monospace = true),
+            SpanRepresentation(
+                start = 113,
+                end = 113 + 37,
+                link = true,
+                linkData = "https://github.com/Crustack/NotallyX",
+            ),
         )
 
     val FORMATTING_NOTE =

@@ -25,6 +25,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -33,9 +34,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
@@ -48,11 +51,37 @@ fun DeviceFrame(
     deviceFrameColor: Color = Color(0xFF1E1E1E),
     statusBarColor: Color = MaterialTheme.colorScheme.surface,
     statusBarContentColor: Color = MaterialTheme.colorScheme.onSurface,
+    clipBottom: Boolean = true,
     screenContent: @Composable () -> Unit,
 ) {
     Box(
         modifier =
             modifier
+                .then(
+                    if (clipBottom) {
+                        Modifier.layout { measurable, constraints ->
+                                // Measure children with infinite vertical height so they NEVER
+                                // squish or stretch
+                                val looseConstraints =
+                                    constraints.copy(
+                                        minHeight = 0,
+                                        maxHeight = Constraints.Infinity,
+                                    )
+                                val placeable = measurable.measure(looseConstraints)
+
+                                // Report only 75% height as the visible frame
+                                val clippedHeight = (placeable.height * 0.75f).toInt()
+
+                                layout(placeable.width, clippedHeight) {
+                                    // Place top-left without any scaling/stretching
+                                    placeable.placeRelative(0, 0)
+                                }
+                            }
+                            .clipToBounds()
+                    } else {
+                        Modifier
+                    }
+                )
                 .background(
                     brush =
                         Brush.verticalGradient(
@@ -64,7 +93,7 @@ fun DeviceFrame(
                         )
                 )
                 .padding(32.dp),
-        contentAlignment = Alignment.Center,
+        contentAlignment = Alignment.TopCenter,
     ) {
         val deviceFrameRounding = 48.dp
         val contentRounding = deviceFrameRounding - 10.dp
@@ -73,8 +102,7 @@ fun DeviceFrame(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            // 1. Marketing Header Text (Fixed height so title line count does not alter phone case
-            // dimensions)
+            // 1. Marketing Header Text
             Box(
                 modifier = Modifier.fillMaxWidth().height(112.dp),
                 contentAlignment = Alignment.Center,
@@ -93,12 +121,10 @@ fun DeviceFrame(
             Spacer(modifier = Modifier.height(28.dp))
 
             // 2. Hardware Device Frame & Case with Buttons
-            val phoneWidth = 400.dp
+            val phoneWidth = 450.dp
             val phoneHeight = 820.dp
 
             Box(modifier = Modifier.width(phoneWidth).height(phoneHeight)) {
-                // Main Phone Body
-                val buttonsRounding = 12.dp
                 Box(
                     modifier =
                         Modifier.fillMaxSize()
@@ -112,7 +138,6 @@ fun DeviceFrame(
                             .clip(RoundedCornerShape(contentRounding))
                 ) {
                     Box(modifier = Modifier.fillMaxSize().background(statusBarColor)) {
-
                         // A. App Screen Content
                         Box(modifier = Modifier.fillMaxSize().padding(top = 40.dp)) {
                             screenContent()
@@ -150,36 +175,19 @@ fun DeviceFrame(
                     }
                 }
 
-                // --- Hardware Buttons on the Right Side ---
+                val buttonsWidth = 6.dp
+                val buttonsRounding = 4.dp
 
-                // Power Button (Upper Right)
-                Box(
-                    modifier =
-                        Modifier.align(Alignment.TopEnd)
-                            .padding(top = 180.dp)
-                            .offset(x = 4.dp)
-                            .width(4.dp)
-                            .height(55.dp)
-                            .background(
-                                color = deviceFrameColor,
-                                shape =
-                                    RoundedCornerShape(
-                                        topEnd = buttonsRounding,
-                                        bottomEnd = buttonsRounding,
-                                    ),
-                            )
-                )
-
-                // Volume Buttons (Below Power Button)
                 Column(
                     modifier =
-                        Modifier.align(Alignment.TopEnd).padding(top = 255.dp).offset(x = 4.dp),
+                        Modifier.align(Alignment.TopEnd)
+                            .padding(top = 160.dp)
+                            .offset(x = buttonsWidth / 2),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    // Volume Up
                     Box(
                         modifier =
-                            Modifier.width(4.dp)
+                            Modifier.width(buttonsWidth)
                                 .height(45.dp)
                                 .background(
                                     color = deviceFrameColor,
@@ -190,10 +198,9 @@ fun DeviceFrame(
                                         ),
                                 )
                     )
-                    // Volume Down
                     Box(
                         modifier =
-                            Modifier.width(4.dp)
+                            Modifier.width(buttonsWidth)
                                 .height(45.dp)
                                 .background(
                                     color = deviceFrameColor,
@@ -205,6 +212,24 @@ fun DeviceFrame(
                                 )
                     )
                 }
+
+                // --- Hardware Buttons ---
+                Box(
+                    modifier =
+                        Modifier.align(Alignment.TopEnd)
+                            .padding(top = 290.dp)
+                            .offset(x = buttonsWidth / 2)
+                            .width(buttonsWidth)
+                            .height(55.dp)
+                            .background(
+                                color = deviceFrameColor,
+                                shape =
+                                    RoundedCornerShape(
+                                        topEnd = buttonsRounding,
+                                        bottomEnd = buttonsRounding,
+                                    ),
+                            )
+                )
             }
         }
     }
