@@ -214,7 +214,7 @@ fun SemanticsNodeInteraction.dragAndDropTo(
     targetNode: SemanticsNodeInteraction,
     verticalOffset: Float = 20f,
     holdDurationMillis: Long = 600L,
-    dragDurationMillis: Long = 500L,
+    dragDurationMillis: Long = 200L,
     steps: Int = 30,
     settleDelayMillis: Long = 200L,
 ): SemanticsNodeInteraction {
