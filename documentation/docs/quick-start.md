@@ -9,7 +9,7 @@ This guide will help you get up and running with NotallyX quickly. We'll cover t
 
 ### Creating a Text Note
 
-<img src={require('/img/phoneScreenshots/3.png').default} width="32%" alt="NotallyX Text Note" />
+<img src={require('/img/phoneScreenshots/03_RichText.png').default} width="32%" alt="NotallyX Text Note" />
 
 1. Tap the **✏️** button on the lower right
 2. Write your note content
@@ -26,7 +26,7 @@ For more details see ✏️ [Rich Text Formatting](features/rich-text.mdx)
 
 ### Creating a List Note
 
-<img src={require('/img/phoneScreenshots/2.png').default} width="32%" alt="NotallyX List Note" />
+<img src={require('/img/phoneScreenshots/02_TaskLists.png').default} width="32%" alt="NotallyX List Note" />
 
 1. Tap the **List Note** option
 2. Enter a title for your list (optional)
@@ -42,7 +42,7 @@ For more details see ✅ [Task Lists and Subtasks](features/task-lists.mdx)
 
 ## Organizing Your Notes
 
-<img src={require('/img/phoneScreenshots/1.png').default} width="32%" alt="NotallyX Organization" />
+<img src={require('/img/phoneScreenshots/01_ManageAndOrganize.png').default} width="32%" alt="NotallyX Organization" />
 
 ### Pinning Important Notes
 

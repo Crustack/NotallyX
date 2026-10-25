@@ -176,7 +176,7 @@
     <string name="empty_list">Daftar kosong</string>
     <string name="empty_note">Catatan kosong</string>
     <string name="empty_reminders">Belum ada pengingat. Mau buat satu\?</string>
-    <string name="enable_lock_description">Hal ini juga akan mengenkripsi basis data</string>
+
     <string name="enable_lock_title">Aktifkan penguncian melalui biometrik/PIN</string>
     <string name="enabled">Diaktifkan</string>
     <string name="encrypt_database_advice">EKSPERIMENTAL: Secara default, mengaktifkan kunci tidak akan mengenkripsi basis data. Anda dapat memilih untuk mengaktifkan enkripsi basis data, yang dapat digunakan bersamaan dengan opsi \'data in public\' agar basis data disimpan di folder publik, namun tetap terenkripsi. Perlu diperhatikan bahwa enkripsi basis data belum stabil.</string>

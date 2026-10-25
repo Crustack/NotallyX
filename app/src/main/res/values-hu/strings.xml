@@ -176,7 +176,7 @@
     <string name="empty_list">Üres lista</string>
     <string name="empty_note">Üres jegyzet</string>
     <string name="empty_reminders">Még nincs emlékeztető. Készítsen egyet\?</string>
-    <string name="enable_lock_description">Ezzel az adatbázis is titkosítva lesz</string>
+
     <string name="enable_lock_title">A zár biometrikus azonosítással vagy PIN-kóddal történő engedélyezése</string>
     <string name="enabled">Engedélyezve</string>
     <string name="encrypt_database_advice">KÍSÉRLETI: Alapértelmezés szerint a zár engedélyezése nem titkosítja az adatbázist. Opcionálisan engedélyezheted az adatbázis titkosítását, amely a „data in public” opcióval együtt használva lehetővé teszi, hogy az adatbázis egy nyilvános mappában legyen, de titkosítva. Ne feledd, hogy az adatbázis-titkosítás még nem működik stabilan.</string>

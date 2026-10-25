@@ -176,7 +176,7 @@
     <string name="empty_list">Lista vuota</string>
     <string name="empty_note">Nota vuota</string>
     <string name="empty_reminders">Nessun promemoria ancora. Crearne uno\?</string>
-    <string name="enable_lock_description">Questo inoltre crittograferà il database</string>
+
     <string name="enable_lock_title">Attiva blocco con Biometria/PIN</string>
     <string name="enabled">Attivato</string>
     <string name="encrypt_database_advice">SPERIMENTALE: Per impostazione predefinita, l\'attivazione del blocco non comporta la crittografia del database. È possibile, se lo si desidera, abilitare la crittografia del database, che può essere utilizzata insieme all\'opzione \"data in public\" per collocare il database in una cartella pubblica, ma in forma crittografata. Si tenga presente che la crittografia del database non è ancora stabile.</string>

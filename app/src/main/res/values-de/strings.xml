@@ -176,7 +176,7 @@
     <string name="empty_list">Leere Liste</string>
     <string name="empty_note">Leere Notiz</string>
     <string name="empty_reminders">Keine Erinnerungen vorhanden. Tippen, um eine neue Erinnerung zu erstellen.</string>
-    <string name="enable_lock_description">Dies verschlüsselt außerdem die Datenbank</string>
+
     <string name="enable_lock_title">Aktiviere Biometrie/PIN Sperre</string>
     <string name="enabled">Aktiviert</string>
     <string name="encrypt_database_advice">EXPERIMENTELL: Standardmäßig wird die Datenbank durch das Aktivieren der Sperre nicht verschlüsselt. Optional können Sie die Verschlüsselung der Datenbank aktivieren. Diese Funktion lässt sich in Verbindung mit der Option „data in public“ nutzen, um die Datenbank in einem öffentlichen Ordner abzulegen, wobei sie jedoch verschlüsselt bleibt. Bitte beachten Sie, dass die Datenbankverschlüsselung noch nicht stabil ist.</string>
@@ -429,4 +429,14 @@
     <string name="yearly">Jährlich</string>
     <string name="years">Jahre</string>
     <string name="your_notes_associated">Notizen, welche dieses Label verwenden, werden nicht gelöscht.</string>
+
+    <!-- App Store Marketing Headlines -->
+    <string name="store_headline_manage_and_organize">Organisiere und verwalte alle deine Notizen</string>
+    <string name="store_headline_task_lists">Behalte den Überblick über deine Aufgabenlisten</string>
+    <string name="store_headline_rich_text">Formatiere deine Notizen mit Rich-Text</string>
+    <string name="store_headline_images_and_files">Erweitere deine Notizen mit Bildern und Dateien</string>
+    <string name="store_headline_widgets">Zeige Notizen als Widgets an</string>
+    <string name="store_headline_reminders">Erstelle Erinnerungen für wichtige Notizen</string>
+    <string name="store_headline_dark_mode">Akkusparender Dunkelmodus</string>
+    <string name="store_headline_fingerprint_lock">Sperre deine Notizen per Fingerabdruck</string>
 </resources>

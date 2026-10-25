@@ -19,6 +19,7 @@ plugins {
     alias(libs.plugins.auto.translation)
     alias(libs.plugins.roborazzi)
     alias(libs.plugins.koin.compiler)
+    alias(libs.plugins.android.compose.screenshot)
     kotlin("plugin.compose") version libs.versions.kotlin
 }
 
@@ -140,6 +141,7 @@ android {
     }
 
     testOptions { unitTests.isIncludeAndroidResources = true }
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
 }
 
 androidComponents {
@@ -302,6 +304,97 @@ tasks.register<Copy>("installLocalGitHooks") {
     // chmod +rwx ./.git/hooks/pre-commit*
 }
 
+private data class ParsedScreenshot(
+    val file: File,
+    val baseName: String,
+    val locale: String,
+)
+
+private fun parseScreenshots(sourceDir: File): List<ParsedScreenshot> {
+    if (!sourceDir.exists()) return emptyList()
+    val screenshotRegex =
+        Regex("""^(.+)_([a-zA-Z]{2,3}(?:[-_][a-zA-Z0-9]{2,4})?)(?:_[a-fA-F0-9]+_\d+)?\.png$""")
+
+    return sourceDir
+        .walkTopDown()
+        .filter { it.isFile && it.extension == "png" }
+        .mapNotNull { file ->
+            val match = screenshotRegex.matchEntire(file.name)
+            if (match != null) {
+                ParsedScreenshot(
+                    file = file,
+                    baseName = match.groupValues[1],
+                    locale = match.groupValues[2],
+                )
+            } else {
+                println("Skipped file not matching pattern: ${file.name}")
+                null
+            }
+        }
+        .toList()
+}
+
+tasks.register("copyScreenshotsToFastlane") {
+    group = "documentation"
+    description = "Copies screenshotTest images to fastlane metadata phoneScreenshots by locale."
+
+    dependsOn.add(tasks.named("updateDebugScreenshotTest"))
+    val sourceDir = layout.projectDirectory.dir("src/screenshotTestDebug").asFile
+    val fastlaneDir = rootProject.layout.projectDirectory.dir("fastlane/metadata/android").asFile
+
+    inputs.dir(sourceDir)
+    outputs.dir(fastlaneDir)
+
+    doLast {
+        val screenshots = parseScreenshots(sourceDir)
+        var copiedCount = 0
+        screenshots.forEach { screenshot ->
+            val fastlaneTargetDir =
+                File(fastlaneDir, "${screenshot.locale}/images/phoneScreenshots")
+            fastlaneTargetDir.mkdirs()
+            val fastlaneTargetFile = File(fastlaneTargetDir, "${screenshot.baseName}.png")
+
+            screenshot.file.copyTo(fastlaneTargetFile, overwrite = true)
+            println(
+                "Copied ${screenshot.file.name} -> ${fastlaneTargetFile.relativeTo(rootProject.rootDir)}"
+            )
+            copiedCount++
+        }
+        println("Successfully copied $copiedCount screenshots to fastlane metadata.")
+    }
+}
+
+tasks.register("copyScreenshotsToDocumentation") {
+    group = "documentation"
+    description = "Copies screenshotTest images to Docusaurus documentation phoneScreenshots."
+
+    dependsOn.add(tasks.named("updateDebugScreenshotTest"))
+    val sourceDir = layout.projectDirectory.dir("src/screenshotTestDebug").asFile
+    val docusaurusDir =
+        rootProject.layout.projectDirectory.dir("documentation/static/img/phoneScreenshots").asFile
+
+    inputs.dir(sourceDir)
+    outputs.dir(docusaurusDir)
+
+    doLast {
+        val screenshots = parseScreenshots(sourceDir)
+        var copiedCount = 0
+        screenshots
+            .filter { it.locale == "en-US" || it.locale == "en" }
+            .forEach { screenshot ->
+                docusaurusDir.mkdirs()
+                val docusaurusTargetFile = File(docusaurusDir, "${screenshot.baseName}.png")
+
+                screenshot.file.copyTo(docusaurusTargetFile, overwrite = true)
+                println(
+                    "Copied ${screenshot.file.name} -> ${docusaurusTargetFile.relativeTo(rootProject.rootDir)}"
+                )
+                copiedCount++
+            }
+        println("Successfully copied $copiedCount screenshots to docusaurus.")
+    }
+}
+
 tasks.preBuild.dependsOn(tasks.named("installLocalGitHooks"), tasks.exportTranslationsToExcel)
 
 tasks.register("generateChangelogs") {
@@ -356,6 +449,12 @@ afterEvaluate {
         dependsOn(tasks.named("testReleaseUnitTest"))
         finalizedBy(tasks.named("generateChangelogs"))
     }
+    tasks.named("generateChangelogs").configure {
+        finalizedBy(
+            tasks.named("copyScreenshotsToFastlane"),
+            tasks.named("copyScreenshotsToDocumentation"),
+        )
+    }
 }
 
 roborazzi {
@@ -399,6 +498,10 @@ dependencies {
     debugImplementation(libs.androidx.glance.appwidgetPreview)
     debugImplementation(libs.androidx.glance.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
+    debugImplementation("androidx.compose.material:material-icons-extended:1.7.8")
+
+    screenshotTestImplementation(libs.screenshot.validation.api)
+    screenshotTestImplementation(libs.androidx.compose.ui.tooling)
 
     // Koin
     implementation(platform(libs.koin.bom))

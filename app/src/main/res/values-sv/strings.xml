@@ -176,7 +176,7 @@
     <string name="empty_list">Tom lista</string>
     <string name="empty_note">Tom anteckning</string>
     <string name="empty_reminders">Inga påminnelser än. Vill du skapa en\?</string>
-    <string name="enable_lock_description">Detta kommer också att kryptera databasen</string>
+
     <string name="enable_lock_title">Aktivera låsning via biometrisk autentisering/PIN-kod</string>
     <string name="enabled">Aktiverad</string>
     <string name="encrypt_database_advice">EXPERIMENTELLT: Som standard krypteras inte databasen när låset aktiveras. Du kan valfritt aktivera kryptering av databasen, vilket kan användas tillsammans med alternativet ”data in public” för att placera databasen i en offentlig mapp, men i krypterad form. Tänk på att databaskryptering ännu inte är stabil.</string>
