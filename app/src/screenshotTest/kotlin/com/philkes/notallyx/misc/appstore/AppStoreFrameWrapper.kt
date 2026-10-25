@@ -13,6 +13,9 @@ import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.toColorString
 import java.util.Date
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
 
 /**
  * Multi-preview annotation for generating app store marketing screenshots across multiple locales
@@ -36,6 +39,8 @@ import java.util.Date
 annotation class MarketingPreview
 
 object MarketingSampleData {
+    private val date = Instant.parse("2026-01-02T12:00:00Z")
+
     val DAILY_JOURNAL_NOTE =
         BaseNote(
             id = 1L,
@@ -44,8 +49,8 @@ object MarketingSampleData {
             color = BaseNote.COLOR_DEFAULT,
             title = "Daily Journal",
             pinned = false,
-            timestamp = System.currentTimeMillis() - 86400000L,
-            modifiedTimestamp = System.currentTimeMillis(),
+            timestamp = date.toEpochMilliseconds(),
+            modifiedTimestamp = date.plus(10.minutes).toEpochMilliseconds(),
             labels = emptyList(),
             body =
                 "Date: October 19, 2024\n\nToday was a productive day! I managed to:\n- Finish the presentation for Monday\n- Attend the team meeting\n- Go for a 30-minute run\n\nLooking forward to a relaxing weekend ahead.",
@@ -92,8 +97,8 @@ object MarketingSampleData {
             color = com.philkes.notallyx.data.model.Color.CLAY.toColorString(),
             title = "Formatting",
             pinned = false,
-            timestamp = System.currentTimeMillis() - 43200000L,
-            modifiedTimestamp = System.currentTimeMillis(),
+            timestamp = date.plus(1.days).toEpochMilliseconds(),
+            modifiedTimestamp = date.plus(1.days).plus(10.minutes).toEpochMilliseconds(),
             labels = emptyList(),
             body = FORMATTING_BODY,
             spans = FORMATTING_SPANS,
@@ -114,8 +119,8 @@ object MarketingSampleData {
             color = com.philkes.notallyx.data.model.Color.FOG.toColorString(),
             title = "Grocery List",
             pinned = false,
-            timestamp = System.currentTimeMillis() - 21600000L,
-            modifiedTimestamp = System.currentTimeMillis(),
+            timestamp = date.plus(2.days).toEpochMilliseconds(),
+            modifiedTimestamp = date.plus(2.days).plus(10.minutes).toEpochMilliseconds(),
             labels = listOf("Todo"),
             body = "",
             spans = emptyList(),
@@ -210,8 +215,8 @@ object MarketingSampleData {
             color = com.philkes.notallyx.data.model.Color.DUSK.toColorString(),
             title = "Vacation",
             pinned = false,
-            timestamp = System.currentTimeMillis() - 10800000L,
-            modifiedTimestamp = System.currentTimeMillis(),
+            timestamp = date.plus(3.days).toEpochMilliseconds(),
+            modifiedTimestamp = date.plus(3.days).plus(10.minutes).toEpochMilliseconds(),
             labels = emptyList(),
             body =
                 "Here are some places I'd like to visit this summer:\n- Beach Resort in Maldives\n- Mountain Hiking in Switzerland\n- City Tour in Tokyo",
@@ -264,8 +269,8 @@ object MarketingSampleData {
             color = com.philkes.notallyx.data.model.Color.BLOSSOM.toColorString(),
             title = "Dinner Bucketlist",
             pinned = false,
-            timestamp = System.currentTimeMillis() - 5400000L,
-            modifiedTimestamp = System.currentTimeMillis(),
+            timestamp = date.plus(4.days).toEpochMilliseconds(),
+            modifiedTimestamp = date.plus(4.days).plus(10.minutes).toEpochMilliseconds(),
             labels = listOf("Todo"),
             body = "",
             spans = emptyList(),
@@ -320,8 +325,8 @@ object MarketingSampleData {
             color = com.philkes.notallyx.data.model.Color.MINT.toColorString(),
             title = "Doctor Appointment",
             pinned = false,
-            timestamp = System.currentTimeMillis() - 7200000L,
-            modifiedTimestamp = System.currentTimeMillis(),
+            timestamp = date.plus(5.days).toEpochMilliseconds(),
+            modifiedTimestamp = date.plus(5.days).plus(10.minutes).toEpochMilliseconds(),
             labels = listOf("Health"),
             body = "Annual checkup at City Health Clinic with Dr. Miller.",
             spans = emptyList(),
@@ -349,8 +354,8 @@ object MarketingSampleData {
             color = com.philkes.notallyx.data.model.Color.SAND.toColorString(),
             title = "Car Service",
             pinned = false,
-            timestamp = System.currentTimeMillis() - 3600000L,
-            modifiedTimestamp = System.currentTimeMillis(),
+            timestamp = date.plus(6.days).toEpochMilliseconds(),
+            modifiedTimestamp = date.plus(6.days).plus(10.minutes).toEpochMilliseconds(),
             labels = emptyList(),
             body = "Scheduled oil change, brake inspection, and tire rotation.",
             spans = emptyList(),

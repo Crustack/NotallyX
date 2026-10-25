@@ -18,7 +18,7 @@ autoTranslation = "1.0.5"
 kotlinSerialization = "2.4.20"
 koin = "4.2.2"
 koinCompilerPlugin = "1.2.1"
-composeScreenshot = "0.0.1-alpha16"
+composeScreenshot = "0.0.1-alpha15"
 
 # Compose
 composeBom = "2026.09.00"
@@ -98,6 +98,7 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+screenshot-plugin = { module = "com.android.compose.screenshot:com.android.compose.screenshot.gradle.plugin", version.ref = "composeScreenshot" }
 screenshot-validation-api = { group = "com.android.tools.screenshot", name = "screenshot-validation-api", version.ref = "composeScreenshot" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleRuntimeCompose" }
