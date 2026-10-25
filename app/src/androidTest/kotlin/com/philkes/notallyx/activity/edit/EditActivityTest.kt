@@ -5,8 +5,13 @@ import android.app.Activity
 import android.app.Instrumentation
 import android.content.ClipData
 import android.content.Intent
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
@@ -19,6 +24,7 @@ import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextInputSelection
 import androidx.compose.ui.test.performTextReplacement
@@ -42,6 +48,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.extensions.getCurrentAudioDirectory
 import com.philkes.notallyx.core.common.extensions.getTempAudioFile
 import com.philkes.notallyx.core.common.extensions.getUriForFile
 import com.philkes.notallyx.core.ui.extensions.extractColor
@@ -597,9 +604,13 @@ class EditActivityTest : UiTestBase() {
         }
     }
 
-    private fun createSampleAudioFile(file: File) {
+    private fun createSampleAudioFile(file: File, durationSeconds: Int = 1) {
         file.parentFile?.mkdirs()
-        val pcmDataSize = 1600
+        val sampleRate = 8000
+        val channels = 1
+        val bitsPerSample = 16
+        val byteRate = sampleRate * channels * (bitsPerSample / 8)
+        val pcmDataSize = if (durationSeconds <= 1) 1600 else byteRate * durationSeconds
         val totalDataLen = pcmDataSize + 36
 
         val header =
@@ -610,8 +621,8 @@ class EditActivityTest : UiTestBase() {
                 'F'.code.toByte(),
                 (totalDataLen and 0xff).toByte(),
                 ((totalDataLen ushr 8) and 0xff).toByte(),
-                0,
-                0,
+                ((totalDataLen ushr 16) and 0xff).toByte(),
+                ((totalDataLen ushr 24) and 0xff).toByte(),
                 'W'.code.toByte(),
                 'A'.code.toByte(),
                 'V'.code.toByte(),
@@ -626,19 +637,19 @@ class EditActivityTest : UiTestBase() {
                 0,
                 1,
                 0,
-                1,
+                channels.toByte(),
                 0,
-                0x40,
-                0x1f,
-                0,
-                0,
-                0x80.toByte(),
-                0x3e,
+                (sampleRate and 0xff).toByte(),
+                ((sampleRate ushr 8) and 0xff).toByte(),
                 0,
                 0,
-                2,
+                (byteRate and 0xff).toByte(),
+                ((byteRate ushr 8) and 0xff).toByte(),
                 0,
-                16,
+                0,
+                (channels * bitsPerSample / 8).toByte(),
+                0,
+                bitsPerSample.toByte(),
                 0,
                 'd'.code.toByte(),
                 'a'.code.toByte(),
@@ -646,8 +657,8 @@ class EditActivityTest : UiTestBase() {
                 'a'.code.toByte(),
                 (pcmDataSize and 0xff).toByte(),
                 ((pcmDataSize ushr 8) and 0xff).toByte(),
-                0,
-                0,
+                ((pcmDataSize ushr 16) and 0xff).toByte(),
+                ((pcmDataSize ushr 24) and 0xff).toByte(),
             )
 
         file.outputStream().use { out ->
@@ -1493,6 +1504,370 @@ class EditActivityTest : UiTestBase() {
         // Close search mode
         composeTestRule.onNodeWithContentDescription(backLabel).performClick()
 
+        scenario.close()
+    }
+
+    @Test
+    fun playAndControlAudioAttachment() {
+        val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        uiAutomation.grantRuntimePermission(
+            context.packageName,
+            Manifest.permission.RECORD_AUDIO,
+        )
+
+        runBlocking { database.clearAllTables() }
+
+        val tempAudioFile = context.getTempAudioFile()
+        createSampleAudioFile(tempAudioFile, durationSeconds = 6)
+
+        val savedAudioFile =
+            File(context.cacheDir, "saved_audio.m4a").apply { if (exists()) delete() }
+        val savedAudioUri = context.getUriForFile(savedAudioFile)
+
+        Intents.init()
+        try {
+            val recordAudioResult = Instrumentation.ActivityResult(Activity.RESULT_OK, null)
+            intending(hasComponent(RecordAudioActivity::class.java.name))
+                .respondWith(recordAudioResult)
+
+            val shareResult = Instrumentation.ActivityResult(Activity.RESULT_OK, null)
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(
+                            Intent.EXTRA_INTENT,
+                            allOf(
+                                hasAction(Intent.ACTION_SEND),
+                                hasType("audio/mp4"),
+                            ),
+                        ),
+                    )
+                )
+                .respondWith(shareResult)
+
+            val saveAudioResult =
+                Instrumentation.ActivityResult(
+                    Activity.RESULT_OK,
+                    Intent().apply { data = savedAudioUri },
+                )
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(Intent.EXTRA_INTENT, hasAction(Intent.ACTION_CREATE_DOCUMENT)),
+                    )
+                )
+                .respondWith(saveAudioResult)
+
+            val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+            // 1. Create a new note and add audio attachment
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.take_note))
+                .performClick()
+
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.title))
+                .performTextInput("Audio Playback Test")
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.note))
+                .performTextInput("Testing audio player controls and deletion")
+
+            val noteId = runBlocking { database.getBaseNoteDao().getAll().first().id }
+
+            // Attach audio recording
+            createSampleAudioFile(tempAudioFile, durationSeconds = 6)
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.add_item))
+                .performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.record_audio)).performClick()
+
+            // Verify audio section and AudioItemRow are rendered in EditScreen
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(
+                        hasText(context.getString(R.string.audio_recordings), substring = true)
+                    )
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.audio_recordings), substring = true)
+                .assertIsDisplayed()
+
+            // Wait until audio item row is displayed with .m4a
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(".m4a", substring = true))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+
+            // Obtain the recorded audio attachment info from DB
+            val noteWithAudio = runBlocking { database.getBaseNoteDao().get(noteId) }
+            assertTrue(
+                "Note should have 1 audio attachment in database",
+                noteWithAudio != null && noteWithAudio.audios.size == 1,
+            )
+            val audioAttachment = noteWithAudio!!.audios.first()
+            val audioName = audioAttachment.name
+
+            // Verify audio file exists in audio directory
+            val audioDir = context.getCurrentAudioDirectory()
+            val audioFileOnDisk = File(audioDir, audioName)
+            assertTrue(
+                "Audio file should exist in current audio directory",
+                audioFileOnDisk.exists(),
+            )
+
+            // 2. Click on the AudioItemRow to open PlayAudioActivity
+            composeTestRule.onNodeWithText(".m4a", substring = true).performClick()
+
+            // 3. Verify PlayAudioScreen UI components in PlayAudioActivity
+            // Wait for audio player service to prepare and display Play button
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.play)))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(context.getString(R.string.play)).assertIsDisplayed()
+            composeTestRule.onNodeWithText("00:00").assertIsDisplayed()
+            composeTestRule.onNodeWithText("00:06").assertIsDisplayed()
+
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.share))
+                .assertIsDisplayed()
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.save_to_device))
+                .assertIsDisplayed()
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.delete))
+                .assertIsDisplayed()
+
+            // 4. Test Play interaction
+            composeTestRule.onNodeWithText(context.getString(R.string.play)).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.pause)))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(context.getString(R.string.pause)).assertIsDisplayed()
+
+            // 5. Test Pause interaction
+            composeTestRule.onNodeWithText(context.getString(R.string.pause)).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.play)))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(context.getString(R.string.play)).assertIsDisplayed()
+
+            // 6. Test Seek bar dragging / setting progress
+            composeTestRule
+                .onNode(SemanticsMatcher.keyIsDefined(SemanticsActions.SetProgress))
+                .performSemanticsAction(SemanticsActions.SetProgress) { it(3000f) }
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText("00:03")).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("00:03").assertIsDisplayed()
+
+            // Test touch swipe on seek bar
+            composeTestRule
+                .onNode(SemanticsMatcher.keyIsDefined(SemanticsActions.SetProgress))
+                .performTouchInput { swipeRight() }
+
+            // 7. Test Share Audio
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.share))
+                .performClick()
+            intended(
+                allOf(
+                    hasAction(Intent.ACTION_CHOOSER),
+                    hasExtra(
+                        Intent.EXTRA_INTENT,
+                        allOf(
+                            hasAction(Intent.ACTION_SEND),
+                            hasType("audio/mp4"),
+                        ),
+                    ),
+                )
+            )
+
+            // 8. Test Save to Device
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.save_to_device))
+                .performClick()
+            intended(
+                allOf(
+                    hasAction(Intent.ACTION_CHOOSER),
+                    hasExtra(Intent.EXTRA_INTENT, hasAction(Intent.ACTION_CREATE_DOCUMENT)),
+                )
+            )
+            waitUntil { savedAudioFile.exists() && savedAudioFile.length() > 0 }
+            assertTrue(
+                "Exported audio file should exist and have data",
+                savedAudioFile.exists() && savedAudioFile.length() > 0,
+            )
+
+            // 9. Test Delete Audio Attachment
+            // 9a. Click delete icon in top bar -> confirm dialog appears
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.delete))
+                .performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.delete_audio_recording_forever)))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.delete_audio_recording_forever))
+                .assertIsDisplayed()
+
+            // 9b. Cancel deletion -> dialog dismisses and PlayAudioActivity remains open
+            composeTestRule.onNodeWithText(context.getString(R.string.cancel)).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.delete_audio_recording_forever)))
+                    .fetchSemanticsNodes()
+                    .isEmpty()
+            }
+            composeTestRule.onNodeWithText(context.getString(R.string.play)).assertIsDisplayed()
+
+            // 9c. Click delete icon again and confirm deletion
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.delete))
+                .performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.delete_audio_recording_forever)))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule
+                .onNode(
+                    hasText(context.getString(R.string.delete)) and
+                        hasAnyAncestor(isComposeDialog())
+                )
+                .performClick()
+
+            // 10. Verify returning to EditScreen and audio section is removed
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(
+                        hasText(context.getString(R.string.audio_recordings), substring = true)
+                    )
+                    .fetchSemanticsNodes()
+                    .isEmpty()
+            }
+            composeTestRule
+                .onAllNodes(hasText(context.getString(R.string.audio_recordings), substring = true))
+                .assertCountEquals(0)
+
+            // 11. Verify audio deletion from Room database
+            val noteAfterAudioDelete = runBlocking { database.getBaseNoteDao().get(noteId) }
+            assertTrue(
+                "Note in database should have no audio attachments after deletion",
+                noteAfterAudioDelete != null && noteAfterAudioDelete.audios.isEmpty(),
+            )
+
+            // 12. Verify audio file deletion from disk
+            waitUntil { !audioFileOnDisk.exists() }
+            assertTrue(
+                "Audio file should be deleted from disk",
+                !audioFileOnDisk.exists(),
+            )
+
+            scenario.close()
+        } finally {
+            Intents.release()
+            tempAudioFile.delete()
+            if (savedAudioFile.exists()) savedAudioFile.delete()
+        }
+    }
+
+    @Test
+    fun recordAudioControls() {
+        val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        uiAutomation.grantRuntimePermission(
+            context.packageName,
+            Manifest.permission.RECORD_AUDIO,
+        )
+
+        val scenario = ActivityScenario.launch(RecordAudioActivity::class.java)
+
+        // 1. Verify initial UI state: timer at 00:00, Start button displayed, Stop button disabled
+        composeTestRule.onNodeWithText("00:00").assertIsDisplayed()
+        composeTestRule.onNodeWithText(context.getString(R.string.start)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(context.getString(R.string.stop)).assertIsNotEnabled()
+
+        // 2. Click Start to begin recording
+        composeTestRule.onNodeWithText(context.getString(R.string.start)).performClick()
+
+        // 3. Status becomes RECORDING: Start changes to Pause, Stop button becomes enabled
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText(context.getString(R.string.pause)))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(context.getString(R.string.pause)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(context.getString(R.string.stop)).assertIsEnabled()
+
+        // 4. Click Pause: button changes to Resume
+        composeTestRule.onNodeWithText(context.getString(R.string.pause)).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText(context.getString(R.string.resume)))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(context.getString(R.string.resume)).assertIsDisplayed()
+
+        // 5. Click Resume: button changes back to Pause
+        composeTestRule.onNodeWithText(context.getString(R.string.resume)).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText(context.getString(R.string.pause)))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(context.getString(R.string.pause)).assertIsDisplayed()
+
+        // 6. Test back press confirmation dialog while recording is active
+        Espresso.pressBack()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText(context.getString(R.string.save_recording)))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.save_recording))
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithText(context.getString(R.string.save)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(context.getString(R.string.discard)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(context.getString(R.string.cancel)).assertIsDisplayed()
+
+        // 7. Cancel dialog: dismisses dialog and remains in RecordAudioActivity
+        composeTestRule.onNodeWithText(context.getString(R.string.cancel)).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText(context.getString(R.string.save_recording)))
+                .fetchSemanticsNodes()
+                .isEmpty()
+        }
+        composeTestRule.onNodeWithText(context.getString(R.string.stop)).assertIsDisplayed()
+
+        // 8. Click Stop: stops recording and finishes activity
+        composeTestRule.onNodeWithText(context.getString(R.string.stop)).performClick()
+
+        waitUntil { scenario.state == androidx.lifecycle.Lifecycle.State.DESTROYED }
+
+        context.getTempAudioFile().delete()
         scenario.close()
     }
 }
