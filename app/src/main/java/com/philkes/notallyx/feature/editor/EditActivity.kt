@@ -141,6 +141,13 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
         notallyModel.modifiedTimestamp = System.currentTimeMillis()
     }
 
+    override fun onStop() {
+        super.onStop()
+        if (notallyModel.isModified()) {
+            lifecycleScope.launch { saveNote() }
+        }
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putLong("id", notallyModel.id)
