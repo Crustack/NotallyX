@@ -12,6 +12,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
@@ -382,29 +383,139 @@ class EditActivityTest : UiTestBase() {
     fun undoAndRedo() {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
+        val noteTitle = "Deep Undo Redo Note"
         val takeNoteLabel = context.getString(R.string.take_note)
+        val titleLabel = context.getString(R.string.title)
         val bodyLabel = context.getString(R.string.note)
+        val undoLabel = context.getString(R.string.undo)
+        val redoLabel = context.getString(R.string.redo)
+        val backLabel = context.getString(R.string.back)
 
+        // 1. Open new note
         composeTestRule.onNodeWithContentDescription(takeNoteLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(bodyLabel))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        // Set title for later persistence verification
+        composeTestRule.onNodeWithContentDescription(titleLabel).performTextInput(noteTitle)
+
+        // Initial state assertions: both undo and redo are disabled
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsNotEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
+        composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("", bodyLabel)
 
         // Step 1: Perform first edit
         composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput("A")
+        composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("A")
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
 
         // Step 2: Perform second edit
         composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput("B")
+        composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("AB")
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
 
         // Step 3: Perform third edit
         composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput("C")
+        composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("ABC")
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
 
-        // 1. Single tap undo
-        composeTestRule
-            .onNodeWithContentDescription(context.getString(R.string.undo))
-            .performClick()
+        // Step 4: Perform fourth edit
+        composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput("D")
+        composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("ABCD")
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
 
-        // 2. Single tap redo
-        composeTestRule
-            .onNodeWithContentDescription(context.getString(R.string.redo))
-            .performClick()
+        // --- Deep Multi-Step Undo ---
+        // Undo 1: Reverts 4th edit -> "ABC"
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("ABC")
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Undo 2: Reverts 3rd edit -> "AB"
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("AB")
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Undo 3: Reverts 2nd edit -> "A"
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("A")
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Undo 4: Reverts 1st edit -> ""
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("", bodyLabel)
+        // Entire undo stack is now empty!
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsNotEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // --- Deep Multi-Step Redo ---
+        // Redo 1: Restores 1st edit -> "A"
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("A")
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Redo 2: Restores 2nd edit -> "AB"
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("AB")
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Redo 3: Restores 3rd edit -> "ABC"
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("ABC")
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Redo 4: Restores 4th edit -> "ABCD"
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("ABCD")
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        // Entire redo stack is now exhausted!
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
+
+        // --- Test: Modification after undoing clears redo stack ---
+        // Undo 4th edit -> "ABC"
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("ABC")
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Perform a new modification: type "E" -> "ABCE"
+        composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput("E")
+        composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("ABCE")
+
+        // Verify redo stack was cleared: Redo button must now be disabled!
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+
+        // Leaving note and re-entering to verify persistence
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(noteTitle).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(bodyLabel))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        // Verify state is preserved: body is "ABCE", undo and redo are disabled on freshly opened
+        // note
+        composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("ABCE")
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsNotEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
 
         scenario.close()
     }
