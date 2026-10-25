@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -42,6 +43,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
+import com.philkes.notallyx.core.ui.views.TestTags
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -110,6 +112,7 @@ internal fun StepperPreferenceRow(
                 modifier =
                     Modifier.height(36.dp)
                         .width(36.dp)
+                        .testTag("${TestTags.STEPPER_DECREASE}_$title")
                         .repeatingClickable(
                             enabled = minusEnabled,
                             interactionSource = minusInteractionSource,
@@ -176,7 +179,10 @@ internal fun StepperPreferenceRow(
                                     currentOnValueChange(parsed)
                                 }
                             ),
-                        modifier = Modifier.wrapContentWidth().widthIn(min = 24.dp),
+                        modifier =
+                            Modifier.wrapContentWidth()
+                                .widthIn(min = 24.dp)
+                                .testTag("${TestTags.STEPPER_INPUT}_$title"),
                     )
                 }
             }
@@ -195,6 +201,7 @@ internal fun StepperPreferenceRow(
                 modifier =
                     Modifier.height(36.dp)
                         .width(36.dp)
+                        .testTag("${TestTags.STEPPER_INCREASE}_$title")
                         .repeatingClickable(
                             enabled = plusEnabled,
                             interactionSource = plusInteractionSource,

@@ -2,6 +2,7 @@ package com.philkes.notallyx.activity.main.routes
 
 import android.app.Activity
 import android.app.Instrumentation
+import android.content.ContextWrapper
 import android.content.Intent
 import android.graphics.Color as AndroidColor
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -11,6 +12,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog as isComposeDialog
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -18,8 +20,10 @@ import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.core.graphics.ColorUtils
 import androidx.core.net.toUri
@@ -30,6 +34,9 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getExternalBackupsDirectory
 import com.philkes.notallyx.core.common.extensions.getExternalMediaDirectory
@@ -37,9 +44,12 @@ import com.philkes.notallyx.core.common.extensions.getUriForFile
 import com.philkes.notallyx.core.common.extensions.listZipFiles
 import com.philkes.notallyx.core.preference.PeriodicBackup
 import com.philkes.notallyx.core.preference.Theme
+import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.model.BaseNote
+import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.feature.editor.refreshStatusBarPin
 import com.philkes.notallyx.feature.main.MainActivity
+import com.philkes.notallyx.feature.main.routes.settings.removeOldDeletedNotes
 import com.philkes.notallyx.feature.migration.backup.ON_SAVE_BACKUP_FILE
 import com.philkes.notallyx.feature.migration.backup.PERIODIC_BACKUP_FILE_PREFIX
 import com.philkes.notallyx.navigation.NotallyNavKey
@@ -827,6 +837,265 @@ class SettingsRouteTest : UiTestBase() {
             composeTestRule.onNodeWithText(saveLabel).performClick()
             composeTestRule.waitUntilSettingsValue(R.string.theme, initialTheme.textResId)
         }
+    }
+
+    @Test
+    fun autoRemoveDeletedNotesRetention() {
+        val now = System.currentTimeMillis()
+        val oneDayMillis = 24 * 60 * 60 * 1000L
+
+        // Prepare test data with different deletion timestamps:
+        // 1. Deleted 40 days ago (> 30 days retention threshold)
+        val note40DaysTitle = "DeletedNote40Days"
+        var note40Days =
+            createBaseNote(
+                title = note40DaysTitle,
+                body = "Deleted 40 days ago",
+                folder = Folder.DELETED,
+                timestamp = now - (40 * oneDayMillis),
+                modifiedTimestamp = now - (40 * oneDayMillis),
+            )
+        // 2. Deleted 15 days ago (between 7 and 30 days retention threshold)
+        val note15DaysTitle = "DeletedNote15Days"
+        var note15Days =
+            createBaseNote(
+                title = note15DaysTitle,
+                body = "Deleted 15 days ago",
+                folder = Folder.DELETED,
+                timestamp = now - (15 * oneDayMillis),
+                modifiedTimestamp = now - (15 * oneDayMillis),
+            )
+        // 3. Deleted 2 days ago (< 7 days retention threshold)
+        val note2DaysTitle = "DeletedNote2Days"
+        var note2Days =
+            createBaseNote(
+                title = note2DaysTitle,
+                body = "Deleted 2 days ago",
+                folder = Folder.DELETED,
+                timestamp = now - (2 * oneDayMillis),
+                modifiedTimestamp = now - (2 * oneDayMillis),
+            )
+        // 4. Active note in NOTES folder modified 50 days ago (must never be deleted by
+        // auto-remove)
+        val activeNoteTitle = "ActiveNote50Days"
+        var activeNote =
+            createBaseNote(
+                title = activeNoteTitle,
+                body = "Active note modified long ago",
+                folder = Folder.NOTES,
+                timestamp = now - (50 * oneDayMillis),
+                modifiedTimestamp = now - (50 * oneDayMillis),
+            )
+
+        runBlocking {
+            withContext(Dispatchers.IO) {
+                note40Days = note40Days.copy(id = database.getBaseNoteDao().insert(note40Days))
+                note15Days = note15Days.copy(id = database.getBaseNoteDao().insert(note15Days))
+                note2Days = note2Days.copy(id = database.getBaseNoteDao().insert(note2Days))
+                activeNote = activeNote.copy(id = database.getBaseNoteDao().insert(activeNote))
+                database.checkpoint()
+            }
+        }
+
+        val autoRemoveTitle = context.getString(R.string.auto_remove_deleted_notes)
+        val offLabel = context.getString(R.string.off)
+        val workManager = WorkManager.getInstance(context)
+
+        // Ensure baseline preference starts at 0 (Off)
+        preferences.autoRemoveDeletedNotesAfterDays.save(0)
+
+        // 1. Navigate to Settings and scroll to auto remove preference
+        composeTestRule.navigateTo(NotallyNavKey.Settings)
+        composeTestRule
+            .onNode(hasTestTag("${TestTags.STEPPER_INPUT}_$autoRemoveTitle"))
+            .performScrollTo()
+
+        assertEquals(0, preferences.autoRemoveDeletedNotesAfterDays.value)
+        composeTestRule
+            .onNode(hasTestTag("${TestTags.STEPPER_INPUT}_$autoRemoveTitle"))
+            .assertIsDisplayed()
+
+        // 2. Change retention period to 30 days via text input
+        composeTestRule
+            .onNode(hasTestTag("${TestTags.STEPPER_INPUT}_$autoRemoveTitle"))
+            .performScrollTo()
+            .performTextReplacement("30")
+        composeTestRule
+            .onNode(hasTestTag("${TestTags.STEPPER_INPUT}_$autoRemoveTitle"))
+            .performImeAction()
+
+        composeTestRule.waitUntil(10_000) {
+            preferences.autoRemoveDeletedNotesAfterDays.value == 30
+        }
+        assertEquals(30, preferences.autoRemoveDeletedNotesAfterDays.value)
+        composeTestRule
+            .onNode(hasTestTag("${TestTags.STEPPER_INPUT}_$autoRemoveTitle") and hasText("30 Days"))
+            .performScrollTo()
+            .assertIsDisplayed()
+
+        // Verify WorkManager periodic work is scheduled
+        val workInfos30 =
+            workManager
+                .getWorkInfosForUniqueWork(NotallyXApplication.AUTO_REMOVE_DELETED_NOTES)
+                .get()
+        assertTrue("WorkManager should have scheduled auto-remove work", workInfos30.isNotEmpty())
+        assertTrue(
+            "Scheduled work should be ENQUEUED or RUNNING",
+            workInfos30.any {
+                it.state == WorkInfo.State.ENQUEUED || it.state == WorkInfo.State.RUNNING
+            },
+        )
+
+        // Trigger background cleanup worker behavior for 30 days retention
+        val result30 = runBlocking {
+            (context.applicationContext as ContextWrapper).removeOldDeletedNotes(preferences)
+        }
+        assertEquals(androidx.work.ListenableWorker.Result.success(), result30)
+
+        // Verify database state after 30-day retention cleanup:
+        // - Note deleted 40 days ago (> 30 days) should be permanently removed
+        // - Note deleted 15 days ago (<= 30 days) should still exist
+        // - Note deleted 2 days ago (<= 30 days) should still exist
+        // - Active note should still exist
+        runBlocking {
+            withContext(Dispatchers.IO) {
+                val remainingIds = database.getBaseNoteDao().getAll().map { it.id }.toSet()
+                assertFalse(
+                    "Note deleted 40 days ago should be removed",
+                    remainingIds.contains(note40Days.id),
+                )
+                assertTrue(
+                    "Note deleted 15 days ago should remain",
+                    remainingIds.contains(note15Days.id),
+                )
+                assertTrue(
+                    "Note deleted 2 days ago should remain",
+                    remainingIds.contains(note2Days.id),
+                )
+                assertTrue("Active note should remain", remainingIds.contains(activeNote.id))
+            }
+        }
+
+        // 3. Change retention period to 7 days via text input
+        composeTestRule
+            .onNode(hasTestTag("${TestTags.STEPPER_INPUT}_$autoRemoveTitle"))
+            .performScrollTo()
+            .performTextReplacement("7")
+        composeTestRule
+            .onNode(hasTestTag("${TestTags.STEPPER_INPUT}_$autoRemoveTitle"))
+            .performImeAction()
+
+        composeTestRule.waitUntil(10_000) { preferences.autoRemoveDeletedNotesAfterDays.value == 7 }
+        assertEquals(7, preferences.autoRemoveDeletedNotesAfterDays.value)
+        composeTestRule
+            .onNode(hasTestTag("${TestTags.STEPPER_INPUT}_$autoRemoveTitle") and hasText("7 Days"))
+            .performScrollTo()
+            .assertIsDisplayed()
+
+        // Trigger background cleanup worker behavior for 7 days retention
+        val result7 = runBlocking {
+            (context.applicationContext as ContextWrapper).removeOldDeletedNotes(preferences)
+        }
+        assertEquals(androidx.work.ListenableWorker.Result.success(), result7)
+
+        // Verify database state after 7-day retention cleanup:
+        // - Note deleted 15 days ago (> 7 days) should now be permanently removed
+        // - Note deleted 2 days ago (<= 7 days) should still exist
+        // - Active note should still exist
+        runBlocking {
+            withContext(Dispatchers.IO) {
+                val remainingIds = database.getBaseNoteDao().getAll().map { it.id }.toSet()
+                assertFalse(
+                    "Note deleted 15 days ago should be removed",
+                    remainingIds.contains(note15Days.id),
+                )
+                assertTrue(
+                    "Note deleted 2 days ago should remain",
+                    remainingIds.contains(note2Days.id),
+                )
+                assertTrue("Active note should remain", remainingIds.contains(activeNote.id))
+            }
+        }
+
+        // 4. Change retention period to Never (0 / Off) via text input
+        composeTestRule
+            .onNode(hasTestTag("${TestTags.STEPPER_INPUT}_$autoRemoveTitle"))
+            .performScrollTo()
+            .performTextReplacement("0")
+        composeTestRule
+            .onNode(hasTestTag("${TestTags.STEPPER_INPUT}_$autoRemoveTitle"))
+            .performImeAction()
+
+        composeTestRule.waitUntil(10_000) { preferences.autoRemoveDeletedNotesAfterDays.value == 0 }
+        assertEquals(0, preferences.autoRemoveDeletedNotesAfterDays.value)
+        composeTestRule
+            .onNode(hasTestTag("${TestTags.STEPPER_INPUT}_$autoRemoveTitle") and hasText(offLabel))
+            .performScrollTo()
+            .assertIsDisplayed()
+
+        // Verify WorkManager periodic work is cancelled when disabled
+        composeTestRule.waitUntil(10_000) {
+            val infos =
+                workManager
+                    .getWorkInfosForUniqueWork(NotallyXApplication.AUTO_REMOVE_DELETED_NOTES)
+                    .get()
+            infos.isEmpty() || infos.all { it.state == WorkInfo.State.CANCELLED }
+        }
+
+        // Running cleanup worker when days <= 0 should do nothing (keep note deleted 2 days ago)
+        val result0 = runBlocking {
+            (context.applicationContext as ContextWrapper).removeOldDeletedNotes(preferences)
+        }
+        assertEquals(androidx.work.ListenableWorker.Result.success(), result0)
+        runBlocking {
+            withContext(Dispatchers.IO) {
+                val remainingIds = database.getBaseNoteDao().getAll().map { it.id }.toSet()
+                assertTrue(
+                    "Note deleted 2 days ago should remain when auto-remove is Off",
+                    remainingIds.contains(note2Days.id),
+                )
+                assertTrue("Active note should remain", remainingIds.contains(activeNote.id))
+            }
+        }
+
+        // 5. Test Stepper button increments and decrements (Increase & Decrease)
+        composeTestRule
+            .onNode(hasTestTag("${TestTags.STEPPER_INCREASE}_$autoRemoveTitle"))
+            .performScrollTo()
+            .performClick()
+        composeTestRule.waitUntil(10_000) { preferences.autoRemoveDeletedNotesAfterDays.value == 1 }
+        assertEquals(1, preferences.autoRemoveDeletedNotesAfterDays.value)
+        composeTestRule
+            .onNode(hasTestTag("${TestTags.STEPPER_INPUT}_$autoRemoveTitle") and hasText("1 Day"))
+            .performScrollTo()
+            .assertIsDisplayed()
+
+        composeTestRule
+            .onNode(hasTestTag("${TestTags.STEPPER_DECREASE}_$autoRemoveTitle"))
+            .performScrollTo()
+            .performClick()
+        composeTestRule.waitUntil(10_000) { preferences.autoRemoveDeletedNotesAfterDays.value == 0 }
+        assertEquals(0, preferences.autoRemoveDeletedNotesAfterDays.value)
+        composeTestRule
+            .onNode(hasTestTag("${TestTags.STEPPER_INPUT}_$autoRemoveTitle") and hasText(offLabel))
+            .performScrollTo()
+            .assertIsDisplayed()
+
+        // 6. Verify UI reflected in Deleted screen: noteDeleted2Days should be visible, others not
+        composeTestRule.navigateTo(NotallyNavKey.Deleted)
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(note2DaysTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(note2DaysTitle).assertIsDisplayed()
+        composeTestRule.onNodeWithText(note15DaysTitle).assertDoesNotExist()
+        composeTestRule.onNodeWithText(note40DaysTitle).assertDoesNotExist()
+
+        // Verify UI reflected in Notes screen: activeNoteOld should be visible
+        composeTestRule.navigateTo(NotallyNavKey.Notes)
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(activeNoteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(activeNoteTitle).assertIsDisplayed()
     }
 
     private fun getCardBackgroundColor(title: String): Int {
