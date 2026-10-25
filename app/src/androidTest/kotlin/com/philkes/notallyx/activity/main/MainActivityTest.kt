@@ -4,13 +4,10 @@ import android.app.Activity
 import android.app.Instrumentation
 import android.app.Notification
 import android.content.Intent
-import android.graphics.Bitmap
 import android.util.Log
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
@@ -25,10 +22,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.text.TextLayoutResult
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
@@ -40,7 +35,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.extensions.getCurrentImagesDirectory
 import com.philkes.notallyx.core.preference.NotesSort
 import com.philkes.notallyx.core.preference.NotesSortBy
 import com.philkes.notallyx.core.preference.NotesView
@@ -48,10 +42,8 @@ import com.philkes.notallyx.core.preference.SortDirection
 import com.philkes.notallyx.core.ui.extensions.sortWith
 import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.model.Color
-import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
-import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.toColorString
 import com.philkes.notallyx.feature.editor.refreshStatusBarPin
 import com.philkes.notallyx.feature.main.MainActivity
@@ -65,7 +57,6 @@ import com.philkes.notallyx.test.createListItem
 import com.philkes.notallyx.test.navigateTo
 import com.philkes.notallyx.test.waitUntil
 import com.philkes.notallyx.test.waitUntilSettingsValue
-import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -999,257 +990,5 @@ class MainActivityTest : UiTestBase() {
         composeTestRule.onNodeWithText("Second Grid Note").assertIsDisplayed()
 
         scenario.close()
-    }
-
-    @Test
-    fun noteCardDisplayConfig() {
-        // 1. Initially programmatically set the preferences
-        preferences.maxItems.save(3)
-        preferences.maxLines.save(3)
-        preferences.maxTitle.save(3)
-        preferences.labelTagsHiddenInOverview.save(false)
-        preferences.imagesHiddenInOverview.save(false)
-        preferences.textSizeOverview.save(16f)
-
-        // 2. Setup test data and images
-        val imageDir = context.getCurrentImagesDirectory().apply { mkdirs() }
-        val imgFile1 = File(imageDir, "card_config_test_1.jpg")
-        val imgFile2 = File(imageDir, "card_config_test_2.jpg")
-        val sampleBitmap = Bitmap.createBitmap(16, 16, Bitmap.Config.ARGB_8888)
-        imgFile1.outputStream().use { sampleBitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
-        imgFile2.outputStream().use { sampleBitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
-
-        val listTitle = "Config List Title"
-        val listItems = listOf("Item 1", "Item 2", "Item 3", "Item 4", "Item 5")
-        val listNote =
-            createBaseNote(
-                title = listTitle,
-                type = Type.LIST,
-                items = listItems.map { createListItem(it) },
-                timestamp = 2000L,
-                modifiedTimestamp = 2000L,
-            )
-
-        val noteTitle = "Title Line 1\nTitle Line 2\nTitle Line 3\nTitle Line 4"
-        val noteBody = "Body Line 1\nBody Line 2\nBody Line 3\nBody Line 4"
-        val noteLabel = "DisplayConfigLabel"
-        val textNote =
-            createBaseNote(
-                title = noteTitle,
-                body = noteBody,
-                type = Type.NOTE,
-                labels = listOf(noteLabel),
-                images =
-                    listOf(
-                        FileAttachment(
-                            localName = "card_config_test_1.jpg",
-                            originalName = "card_config_test_1.jpg",
-                            mimeType = "image/jpeg",
-                        ),
-                        FileAttachment(
-                            localName = "card_config_test_2.jpg",
-                            originalName = "card_config_test_2.jpg",
-                            mimeType = "image/jpeg",
-                        ),
-                    ),
-                timestamp = 1000L,
-                modifiedTimestamp = 1000L,
-            )
-
-        runBlocking {
-            database.clearAllTables()
-            database.getLabelDao().insert(listOf(Label(noteLabel, 0)))
-            database.getBaseNoteDao().insert(listOf(listNote, textNote))
-        }
-
-        val scenario = ActivityScenario.launch(MainActivity::class.java)
-
-        try {
-            // Wait for initial notes to load
-            composeTestRule.waitUntil(10_000) {
-                composeTestRule.onAllNodes(hasText(listTitle)).fetchSemanticsNodes().isNotEmpty() &&
-                    composeTestRule
-                        .onAllNodes(hasText(noteTitle))
-                        .fetchSemanticsNodes()
-                        .isNotEmpty()
-            }
-
-            // --- 1. Test maxItems (0, 1, 3) ---
-            // maxItems = 0: no items displayed
-            preferences.maxItems.save(0)
-            composeTestRule.waitUntil(5_000) {
-                composeTestRule.onAllNodes(hasText("Item 1")).fetchSemanticsNodes().isEmpty()
-            }
-            composeTestRule.onNodeWithText("Item 1").assertDoesNotExist()
-            composeTestRule.onNodeWithText("+5").assertDoesNotExist()
-
-            // maxItems = 1: 1 item displayed, +4 more item shown
-            preferences.maxItems.save(1)
-            composeTestRule.waitUntil(5_000) {
-                composeTestRule.onAllNodes(hasText("Item 1")).fetchSemanticsNodes().isNotEmpty() &&
-                    composeTestRule.onAllNodes(hasText("+4")).fetchSemanticsNodes().isNotEmpty()
-            }
-            composeTestRule.onNodeWithText("Item 1").assertIsDisplayed()
-            composeTestRule.onNodeWithText("Item 2").assertDoesNotExist()
-            composeTestRule.onNodeWithText("+4").assertIsDisplayed()
-
-            // maxItems = 3: 3 items displayed, +2 more item shown
-            preferences.maxItems.save(3)
-            composeTestRule.waitUntil(5_000) {
-                composeTestRule.onAllNodes(hasText("Item 3")).fetchSemanticsNodes().isNotEmpty() &&
-                    composeTestRule.onAllNodes(hasText("+2")).fetchSemanticsNodes().isNotEmpty()
-            }
-            composeTestRule.onNodeWithText("Item 1").assertIsDisplayed()
-            composeTestRule.onNodeWithText("Item 2").assertIsDisplayed()
-            composeTestRule.onNodeWithText("Item 3").assertIsDisplayed()
-            composeTestRule.onNodeWithText("Item 4").assertDoesNotExist()
-            composeTestRule.onNodeWithText("+2").assertIsDisplayed()
-
-            // --- 2. Test maxLines (0, 1, 3) ---
-            // maxLines = 0: body hidden completely
-            preferences.maxLines.save(0)
-            composeTestRule.waitUntil(5_000) {
-                composeTestRule.onAllNodes(hasText(noteBody)).fetchSemanticsNodes().isEmpty()
-            }
-            composeTestRule.onNodeWithText(noteBody).assertDoesNotExist()
-
-            // maxLines = 1: body visible with 1 line
-            preferences.maxLines.save(1)
-            composeTestRule.waitUntil(5_000) {
-                composeTestRule.onAllNodes(hasText(noteBody)).fetchSemanticsNodes().isNotEmpty() &&
-                    composeTestRule.onNodeWithText(noteBody).getLineCount() == 1
-            }
-            composeTestRule.onNodeWithText(noteBody).assertIsDisplayed()
-            assertEquals(1, composeTestRule.onNodeWithText(noteBody).getLineCount())
-            val bodyHeight1 =
-                composeTestRule.onNodeWithText(noteBody).fetchSemanticsNode().size.height
-
-            // maxLines = 3: body visible with 3 lines
-            preferences.maxLines.save(3)
-            composeTestRule.waitUntil(5_000) {
-                composeTestRule.onAllNodes(hasText(noteBody)).fetchSemanticsNodes().isNotEmpty() &&
-                    composeTestRule.onNodeWithText(noteBody).getLineCount() == 3
-            }
-            composeTestRule.onNodeWithText(noteBody).assertIsDisplayed()
-            assertEquals(3, composeTestRule.onNodeWithText(noteBody).getLineCount())
-            val bodyHeight3 =
-                composeTestRule.onNodeWithText(noteBody).fetchSemanticsNode().size.height
-            assertTrue(
-                "Body height with 3 lines ($bodyHeight3) should be greater than with 1 line ($bodyHeight1)",
-                bodyHeight3 > bodyHeight1,
-            )
-
-            // --- 3. Test maxTitle (1, 3) ---
-            // maxTitle = 1: title limited to 1 line
-            preferences.maxTitle.save(1)
-            composeTestRule.waitUntil(5_000) {
-                composeTestRule.onNodeWithText(noteTitle).getLineCount() == 1
-            }
-            composeTestRule.onNodeWithText(noteTitle).assertIsDisplayed()
-            assertEquals(1, composeTestRule.onNodeWithText(noteTitle).getLineCount())
-            val titleHeight1 =
-                composeTestRule.onNodeWithText(noteTitle).fetchSemanticsNode().size.height
-
-            // maxTitle = 3: title limited to 3 lines
-            preferences.maxTitle.save(3)
-            composeTestRule.waitUntil(5_000) {
-                composeTestRule.onNodeWithText(noteTitle).getLineCount() == 3
-            }
-            composeTestRule.onNodeWithText(noteTitle).assertIsDisplayed()
-            assertEquals(3, composeTestRule.onNodeWithText(noteTitle).getLineCount())
-            val titleHeight3 =
-                composeTestRule.onNodeWithText(noteTitle).fetchSemanticsNode().size.height
-            assertTrue(
-                "Title height with 3 lines ($titleHeight3) should be greater than with 1 line ($titleHeight1)",
-                titleHeight3 > titleHeight1,
-            )
-
-            // --- 4. Test labelTagsHiddenInOverview (true, false) ---
-            // labelTagsHiddenInOverview = true: labels hidden
-            preferences.labelTagsHiddenInOverview.save(true)
-            composeTestRule.waitUntil(5_000) {
-                composeTestRule.onAllNodes(hasText(noteLabel)).fetchSemanticsNodes().isEmpty()
-            }
-            composeTestRule.onNodeWithText(noteLabel).assertDoesNotExist()
-
-            // labelTagsHiddenInOverview = false: labels displayed
-            preferences.labelTagsHiddenInOverview.save(false)
-            composeTestRule.waitUntil(5_000) {
-                composeTestRule.onAllNodes(hasText(noteLabel)).fetchSemanticsNodes().isNotEmpty()
-            }
-            composeTestRule.onNodeWithText(noteLabel).assertIsDisplayed()
-
-            // --- 5. Test imagesHiddenInOverview (true, false) ---
-            // imagesHiddenInOverview = true: image preview and image count chip hidden
-            preferences.imagesHiddenInOverview.save(true)
-            composeTestRule.waitUntil(5_000) {
-                composeTestRule.onAllNodes(hasText("2")).fetchSemanticsNodes().isEmpty()
-            }
-            composeTestRule.onNodeWithText("2").assertDoesNotExist()
-
-            // imagesHiddenInOverview = false: image preview and image count chip displayed
-            preferences.imagesHiddenInOverview.save(false)
-            composeTestRule.waitUntil(5_000) {
-                composeTestRule.onAllNodes(hasText("2")).fetchSemanticsNodes().isNotEmpty()
-            }
-            composeTestRule.onNodeWithText("2").assertIsDisplayed()
-
-            // --- 6. Test textSize (16f, 10f) ---
-            // Default 16f: title is 16sp, body is 14sp
-            preferences.textSizeOverview.save(16f)
-            composeTestRule.waitUntil(5_000) {
-                composeTestRule.onNodeWithText(noteTitle).getTextFontSize() == 16f
-            }
-            assertEquals(16f, composeTestRule.onNodeWithText(noteTitle).getTextFontSize())
-            assertEquals(14f, composeTestRule.onNodeWithText(noteBody).getTextFontSize())
-            val titleHeight16 =
-                composeTestRule.onNodeWithText(noteTitle).fetchSemanticsNode().size.height
-
-            // Small 10f: title is 10sp, body is 8sp
-            preferences.textSizeOverview.save(10f)
-            composeTestRule.waitUntil(5_000) {
-                composeTestRule.onNodeWithText(noteTitle).getTextFontSize() == 10f
-            }
-            assertEquals(10f, composeTestRule.onNodeWithText(noteTitle).getTextFontSize())
-            assertEquals(8f, composeTestRule.onNodeWithText(noteBody).getTextFontSize())
-            val titleHeight10 =
-                composeTestRule.onNodeWithText(noteTitle).fetchSemanticsNode().size.height
-            assertTrue(
-                "Title height at textSize 16 ($titleHeight16) should be greater than at textSize 10 ($titleHeight10)",
-                titleHeight16 > titleHeight10,
-            )
-        } finally {
-            scenario.close()
-            imgFile1.delete()
-            imgFile2.delete()
-            preferences.maxItems.save(preferences.maxItems.defaultValue)
-            preferences.maxLines.save(preferences.maxLines.defaultValue)
-            preferences.maxTitle.save(preferences.maxTitle.defaultValue)
-            preferences.labelTagsHiddenInOverview.save(
-                preferences.labelTagsHiddenInOverview.defaultValue
-            )
-            preferences.imagesHiddenInOverview.save(preferences.imagesHiddenInOverview.defaultValue)
-            preferences.textSizeOverview.save(preferences.textSizeOverview.defaultValue)
-        }
-    }
-
-    private fun SemanticsNodeInteraction.getLineCount(): Int {
-        return try {
-            val textLayoutResults = mutableListOf<TextLayoutResult>()
-            performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(textLayoutResults) }
-            textLayoutResults.firstOrNull()?.lineCount ?: -1
-        } catch (_: Throwable) {
-            -1
-        }
-    }
-
-    private fun SemanticsNodeInteraction.getTextFontSize(): Float {
-        return try {
-            val textLayoutResults = mutableListOf<TextLayoutResult>()
-            performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(textLayoutResults) }
-            textLayoutResults.firstOrNull()?.layoutInput?.style?.fontSize?.value ?: -1f
-        } catch (_: Throwable) {
-            -1f
-        }
     }
 }

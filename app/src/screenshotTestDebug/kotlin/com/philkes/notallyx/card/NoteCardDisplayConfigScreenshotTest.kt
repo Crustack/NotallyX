@@ -266,7 +266,7 @@ fun NoteCard_Images_Visible() {
     }
 }
 
-// ==================== textSize (16f, 10f) ====================
+// ==================== textSize (16f, 10f, 22f) ====================
 
 @Preview(showBackground = true)
 @PreviewTest
@@ -288,6 +288,18 @@ fun NoteCard_TextSize_Small10() {
         BaseNoteCard(
             baseNote = PREVIEW_TEXT_NOTE,
             config = NoteCardDisplayConfig(textSize = 10f),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@PreviewTest
+@Composable
+fun NoteCard_TextSize_Large22() {
+    CardScreenshotWrapper {
+        BaseNoteCard(
+            baseNote = PREVIEW_TEXT_NOTE,
+            config = NoteCardDisplayConfig(textSize = 22f),
         )
     }
 }

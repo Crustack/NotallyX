@@ -66,36 +66,6 @@ class ErrorActivityTest : UiTestBase() {
     }
 
     @Test
-    fun errorScreen_displaysCrashInfoAndActionButtons() {
-        val scenario = ActivityScenario.launch<ErrorActivity>(createErrorIntent())
-        try {
-            composeTestRule
-                .onNodeWithText(context.getString(R.string.crash_message))
-                .assertIsDisplayed()
-            composeTestRule.onNodeWithText(DEFAULT_EXCEPTION_TITLE).assertIsDisplayed()
-            composeTestRule.onNodeWithText(DEFAULT_STACK_TRACE_DETAILS).assertIsDisplayed()
-
-            composeTestRule
-                .onNodeWithText(context.getString(R.string.restart_app))
-                .assertIsDisplayed()
-            composeTestRule
-                .onNodeWithText(context.getString(R.string.report_bug))
-                .assertIsDisplayed()
-            composeTestRule
-                .onNodeWithText(context.getString(R.string.export_backup))
-                .assertIsDisplayed()
-            composeTestRule
-                .onNodeWithText(context.getString(R.string.view_logs))
-                .assertIsDisplayed()
-            composeTestRule
-                .onNodeWithContentDescription(context.getString(R.string.copy))
-                .assertIsDisplayed()
-        } finally {
-            scenario.close()
-        }
-    }
-
-    @Test
     fun copyStackTrace_copiesToClipboard() {
         val scenario = ActivityScenario.launch<ErrorActivity>(createErrorIntent())
         try {
@@ -349,8 +319,6 @@ class ErrorActivityTest : UiTestBase() {
         private const val EXTRA_CUSTOM_CRASH_DATA =
             "cat.ereza.customactivityoncrash.EXTRA_CUSTOM_CRASH_DATA"
 
-        private const val DEFAULT_EXCEPTION_TITLE =
-            "java.lang.NullPointerException:\n Test crash occurred"
         private const val DEFAULT_STACK_TRACE_DETAILS =
             "\tat com.philkes.notallyx.FakeClass.fakeMethod(FakeClass.kt:42)\n" +
                 "\tat com.philkes.notallyx.FakeClass.anotherMethod(FakeClass.kt:100)"

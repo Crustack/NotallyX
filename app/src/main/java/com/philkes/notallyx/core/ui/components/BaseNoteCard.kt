@@ -344,7 +344,7 @@ private fun ImagePreview(
         Box(modifier = Modifier.fillMaxWidth().aspectRatio(8f / 5f)) {
             if (isPreview) {
                 Image(
-                    painter = painterResource(id = R.drawable.cat),
+                    painter = painterResource(id = R.drawable.vacation),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.matchParentSize(),
