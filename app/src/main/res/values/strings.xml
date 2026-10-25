@@ -437,6 +437,7 @@
 
     <!-- App Store Marketing Headlines -->
     <string name="store_headline_manage_and_organize" tools:ignore="MissingTranslation">Manage and organize all your notes</string>
+    <string name="store_headline_alternatively_also_in_a_grid" tools:ignore="MissingTranslation">Alternatively also in a Grid</string>
     <string name="store_headline_task_lists" tools:ignore="MissingTranslation">Keep track of your task lists</string>
     <string name="store_headline_rich_text" tools:ignore="MissingTranslation">Format your rich text notes</string>
     <string name="store_headline_images_and_files" tools:ignore="MissingTranslation">Enhance your notes with images and files</string>

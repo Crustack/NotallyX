@@ -18,7 +18,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 /**
- * Multi-preview annotation for generating app store marketing screenshots across multiple locales
+ * Multi-preview annotation for generating app store app store screenshots across multiple locales
  * (English, German, etc.) as described in
  * docs/generate_app_store_screenshots_directly_from_jetpack_compose_previews.md.
  */
@@ -32,9 +32,9 @@ import kotlin.time.Instant
     locale = "de",
     showBackground = true,
 )
-annotation class MarketingPreview
+annotation class AppStorePreview
 
-object MarketingSampleData {
+object AppStoreSampleData {
     private val date = Instant.parse("2026-01-02T12:00:00Z")
 
     val DAILY_JOURNAL_NOTE =
