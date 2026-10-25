@@ -18,6 +18,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
@@ -75,6 +76,12 @@ class MainActivityViewModel(app: Application, val preferences: NotallyXPreferenc
     val labels: StateFlow<List<Label>> =
         NotallyDatabase.getDatabase(app)
             .flatMapLatest { database -> database?.getLabelDao()?.getAll() ?: flowOf(emptyList()) }
+            .combine(preferences.labelsHidden.flow) { labels, hidden ->
+                labels.filter { !hidden.contains(it.value) }
+            }
+            .combine(preferences.maxLabels.flow) { labels, max ->
+                if (max > 0) labels.take(max) else labels
+            }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),

@@ -2,13 +2,11 @@ package com.philkes.notallyx.core.ui.components
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -51,6 +49,7 @@ import com.philkes.notallyx.core.preference.displayBodySize
 import com.philkes.notallyx.core.preference.displaySmallerSize
 import com.philkes.notallyx.core.preference.displayTitleSize
 import com.philkes.notallyx.core.ui.extensions.format
+import com.philkes.notallyx.core.ui.extensions.toAnnotatedString
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.core.ui.theme.contentColorFor
 import com.philkes.notallyx.data.model.Audio
@@ -85,7 +84,6 @@ data class NoteCardDisplayConfig(
 )
 
 /** Composable replacing recycler_base_note.xml layout. Exactly 1 BaseNoteCard composable. */
-@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 internal fun BaseNoteCard(
     baseNote: BaseNote,
@@ -237,8 +235,12 @@ internal fun BaseNoteCard(
                         if (titleText.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(4.dp))
                         }
+                        val annotatedBody =
+                            remember(baseNote.body, baseNote.spans) {
+                                baseNote.body.toAnnotatedString(baseNote.spans)
+                            }
                         Text(
-                            text = baseNote.body,
+                            text = annotatedBody,
                             fontSize = config.textSize.displayBodySize.sp,
                             style = MaterialTheme.typography.bodyMedium,
                             color = LocalContentColor.current,

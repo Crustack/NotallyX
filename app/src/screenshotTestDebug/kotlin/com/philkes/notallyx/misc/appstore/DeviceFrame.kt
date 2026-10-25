@@ -112,7 +112,7 @@ fun DeviceFrame(
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
-                    color = contentColorFor(backgroundColor),
+                    color = com.philkes.notallyx.core.ui.theme.contentColorFor(backgroundColor),
                     lineHeight = 36.sp,
                     maxLines = 3,
                 )
