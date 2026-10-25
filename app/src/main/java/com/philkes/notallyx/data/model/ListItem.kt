@@ -37,9 +37,6 @@ data class ListItem(
             this.checkedTimestamp == other.checkedTimestamp)
     }
 
-    val itemCount: Int
-        get() = children.size + 1
-
     fun isChildOf(other: ListItem): Boolean {
         return !other.isChild && other.children.contains(this)
     }

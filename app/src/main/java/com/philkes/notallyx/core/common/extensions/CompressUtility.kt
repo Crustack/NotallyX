@@ -16,9 +16,6 @@ object CompressUtility {
     private const val TEXT_FIELD = "text"
     private const val SPANS_FIELD = "spans"
 
-    // Threshold in characters for when to compress text (approximately 10KB)
-    const val COMPRESSION_THRESHOLD: Int = 10_000
-
     /** Compresses text and spans using GZIP compression into a ByteArray. */
     fun compressTextAndSpans(text: String, spans: List<SpanRepresentation>): ByteArray {
         val jsonObject = JSONObject()

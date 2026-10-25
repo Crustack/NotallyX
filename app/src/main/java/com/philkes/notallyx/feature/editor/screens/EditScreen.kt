@@ -288,8 +288,6 @@ internal interface EditChangeHandlers {
     fun onSearchQueryChange(query: String) {}
 }
 
-internal typealias EditNoteChangeHandlers = EditChangeHandlers
-
 internal interface EditClickHandlers {
     fun onBackClick() {}
 
@@ -339,8 +337,6 @@ internal interface EditClickHandlers {
 
     fun onCloseSearch() {}
 }
-
-internal typealias EditNoteClickHandlers = EditClickHandlers
 
 @Composable
 private fun ActionIconButton(

@@ -406,7 +406,6 @@ class NotallyXPreferences private constructor(private val context: Context) {
     }
 
     companion object {
-        private const val TAG = "NotallyXPreferences"
         const val EMPTY_PATH = "emptyPath"
         const val START_VIEW_DEFAULT = ""
         const val START_VIEW_UNLABELED = "com.philkes.notallyx.startview.UNLABELED"
@@ -431,6 +430,3 @@ class NotallyXPreferences private constructor(private val context: Context) {
         }
     }
 }
-
-val NotallyXPreferences.autoSortByCheckedEnabled
-    get() = listItemSorting.value.isAutoSortChecked

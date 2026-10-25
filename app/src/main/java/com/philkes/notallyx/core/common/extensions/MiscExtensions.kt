@@ -32,21 +32,6 @@ fun CharSequence.fromCamelCaseToEnumName(): String {
         .toString()
 }
 
-fun CharSequence?.isWebUrl(): Boolean {
-    return this?.let { Patterns.WEB_URL.matcher(this).matches() } ?: false
-}
-
-fun CharSequence?.findWebUrls(): Collection<Pair<Int, Int>> {
-    return this?.let {
-        val matcher = Patterns.WEB_URL.matcher(this)
-        val matches = mutableListOf<Pair<Int, Int>>()
-        while (matcher.find()) {
-            matches.add(Pair(matcher.start(), matcher.end()))
-        }
-        matches
-    } ?: listOf()
-}
-
 /** Calculates the character limit for a given MB size (in worst case). */
 fun Double.charLimit(): Int {
     val totalBytes = (this * 1024 * 1024).toInt()
@@ -72,10 +57,6 @@ fun String.findAllOccurrences(
         startIndex = index + search.length
     }
     return result
-}
-
-fun String.removeTrailingParentheses(): String {
-    return substringBeforeLast(" (")
 }
 
 fun String.toCamelCase(): String {

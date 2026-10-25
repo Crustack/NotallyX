@@ -285,11 +285,6 @@ class NoteWidget : GlanceAppWidget() {
             return Pair(backgroundColor, getContrastFontColor(backgroundColor))
         }
 
-        fun Context.extractWidgetColors(
-            color: String,
-            preferences: NotallyXPreferences,
-        ): Pair<Int, Int> = extractWidgetColors(color, preferences.theme.value)
-
         const val ACTION_NOTES_MODIFIED = "com.philkes.notallyx.ACTION_NOTE_MODIFIED"
         const val EXTRA_MODIFIED_NOTES = "com.philkes.notallyx.EXTRA_MODIFIED_NOTES"
     }

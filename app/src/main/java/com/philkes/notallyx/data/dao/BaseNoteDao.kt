@@ -11,7 +11,6 @@ import androidx.sqlite.db.SupportSQLiteQuery
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.charLimit
 import com.philkes.notallyx.core.common.extensions.log
-import com.philkes.notallyx.core.ui.extensions.getQuantityString
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
@@ -20,18 +19,10 @@ import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.LabelsInBaseNote
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.Reminder
-import com.philkes.notallyx.data.model.Type
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 data class NoteIdReminder(val id: Long, val reminders: List<Reminder>)
-
-data class NoteReminder(
-    val id: Long,
-    val title: String,
-    val type: Type,
-    val reminders: List<Reminder>,
-)
 
 /** Maximum allowed size of a note body in MB (~340,000 characters) */
 const val MAX_BODY_SIZE_MB = 1.5
@@ -71,33 +62,6 @@ interface BaseNoteDao {
             )
         }
         return insert(note)
-    }
-
-    suspend fun insertSafe(context: ContextWrapper, baseNotes: List<BaseNote>): List<Long> {
-        val truncatedNotes = mutableListOf<BaseNote>()
-        var truncatedCharacterSize = 0
-        val notes = baseNotes.map { baseNote ->
-            val (truncated, note) = baseNote.truncated()
-            if (truncated) {
-                truncatedCharacterSize += baseNote.body.length
-                truncatedNotes.add(note)
-            }
-            note
-        }
-        if (truncatedNotes.isNotEmpty()) {
-            context.log(
-                TAG,
-                "${truncatedNotes.size} Notes are too big to save, they were truncated to $truncatedCharacterSize characters",
-            )
-            context.showToast(
-                context.getQuantityString(
-                    R.plurals.notes_too_big_truncating,
-                    truncatedNotes.size,
-                    truncatedCharacterSize,
-                )
-            )
-        }
-        return insert(notes)
     }
 
     @Insert suspend fun insert(baseNotes: List<BaseNote>): List<Long>

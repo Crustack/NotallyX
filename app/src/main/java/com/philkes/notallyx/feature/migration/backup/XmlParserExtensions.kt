@@ -8,19 +8,9 @@ import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.parseToColorString
-import java.io.File
-import java.io.FileInputStream
 import java.io.InputStream
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
-
-fun File.toBaseNote(folder: Folder): BaseNote {
-    val inputStream = FileInputStream(this)
-    val parser = XmlPullParserFactory.newInstance().newPullParser()
-    parser.setInput(inputStream, null)
-    parser.next()
-    return parser.parseBaseNote(parser.name, folder)
-}
 
 fun InputStream.readAsBackup(): Pair<List<BaseNote>, List<Label>> {
     val parser = XmlPullParserFactory.newInstance().newPullParser()

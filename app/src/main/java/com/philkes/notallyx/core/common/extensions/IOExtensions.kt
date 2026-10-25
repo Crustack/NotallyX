@@ -3,11 +3,9 @@ package com.philkes.notallyx.core.common.extensions
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.util.Log
-import androidx.core.net.toUri
 import com.philkes.notallyx.core.common.result.Progress
 import com.philkes.notallyx.core.database.NotallyDatabase.Companion.DATABASE_NAME
 import com.philkes.notallyx.core.preference.NotallyXPreferences
@@ -260,39 +258,6 @@ fun File.clearDirectory() {
 fun File.decodeToBitmap(): Bitmap? {
     val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     return BitmapFactory.decodeFile(absolutePath, options)
-}
-
-fun File.isAudioFile(context: Context): Boolean {
-    val retriever = MediaMetadataRetriever()
-    return try {
-        retriever.setDataSource(context, toUri()) // Try to set the file path
-        val hasAudio = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO)
-        val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-        val mimeType = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)
-        mimeType != null && hasAudio != null ||
-            duration != null // If it has audio metadata, it's a valid audio file
-    } catch (e: Exception) {
-        false // An exception means it’s not a valid audio file
-    } finally {
-        retriever.release() // Always release retriever to free resources
-    }
-}
-
-fun File.toRelativePathFrom(baseFolderName: String): String {
-    val parentFolderIndex = absolutePath.indexOf("/$baseFolderName/")
-    if (parentFolderIndex == -1) {
-        return name
-    }
-    val relativePath = absolutePath.substring(parentFolderIndex + baseFolderName.length + 2)
-    return relativePath.trimStart(File.separatorChar)
-}
-
-fun File.recreateDir(): File {
-    if (exists()) {
-        deleteRecursively()
-    }
-    mkdirs()
-    return this
 }
 
 private const val BUFFER_SIZE = 512 * 1024
