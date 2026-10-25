@@ -754,6 +754,9 @@ class EditActivityTest : UiTestBase() {
                 .onNodeWithContentDescription(context.getString(R.string.note))
                 .performTextInput("Testing attachments deletion and image viewer")
 
+            composeTestRule.waitUntil(10_000) {
+                runBlocking { database.getBaseNoteDao().getAll().firstOrNull() != null }
+            }
             val noteId = runBlocking { database.getBaseNoteDao().getAll().first().id }
 
             // 2. Add images
@@ -766,6 +769,10 @@ class EditActivityTest : UiTestBase() {
                 composeTestRule.onAllNodes(hasText("1/2")).fetchSemanticsNodes().isNotEmpty()
             }
             composeTestRule.onNodeWithText("1/2").assertIsDisplayed()
+            composeTestRule.waitUntil(10_000) {
+                val note = runBlocking { database.getBaseNoteDao().get(noteId) }
+                note != null && note.images.size == 2
+            }
 
             // 3. Attach file
             composeTestRule
@@ -780,6 +787,10 @@ class EditActivityTest : UiTestBase() {
                     .isNotEmpty()
             }
             composeTestRule.onNodeWithText("text_del.txt", substring = true).assertIsDisplayed()
+            composeTestRule.waitUntil(10_000) {
+                val note = runBlocking { database.getBaseNoteDao().get(noteId) }
+                note != null && note.files.isNotEmpty()
+            }
 
             // 4. Test File Attachment Deletion:
             // 4a. Long-click file chip and cancel deletion
@@ -825,6 +836,10 @@ class EditActivityTest : UiTestBase() {
             }
 
             // Verify file removal from database
+            composeTestRule.waitUntil(10_000) {
+                val note = runBlocking { database.getBaseNoteDao().get(noteId) }
+                note != null && note.files.isEmpty()
+            }
             val noteAfterFileDelete = runBlocking { database.getBaseNoteDao().get(noteId) }
             assertTrue(
                 "Note should exist and have no file attachments in database",
@@ -912,22 +927,18 @@ class EditActivityTest : UiTestBase() {
                 .onNodeWithContentDescription(context.getString(R.string.back))
                 .performClick()
 
-            // Wait until back in EditScreen
+            // Wait until back in EditScreen and image count chip "1/2" or "2/2" is gone
             composeTestRule.waitUntil(10_000) {
-                composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+                composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty() &&
+                    composeTestRule.onAllNodes(hasText("1/2")).fetchSemanticsNodes().isEmpty() &&
+                    composeTestRule.onAllNodes(hasText("2/2")).fetchSemanticsNodes().isEmpty()
             }
-            // Image count chip "1/2" or "2/2" should no longer be displayed because only 1 image
-            // remains
-            assertTrue(
-                "Image count chip 1/2 should not be displayed when only 1 image remains",
-                composeTestRule.onAllNodes(hasText("1/2")).fetchSemanticsNodes().isEmpty(),
-            )
-            assertTrue(
-                "Image count chip 2/2 should not be displayed when only 1 image remains",
-                composeTestRule.onAllNodes(hasText("2/2")).fetchSemanticsNodes().isEmpty(),
-            )
 
             // Verify in DB that only 1 image remains
+            composeTestRule.waitUntil(10_000) {
+                val note = runBlocking { database.getBaseNoteDao().get(noteId) }
+                note != null && note.images.size == 1
+            }
             val noteWithOneImage = runBlocking { database.getBaseNoteDao().get(noteId) }
             assertTrue(
                 "Note should have exactly 1 image in database",
@@ -974,13 +985,30 @@ class EditActivityTest : UiTestBase() {
                     .isEmpty()
             }
 
+            // Verify in DB that all images are removed
+            composeTestRule.waitUntil(10_000) {
+                val note = runBlocking { database.getBaseNoteDao().get(noteId) }
+                note != null && note.images.isEmpty()
+            }
+
             // 6. Navigate back to MainActivity and verify database and disk cleanup
             composeTestRule
                 .onNodeWithContentDescription(context.getString(R.string.back))
                 .performClick()
 
             composeTestRule.waitUntil(10_000) {
-                composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+                composeTestRule
+                    .onAllNodes(hasContentDescription(context.getString(R.string.take_note)))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+
+            composeTestRule.waitUntil(10_000) {
+                val note = runBlocking { database.getBaseNoteDao().get(noteId) }
+                note != null &&
+                    note.title == noteTitle &&
+                    note.images.isEmpty() &&
+                    note.files.isEmpty()
             }
 
             val finalNote = runBlocking { database.getBaseNoteDao().get(noteId) }

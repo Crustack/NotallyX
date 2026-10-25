@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,8 +21,8 @@ internal fun AudioItemRow(
     dateText: String,
     lengthText: String,
     modifier: Modifier = Modifier,
-    contentColor: Color = Color.Unspecified,
-    lengthColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    contentColor: Color = LocalContentColor.current,
+    lengthColor: Color = LocalContentColor.current.copy(alpha = 0.7f),
     onClick: () -> Unit = {},
 ) {
     Row(
@@ -35,15 +36,13 @@ internal fun AudioItemRow(
         Text(
             text = dateText,
             style = MaterialTheme.typography.bodyMedium,
-            color =
-                if (contentColor != Color.Unspecified) contentColor
-                else MaterialTheme.colorScheme.onSurface,
+            color = contentColor,
             modifier = Modifier.weight(1f).padding(end = 8.dp),
         )
         Text(
             text = lengthText,
             style = MaterialTheme.typography.bodyMedium,
-            color = if (contentColor != Color.Unspecified) contentColor else lengthColor,
+            color = lengthColor,
         )
     }
 }

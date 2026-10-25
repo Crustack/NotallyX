@@ -27,4 +27,15 @@ class ComponentComposablesTest {
         val lightColor = Color(0xFF000000 or lightHex)
         assertThat(lightColor.luminance()).isGreaterThan(0.5f)
     }
+
+    @Test
+    fun testContentColorFor() {
+        val darkColor = Color(0xFF111111)
+        assertThat(com.philkes.notallyx.core.ui.theme.contentColorFor(darkColor))
+            .isEqualTo(com.philkes.notallyx.core.ui.theme.MdThemeOnBackgroundDark)
+
+        val lightColor = Color(0xFFF8BBD0)
+        assertThat(com.philkes.notallyx.core.ui.theme.contentColorFor(lightColor))
+            .isEqualTo(com.philkes.notallyx.core.ui.theme.MdThemeOnBackgroundLight)
+    }
 }
