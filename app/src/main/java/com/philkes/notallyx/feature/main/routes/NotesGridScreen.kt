@@ -34,6 +34,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getCurrentImagesDirectory
+import com.philkes.notallyx.core.preference.DateFormat
+import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.core.ui.components.BaseNoteCard
 import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.core.ui.components.SampleNotes
@@ -264,6 +266,29 @@ private fun NotesGridScreenPreview() {
 
 @Preview(showBackground = true)
 @Composable
+private fun NotesGridScreenDisplayConfigPreview() {
+    NotallyXTheme {
+        NotesGridScreen(
+            items = SampleNotes.ALL,
+            showSearchBar = false,
+            onSearchKeywordChange = {},
+            onFolderSelected = {},
+            isGrid = true,
+            displayConfig =
+                NoteCardDisplayConfig(
+                    dateFormat = DateFormat.NONE,
+                    timeFormat = TimeFormat.NONE,
+                    maxItems = 1,
+                    maxLines = 1,
+                    hideLabels = true,
+                    hideImages = true,
+                ),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
 private fun NotesListScreenPreview() {
     NotallyXTheme {
         NotesGridScreen(
@@ -271,6 +296,28 @@ private fun NotesListScreenPreview() {
             showSearchBar = true,
             onSearchKeywordChange = {},
             selectedFolder = Folder.NOTES,
+            onFolderSelected = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun NotesListScreenDisplayConfigPreview() {
+    NotallyXTheme {
+        NotesGridScreen(
+            items = SampleNotes.ALL,
+            showSearchBar = false,
+            onSearchKeywordChange = {},
+            displayConfig =
+                NoteCardDisplayConfig(
+                    dateFormat = DateFormat.NONE,
+                    timeFormat = TimeFormat.NONE,
+                    maxItems = 1,
+                    maxLines = 1,
+                    hideLabels = true,
+                    hideImages = true,
+                ),
             onFolderSelected = {},
         )
     }

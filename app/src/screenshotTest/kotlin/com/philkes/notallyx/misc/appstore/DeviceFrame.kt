@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -28,6 +29,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -42,14 +44,26 @@ import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 fun DeviceFrame(
     title: String,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = Color.White,
+    backgroundColor: Color = MaterialTheme.colorScheme.primary,
     deviceFrameColor: Color = Color(0xFF1E1E1E),
     statusBarColor: Color = MaterialTheme.colorScheme.surface,
     statusBarContentColor: Color = MaterialTheme.colorScheme.onSurface,
     screenContent: @Composable () -> Unit,
 ) {
     Box(
-        modifier = modifier.background(backgroundColor).padding(32.dp),
+        modifier =
+            modifier
+                .background(
+                    brush =
+                        Brush.verticalGradient(
+                            colors =
+                                listOf(
+                                    backgroundColor,
+                                    backgroundColor.copy(alpha = 0.75f),
+                                )
+                        )
+                )
+                .padding(32.dp),
         contentAlignment = Alignment.Center,
     ) {
         val deviceFrameRounding = 48.dp
@@ -70,7 +84,7 @@ fun DeviceFrame(
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
-                    color = Color.Black,
+                    color = contentColorFor(backgroundColor),
                     lineHeight = 36.sp,
                     maxLines = 3,
                 )

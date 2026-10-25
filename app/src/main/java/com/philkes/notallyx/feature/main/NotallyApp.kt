@@ -116,17 +116,48 @@ fun NotallyApp(
         val isAllPinnedToStatus =
             selectedNotes.isNotEmpty() && selectedNotes.all { it.isPinnedToStatus }
 
+        val dateFormatOverview by
+            preferences.dateFormatOverview.flow.collectAsStateWithLifecycle(
+                preferences.dateFormatOverview.value
+            )
+        val timeFormatOverview by
+            preferences.timeFormatOverview.flow.collectAsStateWithLifecycle(
+                preferences.timeFormatOverview.value
+            )
+        val notesSorting by
+            preferences.notesSorting.flow.collectAsStateWithLifecycle(
+                preferences.notesSorting.value
+            )
+        val textSizeOverview by
+            preferences.textSizeOverview.flow.collectAsStateWithLifecycle(
+                preferences.textSizeOverview.value
+            )
+        val maxTitle by
+            preferences.maxTitle.flow.collectAsStateWithLifecycle(preferences.maxTitle.value)
+        val maxLines by
+            preferences.maxLines.flow.collectAsStateWithLifecycle(preferences.maxLines.value)
+        val maxItems by
+            preferences.maxItems.flow.collectAsStateWithLifecycle(preferences.maxItems.value)
+        val labelTagsHiddenInOverview by
+            preferences.labelTagsHiddenInOverview.flow.collectAsStateWithLifecycle(
+                preferences.labelTagsHiddenInOverview.value
+            )
+        val imagesHiddenInOverview by
+            preferences.imagesHiddenInOverview.flow.collectAsStateWithLifecycle(
+                preferences.imagesHiddenInOverview.value
+            )
+
         val displayConfig =
             NoteCardDisplayConfig(
-                dateFormat = preferences.dateFormatOverview.value,
-                timeFormat = preferences.timeFormatOverview.value,
-                sortBy = preferences.notesSorting.value.sortedBy,
-                textSize = preferences.textSizeOverview.value,
-                maxTitleLines = preferences.maxTitle.value,
-                maxLines = preferences.maxLines.value,
-                maxItems = preferences.maxItems.value,
-                hideLabels = preferences.labelTagsHiddenInOverview.value,
-                hideImages = preferences.imagesHiddenInOverview.value,
+                dateFormat = dateFormatOverview,
+                timeFormat = timeFormatOverview,
+                sortBy = notesSorting.sortedBy,
+                textSize = textSizeOverview,
+                maxTitleLines = maxTitle,
+                maxLines = maxLines,
+                maxItems = maxItems,
+                hideLabels = labelTagsHiddenInOverview,
+                hideImages = imagesHiddenInOverview,
             )
 
         val actionModeListener =
