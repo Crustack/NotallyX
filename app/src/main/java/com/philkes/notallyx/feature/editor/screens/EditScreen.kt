@@ -278,6 +278,10 @@ internal interface EditChangeHandlers {
 
     fun onItemTextChange(item: ListItem, text: String) {}
 
+    fun onItemTextChange(item: ListItem, text: AnnotatedString) {
+        onItemTextChange(item, text.text)
+    }
+
     fun onItemCheckedChange(item: ListItem, checked: Boolean) {}
 
     fun onItemDelete(item: ListItem) {}

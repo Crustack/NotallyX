@@ -1,8 +1,11 @@
 package com.philkes.notallyx.feature.editor.history
 
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.feature.editor.NoteModel
+import com.philkes.notallyx.feature.editor.history.changes.ListItemBodyDeltaChange
 import com.philkes.notallyx.feature.editor.history.changes.NoteBodyDeltaChange
 
 fun AnnotatedString.replaceRangeWithSpans(
@@ -86,14 +89,16 @@ fun findDifferingRange(oldStr: AnnotatedString, newStr: AnnotatedString): Pair<I
     return Pair(start, end)
 }
 
-fun computeBodyDelta(
-    oldValue: TextFieldValue,
-    newValue: TextFieldValue,
-    notallyModel: NoteModel,
-    onBodyUpdated: (TextFieldValue) -> Unit = {},
-): NoteBodyDeltaChange? {
-    val oldStr = oldValue.annotatedString
-    val newStr = newValue.annotatedString
+data class TextDelta(
+    val startOffset: Int,
+    val deletedText: AnnotatedString,
+    val insertedText: AnnotatedString,
+)
+
+fun computeAnnotatedStringDelta(
+    oldStr: AnnotatedString,
+    newStr: AnnotatedString,
+): TextDelta? {
     if (oldStr == newStr) return null
 
     val oldText = oldStr.text
@@ -104,14 +109,10 @@ fun computeBodyDelta(
         val deletedSlice = oldStr.subSequence(diffStart, diffEnd)
         val insertedSlice = newStr.subSequence(diffStart, diffEnd)
 
-        return NoteBodyDeltaChange(
-            notallyModel = notallyModel,
+        return TextDelta(
             startOffset = diffStart,
             deletedText = deletedSlice,
             insertedText = insertedSlice,
-            oldSelection = oldValue.selection,
-            newSelection = newValue.selection,
-            onBodyUpdated = onBodyUpdated,
         )
     }
 
@@ -131,13 +132,89 @@ fun computeBodyDelta(
     val deletedSlice = oldStr.subSequence(prefix, oldSuffix + 1)
     val insertedSlice = newStr.subSequence(prefix, newSuffix + 1)
 
-    return NoteBodyDeltaChange(
-        notallyModel = notallyModel,
+    return TextDelta(
         startOffset = prefix,
         deletedText = deletedSlice,
         insertedText = insertedSlice,
+    )
+}
+
+fun computeBodyDelta(
+    oldValue: TextFieldValue,
+    newValue: TextFieldValue,
+    notallyModel: NoteModel,
+    onBodyUpdated: (TextFieldValue) -> Unit = {},
+): NoteBodyDeltaChange? {
+    val delta =
+        computeAnnotatedStringDelta(oldValue.annotatedString, newValue.annotatedString)
+            ?: return null
+
+    return NoteBodyDeltaChange(
+        notallyModel = notallyModel,
+        startOffset = delta.startOffset,
+        deletedText = delta.deletedText,
+        insertedText = delta.insertedText,
         oldSelection = oldValue.selection,
         newSelection = newValue.selection,
         onBodyUpdated = onBodyUpdated,
     )
 }
+
+fun computeListItemBodyDelta(
+    oldValue: AnnotatedString,
+    newValue: AnnotatedString,
+    itemId: Int,
+    notallyModel: NoteModel,
+    oldSelection: TextRange = TextRange.Zero,
+    newSelection: TextRange = TextRange.Zero,
+    onItemUpdated: (ListItem, AnnotatedString) -> Unit = { _, _ -> },
+): ListItemBodyDeltaChange? {
+    val delta = computeAnnotatedStringDelta(oldValue, newValue) ?: return null
+
+    return ListItemBodyDeltaChange(
+        notallyModel = notallyModel,
+        itemId = itemId,
+        startOffset = delta.startOffset,
+        deletedText = delta.deletedText,
+        insertedText = delta.insertedText,
+        oldSelection = oldSelection,
+        newSelection = newSelection,
+        onItemUpdated = onItemUpdated,
+    )
+}
+
+fun computeListItemBodyDelta(
+    oldText: String,
+    newText: String,
+    itemId: Int,
+    notallyModel: NoteModel,
+    oldSelection: TextRange = TextRange.Zero,
+    newSelection: TextRange = TextRange.Zero,
+    onItemUpdated: (ListItem) -> Unit = {},
+): ListItemBodyDeltaChange? =
+    computeListItemBodyDelta(
+        oldValue = AnnotatedString(oldText),
+        newValue = AnnotatedString(newText),
+        itemId = itemId,
+        notallyModel = notallyModel,
+        oldSelection = oldSelection,
+        newSelection = newSelection,
+        onItemUpdated = { item, _ -> onItemUpdated(item) },
+    )
+
+fun computeListItemBodyDelta(
+    oldValue: TextFieldValue,
+    newValue: TextFieldValue,
+    itemId: Int,
+    notallyModel: NoteModel,
+    onItemUpdated: (ListItem, AnnotatedString) -> Unit = { _, _ -> },
+): ListItemBodyDeltaChange? =
+    computeListItemBodyDelta(
+        oldValue = oldValue.annotatedString,
+        newValue = newValue.annotatedString,
+        itemId = itemId,
+        notallyModel = notallyModel,
+        oldSelection = oldValue.selection,
+        newSelection = newValue.selection,
+        onItemUpdated = onItemUpdated,
+    )

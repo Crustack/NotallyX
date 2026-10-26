@@ -7,6 +7,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextRange
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.philkes.notallyx.core.common.extensions.findAllOccurrences
 import com.philkes.notallyx.core.common.extensions.uniqueCurrentMillis
@@ -19,7 +21,9 @@ import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
+import com.philkes.notallyx.feature.editor.history.changes.ListItemBodyDeltaChange
 import com.philkes.notallyx.feature.editor.history.changes.ListItemsChange
+import com.philkes.notallyx.feature.editor.history.computeListItemBodyDelta
 import com.philkes.notallyx.feature.editor.listitem.checkItem
 import com.philkes.notallyx.feature.editor.listitem.cloneList
 import com.philkes.notallyx.feature.editor.listitem.initChildren
@@ -53,6 +57,63 @@ class EditListActivity : EditActivity(Type.LIST) {
             )
         )
         itemsVersionState.intValue++
+    }
+
+    private fun pushListItemBodyChange(change: ListItemBodyDeltaChange) {
+        val top = changeHistory.peek()
+        if (
+            !changeHistory.canRedo.value &&
+                (top is ListItemBodyDeltaChange) &&
+                top.tryMergeWith(change)
+        ) {
+            // Merged into top change
+        } else {
+            changeHistory.push(change)
+        }
+    }
+
+    fun applyListItemTextChange(
+        item: ListItem,
+        newBody: AnnotatedString,
+        oldBody: AnnotatedString = AnnotatedString(item.body),
+        oldSelection: TextRange = TextRange.Zero,
+        newSelection: TextRange = TextRange.Zero,
+    ) {
+        if (oldBody != newBody) {
+            val delta =
+                computeListItemBodyDelta(
+                    oldValue = oldBody,
+                    newValue = newBody,
+                    itemId = item.id,
+                    notallyModel = notallyModel,
+                    oldSelection = oldSelection,
+                    newSelection = newSelection,
+                    onItemUpdated = { _, _ ->
+                        itemsVersionState.intValue++
+                        if (isSearchActiveState.value) {
+                            updateSearchResults(searchQueryState.value)
+                        }
+                        resetIdleTimer()
+                    },
+                )
+            if (delta != null) {
+                pushListItemBodyChange(delta)
+            }
+            item.body = newBody.text
+            itemsVersionState.intValue++
+            if (isSearchActiveState.value) {
+                updateSearchResults(searchQueryState.value)
+            }
+            resetIdleTimer()
+        }
+    }
+
+    fun applyListItemTextChange(item: ListItem, newText: String) {
+        applyListItemTextChange(
+            item = item,
+            newBody = AnnotatedString(newText),
+            oldBody = AnnotatedString(item.body),
+        )
     }
 
     fun handleListAction(action: EditListAction) {
@@ -191,7 +252,13 @@ class EditListActivity : EditActivity(Type.LIST) {
 
                     override fun onItemTextChange(item: ListItem, text: String) {
                         if (item.body != text) {
-                            applyListChange { item.body = text }
+                            applyListItemTextChange(item, text)
+                        }
+                    }
+
+                    override fun onItemTextChange(item: ListItem, text: AnnotatedString) {
+                        if (item.body != text.text) {
+                            applyListItemTextChange(item, text)
                         }
                     }
 
