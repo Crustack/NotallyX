@@ -19,36 +19,40 @@ private const val TAG = "DatabaseBackupExtensions"
 
 suspend fun ContextWrapper.exportRawDatabase(fileUri: Uri) {
     val (_, databaseCopy) = copyDatabase()
-    val database =
-        SQLiteDatabase.openDatabase(databaseCopy.path, null, SQLiteDatabase.OPEN_READONLY)
-    database
-        .rawQuery(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
-            arrayOf("BaseNote"),
-        )
-        .use { cursor ->
-            if (cursor.count < 1) {
-                throw IOException("Database does not contain 'BaseNote' table!")
+    try {
+        SQLiteDatabase.openDatabase(databaseCopy.path, null, SQLiteDatabase.OPEN_READONLY).use {
+            database ->
+            database
+                .rawQuery(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+                    arrayOf("BaseNote"),
+                )
+                .use { cursor ->
+                    if (cursor.count < 1) {
+                        throw IOException("Database does not contain 'BaseNote' table!")
+                    }
+                }
+        }
+        val outputStream =
+            contentResolver.openOutputStream(fileUri)
+                ?: throw IOException("Failed to open output stream for $fileUri")
+        outputStream.use { outStream ->
+            (outStream as? FileOutputStream)?.channel?.truncate(0)
+            FileInputStream(databaseCopy).use { inputStream ->
+                inputStream.copyToLarge(outStream)
+                outStream.flush()
             }
         }
-    val outputStream =
-        contentResolver.openOutputStream(fileUri)
-            ?: throw IOException("Failed to open output stream for $fileUri")
-    outputStream.use { outputStream ->
-        (outputStream as? FileOutputStream)?.channel?.truncate(0)
-        FileInputStream(databaseCopy).use { inputStream ->
-            inputStream.copyToLarge(outputStream)
-            outputStream.flush()
+    } finally {
+        try {
+            databaseCopy.delete()
+        } catch (e: Exception) {
+            log(
+                TAG,
+                msg = "Failed to delete raw db copy file: '${databaseCopy.absolutePath}'",
+                throwable = e,
+            )
         }
-    }
-    try {
-        databaseCopy.delete()
-    } catch (e: Exception) {
-        log(
-            TAG,
-            msg = "Failed to delete raw db copy file: '${databaseCopy.absolutePath}'",
-            throwable = e,
-        )
     }
     contentResolver.query(fileUri, null, null, null, null)?.use { cursor ->
         val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)

@@ -22,7 +22,7 @@
 
 ## Evaluation Criteria Legend
 
-Each Composable is evaluated against the 7 core categories of `evaluate-jetpack-composables`:
+Each Composable is evaluated against the 7 core categories of `create-compose-ui-elements`:
 1. **Modifiers Usage & Application**: Accepts optional `modifier: Modifier = Modifier` parameter as first optional param, applied to root element.
 2. **Compose Previews Completeness**: Has at least one `@Preview` function wrapped in `NotallyXTheme` with realistic mock parameters.
 3. **State Hoisting & Parameter Hygiene**: UDF compliant, no parameter bloat (>5 parameters bundled into UI State / Events object).
