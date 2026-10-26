@@ -4,8 +4,8 @@
 
 **NotallyX** is an open-source, minimalistic, yet feature-rich note-taking Android application built with Kotlin. It provides users with a distraction-free experience for creating text notes, task lists, rich-text formatting, media attachments (images, audio, files), labels, reminders, and encrypted backups.
 
-- **Target Platform**: Android (Min SDK: 24, Compile/Target SDK: 36, JVM Target: 17).
-- **Core Architecture**: MVVM (Model-View-ViewModel) architecture backed by Android Jetpack components (Room, Kotlin Coroutines Flow/StateFlow, ViewModel, Navigation Component, WorkManager), Koin Dependency Injection, with ViewBinding and DataBinding.
+- **Target Platform**: Android (Min SDK: 24, Compile/Target SDK: 37, JVM Target: 17).
+- **Core Architecture**: Feature-first MVVM (Model-View-ViewModel) architecture backed by Android Jetpack components (Jetpack Compose, Room, Kotlin Coroutines Flow/StateFlow, ViewModel, Navigation 3, WorkManager), Koin Dependency Injection, and Jetpack Glance.
 - **Key Tenets**: User privacy, offline-first reliability, non-destructive data handling, robust backup/restore mechanisms, and clean Kotlin idioms.
 
 ---
@@ -19,28 +19,32 @@
 - **Code Formatter**: `ktfmt` with Kotlin standard style (`kotlinLangStyle`).
 
 ### UI Framework & Conventions
-- **UI System**: Android Views (XML layouts) with `MaterialComponents` / Material 3 styling.
-- **View Binding**: ViewBinding and DataBinding enabled (`buildFeatures { viewBinding = true; dataBinding = true }`).
-- **Navigation**: Jetpack Navigation Component with NavHostFragment and XML navigation graphs (`navigation.xml`).
-- **Lists**: `RecyclerView` using custom ViewHolders (`*VH`), ListAdapters / custom Adapters (`*Adapter`), and `ItemTouchHelper` for drag-and-drop / swipe interactions.
+- **UI Toolkit**: Pure Jetpack Compose with Material 3 (`androidx.compose.material3`).
+- **Theming**: `NotallyXTheme` supporting dynamic system colors, dark mode, and custom note colors.
+- **Navigation**: Jetpack Navigation 3 (`androidx.navigation3.runtime`, `androidx.navigation3.ui`) using type-safe `@Serializable` `NotallyNavKey` entries with `rememberNavBackStack`, `NavDisplay`, and `entryProvider`.
+- **Lists & Grids**: Compose `LazyColumn` and `LazyVerticalGrid` / `LazyVerticalStaggeredGrid`. Reordering and gestures use custom Compose drag-and-drop and swipe handlers.
+- **App Widgets**: Jetpack Glance (`androidx.glance.appwidget`, `NoteWidget.kt`).
+- **Legacy Interop**: `LockedActivity<T : ViewBinding>` uses `ComposeBinding` as a lightweight wrapper around `ComposeView`. Do not create XML layouts for new UI features.
 
 ### State Management & Concurrency
-- **State Holders**: `AndroidViewModel` / `ViewModel` subclasses handling business logic and exposing observable state (injected via Koin `viewModelOf` / `viewModel`).
-- **Observables**: Kotlin Coroutines `StateFlow` and `MutableStateFlow` (`asStateFlow()`).
+- **State Holders**: `ViewModel` / `AndroidViewModel` subclasses exposing observable state via `StateFlow` / `MutableStateFlow` (`asStateFlow()`), registered via Koin `viewModelOf`.
+- **UI Observation**: Lifecycle-aware collection using `collectAsStateWithLifecycle()` in composables, or `repeatOnLifecycleScope` in Activities.
 - **Async & Concurrency**: Kotlin Coroutines (`viewModelScope`, `CoroutineScope`).
 - **Dispatchers**:
   - `Dispatchers.Main`: UI interactions and StateFlow emissions.
   - `Dispatchers.IO`: Database operations, disk I/O, file exports/imports, compression, encryption.
-  - Always handle coroutine exceptions using `CoroutineExceptionHandler` or try-catch blocks around suspend calls.
+  - `Dispatchers.Default`: Intensive CPU calculations (e.g. search occurrences, text delta calculations).
+  - Handle coroutine exceptions using `CoroutineExceptionHandler` or try-catch blocks around suspend calls.
 
 ### Database & Storage Patterns
 - **Database**: Room Database (`NotallyDatabase`, versioned with KSP schema exports in `app/schemas/`).
-- **Encryption**: Optional SQLCipher database encryption (`net.zetetic:sqlcipher-android`) and AndroidX Security EncryptedSharedPreferences for sensitive settings.
+- **Migrations**: Incremental schema migrations defined in `core/database/DataSchemaMigrations.kt`.
+- **Encryption**: Optional SQLCipher database encryption (`net.zetetic:sqlcipher-android`) and AndroidX Security `EncryptedSharedPreferences` for sensitive preferences.
 - **Storage Strategy**:
   - Internal storage for private app data and default SQLite database.
   - Optional external storage mode (`dataInPublicFolder`).
   - Strict WAL checkpointing (`pragma WAL_CHECKPOINT(FULL)`) before any database export, backup, or replacement.
-- **Type Converters**: `Converters.kt` converts complex models (spans, attachments, folders, reminders, labels) to/from JSON strings.
+- **Type Converters**: `core/database/Converters.kt` converts complex models (spans, attachments, folders, reminders, labels) to/from JSON strings.
 
 ### App Documentation
 - **Docusaurus Website**: App user and developer documentation is located in `@documentation` (`/documentation`). It is a Docusaurus website containing feature guides, setup instructions, FAQs, settings, security & privacy details, and contribution docs.
@@ -55,23 +59,35 @@ NotallyX/
 │   ├── schemas/                                       # Room schema exports
 │   ├── src/
 │   │   ├── main/
-│   │   │   ├── AndroidManifest.xml                    # Manifest, permissions, activities
+│   │   │   ├── AndroidManifest.xml                    # Manifest, permissions, activities, receivers
 │   │   │   ├── java/com/philkes/notallyx/
 │   │   │   │   ├── NotallyXApplication.kt             # Application entry point & Koin initialization
-│   │   │   │   ├── data/                              # Data layer: Room DB, DAOs, entities, importers
+│   │   │   │   ├── core/                              # Core domain & infrastructure
+│   │   │   │   │   ├── common/                        # Extensions, results (Progress), error screens, BaseViewModel
+│   │   │   │   │   ├── database/                      # Room DB (NotallyDatabase), migrations, converters
+│   │   │   │   │   ├── preference/                    # NotallyXPreferences, sorting models
+│   │   │   │   │   ├── security/                      # Biometrics, encryption, SQLCipher, LockedActivity
+│   │   │   │   │   └── ui/                            # Compose theme, BaseNoteCard, dialogs, UI components
+│   │   │   │   ├── data/                              # Data layer
 │   │   │   │   │   ├── dao/                           # Room DAOs (BaseNoteDao, LabelDao, CommonDao)
-│   │   │   │   │   ├── imports/                       # Importers (Google Keep, Evernote, Quillpad, JSON, TXT)
-│   │   │   │   │   └── model/                         # Entities & data models (BaseNote, Label, Attachment)
-│   │   │   │   ├── di/                                # Dependency Injection: Koin modules (AppModule.kt)
-│   │   │   │   ├── presentation/                      # Presentation layer: UI & ViewModels
-│   │   │   │   │   ├── activity/                      # Activities & Fragments (MainActivity, EditNoteActivity)
-│   │   │   │   │   ├── view/                          # ViewHolders, Adapters, custom UI components
-│   │   │   │   │   └── viewmodel/                     # ViewModels (BaseNoteModel, NotallyModel)
-│   │   │   │   └── utils/                             # Utilities: Backup, security, formatting, media
-│   │   │   └── res/                                   # Resources (layouts, drawables, navigation, values)
-│   │   ├── test/                                      # Unit & Robolectric test suite and resources
-│   │   └── androidTest/                               # Instrumented & UI tests
-│   └── build.gradle.kts                               # App-level build configurations & dependencies
+│   │   │   │   │   └── model/                         # Entities & models (BaseNote, Label, Folder, Item)
+│   │   │   │   ├── di/                                # Koin modules (AppModule, FeatureModule, DatabaseModule)
+│   │   │   │   ├── feature/                           # Feature-first modules
+│   │   │   │   │   ├── editor/                        # Note & list editing (EditActivity, NoteModel, bottom sheets)
+│   │   │   │   │   ├── labels/                        # Labels screen, selector, viewmodels
+│   │   │   │   │   ├── main/                          # MainActivity, NotallyApp, routes/ (Notes, Archived, Deleted, etc.)
+│   │   │   │   │   ├── media/                         # Audio recording/playback, image viewer
+│   │   │   │   │   ├── migration/                     # Backup, restore, exporters, external importers (Keep, Evernote, etc.)
+│   │   │   │   │   ├── reminder/                      # Reminders screen, notifications, alarm receivers
+│   │   │   │   │   ├── settings/                      # Settings screen, preference rows, dialogs
+│   │   │   │   │   └── widget/                        # Jetpack Glance widgets (NoteWidget)
+│   │   │   │   └── navigation/                        # Navigation 3 keys (NotallyNavKey)
+│   │   │   └── res/                                   # Resources (strings, drawables, XML descriptors)
+│   │   ├── test/                                      # Unit & Robolectric test suite, Roborazzi screenshot tests
+│   │   ├── androidTest/                               # Instrumented UI tests extending UiTestBase
+│   │   └── screenshotTestDebug/                       # Compose Screenshot Testing previews
+│   └── build.gradle.kts                               # App build configurations & dependencies
+├── test-lib/                                          # Shared test utilities (UiTestBase, UiUtils, Fakes)
 ├── documentation/                                     # Docusaurus website for app documentation (@documentation)
 ├── build.gradle.kts                                   # Root build configuration
 └── settings.gradle.kts                                # Project & repository settings
@@ -82,17 +98,21 @@ NotallyX/
 ## Agent Guidelines & Constraints
 
 ### Do's
+- **Compose First**: Build user interfaces with Jetpack Compose composables and Material 3. When creating or refactoring UI elements, follow the [.agents/skills/evaluate-jetpack-composables](.agents/skills/create-compose-ui-elements/SKILL.md) skill.
+- **State Hoisting**: Keep screen composables stateless and testable by hoisting state to ViewModel `StateFlow` and exposing event callbacks.
+- **Use Navigation 3**: Manage destinations with type-safe `NotallyNavKey` entries in `NavDisplay`.
 - **Preserve Data Integrity**: Always safeguard user notes. Never drop tables destructively without valid migration paths.
 - **Run Checkpoints Before DB Copy**: When exporting, backing up, or copying SQLite files, call `database.checkpoint()` to ensure the WAL is flushed.
-- **Use ViewBinding**: Inflate views using generated ViewBinding bindings (e.g., `ActivityEditBinding.inflate(layoutInflater)`).
 - **Offload Heavy Work**: Perform file I/O, parsing (JSON/Markdown/HTML), and database queries on `Dispatchers.IO`.
-- **Format with ktfmt**: Ensure Kotlin files comply with `ktfmt` by running `./gradlew ktfmtFormat`.
-- **Follow Existing Patterns**: Match existing naming conventions (`*Activity`, `*Fragment`, `*Model`, `*VH`, `*Adapter`, `*Dao`).
-- **Write Unit, Robolectric & Roborazzi Tests**: Add unit tests under `app/src/test/` and Roborazzi screenshot tests whenever introducing business logic, migration steps, parser utilities, or UI changes.
+- **Format with ktfmt**: Ensure Kotlin files comply with `ktfmt` standard style (`./gradlew ktfmtFormat`).
+- **Follow Existing Patterns**: Match existing naming conventions (`*Activity`, `*Route`, `*Screen`, `*ViewModel`, `*Dao`, `*NavKey`).
+- **Write Unit, UI & Screenshot Tests**: Add unit tests under `app/src/test/`, instrumented tests under `app/src/androidTest/`, and Roborazzi / Compose screenshot tests whenever introducing features, migration steps, or UI changes.
 
 ### Don'ts
+- **NO XML Layouts for New Screens**: Use Jetpack Compose composables for all new UI screens, dialogs, and components.
+- **NO Direct State Mutation in UI Tests**: Always interact through Compose semantics (`performClick()`, `performTextInput()`) or Espresso actions. Never directly assign activity/viewmodel state fields in UI tests.
 - **NO Blocking Main Thread**: Never invoke synchronous database queries, heavy regex, or file operations on the main thread.
-- **NO Raw SQL Injections**: Use Room DAO annotations (`@Query`, `@Insert`, `@Update`, `@Delete`) or properly parameterised `SupportSQLiteQuery`.
+- **NO Raw SQL Injections**: Use Room DAO annotations (`@Query`, `@Insert`, `@Update`, `@Delete`) or properly parameterized `SupportSQLiteQuery`.
 - **NO Hardcoded Strings**: Use string resources (`R.string.*`) for all UI-visible text to preserve localization support across 30+ languages.
 - **NO Unapproved Third-Party Libraries**: Avoid adding heavy external dependencies unless explicitly requested.
 
@@ -101,69 +121,62 @@ NotallyX/
 ## Common Tasks & Workflows
 
 ### 1. Adding a New Screen / Feature
-1. **Layout**: Create an XML layout in `app/src/main/res/layout/` with ViewBinding support.
-2. **ViewModel**: Expose `StateFlow` state in an existing or new `ViewModel` (`AndroidViewModel` / base view models).
-3. **Activity/Fragment**:
-   - Create the Activity in `presentation/activity/` or Fragment in `presentation/activity/main/fragment/`.
-   - Bind views using `ViewBinding`.
-   - Collect ViewModel `StateFlow` states in `onCreate()` / `onViewCreated()` using lifecycle-aware collection (`viewLifecycleOwner.lifecycleScope.launch`).
-4. **Navigation**: If part of the main navigation, declare the fragment/destination in `app/src/main/res/navigation/navigation.xml` and register menu actions in `MainActivity`.
-5. **Manifest**: Register new Activities in `app/src/main/AndroidManifest.xml`.
+> [!TIP]
+> When creating any new Compose UI elements (screens, routes, components, or dialogs), strictly follow the templates and guidelines in [.agents/skills/evaluate-jetpack-composables/SKILL.md](.agents/skills/create-compose-ui-elements/SKILL.md) for modifier hygiene, state hoisting, M3 theming, previews, and performance.
 
-#### Example ViewModel Pattern with StateFlow:
+1. **Destination Key**: Define a `@Serializable` key in `navigation/NotallyNavKey.kt` implementing `NotallyNavKey`.
+2. **ViewModel**: Expose `StateFlow` state in a `ViewModel` in `feature/<name>/` and register it in `di/FeatureModule.kt` via `viewModelOf(::MyViewModel)`.
+3. **Screen Composable**: Build a stateless Composable in `feature/<name>/<Name>Screen.kt` accepting data state and hoisted callback lambdas (`onItemClick`, `onBackClick`).
+4. **Route Composable**: If hosted in `MainActivity`, create a Route in `feature/main/routes/<name>/<Name>Route.kt` that injects the ViewModel with `koinViewModel()`, collects state via `collectAsStateWithLifecycle()`, and binds callbacks to the stateless screen.
+5. **Navigation Entry**: Register the destination in `feature/main/NotallyApp.kt` inside `NavDisplay`'s `entryProvider`:
+   ```kotlin
+   entry<NotallyNavKey.MyDestination> {
+       MyRoute(...)
+   }
+   ```
+6. **Previews**: Add `@Preview` functions wrapped in `NotallyXTheme` to verify the UI across light and dark themes.
+
+#### Example Route and Screen Pattern:
 ```kotlin
-class FeatureViewModel(application: Application) : AndroidViewModel(application) {
-    val uiState: StateFlow<FeatureUiState>
-        field = MutableStateFlow<FeatureUiState>(FeatureUiState.Loading)
-
-    fun loadData() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val data = fetchData()
-                uiState.value = FeatureUiState.Success(data)
-            } catch (e: Exception) {
-                uiState.value = FeatureUiState.Error(e.message ?: "Unknown error")
-            }
-        }
-    }
+@Composable
+fun FeatureRoute(
+    onNavigateBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: FeatureViewModel = koinViewModel(),
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    FeatureScreen(
+        state = uiState,
+        onRefresh = viewModel::refresh,
+        onBackClick = onNavigateBack,
+        modifier = modifier,
+    )
 }
-```
 
-#### Example Fragment StateFlow Collection Pattern:
-```kotlin
-class FeatureFragment : Fragment(R.layout.fragment_feature) {
-    private var binding: FragmentFeatureBinding? = null
-    private val viewModel: FeatureViewModel by viewModels()
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        binding = FragmentFeatureBinding.bind(view)
-
-        observeViewModel()
-        viewModel.loadData()
-    }
-
-    private fun observeViewModel() {
-        viewLifecycleOwner.repeatOnLifecycleScope {
-            viewModel.uiState.collect { state ->
-                when (state) {
-                    is FeatureUiState.Loading -> binding.progressBar.visibility = View.VISIBLE
-                    is FeatureUiState.Success -> {
-                        binding.progressBar.visibility = View.GONE
-                        binding.textViewContent.text = state.data
+@Composable
+fun FeatureScreen(
+    state: FeatureUiState,
+    onRefresh: () -> Unit,
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.feature_title)) },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                        )
                     }
-                    is FeatureUiState.Error -> {
-                        binding.progressBar.visibility = View.GONE
-                        showToast(state.message)
-                    }
-                }
-            }
-        }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        binding = null
+                },
+            )
+        },
+        modifier = modifier,
+    ) { innerPadding ->
+        // Render content with innerPadding
     }
 }
 ```
@@ -174,7 +187,7 @@ class FeatureFragment : Fragment(R.layout.fragment_feature) {
 When modifying Room entities (`BaseNote`, `Label`, etc.):
 1. Update entity classes in `com.philkes.notallyx.data.model`.
 2. Increment the `version` number in `@Database(entities = [...], version = NEW_VERSION)` in `NotallyDatabase.kt`.
-3. Define the `Migration` object in `NotallyDatabase.kt`:
+3. Define the `Migration` object in `core/database/DataSchemaMigrations.kt` (or `NotallyDatabase.kt`):
    ```kotlin
    val MIGRATION_11_12 = object : Migration(11, 12) {
        override fun migrate(db: SupportSQLiteDatabase) {
@@ -182,60 +195,39 @@ When modifying Room entities (`BaseNote`, `Label`, etc.):
        }
    }
    ```
-4. Add the migration object to `MIGRATIONS` array in `NotallyDatabase.kt`.
+4. Add the migration object to the `MIGRATIONS` array in `NotallyDatabase.kt`.
 5. Run `./gradlew kspDebugKotlin` to regenerate the Room schema JSON in `app/schemas/`.
-6. Write migration verification tests in `app/src/test/kotlin/com/philkes/notallyx/data/`.
+6. Write migration verification tests in `app/src/test/kotlin/com/philkes/notallyx/data/` or `app/src/androidTest/kotlin/com/philkes/notallyx/utils/DataSchemaMigrationsTest.kt`.
 
 ---
 
-### 3. Writing and Running Tests & Roborazzi Screenshot Tests
+### 3. Writing and Running Tests
 
-The test suite contains unit tests, Robolectric tests (`testOptions.unitTests.isIncludeAndroidResources = true`), and Roborazzi screenshot tests.
+#### Test Types & Targets:
+- **Unit & Robolectric Tests**: `app/src/test/` for business logic, importers, formatters, and Robolectric lifecycle tests.
+- **Roborazzi Screenshot Tests**: `app/src/test/kotlin/.../ScreenshotTests.kt` with reference images in `app/src/screenshots/`.
+- **Compose Screenshot Tests**: `app/src/screenshotTestDebug/` validating composable previews against references.
+- **Instrumented UI Tests**: `app/src/androidTest/` extending `UiTestBase` from `:test-lib` for end-to-end user flows.
 
 #### Running Tests via CLI:
 ```bash
-# Run all unit tests
-./gradlew test
-
-# Run debug unit tests specifically
+# Run unit and Robolectric tests
 ./gradlew testDebugUnitTest
 
-# Record Roborazzi reference screenshots
-./gradlew recordRoborazziDebug
+# Roborazzi screenshot tests
+./gradlew verifyRoborazziDebug        # Verify against reference images
+./gradlew recordRoborazziDebug        # Record new reference images
 
-# Verify Roborazzi screenshot tests against reference images
-./gradlew verifyRoborazziDebug
+# Compose screenshot preview tests
+./gradlew validateDebugScreenshotTest  # Validate Compose screenshot tests
+./gradlew updateDebugScreenshotTest    # Update Compose screenshot reference images
 
-# Reformat code with ktfmt
-./gradlew ktfmtFormat
+# Instrumented UI tests (connected device or emulator)
+./gradlew connectedDebugAndroidTest
 
-# Check code formatting without applying
-./gradlew ktfmtCheck
-```
-
-#### Example Unit / Robolectric Test Pattern:
-```kotlin
-@RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
-class NoteHelperTest {
-
-    @get:Rule
-    val instantTaskExecutorRule = InstantTaskExecutorRule()
-
-    @Test
-    fun testNoteTransformation() {
-        val note = BaseNote(
-            id = 1L,
-            title = "Test Title",
-            body = "Test Body",
-            type = Type.NOTE,
-            folder = Folder.NOTES
-        )
-
-        val result = note.toSearchResult()
-        assertThat(result.title).isEqualTo("Test Title")
-    }
-}
+# Code formatting (ktfmt)
+./gradlew ktfmtCheck                 # Check code formatting without applying
+./gradlew ktfmtFormat                # Reformat all Kotlin files
 ```
 
 ---
@@ -246,24 +238,21 @@ class NoteHelperTest {
 2. **Naming Conventions**:
    - Entities & Models: PascalCase data classes (`BaseNote`, `Label`, `Attachment`).
    - DAOs: Interface suffix `*Dao` (`BaseNoteDao`, `LabelDao`).
-   - ViewModels: `*Model` or `*ViewModel` (`BaseNoteModel`, `NotallyModel`).
-   - Activities & Fragments: `*Activity`, `*Fragment` (`EditNoteActivity`, `NotesFragment`).
-   - Composables: PascalCase functions (`BaseNoteCard`, `NotesGridScreen`).
+   - ViewModels: `*ViewModel` or `*Model` (`MainActivityViewModel`, `NoteModel`).
+   - Navigation Keys: PascalCase data class/object implementing `NotallyNavKey` (`NotallyNavKey.Notes`).
+   - Composables: PascalCase functions (`BaseNoteCard`, `NotesGridScreen`, `SettingsRoute`).
    - Preferences: Wrapper properties in `NotallyXPreferences`.
 3. **Error Handling**:
    - Catch specific exceptions rather than swallowing generic `Throwable`.
-   - Provide user feedback using `showToast`, `showSnackbar`, or error dialogs.
+   - Provide user feedback using `showToast`, `showSnackbar`, or Compose dialog state.
    - For background jobs, update progress observers (`Progress.ProgressUpdate`, `MigrationProgress`, etc.).
 
 ---
 
-## Agent skills
+## Agent Skills & Context Pointers
 
-### Issue tracker
-
-Local markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
-
-### Domain docs
-
-Single-context layout (`GLOSSARY.md` + `docs/adr/`). See `docs/agents/domain.md`.
-
+- **Issue Tracker**: Local markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
+- **Domain Docs**: Single-context layout (`GLOSSARY.md` + `docs/adr/`). See `docs/agents/domain.md`.
+- **UI Testing Guide**: Standardized patterns for instrumented Compose and hybrid tests (`UiTestBase`, `UiUtils`, `runBlocking` seeding). See `.agents/skills/write-ui-tests/SKILL.md`.
+- **Roborazzi Screenshot Tests**: Workflow and best practices for JVM screenshot tests. See `.agents/skills/roborazzi/SKILL.md`.
+- **Compose UI Elements (Creation & Evaluation)**: Canonical templates, guidelines, and audit checklists for creating new Compose screens, routes, components, and dialogs. See [.agents/skills/evaluate-jetpack-composables/SKILL.md](.agents/skills/create-compose-ui-elements/SKILL.md).
