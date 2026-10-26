@@ -41,6 +41,7 @@ import com.philkes.notallyx.core.preference.NotesView
 import com.philkes.notallyx.core.preference.SortDirection
 import com.philkes.notallyx.core.ui.extensions.sortWith
 import com.philkes.notallyx.core.ui.views.TestTags
+import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Color
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
@@ -259,6 +260,13 @@ class MainActivityTest : UiTestBase() {
 
             // 5. Test onChangeColor()
             composeTestRule.onNodeWithText(context.getString(R.string.change_color)).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(BaseNote.COLOR_NEW))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithContentDescription(BaseNote.COLOR_NEW).performClick()
             composeTestRule.waitUntil(10_000) {
                 composeTestRule
                     .onAllNodes(hasContentDescription(Color.CORAL.toColorString()))

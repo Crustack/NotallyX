@@ -675,9 +675,10 @@ class SettingsRouteTest : UiTestBase() {
         val initialTheme = preferences.theme.value
         val initialDynamicColors = preferences.useDynamicColors.value
 
+        composeTestRule.navigateTo(NotallyNavKey.Settings)
+
         // Ensure dynamic colors start disabled for baseline theme checks
         if (initialDynamicColors) {
-            composeTestRule.navigateTo(NotallyNavKey.Settings)
             composeTestRule.onNodeWithText(themeLabel).performScrollTo().performClick()
             composeTestRule
                 .onNode(hasText(dynamicColorsLabel) and hasAnyAncestor(isComposeDialog()))
@@ -687,7 +688,6 @@ class SettingsRouteTest : UiTestBase() {
         }
 
         // 1. Verify dialog cancellation does not mutate theme
-        composeTestRule.navigateTo(NotallyNavKey.Settings)
         composeTestRule.onNodeWithText(themeLabel).performScrollTo().performClick()
         composeTestRule
             .onNode(hasText(lightLabel) and hasAnyAncestor(isComposeDialog()))
@@ -723,7 +723,6 @@ class SettingsRouteTest : UiTestBase() {
         assertEquals(Theme.SUPER_DARK, preferences.theme.value)
 
         // 5. Switch to Follow System theme and verify preference
-        composeTestRule.navigateTo(NotallyNavKey.Settings)
         composeTestRule.onNodeWithText(themeLabel).performScrollTo().performClick()
         composeTestRule
             .onNode(hasText(followSystemLabel) and hasAnyAncestor(isComposeDialog()))
@@ -733,7 +732,6 @@ class SettingsRouteTest : UiTestBase() {
         assertEquals(Theme.FOLLOW_SYSTEM, preferences.theme.value)
 
         // 6. Test Dynamic Colors: toggle dynamic colors
-        composeTestRule.navigateTo(NotallyNavKey.Settings)
         composeTestRule.onNodeWithText(themeLabel).performScrollTo().performClick()
         composeTestRule
             .onNode(hasText(dynamicColorsLabel) and hasAnyAncestor(isComposeDialog()))
@@ -743,7 +741,6 @@ class SettingsRouteTest : UiTestBase() {
         assertTrue(preferences.useDynamicColors.value)
 
         // Restore initial settings
-        composeTestRule.navigateTo(NotallyNavKey.Settings)
         if (preferences.useDynamicColors.value != initialDynamicColors) {
             composeTestRule.onNodeWithText(themeLabel).performScrollTo().performClick()
             composeTestRule
