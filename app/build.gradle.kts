@@ -461,12 +461,12 @@ val generateLocalesPreview =
 
             val locales = mutableListOf("en" to "en-US", "de" to "de-DE")
             // TODO: check which locales should really be included
-//            localeDirs.forEach { dir ->
-//                val rawTag = dir.name.removePrefix("values-")
-//                val tag = rawTag.replace("-r", "-")
-//                val name = defaultRegionMap[rawTag] ?: defaultRegionMap[tag] ?: tag
-//                locales.add(tag to name)
-//            }
+            //            localeDirs.forEach { dir ->
+            //                val rawTag = dir.name.removePrefix("values-")
+            //                val tag = rawTag.replace("-r", "-")
+            //                val name = defaultRegionMap[rawTag] ?: defaultRegionMap[tag] ?: tag
+            //                locales.add(tag to name)
+            //            }
 
             val annotations =
                 locales.joinToString("\n") { (code, label) ->
@@ -595,7 +595,6 @@ dependencies {
     implementation(libs.subsampling.scale.image.view)
     implementation(libs.glide)
     implementation(libs.swipe.drawer)
-    implementation(libs.colorpickerview)
     implementation(libs.material)
     implementation(libs.jsr305)
     implementation(libs.fastscroll)
@@ -611,6 +610,7 @@ dependencies {
     // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
+    implementation(libs.compose.colorpicker)
     implementation(libs.androidx.glance.appwidget)
     debugImplementation(libs.androidx.glance.appwidgetPreview)
     debugImplementation(libs.androidx.glance.preview)

@@ -10,6 +10,7 @@ import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.dao.LabelDao
+import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.ColorString
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.feature.migration.ExportMimeType
@@ -29,7 +30,11 @@ sealed interface MainActiveDialog {
     data class ColorPicker(
         val colors: Set<ColorString>,
         val currentColor: ColorString?,
+        val defaultColor: ColorString = BaseNote.COLOR_DEFAULT,
         val onColorSelected: (selectedColor: ColorString) -> Unit,
+        val onColorChanged: ((oldColor: ColorString, newColor: ColorString) -> Unit)? = null,
+        val onColorDeleted: ((colorToDelete: ColorString, newColor: ColorString) -> Unit)? = null,
+        val onSetDefaultColor: ((ColorString) -> Unit)? = null,
     ) : MainActiveDialog
 
     data class ExportFormat(
@@ -106,9 +111,22 @@ class MainActivityViewModel(app: Application, val preferences: NotallyXPreferenc
     fun showColorPicker(
         colors: Set<ColorString>,
         currentColor: ColorString?,
+        defaultColor: ColorString = BaseNote.COLOR_DEFAULT,
         onColorSelected: (selectedColor: ColorString) -> Unit,
+        onColorChanged: ((oldColor: ColorString, newColor: ColorString) -> Unit)? = null,
+        onColorDeleted: ((colorToDelete: ColorString, newColor: ColorString) -> Unit)? = null,
+        onSetDefaultColor: ((ColorString) -> Unit)? = null,
     ) {
-        activeDialog.value = MainActiveDialog.ColorPicker(colors, currentColor, onColorSelected)
+        activeDialog.value =
+            MainActiveDialog.ColorPicker(
+                colors = colors,
+                currentColor = currentColor,
+                defaultColor = defaultColor,
+                onColorSelected = onColorSelected,
+                onColorChanged = onColorChanged,
+                onColorDeleted = onColorDeleted,
+                onSetDefaultColor = onSetDefaultColor,
+            )
     }
 
     fun showExportFormatDialog(onFormatSelected: (mimeType: ExportMimeType) -> Unit) {

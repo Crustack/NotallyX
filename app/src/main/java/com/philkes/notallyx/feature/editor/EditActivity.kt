@@ -33,7 +33,6 @@ import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.security.ComposeBinding
 import com.philkes.notallyx.core.security.LockedActivity
-import com.philkes.notallyx.core.ui.dialog.ColorPickerDialog
 import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.dialog.DualTextInputDialog
 import com.philkes.notallyx.core.ui.dialog.ErrorDialog
@@ -41,6 +40,7 @@ import com.philkes.notallyx.core.ui.dialog.LinkOptionsDialog
 import com.philkes.notallyx.core.ui.dialog.ListDialog
 import com.philkes.notallyx.core.ui.dialog.ProgressDialog
 import com.philkes.notallyx.core.ui.dialog.TextInputDialog
+import com.philkes.notallyx.core.ui.dialog.color.ColorPickerDialog
 import com.philkes.notallyx.core.ui.extensions.collectIn
 import com.philkes.notallyx.core.ui.extensions.extractColor
 import com.philkes.notallyx.core.ui.extensions.isLightColor
@@ -553,10 +553,23 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
             is EditorDialogState.ColorPicker -> {
                 ColorPickerDialog(
                     currentColor = dialogState.currentColor,
+                    colors = dialogState.colors,
+                    defaultColor = dialogState.defaultColor,
                     onDismissRequest = { notallyModel.activeDialog.value = null },
                     onColorSelected = { selectedColor ->
                         dialogState.onColorSelected(selectedColor)
                         notallyModel.activeDialog.value = null
+                    },
+                    onColorChanged = { oldColor, newColor ->
+                        dialogState.onColorChanged?.invoke(oldColor, newColor)
+                        notallyModel.activeDialog.value = null
+                    },
+                    onColorDeleted = { colorToDelete, newColor ->
+                        dialogState.onColorDeleted?.invoke(colorToDelete, newColor)
+                        notallyModel.activeDialog.value = null
+                    },
+                    onSetDefaultColor = { newDefault ->
+                        dialogState.onSetDefaultColor?.invoke(newDefault)
                     },
                 )
             }

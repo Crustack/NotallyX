@@ -18,7 +18,7 @@ import com.philkes.notallyx.core.preference.NotesSortBy
 import com.philkes.notallyx.core.preference.Theme
 import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.core.ui.components.BaseNoteCard
-import com.philkes.notallyx.core.ui.dialog.ColorPickerDialog
+import com.philkes.notallyx.core.ui.dialog.color.ColorPickerDialog
 import com.philkes.notallyx.core.ui.extensions.extractColor
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.BaseNote

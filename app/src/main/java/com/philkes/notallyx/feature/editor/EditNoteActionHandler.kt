@@ -347,6 +347,8 @@ class EditNoteActionHandler(
     private fun changeColor() {
         activity.lifecycleScope.launch {
             val database = NotallyDatabase.getDatabase(activity).value ?: return@launch
+            val preferences =
+                com.philkes.notallyx.core.preference.NotallyXPreferences.getInstance(activity)
             val colors: MutableSet<ColorString> =
                 withContext(Dispatchers.IO) {
                         database.getBaseNoteDao().getAllColors().toMutableSet()
@@ -359,10 +361,40 @@ class EditNoteActionHandler(
                 EditorDialogState.ColorPicker(
                     currentColor = notallyModel.color,
                     colors = colors,
+                    defaultColor = preferences.defaultNoteColor.value,
                     onColorSelected = { selectedColor ->
                         notallyModel.color = selectedColor
                         activity.setColor()
                         activity.resetIdleTimer()
+                    },
+                    onColorChanged = { oldColor, newColor ->
+                        activity.lifecycleScope.launch(Dispatchers.IO) {
+                            database.getBaseNoteDao().updateColor(oldColor, newColor)
+                        }
+                        if (notallyModel.color == oldColor) {
+                            notallyModel.color = newColor
+                            activity.setColor()
+                        }
+                        if (preferences.defaultNoteColor.value == oldColor) {
+                            preferences.defaultNoteColor.save(newColor)
+                        }
+                        activity.resetIdleTimer()
+                    },
+                    onColorDeleted = { colorToDelete, newColor ->
+                        activity.lifecycleScope.launch(Dispatchers.IO) {
+                            database.getBaseNoteDao().updateColor(colorToDelete, newColor)
+                        }
+                        if (notallyModel.color == colorToDelete) {
+                            notallyModel.color = newColor
+                            activity.setColor()
+                        }
+                        if (preferences.defaultNoteColor.value == colorToDelete) {
+                            preferences.defaultNoteColor.save(BaseNote.COLOR_DEFAULT)
+                        }
+                        activity.resetIdleTimer()
+                    },
+                    onSetDefaultColor = { newDefault ->
+                        preferences.defaultNoteColor.save(newDefault)
                     },
                 )
         }
