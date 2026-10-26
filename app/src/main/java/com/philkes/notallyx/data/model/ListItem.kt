@@ -37,10 +37,6 @@ data class ListItem(
             this.checkedTimestamp == other.checkedTimestamp)
     }
 
-    fun isChildOf(other: ListItem): Boolean {
-        return !other.isChild && other.children.contains(this)
-    }
-
     override fun toString(): String {
         return "${if (isChild) " >" else ""}${if (checked) "x" else ""} ${body}${
             if (children.isNotEmpty()) "(${

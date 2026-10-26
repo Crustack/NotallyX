@@ -1,33 +1,23 @@
 package com.philkes.notallyx.feature.migration.backup
 
-import android.content.Context
 import android.content.ContextWrapper
-import android.content.SharedPreferences
 import android.database.Cursor
 import android.database.sqlite.SQLiteBlobTooBigException
 import android.database.sqlite.SQLiteDatabase
-import android.graphics.BitmapFactory
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.util.Log
 import androidx.core.database.getLongOrNull
-import androidx.documentfile.provider.DocumentFile
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.SUBFOLDER_AUDIOS
 import com.philkes.notallyx.core.common.extensions.SUBFOLDER_FILES
 import com.philkes.notallyx.core.common.extensions.SUBFOLDER_IMAGES
 import com.philkes.notallyx.core.common.extensions.clearDirectory
 import com.philkes.notallyx.core.common.extensions.copyToFile
-import com.philkes.notallyx.core.common.extensions.determineMimeTypeAndExtension
 import com.philkes.notallyx.core.common.extensions.getCurrentAudioDirectory
 import com.philkes.notallyx.core.common.extensions.getCurrentFilesDirectory
 import com.philkes.notallyx.core.common.extensions.getCurrentImagesDirectory
-import com.philkes.notallyx.core.common.extensions.getFileName
 import com.philkes.notallyx.core.common.extensions.log
-import com.philkes.notallyx.core.common.extensions.mimeTypeToFileExtension
-import com.philkes.notallyx.core.common.extensions.rename
 import com.philkes.notallyx.core.common.extensions.toMessage
-import com.philkes.notallyx.core.common.result.FileError
 import com.philkes.notallyx.core.common.result.ImportProgress
 import com.philkes.notallyx.core.common.result.ImportStage
 import com.philkes.notallyx.core.common.result.Progress
@@ -41,7 +31,6 @@ import com.philkes.notallyx.core.security.SQLCipherUtils
 import com.philkes.notallyx.core.security.decryptDatabase
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
-import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Folder
@@ -49,13 +38,10 @@ import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.parseToColorString
-import com.philkes.notallyx.feature.editor.NoteModel.FileType
 import com.philkes.notallyx.feature.migration.imports.ImportResult
 import com.philkes.notallyx.feature.reminder.cancelPinAndReminders
 import com.philkes.notallyx.feature.reminder.pinAndScheduleReminders
 import java.io.File
-import java.io.FileInputStream
-import java.io.InputStream
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
@@ -64,12 +50,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
 import net.lingala.zip4j.ZipFile
 import net.lingala.zip4j.exception.ZipException
-import org.json.JSONArray
-import org.json.JSONObject
 
 private const val TAG = "ImportExtensions"
 
-fun getOptionalColumns(db: SQLiteDatabase, tableName: String): Array<String> {
+private fun getOptionalColumns(db: SQLiteDatabase, tableName: String): Array<String> {
     val existingColumns = mutableSetOf<String>()
 
     // 1. Get the actual columns currently in the DB
@@ -124,7 +108,7 @@ data class BaseNotesImport(
     val corruptedNotes: Int,
 )
 
-fun ContextWrapper.readBaseNotes(
+private fun ContextWrapper.readBaseNotes(
     dbFile: File,
     progress: MutableStateFlow<Progress?>? = null,
 ): BaseNotesImport {
@@ -467,188 +451,3 @@ private fun <T> Cursor.toList(convert: (cursor: Cursor) -> T): Pair<ArrayList<T>
     } finally {
         ConverterErrorReporter.enabled.set(true)
     }
-
-fun Context.importPreferences(
-    jsonFile: Uri,
-    to: SharedPreferences.Editor,
-    ignore: Set<String>,
-): Boolean {
-    try {
-        val inputStream: InputStream? = contentResolver.openInputStream(jsonFile)
-        val jsonString = inputStream?.bufferedReader()?.use { it.readText() } ?: return false
-        val jsonObject = JSONObject(jsonString)
-        for (key in jsonObject.keys()) {
-            if (key in ignore) {
-                continue
-            }
-            when (val value = jsonObject.get(key)) {
-                is Int -> to.putInt(key, value)
-                is Boolean -> to.putBoolean(key, value)
-                is Double -> to.putFloat(key, value.toFloat())
-                is Long -> to.putLong(key, value)
-                is JSONArray -> {
-                    val set = (0 until value.length()).map { value.getString(it) }.toSet()
-                    to.putStringSet(key, set)
-                }
-
-                else -> to.putString(key, value.toString())
-            }
-        }
-        return to.commit()
-    } catch (e: Exception) {
-        if (this is ContextWrapper) {
-            log(TAG, "Import preferences from '$jsonFile' failed", throwable = e)
-        } else {
-            Log.e(TAG, "Import preferences from '$jsonFile' failed", e)
-        }
-        return false
-    }
-}
-
-suspend fun Context.importFile(
-    uri: Uri,
-    directory: File,
-    fileType: FileType,
-    errorWhileRenaming: Int = R.string.error_while_renaming_file,
-    proposedMimeType: String? = null,
-): Pair<FileAttachment?, FileError?> {
-    return withContext(Dispatchers.IO) {
-        val document =
-            requireNotNull(
-                DocumentFile.fromSingleUri(this@importFile, uri),
-                { "importFile: could not read file from: '$uri'" },
-            )
-        val displayName = document.name ?: getString(R.string.unknown_name)
-        try {
-
-            /*
-            If we have reached this point, an SD card (emulated or real) exists and externalRoot
-            is not null. externalRoot.exists() can be false if the folder `Images` has been deleted after
-            the previous line, but externalRoot itself can't be null
-            */
-            val temp = File(directory, "Temp")
-
-            val inputStream =
-                requireNotNull(
-                    contentResolver.openInputStream(uri),
-                    { "importFile: InputStream for '$uri' is null" },
-                )
-            inputStream.copyToFile(temp)
-
-            val originalName = getFileName(uri)
-            when (fileType) {
-                FileType.IMAGE -> {
-                    val options = BitmapFactory.Options()
-                    options.inJustDecodeBounds = true
-                    BitmapFactory.decodeFile(temp.path, options)
-                    val mimeType = options.outMimeType ?: proposedMimeType
-
-                    if (mimeType != null) {
-                        val extension = mimeType.mimeTypeToFileExtension()
-                        if (extension != null) {
-                            val name = "${UUID.randomUUID()}.$extension"
-                            if (temp.rename(name)) {
-                                return@withContext Pair(
-                                    FileAttachment(name, originalName ?: name, mimeType),
-                                    null,
-                                )
-                            } else {
-                                // I don't expect this error to ever happen but just in
-                                // case
-                                return@withContext Pair(
-                                    null,
-                                    FileError(displayName, getString(errorWhileRenaming), fileType),
-                                )
-                            }
-                        } else
-                            return@withContext Pair(
-                                null,
-                                FileError(
-                                    displayName,
-                                    getString(R.string.image_format_not_supported),
-                                    fileType,
-                                ),
-                            )
-                    } else
-                        return@withContext Pair(
-                            null,
-                            FileError(displayName, getString(R.string.invalid_image), fileType),
-                        )
-                }
-
-                FileType.ANY -> {
-                    val (mimeType, fileExtension) =
-                        contentResolver.determineMimeTypeAndExtension(uri, proposedMimeType)
-                    val name = "${UUID.randomUUID()}${fileExtension}"
-                    if (temp.rename(name)) {
-                        return@withContext Pair(
-                            FileAttachment(name, originalName ?: name, mimeType),
-                            null,
-                        )
-                    } else {
-                        // I don't expect this error to ever happen but just in case
-                        return@withContext Pair(
-                            null,
-                            FileError(displayName, getString(errorWhileRenaming), fileType),
-                        )
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            if (this is ContextWrapper) {
-                log(TAG, throwable = e)
-            } else {
-                Log.e(TAG, "Import file failed", e)
-            }
-            return@withContext Pair(
-                null,
-                FileError(displayName, getString(R.string.unknown_error), fileType),
-            )
-        }
-    }
-}
-
-suspend fun ContextWrapper.importFile(
-    uri: Uri,
-    proposedMimeType: String? = null,
-): Pair<FileAttachment?, FileError?> {
-    val filesRoot = getCurrentFilesDirectory()
-    return importFile(uri, filesRoot, FileType.ANY, proposedMimeType = proposedMimeType)
-}
-
-suspend fun ContextWrapper.importImage(
-    uri: Uri,
-    proposedMimeType: String? = null,
-): Pair<FileAttachment?, FileError?> {
-    val imagesRoot = getCurrentImagesDirectory()
-    return importFile(uri, imagesRoot, FileType.IMAGE, proposedMimeType = proposedMimeType)
-}
-
-suspend fun ContextWrapper.importAudio(original: File, deleteOriginalFile: Boolean): Audio {
-    return withContext(Dispatchers.IO) {
-        /*
-        Regenerate because the directory may have been deleted between the time of activity creation
-        and audio recording
-        */
-        val audioRoot = getCurrentAudioDirectory()
-
-        /*
-        If we have reached this point, an SD card (emulated or real) exists and audioRoot
-        is not null. audioRoot.exists() can be false if the folder `Audio` has been deleted after
-        the previous line, but audioRoot itself can't be null
-        */
-        val name = "${UUID.randomUUID()}.m4a"
-        val final = File(audioRoot, name)
-        val input = FileInputStream(original)
-        input.copyToFile(final)
-
-        if (deleteOriginalFile) {
-            original.delete()
-        }
-
-        val retriever = MediaMetadataRetriever()
-        retriever.setDataSource(final.path)
-        val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-        Audio(name, duration?.toLong(), System.currentTimeMillis())
-    }
-}

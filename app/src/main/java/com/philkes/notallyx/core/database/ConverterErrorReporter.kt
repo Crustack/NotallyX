@@ -19,12 +19,6 @@ object ConverterErrorReporter {
         }
     }
 
-    fun registerDialog(dialog: Dialog) {
-        activeDialogs.add(dialog)
-        // Auto-remove when it's dismissed naturally
-        dialog.setOnDismissListener { activeDialogs.remove(dialog) }
-    }
-
     fun dismissAllDialogs() {
         activeDialogs.toList().forEach { it.dismiss() }
         synchronized(activeDialogs) { activeDialogs.clear() }

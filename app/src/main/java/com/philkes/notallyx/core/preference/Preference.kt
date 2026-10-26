@@ -415,11 +415,6 @@ enum class ListItemSort(override val textResId: Int) : StaticTextProvider {
     AUTO_SORT_BY_CHECKED_TIMESTAMP(R.string.auto_sort_by_checked_timestamp),
 }
 
-val ListItemSort.isAutoSortChecked
-    get() =
-        this in
-            setOf(ListItemSort.AUTO_SORT_BY_CHECKED, ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
-
 enum class DefaultListNoteViewMode(override val textResId: Int) : StaticTextProvider {
     READ_ONLY(R.string.read_only),
     EDIT(R.string.edit),

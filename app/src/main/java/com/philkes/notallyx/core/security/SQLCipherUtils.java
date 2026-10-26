@@ -20,7 +20,7 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.text.Editable;
 
-import com.philkes.notallyx.core.common.extensions.AndroidExtensionsKt;
+import com.philkes.notallyx.core.common.extensions.LoggingExtensionsKt;
 
 import net.zetetic.database.sqlcipher.SQLiteDatabase;
 import net.zetetic.database.sqlcipher.SQLiteStatement;
@@ -82,7 +82,7 @@ public class SQLCipherUtils {
                 }
             } catch (Exception e) {
                 if (context != null) {
-                    AndroidExtensionsKt.log(context, "SQLCipherUtils", String.format("Getting database state of '%s' failed, assuming its encrypted", dbPath.getAbsolutePath()), e, null);
+                    LoggingExtensionsKt.log(context, "SQLCipherUtils", String.format("Getting database state of '%s' failed, assuming its encrypted", dbPath.getAbsolutePath()), e, null);
                 }
                 throw new RuntimeException(e);
             }

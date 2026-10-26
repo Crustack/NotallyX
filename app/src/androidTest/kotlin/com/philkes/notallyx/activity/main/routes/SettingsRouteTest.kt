@@ -390,7 +390,7 @@ class SettingsRouteTest : UiTestBase() {
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.back))
             .performClick()
-        assertLogAppeared("ExportExtensions", "Finished backup ")
+        assertLogAppeared("AutoBackupExtensions", "Finished backup ")
 
         composeTestRule.onNodeWithText("Test Foo").performTouchInput { longClick() }
         composeTestRule
