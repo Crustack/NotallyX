@@ -271,4 +271,27 @@ class BackupHistoryTest {
             result.snapshots,
         )
     }
+
+    @Test
+    fun snapshots_areOnlyInspectedWhenNeeded() {
+        val inspected = mutableListOf<String>()
+        val countingInspector = BackupHistory.SnapshotInspector { file ->
+            inspected.add(file.name)
+            FakeInspector.inspect(file)
+        }
+        var previous = backupDir(1)
+        listOf("2026-10-20", "2026-10-21", "2026-10-22").forEach { date ->
+            val new = backupDir(1)
+            BackupHistory.merge(previous, new, day(date), 2, countingInspector)
+            previous = new
+        }
+        inspected.clear()
+        val new = backupDir(1)
+
+        BackupHistory.merge(previous, new, day("2026-10-23"), 2, countingInspector)
+
+        // Previous database + newest kept snapshot (has notes). No media, so the other snapshots
+        // and the one being removed are never read.
+        assertEquals(listOf(DATABASE_NAME, "NotallyDatabase_2026-10-23"), inspected)
+    }
 }

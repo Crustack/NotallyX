@@ -268,10 +268,18 @@ suspend fun ContextWrapper.autoBackupOnSave(
                         // Corrupt or encrypted with an unknown password: keep it under another
                         // name instead of overwriting it. Other errors (e.g. the file can't be
                         // accessed) abort the backup and leave the existing ZIP untouched.
-                        preserveUnreadableBackup(folder, existingBackup, e)
                         previousDir.deleteRecursively()
                         previousDir.mkdirs()
-                        false
+                        val restoredFromTemp =
+                            extractLeftoverTempBackup(
+                                    folder,
+                                    previousDir,
+                                    previousPassword,
+                                    password,
+                                )
+                                ?.also { previousTimestamp = it }
+                        preserveUnreadableBackup(folder, existingBackup, e)
+                        restoredFromTemp != null
                     }
 
             if (savedNote == null || !hasPrevious) {
@@ -414,6 +422,31 @@ private fun ContextWrapper.recoverInterruptedReplace(folder: DocumentFile) {
     }
 }
 
+/**
+ * If writing the regular ZIP was interrupted in the direct-write fallback of [replaceFileSafely],
+ * the regular ZIP is broken while the verified temp ZIP still exists. Extracts that temp ZIP into
+ * [outputDir] and returns its timestamp, or `null` if there is no readable temp ZIP. A temp ZIP
+ * that is only partially written itself fails to extract and is ignored.
+ */
+private fun ContextWrapper.extractLeftoverTempBackup(
+    folder: DocumentFile,
+    outputDir: File,
+    vararg passwords: String,
+): Long? {
+    val temp =
+        folder.findFile("$ON_SAVE_BACKUP_TEMP_FILE.zip")?.takeIf { it.exists() && it.length() > 0 }
+            ?: return null
+    return try {
+        extractBackupWithAnyPassword(temp.uri, outputDir, passwords.toList().distinct())
+        log(TAG, msg = "Auto backup ZIP is broken, continuing from '${temp.name}'")
+        temp.lastModified().takeIf { it > 0 } ?: System.currentTimeMillis()
+    } catch (e: ZipException) {
+        outputDir.deleteRecursively()
+        outputDir.mkdirs()
+        null
+    }
+}
+
 /** Keeps an auto backup ZIP that can not be read under a new name instead of overwriting it. */
 private fun ContextWrapper.preserveUnreadableBackup(
     folder: DocumentFile,
@@ -465,7 +498,13 @@ private fun ContextWrapper.replaceFileSafely(
     // Renaming is not supported by every DocumentsProvider, write the file again instead
     log(TAG, msg = "Renaming '${temp.uri}' failed, writing '$fileName.zip' directly")
     val target = folder.createFileSafe(MIME_TYPE_ZIP, fileName, ".zip")
-    writeFileVerified(source, target.uri)
+    try {
+        writeFileVerified(source, target.uri)
+    } catch (e: Exception) {
+        // The verified temp ZIP stays and is picked up by the next backup
+        runCatching { target.delete() }
+        throw e
+    }
     temp.delete()
 }
 

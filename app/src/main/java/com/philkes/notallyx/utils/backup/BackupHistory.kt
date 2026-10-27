@@ -152,10 +152,14 @@ object BackupHistory {
             historyDir
                 .listFiles { file -> file.isFile && SNAPSHOT_NAME_REGEX.matches(file.name) }
                 ?.sortedByDescending { it.name } ?: emptyList()
-        val infos = snapshots.associateWith { runCatching { inspector.inspect(it) }.getOrNull() }
+        // Inspected lazily: snapshots are only read when their content is actually needed
+        val infos = snapshots.associateWith {
+            lazy { runCatching { inspector.inspect(it) }.getOrNull() }
+        }
+        fun info(snapshot: File) = infos.getValue(snapshot).value
         val keep = snapshots.take(maxSnapshots.coerceAtLeast(1)).toMutableList()
-        if (keep.none { (infos[it]?.noteCount ?: 0) > 0 }) {
-            snapshots.firstOrNull { (infos[it]?.noteCount ?: 0) > 0 }?.let { keep.add(it) }
+        if (keep.none { (info(it)?.noteCount ?: 0) > 0 }) {
+            snapshots.firstOrNull { (info(it)?.noteCount ?: 0) > 0 }?.let { keep.add(it) }
         }
         val removedSnapshots = (snapshots - keep.toSet()).map { it.name }
         (snapshots - keep.toSet()).forEach { it.delete() }
@@ -163,8 +167,8 @@ object BackupHistory {
         // 5. Remove media that no remaining snapshot needs anymore. If any snapshot cannot be
         // read, nothing is removed since its references are unknown.
         val removedMedia = mutableListOf<String>()
-        if (keep.all { infos[it] != null }) {
-            val referenced = keep.flatMap { infos[it]!!.attachments }.toSet()
+        if (mediaDir.isDirectory && keep.all { info(it) != null }) {
+            val referenced = keep.flatMap { info(it)!!.attachments }.toSet()
             ATTACHMENT_FOLDERS.forEach { folder ->
                 File(mediaDir, folder).listFiles()?.forEach { file ->
                     val path = "$folder/${file.name}"
