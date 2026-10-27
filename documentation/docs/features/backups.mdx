@@ -21,6 +21,29 @@ NotallyX can automatically back up your notes to prevent data loss:
     - **Periodic Backups**: Automatically creates backups at regular day intervals.
     - **Maximum Backups to Keep**: Automatically cleans up older backups beyond your specified limit.
 
+A periodic backup that contains no notes never causes older backups to be deleted, so an accidentally emptied database can not replace your last good backups.
+
+### History of the auto backup on exit
+
+The **Backup on exit Note automatically** feature always updates the same file, `NotallyX_AutoBackup.zip`. To make sure an earlier state is never lost, this ZIP also contains a `History` folder:
+
+```
+NotallyX_AutoBackup.zip
+├── NotallyDatabase                      current state (used by "Import backup")
+├── Images/ Files/ Audios/               current attachments
+└── History/
+    ├── NotallyDatabase_2026-10-27       previous states, at most one per day
+    ├── NotallyDatabase_2026-10-26
+    └── Media/Images|Files|Audios/       attachments that are only needed by these previous states
+```
+
+- For every day the last state before the newest backup is kept. **Maximum Backups to Keep** also sets how many days are kept.
+- States without any notes are never added to the History, so they can't push out good states.
+- Attachments you deleted stay in `History/Media` as long as one of the kept states still uses them.
+- The ZIP is only replaced after the new one has been completely written and verified. An interrupted backup never destroys the previous one.
+
+To restore an older state, extract the ZIP, replace `NotallyDatabase` with the file from `History` (renamed to `NotallyDatabase`), copy the folders from `History/Media` into the root, zip everything again and use **Import backup**.
+
 ## Manual Backup
 
 You can also create backups manually at any time:

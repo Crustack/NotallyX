@@ -22,6 +22,7 @@ import com.philkes.notallyx.presentation.viewmodel.progress.DeleteAttachmentProg
 import com.philkes.notallyx.presentation.widget.WidgetProvider
 import java.io.File
 import java.io.FileFilter
+import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
@@ -559,6 +560,27 @@ private fun ZipFile.verifyEncryptedArchive() {
             ) // wrong password or corrupted entry
         }
     }
+}
+
+/**
+ * Opens [uri] for writing and makes sure existing content is truncated. Mode "w" does not truncate
+ * for every DocumentsProvider, which leaves trailing bytes of the old content behind (e.g. a broken
+ * ZIP). Falls back to "w" if a provider does not support "wt".
+ */
+fun Context.openOutputStreamTruncating(uri: Uri): OutputStream {
+    val stream =
+        try {
+            contentResolver.openOutputStream(uri, "wt")
+        } catch (e: IllegalArgumentException) {
+            null
+        } catch (e: UnsupportedOperationException) {
+            null
+        } catch (e: FileNotFoundException) {
+            null
+        }
+    return stream
+        ?: contentResolver.openOutputStream(uri, "w")
+        ?: throw IOException("Failed to open output stream for '$uri'")
 }
 
 fun Context.md5Hash(uri: Uri): ByteArray? {

@@ -35,7 +35,6 @@ import com.philkes.notallyx.utils.backup.autoBackupOnSaveFileExists
 import com.philkes.notallyx.utils.backup.cancelAutoBackup
 import com.philkes.notallyx.utils.backup.containsNonCancelled
 import com.philkes.notallyx.utils.backup.createBackup
-import com.philkes.notallyx.utils.backup.deleteModifiedNoteBackup
 import com.philkes.notallyx.utils.backup.isEqualTo
 import com.philkes.notallyx.utils.backup.modifiedNoteBackupExists
 import com.philkes.notallyx.utils.backup.scheduleAutoBackup
@@ -116,13 +115,16 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
         applicationScope.launch {
             preferences.backupsFolder.flow.withPrevious().collect {
                 (backupFolderBefore, backupFolder) ->
+                // backupFolderBefore is null for the initial value on app start, which must not be
+                // treated as a changed folder. Otherwise every app start creates a periodic backup
+                // and rotates out older ones.
                 checkUpdatePeriodicBackup(
-                    backupFolderBefore ?: "",
+                    backupFolderBefore,
                     backupFolder,
                     preferences.periodicBackups.value.periodInDays.toLong(),
                     execute = true,
                 )
-                checkUpdateAutoBackupOnSave(backupFolderBefore ?: "", backupFolder)
+                checkUpdateAutoBackupOnSave(backupFolderBefore, backupFolder)
             }
         }
 
@@ -181,12 +183,14 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
                                 (previousBackupPassword != null &&
                                     previousBackupPassword != backupPassword)
                         ) {
-                            deleteModifiedNoteBackup(backupPath)
+                            // The existing ZIP is re-created with the new password, its History is
+                            // kept by reading it with the previous password
                             runOnIODispatcher {
                                 autoBackupOnSave(
                                     backupPath,
                                     savedNote = null,
                                     password = backupPassword,
+                                    previousPassword = previousBackupPassword ?: backupPassword,
                                 )
                             }
                         }
@@ -266,17 +270,12 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
     }
 
     private fun checkUpdateAutoBackupOnSave(backupFolderBefore: String?, backupFolder: String) {
-        if (preferences.backupOnSave.value) {
-            if (
-                backupFolderBefore == null &&
-                    backupFolder != EMPTY_PATH &&
-                    !autoBackupOnSaveFileExists(backupFolder)
-            ) {
-                runOnIODispatcher {
-                    autoBackupOnSave(backupFolder, preferences.backupPassword.value, null)
-                }
-            }
-        } else if (folderChanged(backupFolderBefore, backupFolder)) {
+        if (!preferences.backupOnSave.value || backupFolder == EMPTY_PATH) {
+            return
+        }
+        val initialBackupMissing =
+            backupFolderBefore == null && !autoBackupOnSaveFileExists(backupFolder)
+        if (initialBackupMissing || folderChanged(backupFolderBefore, backupFolder)) {
             runOnIODispatcher {
                 autoBackupOnSave(backupFolder, preferences.backupPassword.value, null)
             }
