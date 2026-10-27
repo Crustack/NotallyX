@@ -952,4 +952,72 @@ class MainActivityTest : UiTestBase() {
 
         scenario.close()
     }
+
+    @Test
+    fun emptyStateRendering() {
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        val emptyListDescription = context.getString(R.string.empty_list)
+
+        // 1. Verify empty state on Notes route
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(emptyListDescription))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithContentDescription(emptyListDescription).assertIsDisplayed()
+
+        // 2. Verify empty state on Archived route
+        composeTestRule.navigateTo(NotallyNavKey.Archived)
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(emptyListDescription))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithContentDescription(emptyListDescription).assertIsDisplayed()
+
+        // 3. Verify empty state on Deleted route
+        composeTestRule.navigateTo(NotallyNavKey.Deleted)
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(emptyListDescription))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithContentDescription(emptyListDescription).assertIsDisplayed()
+
+        // 4. Verify empty state on Unlabeled route
+        composeTestRule.navigateTo(NotallyNavKey.Unlabeled)
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(emptyListDescription))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithContentDescription(emptyListDescription).assertIsDisplayed()
+
+        // 5. Verify empty state on Reminders route
+        composeTestRule.navigateTo(NotallyNavKey.Reminders)
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(emptyListDescription))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithContentDescription(emptyListDescription).assertIsDisplayed()
+
+        // 6. Verify empty state on Labels route
+        composeTestRule.navigateTo(NotallyNavKey.Labels)
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(context.getString(R.string.add_label)))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        // In Labels screen with 0 labels, no list item exists
+        composeTestRule.onNodeWithText("label").assertDoesNotExist()
+
+        scenario.close()
+    }
 }
