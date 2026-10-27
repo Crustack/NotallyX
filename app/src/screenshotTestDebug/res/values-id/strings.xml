@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">Atau juga dalam bentuk kisi</string>
+    <string name="store_headline_dark_mode">Mode Gelap untuk Menghemat Daya Baterai</string>
+    <string name="store_headline_fingerprint_lock">Kunci catatan Anda menggunakan sidik jari</string>
+    <string name="store_headline_images_and_files">Lengkapi catatan Anda dengan gambar dan berkas</string>
+    <string name="store_headline_manage_and_organize">Kelola dan atur semua catatan Anda</string>
+    <string name="store_headline_reminders">Atur pengingat untuk catatan penting</string>
+    <string name="store_headline_rich_text">Memformat catatan teks kaya Anda</string>
+    <string name="store_headline_task_lists">Pantau daftar tugas Anda</string>
+    <string name="store_headline_widgets">Tampilkan catatan sebagai widget</string>
+    <string name="store_sample_car_service_body">Penggantian oli sesuai jadwal, pemeriksaan rem, dan rotasi ban.</string>
+    <string name="store_sample_car_service_title">Layanan Perawatan Mobil</string>
+    <string name="store_sample_daily_journal_body">Tanggal: 19 Oktober 2024\n\nHari ini sungguh hari yang produktif! Saya berhasil:\n- Menyelesaikan presentasi untuk hari Senin\n- Menghadiri rapat tim\n- Berlari selama 30 menit\n\nSaya menantikan akhir pekan yang santai nanti.</string>
+    <string name="store_sample_daily_journal_title">Jurnal Harian</string>
+    <string name="store_sample_dinner_bucketlist_title">Daftar Keinginan untuk Makan Malam</string>
+    <string name="store_sample_dinner_burrito">&#127791; Burrito</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; Philly Cheesesteak</string>
+    <string name="store_sample_dinner_pierogi">&#129375; Pierogi</string>
+    <string name="store_sample_dinner_ramen">&#127836; Ramen</string>
+    <string name="store_sample_doctor_appointment_body">Pemeriksaan kesehatan tahunan di Klinik Kesehatan Kota bersama Dr. Miller.</string>
+    <string name="store_sample_doctor_appointment_title">Janji Temu dengan Dokter</string>
+    <string name="store_sample_formatting_bold">Ini adalah teks tebal.</string>
+    <string name="store_sample_formatting_italic">Ini adalah teks miring.</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">Dan ini adalah blok kode dengan font monospace.</string>
+    <string name="store_sample_formatting_strikethrough">Ini adalah teks yang dicoret.</string>
+    <string name="store_sample_formatting_title">Pemformatan</string>
+    <string name="store_sample_grocery_bread">Roti</string>
+    <string name="store_sample_grocery_breakfast">Sarapan</string>
+    <string name="store_sample_grocery_chips">Keripik</string>
+    <string name="store_sample_grocery_cleaning">Pembersihan</string>
+    <string name="store_sample_grocery_coffee">Kopi</string>
+    <string name="store_sample_grocery_cookies">Cookie</string>
+    <string name="store_sample_grocery_dish_soap">Sabun cuci piring</string>
+    <string name="store_sample_grocery_list_title">Daftar Belanja</string>
+    <string name="store_sample_grocery_snacks">Camilan</string>
+    <string name="store_sample_grocery_sponge">Spons</string>
+    <string name="store_sample_label_health">Kesehatan</string>
+    <string name="store_sample_label_todo">Daftar Tugas</string>
+    <string name="store_sample_vacation_body">Berikut ini beberapa tempat yang ingin saya kunjungi musim panas ini:\n- Resor pantai di Maladewa\n- Mendaki gunung di Swiss\n- Tur kota di Tokyo</string>
+    <string name="store_sample_vacation_title">Liburan</string>
+</resources>

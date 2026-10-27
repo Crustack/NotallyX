@@ -176,7 +176,6 @@
     <string name="empty_list">Vaciar lista</string>
     <string name="empty_note">Vaciar nota</string>
     <string name="empty_reminders">No hay recordatorios todavía. ¿Crear uno\?</string>
-
     <string name="enable_lock_title">Habilitar bloqueo biométrico/PIN</string>
     <string name="enabled">Habilitado</string>
     <string name="encrypt_database_advice">EXPERIMENTAL: De forma predeterminada, al activar el bloqueo no se cifra la base de datos. Si lo deseas, puedes activar el cifrado de la base de datos, lo cual puede utilizarse junto con la opción «datos en público» para que la base de datos se encuentre en una carpeta pública, pero cifrada. Ten en cuenta que el cifrado de la base de datos aún no es estable.</string>

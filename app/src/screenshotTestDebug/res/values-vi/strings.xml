@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">Hoặc cũng có thể theo dạng lưới</string>
+    <string name="store_headline_dark_mode">Chế độ tối tiết kiệm pin</string>
+    <string name="store_headline_fingerprint_lock">Khóa ghi chú của bạn bằng vân tay</string>
+    <string name="store_headline_images_and_files">Tăng cường nội dung ghi chú của bạn bằng hình ảnh và tệp tin</string>
+    <string name="store_headline_manage_and_organize">Quản lý và sắp xếp tất cả các ghi chú của bạn</string>
+    <string name="store_headline_reminders">Đặt lời nhắc cho các ghi chú quan trọng</string>
+    <string name="store_headline_rich_text">Định dạng ghi chú văn bản định dạng phong phú</string>
+    <string name="store_headline_task_lists">Theo dõi danh sách công việc của bạn</string>
+    <string name="store_headline_widgets">Hiển thị ghi chú dưới dạng tiện ích</string>
+    <string name="store_sample_car_service_body">Thay dầu theo lịch trình, kiểm tra hệ thống phanh và xoay lốp.</string>
+    <string name="store_sample_car_service_title">Dịch vụ ô tô</string>
+    <string name="store_sample_daily_journal_body">Ngày: 19 tháng 10 năm 2024\n\nHôm nay là một ngày làm việc hiệu quả! Tôi đã làm được những việc sau:\n- Hoàn thành bản trình bày cho thứ Hai\n- Tham dự cuộc họp nhóm\n- Đi chạy bộ 30 phút\n\nTôi rất mong chờ một cuối tuần thư giãn sắp tới.</string>
+    <string name="store_sample_daily_journal_title">Nhật ký hàng ngày</string>
+    <string name="store_sample_dinner_bucketlist_title">Danh sách những bữa tối đáng thử</string>
+    <string name="store_sample_dinner_burrito">&#127791; Burrito</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; Bánh mì kẹp thịt bò phô mai Philly</string>
+    <string name="store_sample_dinner_pierogi">&#129375; Pierogi</string>
+    <string name="store_sample_dinner_ramen">&#127836; Mì ramen</string>
+    <string name="store_sample_doctor_appointment_body">Khám sức khỏe định kỳ hàng năm tại Phòng khám Y tế Thành phố với Bác sĩ Miller.</string>
+    <string name="store_sample_doctor_appointment_title">Lịch hẹn với bác sĩ</string>
+    <string name="store_sample_formatting_bold">Đây là văn bản in đậm.</string>
+    <string name="store_sample_formatting_italic">Đây là văn bản in nghiêng.</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">Và đây là một khối mã được hiển thị bằng phông chữ có độ rộng cố định.</string>
+    <string name="store_sample_formatting_strikethrough">Đây là văn bản bị gạch ngang.</string>
+    <string name="store_sample_formatting_title">Định dạng</string>
+    <string name="store_sample_grocery_bread">Bánh mì</string>
+    <string name="store_sample_grocery_breakfast">Bữa sáng</string>
+    <string name="store_sample_grocery_chips">Khoai tây chiên</string>
+    <string name="store_sample_grocery_cleaning">Vệ sinh</string>
+    <string name="store_sample_grocery_coffee">Cà phê</string>
+    <string name="store_sample_grocery_cookies">Cookie</string>
+    <string name="store_sample_grocery_dish_soap">Nước rửa chén</string>
+    <string name="store_sample_grocery_list_title">Danh sách mua sắm</string>
+    <string name="store_sample_grocery_snacks">Đồ ăn vặt</string>
+    <string name="store_sample_grocery_sponge">Miếng bọt biển</string>
+    <string name="store_sample_label_health">Sức khỏe</string>
+    <string name="store_sample_label_todo">Danh sách việc cần làm</string>
+    <string name="store_sample_vacation_body">Dưới đây là một số địa điểm tôi muốn ghé thăm vào mùa hè này:\n- Khu nghỉ dưỡng biển ở Maldives\n- Đi bộ leo núi ở Thụy Sĩ\n- Tham quan thành phố Tokyo</string>
+    <string name="store_sample_vacation_title">Kỳ nghỉ</string>
+</resources>

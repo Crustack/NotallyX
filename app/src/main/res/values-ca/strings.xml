@@ -179,7 +179,6 @@
     <string name="empty_list">Llista buida</string>
     <string name="empty_note">Nota buida</string>
     <string name="empty_reminders">Encara no hi ha cap recordatori. En vols crear un\?</string>
-
     <string name="enable_lock_title">Activar el bloqueig mitjançant biometria/PIN</string>
     <string name="enabled">Activat</string>
     <string name="encrypt_database_advice">EXPERIMENTAL: Per defecte, activar el bloqueig no xifra la base de dades. Opcionalment, podeu habilitar el xifratge de la base de dades, que es pot utilitzar conjuntament amb l\'opció «dades en públic» per tenir la base de dades en una carpeta pública però xifrada. Tingueu en compte que el xifratge de la base de dades encara no és estable.</string>

@@ -33,6 +33,7 @@ import com.android.tools.screenshot.PreviewTest
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.misc.appstore.AppStorePreview
+import com.philkes.notallyx.misc.appstore.AppStoreSampleData
 import com.philkes.notallyx.misc.appstore.DeviceFrame
 
 /** 6. Display notes as widgets */
@@ -79,6 +80,7 @@ private fun WidgetHomeScreenMockup() {
             )
 
             // NotallyX Checklist Widget
+            val dinnerNote = AppStoreSampleData.dinnerBucketlistNote()
             Box(
                 modifier =
                     Modifier.fillMaxWidth()
@@ -93,7 +95,7 @@ private fun WidgetHomeScreenMockup() {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "Dinner Bucketlist",
+                            text = dinnerNote.title,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF1F1B16),
@@ -108,13 +110,7 @@ private fun WidgetHomeScreenMockup() {
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    val items =
-                        listOf(
-                            "🌯 Burrito" to false,
-                            "🥪 Philly Cheesesteak" to false,
-                            "🥟 Pierogi" to false,
-                            "🍜 Ramen" to true,
-                        )
+                    val items = dinnerNote.items.map { it.body to it.checked }
 
                     items.forEach { (text, checked) ->
                         Row(

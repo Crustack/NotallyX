@@ -3,6 +3,9 @@
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
+import io.github.crustack.auto.translation.plugin.config.FastlaneTranslationConfig
+import io.github.crustack.auto.translation.plugin.config.StringsXmlTranslationConfig
+import io.github.crustack.auto.translation.plugin.task.AutoTranslateTask
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import org.apache.commons.configuration2.PropertiesConfiguration
@@ -146,6 +149,8 @@ android {
         )
     }
 
+    sourceSets.getByName("debug") { res.directories.add("src/screenshotTestDebug/res") }
+
     testOptions { unitTests.isIncludeAndroidResources = true }
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
 }
@@ -246,6 +251,22 @@ autoTranslate {
         enabled = false
         targetLanguages = setOf("de-DE", "ru-RU")
     }
+}
+
+tasks.register<AutoTranslateTask>("autoTranslateAppStoreStrings") {
+    group = "translations"
+    description = "Auto-translate screenshotTestDebug strings.xml files"
+    provider.set(autoTranslate.provider)
+    targetLanguages.set(android.androidResources.localeFilters - "en")
+    translateFastlane.set(
+        project.objects.newInstance<FastlaneTranslationConfig>().apply { enabled.set(false) }
+    )
+    translateStringsXml.set(
+        project.objects.newInstance<StringsXmlTranslationConfig>().apply {
+            enabled.set(true)
+            resDirectory.set(layout.projectDirectory.dir("src/screenshotTestDebug/res"))
+        }
+    )
 }
 
 firebaseTestLab {

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">Of anders in een raster</string>
+    <string name="store_headline_dark_mode">Batterijbesparende donkere modus</string>
+    <string name="store_headline_fingerprint_lock">Beveilig je notities met je vingerafdruk</string>
+    <string name="store_headline_images_and_files">Verrijk je aantekeningen met afbeeldingen en bestanden</string>
+    <string name="store_headline_manage_and_organize">Al je notities beheren en ordenen</string>
+    <string name="store_headline_reminders">Stel herinneringen in voor belangrijke notities</string>
+    <string name="store_headline_rich_text">Je notities in rich text opmaken</string>
+    <string name="store_headline_task_lists">Houd je takenlijsten bij</string>
+    <string name="store_headline_widgets">Notities als widgets weergeven</string>
+    <string name="store_sample_car_service_body">Geplande oliewissel, remcontrole en bandenwissel.</string>
+    <string name="store_sample_car_service_title">Autoservice</string>
+    <string name="store_sample_daily_journal_body">Datum: 19 oktober 2024\n\nVandaag was een productieve dag! Ik heb het volgende voor elkaar gekregen:\n- De presentatie voor maandag afgerond\n- De teamvergadering bijgewoond\n- 30 minuten hardgelopen\n\nIk kijk uit naar een ontspannen weekend.</string>
+    <string name="store_sample_daily_journal_title">Dagboek</string>
+    <string name="store_sample_dinner_bucketlist_title">Bucketlist voor het avondeten</string>
+    <string name="store_sample_dinner_burrito">&#127791; Burrito</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; Philly Cheesesteak</string>
+    <string name="store_sample_dinner_pierogi">&#129375; Pierogi</string>
+    <string name="store_sample_dinner_ramen">&#127836; Ramen</string>
+    <string name="store_sample_doctor_appointment_body">Jaarlijkse controle bij de City Health Clinic bij dr. Miller.</string>
+    <string name="store_sample_doctor_appointment_title">Afspraak bij de dokter</string>
+    <string name="store_sample_formatting_bold">Dit is vetgedrukte tekst.</string>
+    <string name="store_sample_formatting_italic">Dit is cursieve tekst.</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">En dit is een codeblok in een monospace-lettertype.</string>
+    <string name="store_sample_formatting_strikethrough">Dit is doorgestreepte tekst.</string>
+    <string name="store_sample_formatting_title">Opmaak</string>
+    <string name="store_sample_grocery_bread">Brood</string>
+    <string name="store_sample_grocery_breakfast">Ontbijt</string>
+    <string name="store_sample_grocery_chips">Chips</string>
+    <string name="store_sample_grocery_cleaning">Schoonmaken</string>
+    <string name="store_sample_grocery_coffee">Koffie</string>
+    <string name="store_sample_grocery_cookies">Cookies</string>
+    <string name="store_sample_grocery_dish_soap">Afwasmiddel</string>
+    <string name="store_sample_grocery_list_title">Boodschappenlijstje</string>
+    <string name="store_sample_grocery_snacks">Snacks</string>
+    <string name="store_sample_grocery_sponge">Spons</string>
+    <string name="store_sample_label_health">Gezondheid</string>
+    <string name="store_sample_label_todo">Te doen</string>
+    <string name="store_sample_vacation_body">Dit zijn een paar plekken die ik deze zomer graag zou willen bezoeken:\n- Strandresort op de Malediven\n- Bergwandelen in Zwitserland\n- Stadsrondleiding in Tokio</string>
+    <string name="store_sample_vacation_title">Vakantie</string>
+</resources>

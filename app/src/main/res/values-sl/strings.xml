@@ -178,7 +178,6 @@
     <string name="empty_list">Prazen seznam</string>
     <string name="empty_note">Prazen zapisek</string>
     <string name="empty_reminders">Še ni opomnikov. Želiš ustvariti enega\?</string>
-
     <string name="enable_lock_title">Omogoči zaklepanje z biometričnim podatkom/PIN-om</string>
     <string name="enabled">Omogočeno</string>
     <string name="encrypt_database_advice">POSKUSNO: Privzeto vklop zaklepa ne šifrira baze podatkov. Po želji lahko vklopite šifriranje baze podatkov, kar lahko uporabite v kombinaciji z možnostjo »podatki v javni mapi«, da bo baza podatkov shranjena v javni mapi, vendar šifrirana. Upoštevajte, da šifriranje baze podatkov še ni stabilno.</string>

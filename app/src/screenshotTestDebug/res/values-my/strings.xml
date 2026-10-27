@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">အခြားနည်းလမ်းအဖြစ် Grid တစ်ခုတွင်လည်း</string>
+    <string name="store_headline_dark_mode">ဘက်ထရီသက်သာစေသော မှောင်မိုက်မုဒ်</string>
+    <string name="store_headline_fingerprint_lock">လက်ဗွေဖြင့် မှတ်စုများကို သော့ခတ်ပါ။</string>
+    <string name="store_headline_images_and_files">ပုံများနှင့် ဖိုင်များဖြင့် သင့်မှတ်စုများကို ပိုမိုကောင်းမွန်အောင် ပြုလုပ်ပါ။</string>
+    <string name="store_headline_manage_and_organize">သင့်မှတ်စုအားလုံးကို စီမံပြီး စနစ်တကျ စုစည်းပါ။</string>
+    <string name="store_headline_reminders">အရေးကြီးတဲ့ မှတ်စုတွေအတွက် သတိပေးချက်တွေ သတ်မှတ်ပါ။</string>
+    <string name="store_headline_rich_text">သင့်ရဲ့ ရစ်ခ် တက်စ် မှတ်စုများကို ဖော်မတ်ပြုပါ။</string>
+    <string name="store_headline_task_lists">သင့်လုပ်ငန်းစာရင်းများကို ထိန်းသိမ်းကြည့်ရှုပါ။</string>
+    <string name="store_headline_widgets">မှတ်စုများကို ဝစ်ဂျက်အဖြစ် ပြသပါ။</string>
+    <string name="store_sample_car_service_body">အချိန်ဇယားအတိုင်း ဆီပြောင်းခြင်း၊ ဘရိတ်စစ်ဆေးခြင်းနှင့် ဘီးလှည့်ပြောင်းခြင်း။</string>
+    <string name="store_sample_car_service_title">ကားဝန်ဆောင်မှု</string>
+    <string name="store_sample_daily_journal_body">ရက်စွဲ: ၂၀၂၄ ခုနှစ်၊ အောက်တိုဘာလ ၁၉ ရက်\n\nဒီနေ့က ထိရောက်တဲ့နေ့တစ်နေ့ဖြစ်ခဲ့တယ်! ကျွန်တော် အောက်ပါအတိုင်း ပြီးမြောက်နိုင်ခဲ့တယ်:\n- တနင်္လာနေ့အတွက် တင်ဆက်ချက်ကို ပြီးစီးခဲ့တယ်\n- အဖွဲ့အစည်းအစည်းအဝေးကို တက်ရောက်ခဲ့တယ်\n- ၃၀ မိနစ်ကြာ ပြေးခဲ့တယ်\n\nနောက်ပိုင်း စိတ်အေးချမ်းစွာ အပန်းဖြေဖို့ စောင့်မျှော်နေပါတယ်။</string>
+    <string name="store_sample_daily_journal_title">နေ့စဉ်မှတ်တမ်း</string>
+    <string name="store_sample_dinner_bucketlist_title">ညစာအတွက် ဆန္ဒစာရင်း</string>
+    <string name="store_sample_dinner_burrito">&#127791; ဘူရီတို</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; ဖီလီ ချီးစ်စတိတ်</string>
+    <string name="store_sample_dinner_pierogi">&#129375; ပီရိုဂီ</string>
+    <string name="store_sample_dinner_ramen">&#127836; ရမ်မန်</string>
+    <string name="store_sample_doctor_appointment_body">မြို့ပြကျန်းမာရေးဆေးခန်း၌ ဒေါက်တာ မಿಲ್ಲာနှင့်အတူ နှစ်စဉ်ကျန်းမာရေးစစ်ဆေးမှု။</string>
+    <string name="store_sample_doctor_appointment_title">ဆရာဝန်ချိန်း</string>
+    <string name="store_sample_formatting_bold">ဤသည်မှာ ထင်ရှားသော စာသားဖြစ်သည်။</string>
+    <string name="store_sample_formatting_italic">ဤသည် အီတလစ် စာသားဖြစ်သည်။</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">ဒါကတော့ မိုနိုစပေ့စ် ဖောင့်ဖြင့် ရေးသားထားသော ကုဒ်ဘလော့ခ် ဖြစ်သည်။</string>
+    <string name="store_sample_formatting_strikethrough">ဤသည်မှာ စာကြောင်းဖြတ်ထားသော စာသားဖြစ်သည်။</string>
+    <string name="store_sample_formatting_title">ဖော်မတ်ပြုခြင်း</string>
+    <string name="store_sample_grocery_bread">မုန့်</string>
+    <string name="store_sample_grocery_breakfast">နံနက်စာ</string>
+    <string name="store_sample_grocery_chips">ချစ်ပ်များ</string>
+    <string name="store_sample_grocery_cleaning">သန့်ရှင်းရေး</string>
+    <string name="store_sample_grocery_coffee">ကော်ဖီ</string>
+    <string name="store_sample_grocery_cookies">ကွတ်ကီးများ</string>
+    <string name="store_sample_grocery_dish_soap">ပန်းကန်ဆေးဆပ်ပြာ</string>
+    <string name="store_sample_grocery_list_title">စားသောက်ကုန်စာရင်း</string>
+    <string name="store_sample_grocery_snacks">အနပ်စပ်စားစရာများ</string>
+    <string name="store_sample_grocery_sponge">စပျစ်</string>
+    <string name="store_sample_label_health">ကျန်းမာရေး</string>
+    <string name="store_sample_label_todo">အားလုံး</string>
+    <string name="store_sample_vacation_body">ဒီနွေရာသီမှာ သွားလည်ချင်တဲ့ နေရာအချို့ကတော့:\n- မော်လဒိုင်းရှိ ကမ်းခြေဟိုတယ်\n- ဆွစ်ဇလန်တွင် တောင်တက်ခြင်း\n- တိုကျိုမြို့ ခရီးလည်ပတ်ခြင်း</string>
+    <string name="store_sample_vacation_title">အားလပ်ရက်</string>
+</resources>

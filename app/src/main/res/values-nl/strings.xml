@@ -176,7 +176,6 @@
     <string name="empty_list">Lege lijst</string>
     <string name="empty_note">Lege notitie</string>
     <string name="empty_reminders">Nog geen herinneringen. Wil je er een aanmaken\?</string>
-
     <string name="enable_lock_title">Vergrendeling inschakelen via Biometrisch/PIN</string>
     <string name="enabled">Ingeschakeld</string>
     <string name="encrypt_database_advice">EXPERIMENTEEL: Standaard wordt de database niet versleuteld wanneer de vergrendeling wordt ingeschakeld. Je kunt desgewenst de versleuteling van de database inschakelen. Dit kan worden gecombineerd met de optie \'data in public\' om de database in een openbare map te plaatsen, maar dan wel versleuteld. Houd er rekening mee dat de versleuteling van de database nog niet stabiel is.</string>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">Alternatif olarak bir ızgarada da</string>
+    <string name="store_headline_dark_mode">Pil Tasarrufu Sağlayan Karanlık Mod</string>
+    <string name="store_headline_fingerprint_lock">Notlarınızı parmak izi ile kilitleyin</string>
+    <string name="store_headline_images_and_files">Notlarınızı resim ve dosyalarla zenginleştirin</string>
+    <string name="store_headline_manage_and_organize">Tüm notlarınızı yönetin ve düzenleyin</string>
+    <string name="store_headline_reminders">Önemli notlar için hatırlatıcılar ayarla</string>
+    <string name="store_headline_rich_text">Zengin metin notlarınızı biçimlendirin</string>
+    <string name="store_headline_task_lists">Görev listelerinizi takip edin</string>
+    <string name="store_headline_widgets">Notları widget olarak göster</string>
+    <string name="store_sample_car_service_body">Planlı yağ değişimi, fren kontrolü ve lastik rotasyonu.</string>
+    <string name="store_sample_car_service_title">Araç Servisi</string>
+    <string name="store_sample_daily_journal_body">Tarih: 19 Ekim 2024\n\nBugün verimli bir gün oldu! Şunları başardım:\n- Pazartesi günkü sunumu tamamladım\n- Ekip toplantısına katıldım\n- 30 dakikalık bir koşuya çıktım\n\nÖnümüzdeki rahatlatıcı hafta sonunu sabırsızlıkla bekliyorum.</string>
+    <string name="store_sample_daily_journal_title">Günlük Günlüğü</string>
+    <string name="store_sample_dinner_bucketlist_title">Akşam Yemeği Yapılacaklar Listesi</string>
+    <string name="store_sample_dinner_burrito">&#127791; Burrito</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; Philly Cheesesteak</string>
+    <string name="store_sample_dinner_pierogi">&#129375; Pierogi</string>
+    <string name="store_sample_dinner_ramen">&#127836; Ramen</string>
+    <string name="store_sample_doctor_appointment_body">City Health Clinic’te Dr. Miller ile yıllık sağlık muayenesi.</string>
+    <string name="store_sample_doctor_appointment_title">Doktor Randevusu</string>
+    <string name="store_sample_formatting_bold">Bu, kalın yazılmış bir metindir.</string>
+    <string name="store_sample_formatting_italic">Bu, italik metindir.</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">Ve bu, sabit genişlikli yazı tipinde yazılmış bir kod bloğudur.</string>
+    <string name="store_sample_formatting_strikethrough">Bu, üstü çizili metindir.</string>
+    <string name="store_sample_formatting_title">Biçimlendirme</string>
+    <string name="store_sample_grocery_bread">Ekmek</string>
+    <string name="store_sample_grocery_breakfast">Kahvaltı</string>
+    <string name="store_sample_grocery_chips">Cips</string>
+    <string name="store_sample_grocery_cleaning">Temizlik</string>
+    <string name="store_sample_grocery_coffee">Kahve</string>
+    <string name="store_sample_grocery_cookies">Çerezler</string>
+    <string name="store_sample_grocery_dish_soap">Bulaşık deterjanı</string>
+    <string name="store_sample_grocery_list_title">Alışveriş Listesi</string>
+    <string name="store_sample_grocery_snacks">Atıştırmalıklar</string>
+    <string name="store_sample_grocery_sponge">Sünger</string>
+    <string name="store_sample_label_health">Sağlık</string>
+    <string name="store_sample_label_todo">Yapılacaklar</string>
+    <string name="store_sample_vacation_body">İşte bu yaz ziyaret etmek istediğim bazı yerler:\n- Maldivler’de bir sahil tatil köyü\n- İsviçre’de dağ yürüyüşü\n- Tokyo’da şehir turu</string>
+    <string name="store_sample_vacation_title">Tatil</string>
+</resources>

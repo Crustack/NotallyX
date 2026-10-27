@@ -39,15 +39,15 @@ fun `03_TaskLists`() {
             statusBarColor = noteColor,
             statusBarContentColor = contentColor,
             screenContent = {
+                val groceryListNote = AppStoreSampleData.groceryListNote()
                 EditListScreen(
                     noteState =
                         EditNoteState(
-                            title = AppStoreSampleData.GROCERY_LIST_NOTE.title,
-                            items = AppStoreSampleData.GROCERY_LIST_NOTE.items,
-                            labels = AppStoreSampleData.GROCERY_LIST_NOTE.labels,
-                            createdTimestamp = AppStoreSampleData.GROCERY_LIST_NOTE.timestamp,
-                            modifiedTimestamp =
-                                AppStoreSampleData.GROCERY_LIST_NOTE.modifiedTimestamp,
+                            title = groceryListNote.title,
+                            items = groceryListNote.items,
+                            labels = groceryListNote.labels,
+                            createdTimestamp = groceryListNote.timestamp,
+                            modifiedTimestamp = groceryListNote.modifiedTimestamp,
                             type = Type.LIST,
                         ),
                     preferences =

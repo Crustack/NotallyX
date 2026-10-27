@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">أو في شكل شبكة أيضًا</string>
+    <string name="store_headline_dark_mode">الوضع المظلم الموفر للبطارية</string>
+    <string name="store_headline_fingerprint_lock">قم بتأمين ملاحظاتك باستخدام بصمة الإصبع</string>
+    <string name="store_headline_images_and_files">أضف الصور والملفات إلى ملاحظاتك</string>
+    <string name="store_headline_manage_and_organize">إدارة وتنظيم جميع ملاحظاتك</string>
+    <string name="store_headline_reminders">ضبط تذكيرات للملاحظات المهمة</string>
+    <string name="store_headline_rich_text">تنسيق ملاحظاتك المكتوبة بنص منسق</string>
+    <string name="store_headline_task_lists">تتبع قوائم مهامك</string>
+    <string name="store_headline_widgets">عرض الملاحظات كأدوات مصغرة</string>
+    <string name="store_sample_car_service_body">تغيير الزيت وفقًا للجدول الزمني المحدد، وفحص الفرامل، وتبديل الإطارات.</string>
+    <string name="store_sample_car_service_title">خدمة السيارات</string>
+    <string name="store_sample_daily_journal_body">التاريخ: 19 أكتوبر 2024\n\nكان اليوم يومًا مثمرًا! تمكنت من:\n- إنهاء العرض التقديمي المقرر ليوم الاثنين\n- حضور اجتماع الفريق\n- الذهاب للركض لمدة 30 دقيقة\n\nأتطلع إلى قضاء عطلة نهاية أسبوع مريحة.</string>
+    <string name="store_sample_daily_journal_title">اليوميات</string>
+    <string name="store_sample_dinner_bucketlist_title">قائمة الأطعمة التي يجب تجربتها على العشاء</string>
+    <string name="store_sample_dinner_burrito">&#127791; بوريتو</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; شطيرة فيلي تشيزستيك</string>
+    <string name="store_sample_dinner_pierogi">&#129375; بييروجي</string>
+    <string name="store_sample_dinner_ramen">&#127836; رامين</string>
+    <string name="store_sample_doctor_appointment_body">الفحص الطبي السنوي في عيادة «سيتي هيلث» مع الدكتور ميلر.</string>
+    <string name="store_sample_doctor_appointment_title">موعد مع الطبيب</string>
+    <string name="store_sample_formatting_bold">هذا نص بخط عريض.</string>
+    <string name="store_sample_formatting_italic">هذا نص مكتوب بخط مائل.</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">وهذا كتلة كود مكتوبة بخط أحادي المسافة.</string>
+    <string name="store_sample_formatting_strikethrough">هذا نص مشطوب.</string>
+    <string name="store_sample_formatting_title">التنسيق</string>
+    <string name="store_sample_grocery_bread">الخبز</string>
+    <string name="store_sample_grocery_breakfast">الإفطار</string>
+    <string name="store_sample_grocery_chips">رقائق البطاطس</string>
+    <string name="store_sample_grocery_cleaning">التنظيف</string>
+    <string name="store_sample_grocery_coffee">القهوة</string>
+    <string name="store_sample_grocery_cookies">ملفات تعريف الارتباط</string>
+    <string name="store_sample_grocery_dish_soap">صابون الأطباق</string>
+    <string name="store_sample_grocery_list_title">قائمة المشتريات</string>
+    <string name="store_sample_grocery_snacks">الوجبات الخفيفة</string>
+    <string name="store_sample_grocery_sponge">إسفنجة</string>
+    <string name="store_sample_label_health">الصحة</string>
+    <string name="store_sample_label_todo">قائمة المهام</string>
+    <string name="store_sample_vacation_body">فيما يلي بعض الأماكن التي أود زيارتها هذا الصيف:\n- منتجع شاطئي في جزر المالديف\n- التنزه في الجبال في سويسرا\n- جولة في مدينة طوكيو</string>
+    <string name="store_sample_vacation_title">الإجازة</string>
+</resources>

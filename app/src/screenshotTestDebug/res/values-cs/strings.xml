@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">Případně také v mřížce</string>
+    <string name="store_headline_dark_mode">Tmavý režim pro úsporu baterie</string>
+    <string name="store_headline_fingerprint_lock">Zabezpečte si poznámky pomocí otisku prstu</string>
+    <string name="store_headline_images_and_files">Obohaťte své poznámky o obrázky a soubory</string>
+    <string name="store_headline_manage_and_organize">Spravujte a uspořádejte si všechny své poznámky</string>
+    <string name="store_headline_reminders">Nastavte si připomenutí pro důležité poznámky</string>
+    <string name="store_headline_rich_text">Formátujte své poznámky ve formátu RTF</string>
+    <string name="store_headline_task_lists">Mějte přehled o svých seznamech úkolů</string>
+    <string name="store_headline_widgets">Zobrazit poznámky jako widgety</string>
+    <string name="store_sample_car_service_body">Plánovaná výměna oleje, kontrola brzd a rotace pneumatik.</string>
+    <string name="store_sample_car_service_title">Autoservis</string>
+    <string name="store_sample_daily_journal_body">Datum: 19. října 2024\n\nDnes to byl produktivní den! Podařilo se mi:\n- Dokončit prezentaci na pondělí\n- Zúčastnit se týmové schůzky\n- Běžet 30 minut\n\nTěším se na nadcházející odpočinkový víkend.</string>
+    <string name="store_sample_daily_journal_title">Denní deník</string>
+    <string name="store_sample_dinner_bucketlist_title">Seznam věcí, které si chci vyzkoušet při večeři</string>
+    <string name="store_sample_dinner_burrito">&#127791; Burrito</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; Philly Cheesesteak</string>
+    <string name="store_sample_dinner_pierogi">&#129375; Pierogi</string>
+    <string name="store_sample_dinner_ramen">&#127836; Ramen</string>
+    <string name="store_sample_doctor_appointment_body">Roční preventivní prohlídka v City Health Clinic u doktora Millera.</string>
+    <string name="store_sample_doctor_appointment_title">Návštěva u lékaře</string>
+    <string name="store_sample_formatting_bold">Toto je tučný text.</string>
+    <string name="store_sample_formatting_italic">Toto je kurzíva.</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">A toto je blok kódu v monospaceovém písmu.</string>
+    <string name="store_sample_formatting_strikethrough">Toto je přeškrtnutý text.</string>
+    <string name="store_sample_formatting_title">Formátování</string>
+    <string name="store_sample_grocery_bread">Chléb</string>
+    <string name="store_sample_grocery_breakfast">Snídaně</string>
+    <string name="store_sample_grocery_chips">Čipsy</string>
+    <string name="store_sample_grocery_cleaning">Úklid</string>
+    <string name="store_sample_grocery_coffee">Káva</string>
+    <string name="store_sample_grocery_cookies">Soubory cookie</string>
+    <string name="store_sample_grocery_dish_soap">Mycí prostředek na nádobí</string>
+    <string name="store_sample_grocery_list_title">Nákupní seznam</string>
+    <string name="store_sample_grocery_snacks">Občerstvení</string>
+    <string name="store_sample_grocery_sponge">Houba</string>
+    <string name="store_sample_label_health">Zdraví</string>
+    <string name="store_sample_label_todo">Seznam úkolů</string>
+    <string name="store_sample_vacation_body">Tady je pár míst, která bych letos v létě rád navštívil:\n- Plážový resort na Maledivách\n- Horská túra ve Švýcarsku\n- Prohlídka Tokia</string>
+    <string name="store_sample_vacation_title">Dovolená</string>
+</resources>

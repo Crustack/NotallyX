@@ -176,7 +176,6 @@
     <string name="empty_list">Nội dung liệt kê trống</string>
     <string name="empty_note">Nội dung ghi chú trống</string>
     <string name="empty_reminders">Chưa có nhắc nhở nào. Thử tạo mới\?</string>
-
     <string name="enable_lock_title">Bật khóa sinh trắc học/mã số</string>
     <string name="enabled">Đã bật</string>
     <string name="encrypt_database_advice">THỬ NGHIỆM: Theo mặc định, việc kích hoạt tính năng khóa sẽ không mã hóa cơ sở dữ liệu. Bạn có thể tùy chọn kích hoạt tính năng mã hóa cơ sở dữ liệu; tính năng này có thể được sử dụng kết hợp với tùy chọn “data in public” để lưu trữ cơ sở dữ liệu trong một thư mục công khai nhưng vẫn được mã hóa. Xin lưu ý rằng tính năng mã hóa cơ sở dữ liệu hiện vẫn chưa ổn định.</string>

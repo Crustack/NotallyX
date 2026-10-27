@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">Alternativ, și într-o rețea</string>
+    <string name="store_headline_dark_mode">Modul întunecat pentru economisirea bateriei</string>
+    <string name="store_headline_fingerprint_lock">Blochează-ți notițele folosind amprenta digitală</string>
+    <string name="store_headline_images_and_files">Îmbogățiți-vă notițele cu imagini și fișiere</string>
+    <string name="store_headline_manage_and_organize">Gestionează și organizează-ți toate notițele</string>
+    <string name="store_headline_reminders">Setează mementouri pentru notițele importante</string>
+    <string name="store_headline_rich_text">Formatați notele în format RTF</string>
+    <string name="store_headline_task_lists">Ține evidența listelor tale de sarcini</string>
+    <string name="store_headline_widgets">Afișează notele sub formă de widgeturi</string>
+    <string name="store_sample_car_service_body">Schimbul programat de ulei, verificarea frânelor și rotirea anvelopelor.</string>
+    <string name="store_sample_car_service_title">Servicii auto</string>
+    <string name="store_sample_daily_journal_body">Data: 19 octombrie 2024\n\nAzi a fost o zi productivă! Am reușit să:\n- Finalizez prezentarea pentru luni\n- Particip la ședința echipei\n- Fac o alergare de 30 de minute\n\nAștept cu nerăbdare un weekend relaxant.</string>
+    <string name="store_sample_daily_journal_title">Jurnal zilnic</string>
+    <string name="store_sample_dinner_bucketlist_title">Lista de dorințe pentru cină</string>
+    <string name="store_sample_dinner_burrito">&#127791; Burrito</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; Philly Cheesesteak</string>
+    <string name="store_sample_dinner_pierogi">&#129375; Pierogi</string>
+    <string name="store_sample_dinner_ramen">&#127836; Ramen</string>
+    <string name="store_sample_doctor_appointment_body">Controlul medical anual la City Health Clinic, cu dr. Miller.</string>
+    <string name="store_sample_doctor_appointment_title">Programare la medic</string>
+    <string name="store_sample_formatting_bold">Acesta este un text îngroșat.</string>
+    <string name="store_sample_formatting_italic">Acesta este text în italic.</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">Iată un bloc de cod scris cu font monospace.</string>
+    <string name="store_sample_formatting_strikethrough">Acesta este un text tăiat.</string>
+    <string name="store_sample_formatting_title">Formatare</string>
+    <string name="store_sample_grocery_bread">Pâine</string>
+    <string name="store_sample_grocery_breakfast">Micul dejun</string>
+    <string name="store_sample_grocery_chips">Chipsuri</string>
+    <string name="store_sample_grocery_cleaning">Curățenie</string>
+    <string name="store_sample_grocery_coffee">Cafea</string>
+    <string name="store_sample_grocery_cookies">Cookie-uri</string>
+    <string name="store_sample_grocery_dish_soap">Detergent de vase</string>
+    <string name="store_sample_grocery_list_title">Lista de cumpărături</string>
+    <string name="store_sample_grocery_snacks">Gustări</string>
+    <string name="store_sample_grocery_sponge">Burete</string>
+    <string name="store_sample_label_health">Sănătate</string>
+    <string name="store_sample_label_todo">De făcut</string>
+    <string name="store_sample_vacation_body">Iată câteva locuri pe care mi-ar plăcea să le vizitez în această vară:\n- Stațiune de pe litoral în Maldive\n- Drumeții montane în Elveția\n- Tur al orașului Tokyo</string>
+    <string name="store_sample_vacation_title">Vacanță</string>
+</resources>

@@ -27,7 +27,7 @@ fun `01_ManageAndOrganize`() {
                     showSearchOption = true,
                     content = {
                         NotesGridScreen(
-                            items = AppStoreSampleData.MAIN_NOTES,
+                            items = AppStoreSampleData.mainNotes(),
                             displayConfig = NoteCardDisplayConfig(maxLines = 7),
                         )
                     },

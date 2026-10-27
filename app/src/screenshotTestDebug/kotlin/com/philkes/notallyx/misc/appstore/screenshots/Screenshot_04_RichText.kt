@@ -35,8 +35,8 @@ fun `04_RichText`() {
             LocalContext.current.extractColor(Color.CLAY.toColorString())
         )
     val contentColor = contentColorFor(noteColor)
-    val annotated =
-        AppStoreSampleData.FORMATTING_BODY.toAnnotatedString(AppStoreSampleData.FORMATTING_SPANS)
+    val formattingNote = AppStoreSampleData.formattingNote()
+    val annotated = formattingNote.body.toAnnotatedString(formattingNote.spans)
 
     NotallyXTheme {
         DeviceFrame(
@@ -47,11 +47,10 @@ fun `04_RichText`() {
                 EditNoteScreen(
                     noteState =
                         EditNoteState(
-                            title = AppStoreSampleData.FORMATTING_NOTE.title,
+                            title = formattingNote.title,
                             bodyValue = TextFieldValue(annotated),
-                            createdTimestamp = AppStoreSampleData.FORMATTING_NOTE.timestamp,
-                            modifiedTimestamp =
-                                AppStoreSampleData.FORMATTING_NOTE.modifiedTimestamp,
+                            createdTimestamp = formattingNote.timestamp,
+                            modifiedTimestamp = formattingNote.modifiedTimestamp,
                             type = Type.NOTE,
                         ),
                     preferences =

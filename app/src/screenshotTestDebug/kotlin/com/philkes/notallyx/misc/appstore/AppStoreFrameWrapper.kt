@@ -1,6 +1,10 @@
 package com.philkes.notallyx.misc.appstore
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.BaseNote
+import com.philkes.notallyx.data.model.Color
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.ListItem
@@ -22,19 +26,19 @@ import kotlin.time.Instant
 object AppStoreSampleData {
     private val date = Instant.parse("2026-01-02T12:00:00Z")
 
-    val DAILY_JOURNAL_NOTE =
+    @Composable
+    fun dailyJournalNote(): BaseNote =
         BaseNote(
             id = 1L,
             type = Type.NOTE,
             folder = Folder.NOTES,
             color = BaseNote.COLOR_DEFAULT,
-            title = "Daily Journal",
+            title = stringResource(R.string.store_sample_daily_journal_title),
             pinned = false,
             timestamp = date.toEpochMilliseconds(),
             modifiedTimestamp = date.plus(10.minutes).toEpochMilliseconds(),
             labels = emptyList(),
-            body =
-                "Date: October 19, 2024\n\nToday was a productive day! I managed to:\n- Finish the presentation for Monday\n- Attend the team meeting\n- Go for a 30-minute run\n\nLooking forward to a relaxing weekend ahead.",
+            body = stringResource(R.string.store_sample_daily_journal_body),
             spans = emptyList(),
             items = emptyList(),
             images = emptyList(),
@@ -59,36 +63,80 @@ object AppStoreSampleData {
             isPinnedToStatus = false,
         )
 
-    val FORMATTING_BODY =
-        "This is a bold text.\nThis is italic text.\nThis is strikethrough text.\nAnd this is a code block in monospace font.\nhttps://github.com/Crustack/NotallyX"
+    @Composable
+    private fun formattingData(): Pair<String, List<SpanRepresentation>> {
+        val bold = stringResource(R.string.store_sample_formatting_bold)
+        val italic = stringResource(R.string.store_sample_formatting_italic)
+        val strikethrough = stringResource(R.string.store_sample_formatting_strikethrough)
+        val monospace = stringResource(R.string.store_sample_formatting_monospace)
+        val link = stringResource(R.string.store_sample_formatting_link)
 
-    val FORMATTING_SPANS =
-        listOf(
-            SpanRepresentation(start = 0, end = 20, bold = true),
-            SpanRepresentation(start = 21, end = 41, italic = true),
-            SpanRepresentation(start = 42, end = 69, strikethrough = true),
-            SpanRepresentation(start = 70, end = 113, monospace = true),
+        val body = "$bold\n$italic\n$strikethrough\n$monospace\n$link"
+
+        var currentOffset = bold.length + 1
+        val spans =
+            mutableListOf(
+                SpanRepresentation(
+                    start = 0,
+                    end = bold.length,
+                    bold = true,
+                )
+            )
+
+        spans.add(
             SpanRepresentation(
-                start = 113,
-                end = 113 + 37,
+                start = currentOffset,
+                end = currentOffset + italic.length,
+                italic = true,
+            )
+        )
+        currentOffset += italic.length + 1
+
+        spans.add(
+            SpanRepresentation(
+                start = currentOffset,
+                end = currentOffset + strikethrough.length,
+                strikethrough = true,
+            )
+        )
+        currentOffset += strikethrough.length + 1
+
+        spans.add(
+            SpanRepresentation(
+                start = currentOffset,
+                end = currentOffset + monospace.length,
+                monospace = true,
+            )
+        )
+        currentOffset += monospace.length + 1
+
+        spans.add(
+            SpanRepresentation(
+                start = currentOffset,
+                end = currentOffset + link.length,
                 link = true,
-                linkData = "https://github.com/Crustack/NotallyX",
-            ),
+                linkData = link,
+            )
         )
 
-    val FORMATTING_NOTE =
-        BaseNote(
+        return body to spans
+    }
+
+    @Composable
+    fun formattingNote(): BaseNote {
+        val (body, spans) = formattingData()
+        return BaseNote(
             id = 2L,
             type = Type.NOTE,
             folder = Folder.NOTES,
-            color = com.philkes.notallyx.data.model.Color.CLAY.toColorString(),
-            title = "Formatting",
+            color = Color.CLAY.toColorString(),
+            title = stringResource(R.string.store_sample_formatting_title),
             pinned = false,
             timestamp = date.plus(1.days).toEpochMilliseconds(),
             modifiedTimestamp = date.plus(1.days).plus(10.minutes).toEpochMilliseconds(),
             labels = emptyList(),
-            body = FORMATTING_BODY,
-            spans = FORMATTING_SPANS,
+            body = body,
+            spans = spans,
             items = emptyList(),
             images = emptyList(),
             files = emptyList(),
@@ -97,24 +145,26 @@ object AppStoreSampleData {
             viewMode = NoteViewMode.EDIT,
             isPinnedToStatus = false,
         )
+    }
 
-    val GROCERY_LIST_NOTE =
+    @Composable
+    fun groceryListNote(): BaseNote =
         BaseNote(
             id = 3L,
             type = Type.LIST,
             folder = Folder.NOTES,
-            color = com.philkes.notallyx.data.model.Color.FOG.toColorString(),
-            title = "Grocery List",
+            color = Color.FOG.toColorString(),
+            title = stringResource(R.string.store_sample_grocery_list_title),
             pinned = false,
             timestamp = date.plus(2.days).toEpochMilliseconds(),
             modifiedTimestamp = date.plus(2.days).plus(10.minutes).toEpochMilliseconds(),
-            labels = listOf("Todo"),
+            labels = listOf(stringResource(R.string.store_sample_label_todo)),
             body = "",
             spans = emptyList(),
             items =
                 listOf(
                     ListItem(
-                        "Breakfast",
+                        stringResource(R.string.store_sample_grocery_breakfast),
                         checked = false,
                         isChild = false,
                         order = 0,
@@ -122,7 +172,7 @@ object AppStoreSampleData {
                         id = 1,
                     ),
                     ListItem(
-                        "Coffee",
+                        stringResource(R.string.store_sample_grocery_coffee),
                         checked = false,
                         isChild = true,
                         order = 1,
@@ -130,7 +180,7 @@ object AppStoreSampleData {
                         id = 2,
                     ),
                     ListItem(
-                        "Bread",
+                        stringResource(R.string.store_sample_grocery_bread),
                         checked = true,
                         isChild = true,
                         order = 2,
@@ -138,7 +188,7 @@ object AppStoreSampleData {
                         id = 3,
                     ),
                     ListItem(
-                        "Cleaning",
+                        stringResource(R.string.store_sample_grocery_cleaning),
                         checked = false,
                         isChild = false,
                         order = 3,
@@ -146,7 +196,7 @@ object AppStoreSampleData {
                         id = 4,
                     ),
                     ListItem(
-                        "Dish soap",
+                        stringResource(R.string.store_sample_grocery_dish_soap),
                         checked = false,
                         isChild = true,
                         order = 4,
@@ -154,7 +204,7 @@ object AppStoreSampleData {
                         id = 5,
                     ),
                     ListItem(
-                        "Sponge",
+                        stringResource(R.string.store_sample_grocery_sponge),
                         checked = true,
                         isChild = true,
                         order = 5,
@@ -162,7 +212,7 @@ object AppStoreSampleData {
                         id = 6,
                     ),
                     ListItem(
-                        "Snacks",
+                        stringResource(R.string.store_sample_grocery_snacks),
                         checked = false,
                         isChild = false,
                         order = 6,
@@ -170,7 +220,7 @@ object AppStoreSampleData {
                         id = 7,
                     ),
                     ListItem(
-                        "Cookies",
+                        stringResource(R.string.store_sample_grocery_cookies),
                         checked = false,
                         isChild = true,
                         order = 7,
@@ -178,7 +228,7 @@ object AppStoreSampleData {
                         id = 8,
                     ),
                     ListItem(
-                        "Chips",
+                        stringResource(R.string.store_sample_grocery_chips),
                         checked = false,
                         isChild = true,
                         order = 8,
@@ -194,19 +244,19 @@ object AppStoreSampleData {
             isPinnedToStatus = false,
         )
 
-    val VACATION_NOTE =
+    @Composable
+    fun vacationNote(): BaseNote =
         BaseNote(
             id = 4L,
             type = Type.NOTE,
             folder = Folder.NOTES,
-            color = com.philkes.notallyx.data.model.Color.DUSK.toColorString(),
-            title = "Vacation",
+            color = Color.DUSK.toColorString(),
+            title = stringResource(R.string.store_sample_vacation_title),
             pinned = false,
             timestamp = date.plus(3.days).toEpochMilliseconds(),
             modifiedTimestamp = date.plus(3.days).plus(10.minutes).toEpochMilliseconds(),
             labels = emptyList(),
-            body =
-                "Here are some places I'd like to visit this summer:\n- Beach Resort in Maldives\n- Mountain Hiking in Switzerland\n- City Tour in Tokyo",
+            body = stringResource(R.string.store_sample_vacation_body),
             spans = emptyList(),
             items = emptyList(),
             images =
@@ -248,23 +298,24 @@ object AppStoreSampleData {
             isPinnedToStatus = false,
         )
 
-    val DINNER_BUCKETLIST_NOTE =
+    @Composable
+    fun dinnerBucketlistNote(): BaseNote =
         BaseNote(
             id = 5L,
             type = Type.LIST,
             folder = Folder.NOTES,
-            color = com.philkes.notallyx.data.model.Color.BLOSSOM.toColorString(),
-            title = "Dinner Bucketlist",
+            color = Color.BLOSSOM.toColorString(),
+            title = stringResource(R.string.store_sample_dinner_bucketlist_title),
             pinned = false,
             timestamp = date.plus(4.days).toEpochMilliseconds(),
             modifiedTimestamp = date.plus(4.days).plus(10.minutes).toEpochMilliseconds(),
-            labels = listOf("Todo"),
+            labels = listOf(stringResource(R.string.store_sample_label_todo)),
             body = "",
             spans = emptyList(),
             items =
                 listOf(
                     ListItem(
-                        "🌯 Burrito",
+                        stringResource(R.string.store_sample_dinner_burrito),
                         checked = false,
                         isChild = false,
                         order = 0,
@@ -272,7 +323,7 @@ object AppStoreSampleData {
                         id = 10,
                     ),
                     ListItem(
-                        "🥪 Philly Cheesesteak",
+                        stringResource(R.string.store_sample_dinner_philly_cheesesteak),
                         checked = false,
                         isChild = false,
                         order = 1,
@@ -280,7 +331,7 @@ object AppStoreSampleData {
                         id = 11,
                     ),
                     ListItem(
-                        "🥟 Pierogi",
+                        stringResource(R.string.store_sample_dinner_pierogi),
                         checked = false,
                         isChild = false,
                         order = 2,
@@ -288,7 +339,7 @@ object AppStoreSampleData {
                         id = 12,
                     ),
                     ListItem(
-                        "🍜 Ramen",
+                        stringResource(R.string.store_sample_dinner_ramen),
                         checked = true,
                         isChild = false,
                         order = 3,
@@ -304,18 +355,19 @@ object AppStoreSampleData {
             isPinnedToStatus = false,
         )
 
-    val DOCTOR_APPOINTMENT_NOTE =
+    @Composable
+    fun doctorAppointmentNote(): BaseNote =
         BaseNote(
             id = 6L,
             type = Type.NOTE,
             folder = Folder.NOTES,
-            color = com.philkes.notallyx.data.model.Color.MINT.toColorString(),
-            title = "Doctor Appointment",
+            color = Color.MINT.toColorString(),
+            title = stringResource(R.string.store_sample_doctor_appointment_title),
             pinned = false,
             timestamp = date.plus(5.days).toEpochMilliseconds(),
             modifiedTimestamp = date.plus(5.days).plus(10.minutes).toEpochMilliseconds(),
-            labels = listOf("Health"),
-            body = "Annual checkup at City Health Clinic with Dr. Miller.",
+            labels = listOf(stringResource(R.string.store_sample_label_health)),
+            body = stringResource(R.string.store_sample_doctor_appointment_body),
             spans = emptyList(),
             items = emptyList(),
             images = emptyList(),
@@ -333,18 +385,19 @@ object AppStoreSampleData {
             isPinnedToStatus = false,
         )
 
-    val CAR_SERVICE_NOTE =
+    @Composable
+    fun carServiceNote(): BaseNote =
         BaseNote(
             id = 7L,
             type = Type.NOTE,
             folder = Folder.NOTES,
-            color = com.philkes.notallyx.data.model.Color.SAND.toColorString(),
-            title = "Car Service",
+            color = Color.SAND.toColorString(),
+            title = stringResource(R.string.store_sample_car_service_title),
             pinned = false,
             timestamp = date.plus(6.days).toEpochMilliseconds(),
             modifiedTimestamp = date.plus(6.days).plus(10.minutes).toEpochMilliseconds(),
             labels = emptyList(),
-            body = "Scheduled oil change, brake inspection, and tire rotation.",
+            body = stringResource(R.string.store_sample_car_service_body),
             spans = emptyList(),
             items = emptyList(),
             images = emptyList(),
@@ -362,20 +415,22 @@ object AppStoreSampleData {
             isPinnedToStatus = false,
         )
 
-    val MAIN_NOTES =
+    @Composable
+    fun mainNotes(): List<BaseNote> =
         listOf(
-            DAILY_JOURNAL_NOTE,
-            FORMATTING_NOTE,
-            GROCERY_LIST_NOTE,
-            VACATION_NOTE,
-            DINNER_BUCKETLIST_NOTE,
+            dailyJournalNote(),
+            formattingNote(),
+            groceryListNote(),
+            vacationNote(),
+            dinnerBucketlistNote(),
         )
 
-    val REMINDER_NOTES =
+    @Composable
+    fun reminderNotes(): List<BaseNote> =
         listOf(
-            VACATION_NOTE,
-            DAILY_JOURNAL_NOTE,
-            DOCTOR_APPOINTMENT_NOTE,
-            CAR_SERVICE_NOTE,
+            vacationNote(),
+            dailyJournalNote(),
+            doctorAppointmentNote(),
+            carServiceNote(),
         )
 }
