@@ -143,18 +143,23 @@ suspend fun ContextWrapper.createBackup(): Result {
                         it.delete()
                     }
                 }
-                // Backups without notes are marked in their name, so they can be excluded from
-                // the rotation of the backups with notes
-                val isEmpty = NotallyDatabase.getDatabase(app).value?.getBaseNoteDao()?.count() == 0
                 val name =
-                    "$backupFilePrefix${FILE_TIMESTAMP_FORMAT.format(System.currentTimeMillis())}" +
-                        if (isEmpty) PERIODIC_BACKUP_EMPTY_SUFFIX else ""
+                    "$backupFilePrefix${FILE_TIMESTAMP_FORMAT.format(System.currentTimeMillis())}"
                 log(TAG, msg = "Creating '$uri/$name.zip'...")
                 zipDocument = folder.createFileSafe(MIME_TYPE_ZIP, name, ".zip")
-                val zipUri = zipDocument.uri
                 val (exportedNotes, exportedAttachments) =
-                    app.exportAsZip(zipUri, password = preferences.backupPassword.value)
+                    app.exportAsZip(zipDocument.uri, password = preferences.backupPassword.value)
                 log(TAG, msg = "Exported $exportedNotes notes and $exportedAttachments attachments")
+                // Backups without notes are marked in their name, so they can be excluded from
+                // the rotation of the backups with notes. The count is the one of the exported
+                // database copy, so the marker always matches the content.
+                if (
+                    exportedNotes == 0 &&
+                        !zipDocument.renameTo("$name$PERIODIC_BACKUP_EMPTY_SUFFIX.zip")
+                ) {
+                    log(TAG, msg = "Could not mark '$name.zip' as backup without notes")
+                }
+                val zipUri = zipDocument.uri
                 // Sorted by the timestamp in the name: providers may report lastModified as 0
                 val backupFiles =
                     folder.listZipFiles(backupFilePrefix).sortedByDescending { it.name.orEmpty() }
@@ -224,6 +229,13 @@ private val autoBackupOnSaveMutex = Mutex()
 
 /** Name of the ZIP a new auto backup is written to before it replaces [ON_SAVE_BACKUP_FILE]. */
 const val ON_SAVE_BACKUP_TEMP_FILE = "${ON_SAVE_BACKUP_FILE}_tmp"
+
+/** Name the existing auto backup ZIP has while it is being replaced. */
+const val ON_SAVE_BACKUP_PREVIOUS_FILE = "${ON_SAVE_BACKUP_FILE}_previous"
+
+/** Complete ZIPs left behind by an interrupted replace, in the order they are used for recovery. */
+private val ON_SAVE_BACKUP_LEFTOVER_FILES =
+    listOf(ON_SAVE_BACKUP_TEMP_FILE, ON_SAVE_BACKUP_PREVIOUS_FILE)
 
 /**
  * Creates or updates the "auto backup on save" ZIP ([ON_SAVE_BACKUP_FILE]).
@@ -361,7 +373,13 @@ suspend fun ContextWrapper.autoBackupOnSave(
 
             val resultZip = File(workDir, "result.zip")
             zipDirectory(newDir, resultZip, password)
-            replaceFileSafely(folder, ON_SAVE_BACKUP_FILE, ON_SAVE_BACKUP_TEMP_FILE, resultZip)
+            replaceFileSafely(
+                folder,
+                ON_SAVE_BACKUP_FILE,
+                ON_SAVE_BACKUP_TEMP_FILE,
+                ON_SAVE_BACKUP_PREVIOUS_FILE,
+                resultZip,
+            )
             Log.d(TAG, "Finished auto backup")
         } catch (e: Exception) {
             try {
@@ -431,28 +449,30 @@ private fun ContextWrapper.extractBackupWithAnyPassword(
 }
 
 /**
- * If a previous [replaceFileSafely] was interrupted after the old ZIP was deleted, only the
- * verified temp ZIP exists. Restore it under the regular name before doing anything else.
+ * If a previous [replaceFileSafely] was interrupted, the regular ZIP may be missing while the new
+ * (temp) or old (previous) ZIP still exists. Restore it under the regular name before doing
+ * anything else.
  */
 private fun ContextWrapper.recoverInterruptedReplace(folder: DocumentFile) {
     if (folder.findFile("$ON_SAVE_BACKUP_FILE.zip")?.exists() == true) {
         return
     }
-    val temp =
-        folder.findFile("$ON_SAVE_BACKUP_TEMP_FILE.zip")?.takeIf { it.exists() && it.length() > 0 }
-            ?: return
-    log(TAG, msg = "Restoring interrupted auto backup '${temp.name}'")
-    if (!temp.renameTo("$ON_SAVE_BACKUP_FILE.zip")) {
+    val leftover =
+        ON_SAVE_BACKUP_LEFTOVER_FILES.firstNotNullOfOrNull { name ->
+            folder.findFile("$name.zip")?.takeIf { it.exists() && it.length() > 0 }
+        } ?: return
+    log(TAG, msg = "Restoring interrupted auto backup '${leftover.name}'")
+    if (!leftover.renameTo("$ON_SAVE_BACKUP_FILE.zip")) {
         val target = folder.createFileSafe(MIME_TYPE_ZIP, ON_SAVE_BACKUP_FILE, ".zip")
-        copyDocumentVerified(temp.uri, target.uri)
-        temp.delete()
+        copyDocumentVerified(leftover.uri, target.uri)
+        leftover.delete()
     }
 }
 
 /**
  * If writing the regular ZIP was interrupted in the direct-write fallback of [replaceFileSafely],
- * the regular ZIP is broken while the verified temp ZIP still exists. Extracts that temp ZIP into
- * [outputDir] and returns its timestamp, or `null` if there is no readable temp ZIP. A temp ZIP
+ * the regular ZIP is broken while a complete temp or previous ZIP may still exist. Extracts the
+ * first readable one into [outputDir] and returns its timestamp, or `null` if there is none. A ZIP
  * that is only partially written itself fails to extract and is ignored.
  */
 private fun ContextWrapper.extractLeftoverTempBackup(
@@ -460,18 +480,19 @@ private fun ContextWrapper.extractLeftoverTempBackup(
     outputDir: File,
     vararg passwords: String,
 ): Long? {
-    val temp =
-        folder.findFile("$ON_SAVE_BACKUP_TEMP_FILE.zip")?.takeIf { it.exists() && it.length() > 0 }
-            ?: return null
-    return try {
-        extractBackupWithAnyPassword(temp.uri, outputDir, passwords.toList().distinct())
-        log(TAG, msg = "Auto backup ZIP is broken, continuing from '${temp.name}'")
-        temp.lastModified().takeIf { it > 0 } ?: System.currentTimeMillis()
-    } catch (e: ZipException) {
-        outputDir.deleteRecursively()
-        outputDir.mkdirs()
-        null
+    for (name in ON_SAVE_BACKUP_LEFTOVER_FILES) {
+        val leftover =
+            folder.findFile("$name.zip")?.takeIf { it.exists() && it.length() > 0 } ?: continue
+        try {
+            extractBackupWithAnyPassword(leftover.uri, outputDir, passwords.toList().distinct())
+            log(TAG, msg = "Auto backup ZIP is broken, continuing from '${leftover.name}'")
+            return leftover.lastModified().takeIf { it > 0 } ?: System.currentTimeMillis()
+        } catch (e: ZipException) {
+            outputDir.deleteRecursively()
+            outputDir.mkdirs()
+        }
     }
+    return null
 }
 
 /** Keeps an auto backup ZIP that can not be read under a new name instead of overwriting it. */
@@ -495,14 +516,19 @@ private fun ContextWrapper.preserveUnreadableBackup(
 }
 
 /**
- * Replaces `[fileName].zip` in [folder] with [source] so that there is never a moment without a
- * complete backup: [source] is first written to `[tempFileName].zip` and verified, only then the
- * old file is deleted and the temp file renamed.
+ * Replaces `[fileName].zip` in [folder] with [source] so that a complete backup always exists:
+ * [source] is first written to `[tempFileName].zip` and verified. The old ZIP is then renamed to
+ * `[previousFileName].zip` and only deleted once the temp ZIP has been renamed to `[fileName].zip`.
+ * If renaming the temp ZIP fails, the old ZIP is restored.
+ *
+ * Only if the provider doesn't support renaming at all, the old ZIP is deleted and the new one
+ * written directly; the verified temp ZIP is kept until that succeeded.
  */
 private fun ContextWrapper.replaceFileSafely(
     folder: DocumentFile,
     fileName: String,
     tempFileName: String,
+    previousFileName: String,
     source: File,
 ) {
     folder.findFile("$tempFileName.zip")?.delete()
@@ -513,16 +539,33 @@ private fun ContextWrapper.replaceFileSafely(
         runCatching { temp.delete() }
         throw e
     }
-    folder.findFile("$fileName.zip")?.let { old ->
-        if (old.exists() && !old.delete()) {
+    val old = folder.findFile("$fileName.zip")?.takeIf { it.exists() }
+    if (old == null) {
+        if (temp.renameTo("$fileName.zip")) {
+            return
+        }
+    } else {
+        folder.findFile("$previousFileName.zip")?.delete()
+        if (old.renameTo("$previousFileName.zip")) {
+            if (temp.renameTo("$fileName.zip")) {
+                old.delete()
+                return
+            }
+            // Renaming works in general, so keep the old ZIP instead of deleting it
+            if (!old.renameTo("$fileName.zip")) {
+                throw IOException(
+                    "Replacing '$fileName.zip' failed, the old and new ZIP are kept as '$previousFileName.zip' and '$tempFileName.zip'"
+                )
+            }
+            runCatching { temp.delete() }
+            throw IOException("Replacing '$fileName.zip' failed, the old ZIP was kept")
+        }
+        // Renaming is not supported by this DocumentsProvider
+        if (!old.delete()) {
             runCatching { temp.delete() }
             throw IOException("Could not delete old backup '${old.uri}'")
         }
     }
-    if (temp.renameTo("$fileName.zip")) {
-        return
-    }
-    // Renaming is not supported by every DocumentsProvider, write the file again instead
     log(TAG, msg = "Renaming '${temp.uri}' failed, writing '$fileName.zip' directly")
     val target = folder.createFileSafe(MIME_TYPE_ZIP, fileName, ".zip")
     try {
@@ -689,7 +732,14 @@ suspend fun ContextWrapper.exportAsZip(
         val (databaseOriginal, databaseCopy) = copyDatabase()
         zipFile.addFile(databaseCopy, zipParameters.copy(DATABASE_NAME))
 
-        val totalNotes = databaseOriginal.getBaseNoteDao().count()
+        // Count the notes of the exported copy, the live database may have changed meanwhile
+        val totalNotes =
+            try {
+                SqliteSnapshotInspector.inspect(databaseCopy).noteCount
+            } catch (e: Exception) {
+                log(TAG, msg = "Counting notes of the database copy failed", throwable = e)
+                databaseOriginal.getBaseNoteDao().count()
+            }
         val images = databaseOriginal.getBaseNoteDao().getAllImages().toFileAttachments()
         val files = databaseOriginal.getBaseNoteDao().getAllFiles().toFileAttachments()
         val audios = databaseOriginal.getBaseNoteDao().getAllAudios()
