@@ -51,7 +51,7 @@ object AppStoreSampleData {
                 listOf(
                     Reminder(
                         id = 1L,
-                        dateTime = Date(System.currentTimeMillis() + 3600000L),
+                        dateTime = Date(date.plus(1.days).toEpochMilliseconds()),
                         repetition = Repetition(1, RepetitionTimeUnit.DAYS),
                     )
                 ),
@@ -240,7 +240,7 @@ object AppStoreSampleData {
                 listOf(
                     Reminder(
                         id = 2L,
-                        dateTime = Date(System.currentTimeMillis() + 86400000L),
+                        dateTime = Date(date.plus(4.days).toEpochMilliseconds()),
                         repetition = null,
                     )
                 ),
@@ -325,7 +325,7 @@ object AppStoreSampleData {
                 listOf(
                     Reminder(
                         id = 3L,
-                        dateTime = Date(System.currentTimeMillis() + 172800000L),
+                        dateTime = Date(date.plus(6.days).toEpochMilliseconds()),
                         repetition = null,
                     )
                 ),
@@ -354,7 +354,7 @@ object AppStoreSampleData {
                 listOf(
                     Reminder(
                         id = 4L,
-                        dateTime = Date(System.currentTimeMillis() + 259200000L),
+                        dateTime = Date(date.plus(7.days).toEpochMilliseconds()),
                         repetition = null,
                     )
                 ),
