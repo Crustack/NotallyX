@@ -155,7 +155,9 @@ suspend fun ContextWrapper.createBackup(): Result {
                 val (exportedNotes, exportedAttachments) =
                     app.exportAsZip(zipUri, password = preferences.backupPassword.value)
                 log(TAG, msg = "Exported $exportedNotes notes and $exportedAttachments attachments")
-                val backupFiles = folder.listZipFiles(backupFilePrefix)
+                // Sorted by the timestamp in the name: providers may report lastModified as 0
+                val backupFiles =
+                    folder.listZipFiles(backupFilePrefix).sortedByDescending { it.name.orEmpty() }
                 val (emptyBackups, backupsWithNotes) = backupFiles.partition { it.isEmptyBackup() }
                 log(
                     TAG,
