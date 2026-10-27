@@ -21,7 +21,7 @@ NotallyX can automatically back up your notes to prevent data loss:
     - **Periodic Backups**: Automatically creates backups at regular day intervals.
     - **Maximum Backups to Keep**: Automatically cleans up older backups beyond your specified limit.
 
-A periodic backup that contains no notes never causes older backups to be deleted, so an accidentally emptied database can not replace your last good backups.
+A periodic backup that contains no notes is marked with `_empty` in its file name. It never causes backups with notes to be deleted and doesn't count towards **Maximum Backups to Keep** (only the newest backup without notes is kept), so an accidentally emptied database can not replace your last good backups. For the same reason, the auto backup on exit is not updated while there are no notes at all.
 
 ### History of the auto backup on exit
 

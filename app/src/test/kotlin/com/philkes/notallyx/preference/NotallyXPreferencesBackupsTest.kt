@@ -170,22 +170,25 @@ class NotallyXPreferencesBackupsTest {
     fun createBackup_withoutNotes_doesNotRotateOutOlderBackups() {
         runBlocking {
             val noteDao = createFileDatabase().getBaseNoteDao()
-            preferences.periodicBackups.save(PeriodicBackup(periodInDays = 1, maxBackups = 1))
+            preferences.periodicBackups.save(PeriodicBackup(periodInDays = 1, maxBackups = 2))
             noteDao.insert(createSampleNote(title = "Note", body = "Body"))
             application.createBackup()
-            assertThat(periodicBackupZips()).hasSize(1)
+            val firstBackup = periodicBackupZips().single()
 
-            // The database got emptied: the backup with notes must survive
+            // The database got emptied: backups without notes don't push out the one with notes
             noteDao.deleteFrom(Folder.NOTES)
-            delay(20)
-            application.createBackup()
-            assertThat(periodicBackupZips()).hasSize(2)
+            repeat(2) {
+                delay(20)
+                application.createBackup()
+            }
+            assertThat(periodicBackupZips()).hasSize(2) // first backup + newest empty one
+            assertThat(periodicBackupZips().filter { it.name.endsWith("_empty.zip") }).hasSize(1)
 
-            // Once there are notes again, rotation works as usual
+            // With notes again, empty backups don't count towards maxBackups
             noteDao.insert(createSampleNote(title = "New Note", body = "Body"))
             delay(20)
             application.createBackup()
-            assertThat(periodicBackupZips()).hasSize(1)
+            assertThat(periodicBackupZips()).hasSize(3).contains(firstBackup)
         }
     }
 
@@ -227,15 +230,24 @@ class NotallyXPreferencesBackupsTest {
                 "${BackupHistory.HISTORY_FOLDER}/${BackupHistory.snapshotName(autoBackupZip().lastModified())}"
             assertThat(autoBackupEntries()).contains(NotallyDatabase.DATABASE_NAME, snapshot)
 
-            // Emptying the database must not replace the last state with notes
+            // An emptied database never replaces the existing auto backup
             noteDao.deleteFrom(Folder.NOTES)
             application.autoBackupOnSave(backupsFolder, "", null)
             application.autoBackupOnSave(backupsFolder, "", null)
-
             val extracted = File(application.cacheDir, "history_test").apply { mkdirs() }
-            ZipFile(autoBackupZip()).extractFile(snapshot, extracted.path)
-            assertThat(SqliteSnapshotInspector.inspect(File(extracted, snapshot)).noteCount)
-                .isEqualTo(2)
+            var extractions = 0
+            fun noteCountOf(entry: String): Int {
+                val target = File(extracted, "${extractions++}")
+                ZipFile(autoBackupZip()).extractFile(entry, target.path)
+                return SqliteSnapshotInspector.inspect(File(target, entry)).noteCount
+            }
+            assertThat(noteCountOf(NotallyDatabase.DATABASE_NAME)).isEqualTo(2)
+
+            // A new note after the data loss: the last state with 2 notes moves to the History
+            noteDao.insert(createSampleNote(title = "After loss", body = "Body"))
+            application.autoBackupOnSave(backupsFolder, "", null)
+            assertThat(noteCountOf(NotallyDatabase.DATABASE_NAME)).isEqualTo(1)
+            assertThat(noteCountOf(snapshot)).isEqualTo(2)
             assertThat(
                     File(
                         application.getExternalBackupsDirectory(),

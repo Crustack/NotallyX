@@ -121,27 +121,24 @@ object BackupHistory {
             }
         }
 
-        // 3. Attachments that are not part of the current state anymore go to History/Media
+        // 3. Attachments that are not part of the current state anymore go to History/Media.
+        // Paths are relative to the attachment folder, so names containing '/' work as well.
         val movedToMedia = mutableListOf<String>()
         if (previousDir != null) {
             ATTACHMENT_FOLDERS.forEach { folder ->
-                File(previousDir, folder)
-                    .listFiles()
-                    ?.filter { it.isFile }
-                    ?.forEach { file ->
-                        val path = "$folder/${file.name}"
-                        val target = File(mediaDir, path)
-                        if (!File(newDir, path).exists() && !target.exists()) {
-                            file.copyTo(target)
-                            movedToMedia.add(path)
-                        }
+                File(previousDir, folder).attachmentFiles(folder).forEach { (path, file) ->
+                    val target = File(mediaDir, path)
+                    if (!File(newDir, path).exists() && !target.exists()) {
+                        file.copyTo(target)
+                        movedToMedia.add(path)
                     }
+                }
             }
         }
         // Attachments that are part of the current state again don't need a second copy
         ATTACHMENT_FOLDERS.forEach { folder ->
-            File(mediaDir, folder).listFiles()?.forEach { file ->
-                if (File(newDir, "$folder/${file.name}").exists()) {
+            File(mediaDir, folder).attachmentFiles(folder).forEach { (path, file) ->
+                if (File(newDir, path).exists()) {
                     file.delete()
                 }
             }
@@ -170,16 +167,14 @@ object BackupHistory {
         if (mediaDir.isDirectory && keep.all { info(it) != null }) {
             val referenced = keep.flatMap { info(it)!!.attachments }.toSet()
             ATTACHMENT_FOLDERS.forEach { folder ->
-                File(mediaDir, folder).listFiles()?.forEach { file ->
-                    val path = "$folder/${file.name}"
+                File(mediaDir, folder).attachmentFiles(folder).forEach { (path, file) ->
                     if (path !in referenced && file.delete()) {
                         removedMedia.add(path)
                     }
                 }
             }
         }
-        ATTACHMENT_FOLDERS.forEach { folder -> File(mediaDir, folder).deleteIfEmpty() }
-        mediaDir.deleteIfEmpty()
+        mediaDir.deleteEmptyDirectories()
         historyDir.deleteIfEmpty()
 
         return MergeResult(
@@ -189,6 +184,22 @@ object BackupHistory {
             removedMedia = removedMedia,
             skippedEmptySnapshot = skippedEmptySnapshot,
         )
+    }
+
+    /** All files below this attachment folder as `<folder>/<relative path>` to file. */
+    private fun File.attachmentFiles(folder: String): List<Pair<String, File>> =
+        if (!isDirectory) emptyList()
+        else
+            walkTopDown()
+                .filter { it.isFile }
+                .map { "$folder/${it.relativeTo(this).invariantSeparatorsPath}" to it }
+                .toList()
+
+    /** Deletes this directory and all directories below it that contain no files. */
+    private fun File.deleteEmptyDirectories() {
+        if (isDirectory) {
+            walkBottomUp().filter { it.isDirectory }.forEach { it.deleteIfEmpty() }
+        }
     }
 
     private fun File.deleteIfEmpty() {

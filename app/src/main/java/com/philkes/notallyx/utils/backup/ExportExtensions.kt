@@ -112,6 +112,10 @@ val LOG_DATE_FORMATTER = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH)
 
 const val ON_SAVE_BACKUP_FILE = "NotallyX_AutoBackup"
 const val PERIODIC_BACKUP_FILE_PREFIX = "NotallyX_Backup_"
+const val PERIODIC_BACKUP_EMPTY_SUFFIX = "_empty"
+
+private fun DocumentFile.isEmptyBackup() =
+    name?.endsWith("$PERIODIC_BACKUP_EMPTY_SUFFIX.zip", ignoreCase = true) == true
 
 private val periodicBackupMutex = Mutex()
 
@@ -139,8 +143,12 @@ suspend fun ContextWrapper.createBackup(): Result {
                         it.delete()
                     }
                 }
+                // Backups without notes are marked in their name, so they can be excluded from
+                // the rotation of the backups with notes
+                val isEmpty = NotallyDatabase.getDatabase(app).value?.getBaseNoteDao()?.count() == 0
                 val name =
-                    "$backupFilePrefix${FILE_TIMESTAMP_FORMAT.format(System.currentTimeMillis())}"
+                    "$backupFilePrefix${FILE_TIMESTAMP_FORMAT.format(System.currentTimeMillis())}" +
+                        if (isEmpty) PERIODIC_BACKUP_EMPTY_SUFFIX else ""
                 log(TAG, msg = "Creating '$uri/$name.zip'...")
                 zipDocument = folder.createFileSafe(MIME_TYPE_ZIP, name, ".zip")
                 val zipUri = zipDocument.uri
@@ -148,18 +156,21 @@ suspend fun ContextWrapper.createBackup(): Result {
                     app.exportAsZip(zipUri, password = preferences.backupPassword.value)
                 log(TAG, msg = "Exported $exportedNotes notes and $exportedAttachments attachments")
                 val backupFiles = folder.listZipFiles(backupFilePrefix)
-                log(TAG, msg = "Found ${backupFiles.size} backups")
+                val (emptyBackups, backupsWithNotes) = backupFiles.partition { it.isEmptyBackup() }
+                log(
+                    TAG,
+                    msg =
+                        "Found ${backupsWithNotes.size} backups with notes and ${emptyBackups.size} without",
+                )
+                // Backups without notes never push out backups with notes: the database might have
+                // been emptied by an error and the old backups are the only copy. Of the backups
+                // without notes only the newest one is kept.
                 val backupsToBeDeleted =
-                    if (exportedNotes == 0 && backupFiles.size > 1) {
-                        // A backup without notes must never push out older backups: the database
-                        // might have been emptied by an error and the old backups are the only copy
-                        log(
-                            TAG,
-                            msg =
-                                "Backup contains no notes, keeping all ${backupFiles.size - 1} older backups",
-                        )
-                        emptyList()
-                    } else backupFiles.drop(maxBackups)
+                    emptyBackups.drop(1) +
+                        if (exportedNotes == 0) {
+                            log(TAG, msg = "Backup contains no notes, keeping all older backups")
+                            emptyList()
+                        } else backupsWithNotes.drop(maxBackups)
                 if (backupsToBeDeleted.isNotEmpty()) {
                     log(
                         TAG,
@@ -315,6 +326,20 @@ suspend fun ContextWrapper.autoBackupOnSave(
                             throwable = e,
                         )
                     }
+                }
+            }
+
+            if (hasPrevious) {
+                val newInfo =
+                    try {
+                        SqliteSnapshotInspector.inspect(File(newDir, DATABASE_NAME))
+                    } catch (e: Exception) {
+                        throw IOException("Database of the new auto backup can not be read", e)
+                    }
+                if (newInfo.noteCount == 0) {
+                    // Keep the existing ZIP: importing it must not restore an empty database
+                    log(TAG, msg = "Database contains no notes, keeping the existing auto backup")
+                    return@withLock
                 }
             }
 

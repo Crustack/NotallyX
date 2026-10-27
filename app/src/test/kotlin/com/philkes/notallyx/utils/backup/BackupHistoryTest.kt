@@ -294,4 +294,23 @@ class BackupHistoryTest {
         // and the one being removed are never read.
         assertEquals(listOf(DATABASE_NAME, "NotallyDatabase_2026-10-23"), inspected)
     }
+
+    @Test
+    fun nestedAttachmentPaths_areMovedAndCleanedUp() {
+        var previous = backupDir(1, "Files/sub/doc.pdf")
+        var new = backupDir(1)
+        merge(previous, new, day("2026-10-20"), maxSnapshots = 1)
+        assertEquals(
+            "content of Files/sub/doc.pdf",
+            File(new, "$HISTORY_FOLDER/$MEDIA_FOLDER/Files/sub/doc.pdf").readText(),
+        )
+
+        // The only snapshot referencing it is pushed out on the next day
+        previous = new
+        new = backupDir(1)
+        val result = merge(previous, new, day("2026-10-21"), maxSnapshots = 1)
+
+        assertEquals(listOf("Files/sub/doc.pdf"), result.removedMedia)
+        assertFalse(File(new, "$HISTORY_FOLDER/$MEDIA_FOLDER").exists())
+    }
 }
