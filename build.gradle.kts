@@ -1,13 +1,3 @@
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath(libs.commons.configuration)
-    }
-}
 
 plugins {
     alias(libs.plugins.android.application) apply false
