@@ -180,12 +180,12 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
                                 (previousBackupPassword != null &&
                                     previousBackupPassword != backupPassword)
                         ) {
-                            deleteModifiedNoteBackup(backupPath)
                             runOnIODispatcher {
                                 autoBackupOnSave(
                                     backupPath,
                                     savedNote = null,
                                     password = backupPassword,
+                                    previousPassword = previousBackupPassword ?: backupPassword,
                                 )
                             }
                         }
@@ -265,17 +265,12 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
     }
 
     private fun checkUpdateAutoBackupOnSave(backupFolderBefore: String?, backupFolder: String) {
-        if (preferences.backupOnSave.value) {
-            if (
-                backupFolderBefore == null &&
-                    backupFolder != EMPTY_PATH &&
-                    !autoBackupOnSaveFileExists(backupFolder)
-            ) {
-                runOnIODispatcher {
-                    autoBackupOnSave(backupFolder, preferences.backupPassword.value, null)
-                }
-            }
-        } else if (folderChanged(backupFolderBefore, backupFolder)) {
+        if (!preferences.backupOnSave.value || backupFolder == EMPTY_PATH) {
+            return
+        }
+        val initialBackupMissing =
+            backupFolderBefore == null && !autoBackupOnSaveFileExists(backupFolder)
+        if (initialBackupMissing || folderChanged(backupFolderBefore, backupFolder)) {
             runOnIODispatcher {
                 autoBackupOnSave(backupFolder, preferences.backupPassword.value, null)
             }
