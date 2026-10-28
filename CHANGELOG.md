@@ -1,5 +1,17 @@
 # Changelog
 
+## [v7.11.4](https://github.com/Crustack/NotallyX/tree/v7.11.4) (2026-10-28)
+
+[Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.11.3...v7.11.4)
+
+### Added Features
+
+- Fix accessibility: Open keyboard on TalkBack double-tap [\#1074](https://github.com/Crustack/NotallyX/pull/1074) ([mieciuJP](https://github.com/mieciuJP))
+
+### Fixed Bugs
+
+- NotallyX\_AutoBackup.zip has wrong or unverifiable MD5 hash [\#1150](https://github.com/Crustack/NotallyX/issues/1150)
+
 ## [v7.11.3](https://github.com/Crustack/NotallyX/tree/v7.11.3) (2026-10-11)
 
 [Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.11.2...v7.11.3)
