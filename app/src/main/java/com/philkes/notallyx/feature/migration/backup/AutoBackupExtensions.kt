@@ -286,8 +286,6 @@ suspend fun ContextWrapper.autoBackupOnSave(
     }
 }
 
-
-
 private fun ContextWrapper.toBackupFiles(note: BaseNote, databaseFile: File): List<BackupFile> =
     note.images.map {
         BackupFile(

@@ -9,7 +9,6 @@ import com.philkes.notallyx.core.common.extensions.SUBFOLDER_BACKUPS
 import com.philkes.notallyx.core.common.extensions.getDocumentFolder
 import com.philkes.notallyx.core.common.extensions.getExternalBackupsDirectory
 import com.philkes.notallyx.core.database.NotallyDatabase
-import com.philkes.notallyx.core.preference.BiometricLock
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.preference.PeriodicBackup
 import com.philkes.notallyx.data.ShadowContextImplMedia
