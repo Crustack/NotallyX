@@ -1,0 +1,2 @@
+- Fix Autobackup truncation mode when overwriting
+- Fix invalid backup creation not leading to deletion of previous backup

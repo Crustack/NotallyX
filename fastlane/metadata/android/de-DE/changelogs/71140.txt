@@ -1,0 +1,2 @@
+- Fix Autobackup truncation mode beim Überschreiben
+- Fix invalides neues Backup sorgt nicht mehr für Löschen von validen alten Backups
