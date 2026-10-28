@@ -308,7 +308,7 @@ class SettingsFragmentTest : UiTestBase() {
         R.id.EnterTitle.byId().perform(typeText(" Foo"))
         R.id.EnterBody.byId().perform(typeText(" Foo"), closeSoftKeyboard())
         Espresso.pressBack()
-        assertLogAppeared("ExportExtensions", "Finished full backup")
+        assertLogAppeared("ExportExtensions", "Finished backup ")
 
         R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, longClick()))
         R.string.delete.byContentDescription().perform(click())

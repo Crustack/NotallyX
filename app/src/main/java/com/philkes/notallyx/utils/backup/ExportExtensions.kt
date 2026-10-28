@@ -77,6 +77,7 @@ import com.philkes.notallyx.utils.wrapWithChooser
 import java.io.File
 import java.io.File.createTempFile
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
@@ -460,6 +461,7 @@ private fun ContextWrapper.writeFileVerified(source: File, target: Uri) {
         contentResolver.openOutputStream(target)
             ?: throw IOException("Could not open output stream for '$target'")
     outputStream.use { out ->
+        (out as? FileOutputStream)?.channel?.truncate(0)
         FileInputStream(source).use { input -> input.copyToLarge(out) }
         out.flush()
     }
@@ -566,6 +568,7 @@ suspend fun ContextWrapper.exportRawDatabase(fileUri: Uri) {
         contentResolver.openOutputStream(fileUri)
             ?: throw IOException("Failed to open output stream for $fileUri")
     outputStream.use { outputStream ->
+        (outputStream as? FileOutputStream)?.channel?.truncate(0)
         FileInputStream(databaseCopy).use { inputStream ->
             inputStream.copyToLarge(outputStream)
             outputStream.flush()
@@ -693,6 +696,7 @@ suspend fun ContextWrapper.exportAsZip(
             }
         }
         contentResolver.openOutputStream(fileUri)?.use { outputStream ->
+            (outputStream as? FileOutputStream)?.channel?.truncate(0)
             FileInputStream(zipFile.file).use { inputStream ->
                 inputStream.copyToLarge(outputStream)
                 outputStream.flush()
