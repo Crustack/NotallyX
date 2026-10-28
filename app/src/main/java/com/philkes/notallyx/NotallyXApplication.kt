@@ -35,7 +35,6 @@ import com.philkes.notallyx.utils.backup.autoBackupOnSaveFileExists
 import com.philkes.notallyx.utils.backup.cancelAutoBackup
 import com.philkes.notallyx.utils.backup.containsNonCancelled
 import com.philkes.notallyx.utils.backup.createBackup
-import com.philkes.notallyx.utils.backup.deleteModifiedNoteBackup
 import com.philkes.notallyx.utils.backup.isEqualTo
 import com.philkes.notallyx.utils.backup.modifiedNoteBackupExists
 import com.philkes.notallyx.utils.backup.scheduleAutoBackup
@@ -117,12 +116,12 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
             preferences.backupsFolder.flow.withPrevious().collect {
                 (backupFolderBefore, backupFolder) ->
                 checkUpdatePeriodicBackup(
-                    backupFolderBefore ?: "",
+                    backupFolderBefore,
                     backupFolder,
                     preferences.periodicBackups.value.periodInDays.toLong(),
                     execute = true,
                 )
-                checkUpdateAutoBackupOnSave(backupFolderBefore ?: "", backupFolder)
+                checkUpdateAutoBackupOnSave(backupFolderBefore, backupFolder)
             }
         }
 
