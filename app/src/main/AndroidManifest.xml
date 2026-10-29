@@ -44,7 +44,9 @@
 
         <activity
             android:name=".feature.main.MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -57,14 +59,10 @@
 
         </activity>
 
-        <activity
-            android:name=".feature.editor.EditListActivity"
-            android:windowSoftInputMode="adjustResize" />
-
-        <activity
+        <activity-alias
             android:name=".feature.editor.EditNoteActivity"
             android:exported="true"
-            android:windowSoftInputMode="adjustResize">
+            android:targetActivity=".feature.main.MainActivity">
 
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -93,12 +91,17 @@
                 <data android:scheme="file" android:mimeType="application/xml" />
                 <data android:scheme="content" android:mimeType="application/xml" />
             </intent-filter>
-        </activity>
+        </activity-alias>
 
-        <activity
+        <activity-alias
+            android:name=".feature.editor.EditListActivity"
+            android:exported="true"
+            android:targetActivity=".feature.main.MainActivity" />
+
+        <activity-alias
             android:name=".feature.editor.EditTextPlainActivity"
             android:exported="true"
-            android:windowSoftInputMode="adjustResize">
+            android:targetActivity=".feature.main.MainActivity">
 
             <intent-filter android:label="@string/edit">
                 <action android:name="android.intent.action.VIEW" />
@@ -115,23 +118,11 @@
                 <data android:scheme="file" android:mimeType="application/xml" />
                 <data android:scheme="content" android:mimeType="application/xml" />
             </intent-filter>
-        </activity>
-
-        <activity android:name=".feature.media.image.ViewImageActivity" />
+        </activity-alias>
 
         <activity
             android:name=".feature.migration.backup.DatabaseTransitionActivity"
             android:exported="false" />
-
-        <activity android:name=".feature.labels.SelectLabelsActivity" />
-
-        <activity android:name=".feature.reminder.RemindersActivity" />
-
-        <activity
-            android:name=".feature.media.audio.RecordAudioActivity"
-            android:launchMode="singleTask" />
-
-        <activity android:name=".feature.media.audio.PlayAudioActivity" />
 
         <activity
             android:name=".feature.widget.ConfigureWidgetActivity"
@@ -141,11 +132,6 @@
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
 
-        </activity>
-
-        <activity
-            android:name=".feature.main.PickNoteActivity"
-            android:exported="false">
         </activity>
 
         <activity

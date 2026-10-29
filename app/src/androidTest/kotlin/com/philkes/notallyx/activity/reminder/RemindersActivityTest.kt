@@ -19,16 +19,16 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.extensions.putNavKey
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Repetition
 import com.philkes.notallyx.data.model.RepetitionTimeUnit
-import com.philkes.notallyx.feature.editor.EditActivity
-import com.philkes.notallyx.feature.editor.EditNoteActivity
+import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.reminder.PinnedNotificationManager
 import com.philkes.notallyx.feature.reminder.ReminderReceiver
-import com.philkes.notallyx.feature.reminder.RemindersActivity
 import com.philkes.notallyx.feature.reminder.cancelReminder
+import com.philkes.notallyx.navigation.NotallyNavKey
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.waitUntil
@@ -273,10 +273,10 @@ class RemindersActivityTest : UiTestBase() {
         val noteId = runBlocking { database.getBaseNoteDao().insert(note) }
 
         val intent =
-            Intent(context, RemindersActivity::class.java).apply {
-                putExtra(RemindersActivity.NOTE_ID, noteId)
+            Intent(context, MainActivity::class.java).apply {
+                putNavKey(NotallyNavKey.NoteReminders(noteId))
             }
-        val scenario = ActivityScenario.launch<RemindersActivity>(intent)
+        val scenario = ActivityScenario.launch<MainActivity>(intent)
 
         val dailyLabel = context.getString(R.string.daily)
         val weeklyLabel = context.getString(R.string.weekly)
@@ -388,12 +388,12 @@ class RemindersActivityTest : UiTestBase() {
                 }
             }
 
-            // Launch EditNoteActivity to edit the note
+            // Launch MainActivity with EditNote navKey to edit the note
             val intent =
-                Intent(context, EditNoteActivity::class.java).apply {
-                    putExtra(EditActivity.EXTRA_SELECTED_BASE_NOTE, noteId)
+                Intent(context, MainActivity::class.java).apply {
+                    putExtra(MainActivity.EXTRA_SELECTED_BASE_NOTE, noteId)
                 }
-            val scenario = ActivityScenario.launch<EditNoteActivity>(intent)
+            val scenario = ActivityScenario.launch<MainActivity>(intent)
 
             val titleLabel = context.getString(R.string.title)
             val bodyLabel = context.getString(R.string.note)

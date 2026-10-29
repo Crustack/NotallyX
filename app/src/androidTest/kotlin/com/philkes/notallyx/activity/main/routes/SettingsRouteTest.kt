@@ -1134,6 +1134,7 @@ class SettingsRouteTest : UiTestBase() {
                         )
                     )
             }
+            withContext(Dispatchers.IO) { database.checkpoint() }
         }
 
         // 1. Navigate to Settings

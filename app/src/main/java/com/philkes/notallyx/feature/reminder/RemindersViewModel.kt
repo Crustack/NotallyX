@@ -8,6 +8,7 @@ import com.philkes.notallyx.data.model.BaseNote
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
@@ -19,7 +20,8 @@ class RemindersViewModel(app: Application, preferences: NotallyXPreferences) :
     val reminderNotes: StateFlow<List<BaseNote>> =
         databaseStateFlow
             .flatMapLatest { database ->
-                database?.getBaseNoteDao()?.getAllWithReminders() ?: flowOf(emptyList())
+                database?.getBaseNoteDao()?.getAllWithReminders()?.catch { emit(emptyList()) }
+                    ?: flowOf(emptyList())
             }
             .stateIn(
                 scope = viewModelScope,

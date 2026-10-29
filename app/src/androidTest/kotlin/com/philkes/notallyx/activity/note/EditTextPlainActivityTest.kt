@@ -2,6 +2,7 @@ package com.philkes.notallyx.activity.note
 
 import android.app.Activity
 import android.app.Instrumentation
+import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.test.assertTextEquals
@@ -18,7 +19,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.feature.editor.EditTextPlainActivity
+import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.appendText
 import com.philkes.notallyx.test.waitUntil
@@ -45,12 +46,17 @@ class EditTextPlainActivityTest : UiTestBase() {
         val fileUri = Uri.fromFile(testFile)
 
         val intent =
-            Intent(context, EditTextPlainActivity::class.java).apply {
+            Intent(context, MainActivity::class.java).apply {
+                component =
+                    ComponentName(
+                        context,
+                        "com.philkes.notallyx.feature.editor.EditTextPlainActivity",
+                    )
                 action = Intent.ACTION_VIEW
                 setDataAndType(fileUri, "text/plain")
             }
 
-        val scenario = ActivityScenario.launch<EditTextPlainActivity>(intent)
+        val scenario = ActivityScenario.launch<MainActivity>(intent)
 
         val titleDesc = context.getString(R.string.title)
         val bodyDesc = context.getString(R.string.note)
@@ -97,7 +103,12 @@ class EditTextPlainActivityTest : UiTestBase() {
         val newUri = Uri.fromFile(newFile)
 
         val intent =
-            Intent(context, EditTextPlainActivity::class.java).apply {
+            Intent(context, MainActivity::class.java).apply {
+                component =
+                    ComponentName(
+                        context,
+                        "com.philkes.notallyx.feature.editor.EditTextPlainActivity",
+                    )
                 action = Intent.ACTION_VIEW
                 setDataAndType(originalUri, "text/plain")
             }
@@ -108,7 +119,7 @@ class EditTextPlainActivityTest : UiTestBase() {
             val result = Instrumentation.ActivityResult(Activity.RESULT_OK, resultIntent)
             intending(hasAction(Intent.ACTION_CREATE_DOCUMENT)).respondWith(result)
 
-            val scenario = ActivityScenario.launch<EditTextPlainActivity>(intent)
+            val scenario = ActivityScenario.launch<MainActivity>(intent)
 
             val titleDesc = context.getString(R.string.title)
             val bodyDesc = context.getString(R.string.note)
@@ -147,8 +158,15 @@ class EditTextPlainActivityTest : UiTestBase() {
 
     @Test
     fun convertToTextNote() {
-        val intent = Intent(context, EditTextPlainActivity::class.java)
-        val scenario = ActivityScenario.launch<EditTextPlainActivity>(intent)
+        val intent =
+            Intent(context, MainActivity::class.java).apply {
+                component =
+                    ComponentName(
+                        context,
+                        "com.philkes.notallyx.feature.editor.EditTextPlainActivity",
+                    )
+            }
+        val scenario = ActivityScenario.launch<MainActivity>(intent)
 
         val noteTitle = "Converted Plain Note"
         val noteBody = "Body text for plain note conversion"

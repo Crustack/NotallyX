@@ -41,27 +41,22 @@ import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
-import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasType
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
-import androidx.test.runner.lifecycle.Stage
 import androidx.test.uiautomator.UiDevice
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getCurrentAudioDirectory
 import com.philkes.notallyx.core.common.extensions.getTempAudioFile
 import com.philkes.notallyx.core.common.extensions.getUriForFile
-import com.philkes.notallyx.core.ui.extensions.extractColor
+import com.philkes.notallyx.core.common.extensions.putNavKey
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Color
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.toColorString
-import com.philkes.notallyx.feature.editor.EditActivity
 import com.philkes.notallyx.feature.main.MainActivity
-import com.philkes.notallyx.feature.media.audio.RecordAudioActivity
 import com.philkes.notallyx.feature.migration.ExportMimeType
 import com.philkes.notallyx.feature.reminder.PinnedNotificationManager
 import com.philkes.notallyx.navigation.NotallyNavKey
@@ -124,7 +119,8 @@ class EditActivityTest : UiTestBase() {
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.tap_for_more_options))
             .performClick()
-        composeTestRule.onNodeWithText(context.getString(R.string.labels)).performClick()
+        val labelNodes = composeTestRule.onAllNodes(hasText(context.getString(R.string.labels)))
+        labelNodes[labelNodes.fetchSemanticsNodes().size - 1].performClick()
         composeTestRule.onNodeWithContentDescription(addLabel).performClick()
         composeTestRule.onNode(hasSetTextAction()).performTextInput("label")
         composeTestRule.onNodeWithText(saveLabel).performClick()
@@ -132,14 +128,14 @@ class EditActivityTest : UiTestBase() {
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("label")).fetchSemanticsNodes().isNotEmpty()
         }
-        composeTestRule.onNodeWithText("label").performClick()
+        composeTestRule.onAllNodes(hasText("label"))[0].performClick()
 
         composeTestRule.onNodeWithContentDescription(backLabel).performClick()
 
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("label")).fetchSemanticsNodes().isNotEmpty()
         }
-        composeTestRule.onNodeWithText("label").assertIsDisplayed()
+        composeTestRule.onAllNodes(hasText("label"))[0].assertIsDisplayed()
 
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.back))
@@ -651,10 +647,6 @@ class EditActivityTest : UiTestBase() {
                 )
                 .respondWith(openFileResult)
 
-            val recordAudioResult = Instrumentation.ActivityResult(Activity.RESULT_OK, null)
-            intending(hasComponent(RecordAudioActivity::class.java.name))
-                .respondWith(recordAudioResult)
-
             val scenario = ActivityScenario.launch(MainActivity::class.java)
 
             composeTestRule
@@ -733,6 +725,11 @@ class EditActivityTest : UiTestBase() {
                 .onNodeWithContentDescription(context.getString(R.string.add_item))
                 .performClick()
             composeTestRule.onNodeWithText(context.getString(R.string.record_audio)).performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.start)).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText("00:01")).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(context.getString(R.string.stop)).performClick()
 
             // Verify audio section is rendered in EditScreen
             composeTestRule.waitUntil(10_000) {
@@ -1245,20 +1242,6 @@ class EditActivityTest : UiTestBase() {
             composeTestRule.onNodeWithContentDescription(Color.CORAL.toColorString()).performClick()
             composeTestRule.onNodeWithText(saveLabel).performClick()
 
-            var currentEditActivity: EditActivity? = null
-            InstrumentationRegistry.getInstrumentation().runOnMainSync {
-                val resumedActivities =
-                    ActivityLifecycleMonitorRegistry.getInstance()
-                        .getActivitiesInStage(Stage.RESUMED)
-                currentEditActivity =
-                    resumedActivities.filterIsInstance<EditActivity>().firstOrNull()
-            }
-            assertEquals(Color.CORAL.toColorString(), currentEditActivity?.notallyModel?.color)
-            assertEquals(
-                context.extractColor(Color.CORAL.toColorString()),
-                currentEditActivity?.colorInt,
-            )
-
             // 2. Pin to status bar / Unpin from status bar
             composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
             composeTestRule
@@ -1705,10 +1688,6 @@ class EditActivityTest : UiTestBase() {
 
         Intents.init()
         try {
-            val recordAudioResult = Instrumentation.ActivityResult(Activity.RESULT_OK, null)
-            intending(hasComponent(RecordAudioActivity::class.java.name))
-                .respondWith(recordAudioResult)
-
             val shareResult = Instrumentation.ActivityResult(Activity.RESULT_OK, null)
             intending(
                     allOf(
@@ -1754,11 +1733,15 @@ class EditActivityTest : UiTestBase() {
             val noteId = runBlocking { database.getBaseNoteDao().getAll().first().id }
 
             // Attach audio recording
-            createSampleAudioFile(tempAudioFile, durationSeconds = 6)
             composeTestRule
                 .onNodeWithContentDescription(context.getString(R.string.add_item))
                 .performClick()
             composeTestRule.onNodeWithText(context.getString(R.string.record_audio)).performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.start)).performClick()
+            composeTestRule.waitUntil(15_000) {
+                composeTestRule.onAllNodes(hasText("00:06")).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(context.getString(R.string.stop)).performClick()
 
             // Verify audio section and AudioItemRow are rendered in EditScreen
             composeTestRule.waitUntil(10_000) {
@@ -1976,7 +1959,9 @@ class EditActivityTest : UiTestBase() {
             Manifest.permission.RECORD_AUDIO,
         )
 
-        val scenario = ActivityScenario.launch(RecordAudioActivity::class.java)
+        val intent =
+            Intent(context, MainActivity::class.java).apply { putNavKey(NotallyNavKey.RecordAudio) }
+        val scenario = ActivityScenario.launch<MainActivity>(intent)
 
         // 1. Verify initial UI state: timer at 00:00, Start button displayed, Stop button disabled
         composeTestRule.onNodeWithText("00:00").assertIsDisplayed()
@@ -2089,6 +2074,9 @@ class EditActivityTest : UiTestBase() {
                 addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         context.startActivity(launchIntent)
+
+        // Navigate back to notes list in MainActivity
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
 
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText(homeTitle)).fetchSemanticsNodes().isNotEmpty()
@@ -2311,20 +2299,6 @@ class EditActivityTest : UiTestBase() {
                     .isEmpty()
             }
 
-            var currentEditActivity: EditActivity? = null
-            InstrumentationRegistry.getInstrumentation().runOnMainSync {
-                val resumedActivities =
-                    ActivityLifecycleMonitorRegistry.getInstance()
-                        .getActivitiesInStage(Stage.RESUMED)
-                currentEditActivity =
-                    resumedActivities.filterIsInstance<EditActivity>().firstOrNull()
-            }
-            assertEquals(Color.CORAL.toColorString(), currentEditActivity?.notallyModel?.color)
-            assertEquals(
-                context.extractColor(Color.CORAL.toColorString()),
-                currentEditActivity?.colorInt,
-            )
-
             // Verify that opening Change Color dialog again now highlights CORAL
             composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
             composeTestRule.onNodeWithText(changeColorLabel).performClick()
@@ -2346,14 +2320,6 @@ class EditActivityTest : UiTestBase() {
                     .fetchSemanticsNodes(false)
                     .isEmpty()
             }
-            InstrumentationRegistry.getInstrumentation().runOnMainSync {
-                val resumedActivities =
-                    ActivityLifecycleMonitorRegistry.getInstance()
-                        .getActivitiesInStage(Stage.RESUMED)
-                currentEditActivity =
-                    resumedActivities.filterIsInstance<EditActivity>().firstOrNull()
-            }
-            assertEquals(BaseNote.COLOR_DEFAULT, currentEditActivity?.notallyModel?.color)
 
             // =========================================================================
             // 3. Create color button shows color picker dialog to create new color
@@ -2392,14 +2358,6 @@ class EditActivityTest : UiTestBase() {
                     .fetchSemanticsNodes(false)
                     .isEmpty()
             }
-            InstrumentationRegistry.getInstrumentation().runOnMainSync {
-                val resumedActivities =
-                    ActivityLifecycleMonitorRegistry.getInstance()
-                        .getActivitiesInStage(Stage.RESUMED)
-                currentEditActivity =
-                    resumedActivities.filterIsInstance<EditActivity>().firstOrNull()
-            }
-            assertEquals(Color.SAND.toColorString(), currentEditActivity?.notallyModel?.color)
 
             // =========================================================================
             // 4. Long click a color:
@@ -2474,20 +2432,6 @@ class EditActivityTest : UiTestBase() {
                     .fetchSemanticsNodes(false)
                     .isNotEmpty()
             }
-
-            // Assert new note's model color is the new default color (SAND)
-            InstrumentationRegistry.getInstrumentation().runOnMainSync {
-                val resumedActivities =
-                    ActivityLifecycleMonitorRegistry.getInstance()
-                        .getActivitiesInStage(Stage.RESUMED)
-                currentEditActivity =
-                    resumedActivities.filterIsInstance<EditActivity>().firstOrNull()
-            }
-            assertEquals(Color.SAND.toColorString(), currentEditActivity?.notallyModel?.color)
-            assertEquals(
-                context.extractColor(Color.SAND.toColorString()),
-                currentEditActivity?.colorInt,
-            )
 
             // Verify Change Color dialog on the new note highlights SAND as selected
             composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()

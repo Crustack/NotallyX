@@ -6,8 +6,8 @@ import com.philkes.notallyx.core.preference.EditListAction
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.feature.editor.EditNoteActionHandler
 import com.philkes.notallyx.feature.editor.EditorBottomSheetState
+import com.philkes.notallyx.feature.editor.NoteActionHandler
 import com.philkes.notallyx.feature.editor.NoteModel
 import com.philkes.notallyx.feature.migration.ExportMimeType
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +34,7 @@ class ActionBottomSheetTest {
 
     @Test
     fun testCreateAddActions() {
-        val actionHandler = mock<EditNoteActionHandler>()
+        val actionHandler = mock<NoteActionHandler>()
         val actions = createAddActions(actionHandler)
 
         assertThat(actions).hasSize(3)
@@ -57,7 +57,7 @@ class ActionBottomSheetTest {
 
     @Test
     fun testCreateAddNoteActions() {
-        val actionHandler = mock<EditNoteActionHandler>()
+        val actionHandler = mock<NoteActionHandler>()
         val actions = createAddNoteActions(actionHandler)
 
         assertThat(actions).hasSize(4)
@@ -71,7 +71,7 @@ class ActionBottomSheetTest {
     @Test
     fun testCreateMoreNoteActionsFiltersTopAndBottomActions() {
         val model = mock<NoteModel>()
-        val actionHandler = mock<EditNoteActionHandler>()
+        val actionHandler = mock<NoteActionHandler>()
 
         `when`(model.pinned).thenReturn(false)
         `when`(model.viewMode).thenReturn(MutableStateFlow(NoteViewMode.EDIT))
@@ -100,7 +100,7 @@ class ActionBottomSheetTest {
     @Test
     fun testCreateMoreNoteActionsIncludesRestoreInDeletedFolder() {
         val model = mock<NoteModel>()
-        val actionHandler = mock<EditNoteActionHandler>()
+        val actionHandler = mock<NoteActionHandler>()
 
         `when`(model.pinned).thenReturn(false)
         `when`(model.viewMode).thenReturn(MutableStateFlow(NoteViewMode.EDIT))
@@ -145,7 +145,7 @@ class ActionBottomSheetTest {
     @Test
     fun testCreateMoreListActionsIncludesListActions() {
         val model = mock<NoteModel>()
-        val actionHandler = mock<EditNoteActionHandler>()
+        val actionHandler = mock<NoteActionHandler>()
 
         `when`(model.pinned).thenReturn(false)
         `when`(model.viewMode).thenReturn(MutableStateFlow(NoteViewMode.EDIT))

@@ -45,8 +45,8 @@ import com.philkes.notallyx.feature.migration.backup.importFile
 import com.philkes.notallyx.feature.migration.imports.txt.extractListItems
 import com.philkes.notallyx.feature.migration.imports.txt.findListSyntaxRegex
 import com.philkes.notallyx.feature.migration.progress.AddFilesProgress
+import com.philkes.notallyx.feature.reminder.NEW_REMINDER_ID
 import com.philkes.notallyx.feature.reminder.ReminderReceiver
-import com.philkes.notallyx.feature.reminder.RemindersActivity.Companion.NEW_REMINDER_ID
 import com.philkes.notallyx.feature.reminder.cancelPinAndReminders
 import com.philkes.notallyx.feature.reminder.cancelReminder
 import com.philkes.notallyx.feature.reminder.scheduleReminder

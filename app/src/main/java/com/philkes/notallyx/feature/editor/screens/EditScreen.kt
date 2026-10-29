@@ -109,6 +109,7 @@ import com.philkes.notallyx.feature.editor.listitem.dragContainer
 import com.philkes.notallyx.feature.editor.listitem.draggableModifier
 import com.philkes.notallyx.feature.editor.listitem.rememberListItemDragDropState
 import com.philkes.notallyx.feature.media.audio.AudioItemRow
+import com.philkes.notallyx.navigation.LocalBackButtonVisibility
 import java.io.File
 import java.util.Date
 import kotlinx.coroutines.android.awaitFrame
@@ -541,8 +542,14 @@ internal fun EditScreen(
                     navigationIcon = {
                         IconButton(onClick = { clickHandlers.onBackClick() }) {
                             Icon(
-                                painter = painterResource(id = R.drawable.arrow_back),
-                                contentDescription = stringResource(id = R.string.back),
+                                painter =
+                                    if (LocalBackButtonVisibility.current)
+                                        painterResource(id = R.drawable.arrow_back)
+                                    else painterResource(id = R.drawable.close),
+                                contentDescription =
+                                    if (LocalBackButtonVisibility.current)
+                                        stringResource(id = R.string.back)
+                                    else stringResource(id = R.string.cancel),
                             )
                         }
                     },

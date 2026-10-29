@@ -11,6 +11,7 @@ import com.philkes.notallyx.data.model.Item
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -23,7 +24,9 @@ class ArchivedViewModel(app: Application, preferences: NotallyXPreferences) :
     val archivedNotes: StateFlow<List<Item>> =
         databaseStateFlow
             .flatMapLatest { database ->
-                database?.getBaseNoteDao()?.getByFolder(Folder.ARCHIVED) ?: flowOf(emptyList())
+                database?.getBaseNoteDao()?.getByFolder(Folder.ARCHIVED)?.catch {
+                    emit(emptyList())
+                } ?: flowOf(emptyList())
             }
             .map { list -> app.createItemsFromNotes(list) }
             .stateIn(

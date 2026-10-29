@@ -18,6 +18,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -47,7 +48,8 @@ class DeletedViewModel(app: Application, preferences: NotallyXPreferences) :
     val deletedNotes: StateFlow<List<Item>> =
         databaseStateFlow
             .flatMapLatest { database ->
-                database?.getBaseNoteDao()?.getByFolder(Folder.DELETED) ?: flowOf(emptyList())
+                database?.getBaseNoteDao()?.getByFolder(Folder.DELETED)?.catch { emit(emptyList()) }
+                    ?: flowOf(emptyList())
             }
             .map { list -> app.createItemsFromNotes(list) }
             .stateIn(

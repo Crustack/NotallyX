@@ -14,6 +14,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -48,8 +49,6 @@ import com.philkes.notallyx.data.ShadowContextImplMedia
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.Reminder
-import com.philkes.notallyx.feature.editor.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
-import com.philkes.notallyx.feature.editor.EditNoteActivity
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.migration.imports.google.GoogleKeepImporterTest.Companion.createBaseNote
 import com.philkes.notallyx.navigation.NotallyNavKey
@@ -142,17 +141,16 @@ class ScreenshotTests {
                 }
                 .first()
         val intent =
-            Intent(context, EditNoteActivity::class.java).apply {
-                putExtra(EXTRA_SELECTED_BASE_NOTE, noteId)
+            Intent(context, MainActivity::class.java).apply {
+                putNavKey(NotallyNavKey.EditNote(noteId))
             }
-        ActivityScenario.launch<EditNoteActivity>(intent).use { scenario ->
-            waitUntil(timeoutMs = 10_000) {
+        ActivityScenario.launch<MainActivity>(intent).use { scenario ->
+            composeTestRule.waitUntil(10_000) {
                 ShadowLooper.idleMainLooper()
-                var isLoaded = false
-                scenario.onActivity { activity ->
-                    isLoaded = activity.notallyModel.originalNote != null
-                }
-                isLoaded
+                composeTestRule
+                    .onAllNodesWithContentDescription(context.getString(R.string.title))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
             }
             ShadowLooper.idleMainLooper()
 
@@ -286,13 +284,12 @@ class ScreenshotTests {
 
                 // 1. Wait for background import on Dispatchers.IO to complete and update model
                 // images
-                waitUntil(timeoutMs = 10_000) {
+                composeTestRule.waitUntil(10_000) {
                     ShadowLooper.idleMainLooper()
-                    var isImported = false
-                    scenario.onActivity { activity ->
-                        isImported = activity.notallyModel.images.value.size >= 2
-                    }
-                    isImported
+                    composeTestRule
+                        .onAllNodes(hasText("/2", substring = true))
+                        .fetchSemanticsNodes()
+                        .isNotEmpty()
                 }
 
                 ShadowLooper.idleMainLooper()
