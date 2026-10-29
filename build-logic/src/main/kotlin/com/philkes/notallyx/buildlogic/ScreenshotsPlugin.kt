@@ -43,9 +43,9 @@ class ScreenshotsPlugin : Plugin<Project> {
                 }
 
             afterEvaluate {
-                tasks.matching { it.name == "generateChangelogs" }.configureEach {
-                    finalizedBy(copyFastlane, copyDocs)
-                }
+                tasks
+                    .matching { it.name == "generateChangelogs" }
+                    .configureEach { finalizedBy(copyFastlane, copyDocs) }
             }
         }
     }

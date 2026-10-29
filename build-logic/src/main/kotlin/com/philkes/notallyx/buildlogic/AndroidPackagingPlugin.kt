@@ -11,8 +11,7 @@ class AndroidPackagingPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             val androidComponents =
-                extensions.findByType(ApplicationAndroidComponentsExtension::class.java)
-                    ?: return
+                extensions.findByType(ApplicationAndroidComponentsExtension::class.java) ?: return
 
             androidComponents.onVariants { variant ->
                 val versionName = project.findProperty("app.versionName")?.toString() ?: ""
@@ -97,13 +96,17 @@ class AndroidPackagingPlugin : Plugin<Project> {
             }
 
             afterEvaluate {
-                tasks.matching { it.name == "bundleRelease" }.configureEach {
-                    dependsOn(tasks.matching { it.name == "testReleaseUnitTest" })
-                }
-                tasks.matching { it.name == "assembleRelease" }.configureEach {
-                    dependsOn(tasks.matching { it.name == "testReleaseUnitTest" })
-                    finalizedBy(tasks.matching { it.name == "generateChangelogs" })
-                }
+                tasks
+                    .matching { it.name == "bundleRelease" }
+                    .configureEach {
+                        dependsOn(tasks.matching { it.name == "testReleaseUnitTest" })
+                    }
+                tasks
+                    .matching { it.name == "assembleRelease" }
+                    .configureEach {
+                        dependsOn(tasks.matching { it.name == "testReleaseUnitTest" })
+                        finalizedBy(tasks.matching { it.name == "generateChangelogs" })
+                    }
             }
         }
     }

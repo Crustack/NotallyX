@@ -1,6 +1,5 @@
 package com.philkes.notallyx.test
 
-import android.database.DatabaseErrorHandler
 import android.database.sqlite.SQLiteDatabase
 import androidx.sqlite.db.SimpleSQLiteQuery
 import com.philkes.notallyx.core.database.NotallyDatabase
@@ -76,7 +75,7 @@ fun File.integrityCheckOnCopy(): String {
                 copy.absolutePath,
                 null,
                 SQLiteDatabase.OPEN_READONLY,
-        ) {}
+            ) {}
             .use { db ->
                 db.rawQuery("PRAGMA integrity_check", null).use { cursor ->
                     if (!cursor.moveToFirst()) return "integrity_check returned no rows"

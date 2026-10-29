@@ -2,11 +2,11 @@ package com.philkes.notallyx.feature.main.routes.settings
 
 import android.app.Application
 import android.os.Environment
-import androidx.preference.PreferenceManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.ListenableWorker
 import com.philkes.notallyx.core.common.extensions.SUBFOLDER_FILES
 import com.philkes.notallyx.core.common.extensions.SUBFOLDER_IMAGES
+import com.philkes.notallyx.core.common.extensions.getDefaultSharedPreferences
 import com.philkes.notallyx.core.common.extensions.getPrivateAttachmentsRoot
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.NotallyXPreferences
@@ -44,7 +44,7 @@ class AutoRemoveDeletedNotesWorkerTest {
     @Before
     fun setUp() {
         application = ApplicationProvider.getApplicationContext()
-        PreferenceManager.getDefaultSharedPreferences(application).edit().clear().commit()
+        application.getDefaultSharedPreferences().edit().clear().commit()
         NotallyXPreferences.clearInstance()
         preferences = NotallyXPreferences.getInstance(application)
 

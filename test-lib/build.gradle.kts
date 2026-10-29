@@ -29,7 +29,6 @@ dependencies {
     api(libs.androidx.test.junit)
 
     // Dependencies required by shared test helpers in test-lib
-    api(libs.swipe.drawer)
     api(libs.androidx.work)
     api(libs.androidx.sqlite)
     api(libs.androidx.room.runtime)

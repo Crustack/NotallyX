@@ -9,11 +9,11 @@ import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.security.BiometricAuthenticator
 import com.philkes.notallyx.core.security.getCipher
 import com.philkes.notallyx.core.security.getOrCreateSecretKey
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import javax.crypto.Cipher
 import javax.crypto.SecretKey
 import javax.crypto.spec.IvParameterSpec
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 class FakeBiometricAuthenticator : BiometricAuthenticator, KoinComponent {
     var cipher: Cipher? = null

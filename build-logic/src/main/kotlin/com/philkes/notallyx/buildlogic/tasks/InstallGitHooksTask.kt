@@ -1,6 +1,5 @@
 package com.philkes.notallyx.buildlogic.tasks
 
-import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
@@ -13,15 +12,12 @@ import org.gradle.api.tasks.TaskAction
 
 abstract class InstallGitHooksTask
 @Inject
-constructor(
-    private val fileSystemOperations: FileSystemOperations,
-) : DefaultTask() {
+constructor(private val fileSystemOperations: FileSystemOperations) : DefaultTask() {
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val scriptsDir: DirectoryProperty
 
-    @get:OutputDirectory
-    abstract val hooksDir: DirectoryProperty
+    @get:OutputDirectory abstract val hooksDir: DirectoryProperty
 
     @TaskAction
     fun install() {

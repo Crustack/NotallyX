@@ -8,7 +8,6 @@ import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.TypefaceSpan
 import android.text.style.URLSpan
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -42,7 +41,6 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.UrlAnnotation
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -82,7 +80,6 @@ import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import cn.leaqi.drawer.SwipeDrawer
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.security.AuthenticatorProvider
@@ -96,6 +93,7 @@ import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.navigation.NotallyNavKey
+import java.security.SecureRandom
 import junit.framework.TestCase.assertTrue
 import org.hamcrest.Description
 import org.hamcrest.Matcher
@@ -104,7 +102,6 @@ import org.hamcrest.Matchers.anyOf
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.not
 import org.hamcrest.TypeSafeMatcher
-import java.security.SecureRandom
 
 fun onLabelItem(labelText: String): ViewInteraction =
     onView(
@@ -132,17 +129,6 @@ fun childAtPosition(parentMatcher: Matcher<View>, position: Int): Matcher<View> 
         }
     }
 }
-
-fun ViewInteraction.checkIsPositionChildItem(position: Int, isChild: Boolean = true) =
-    check(
-        matches(
-            atPosition(
-                position = position,
-                itemMatcher =
-                    allOf(hasDescendant(if (isChild) isDrawerOpen() else isDrawerClosed())),
-            )
-        )
-    )
 
 /**
  * Checks whether the item containing [text] matches the expected [checked] state, with optional
@@ -205,7 +191,8 @@ fun atPosition(position: Int, itemMatcher: Matcher<View>): Matcher<View> {
  *
  * @param targetNode The destination node reference.
  * @param verticalOffset Vertical offset in pixels relative to the target's center (default: 0px).
- * @param holdDurationMillis Time to hold before dragging (required for long-press drag detectors; default: 600ms).
+ * @param holdDurationMillis Time to hold before dragging (required for long-press drag detectors;
+ *   default: 600ms).
  * @param dragDurationMillis Total duration over which the drag motion occurs (default: 200ms).
  * @param steps Number of intermediate steps for the drag motion (default: 30).
  * @param settleDelayMillis Time to hold at the destination before releasing (default: 200ms).
@@ -396,9 +383,7 @@ fun performLongPressDrag(
                 y.toFloat(),
                 0,
             )
-        InstrumentationRegistry.getInstrumentation()
-            .uiAutomation
-            .injectInputEvent(moveEvent, true)
+        InstrumentationRegistry.getInstrumentation().uiAutomation.injectInputEvent(moveEvent, true)
         moveEvent.recycle()
         SystemClock.sleep(10)
     }
@@ -498,41 +483,6 @@ fun ViewInteraction.onPositionView(
         itemContainer
             ?: throw IllegalStateException("Could not resolve itemView for position $position.")
     return onView(allOf(childMatcher, isDescendantOfA(org.hamcrest.Matchers.`is`(targetItem))))
-}
-
-/** Matches a SwipeDrawer that is currently open in the specified direction. */
-fun isDrawerOpen(): Matcher<View> {
-    return object : BoundedMatcher<View, SwipeDrawer>(SwipeDrawer::class.java) {
-        override fun describeTo(description: Description) {
-            description.appendText("is SwipeDrawer open")
-        }
-
-        override fun matchesSafely(swipeDrawer: SwipeDrawer): Boolean {
-            Log.e(
-                "UiUtils",
-                "isDrawerOpen: ${swipeDrawer.isShown}, direction: ${swipeDrawer.direction}, leftdragOpen: ${swipeDrawer.leftDragOpen}, rightDragOpen: ${swipeDrawer.rightDragOpen}",
-            )
-
-            return swipeDrawer.isShown
-        }
-    }
-}
-
-/** Matches a SwipeDrawer that is fully closed. */
-fun isDrawerClosed(): Matcher<View> {
-    return object : BoundedMatcher<View, SwipeDrawer>(SwipeDrawer::class.java) {
-        override fun describeTo(description: Description) {
-            description.appendText("is SwipeDrawer closed")
-        }
-
-        override fun matchesSafely(swipeDrawer: SwipeDrawer): Boolean {
-            Log.e(
-                "UiUtils",
-                "isDrawerOpen: ${swipeDrawer.isShown}, direction: ${swipeDrawer.direction}, leftdragOpen: ${swipeDrawer.leftDragOpen}, rightDragOpen: ${swipeDrawer.rightDragOpen}",
-            )
-            return !swipeDrawer.isShown
-        }
-    }
 }
 
 fun createBaseNote(
@@ -838,8 +788,8 @@ fun ComposeTestRule.checkAndUpdateNoteTitle(textToMatch: String, textToAdd: Stri
 }
 
 fun SemanticsNodeInteraction.appendText(textToAppend: String) {
-    val currentText = fetchSemanticsNode()
-        .config.getOrNull(SemanticsProperties.EditableText)?.text ?: ""
+    val currentText =
+        fetchSemanticsNode().config.getOrNull(SemanticsProperties.EditableText)?.text ?: ""
     performTextInputSelection(TextRange(currentText.length))
     performTextInput(textToAppend)
 }
@@ -876,7 +826,8 @@ fun ComposeTestRule.waitUntilSettingsValue(
     onNode(matcher, useUnmergedTree = true).performScrollTo().assertIsDisplayed()
 }
 
-private val radioButtonMatcher = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
+private val radioButtonMatcher =
+    SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
 
 fun ComposeTestRule.enableBiometricLock(encryptDb: Boolean = false) {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -1108,23 +1059,20 @@ fun waitUntilNoDialogShown(timeoutMs: Long = 5000, pollIntervalMs: Long = 100) {
     throw AssertionError("Timed out after ${timeoutMs}ms waiting for dialog window to dismiss.")
 }
 
-
 private fun SpanStyle.hasFormatting(): Boolean {
     return (fontWeight != null && fontWeight!!.weight >= FontWeight.Bold.weight) ||
-            fontStyle == FontStyle.Italic ||
-            textDecoration?.contains(TextDecoration.LineThrough) == true ||
-            fontFamily == FontFamily.Monospace ||
-            fontFamily?.toString()?.contains("monospace", ignoreCase = true) == true
+        fontStyle == FontStyle.Italic ||
+        textDecoration?.contains(TextDecoration.LineThrough) == true ||
+        fontFamily == FontFamily.Monospace ||
+        fontFamily?.toString()?.contains("monospace", ignoreCase = true) == true
 }
 
-/**
- * Helper to inspect the AnnotatedString from EditableText or Text semantics.
- */
+/** Helper to inspect the AnnotatedString from EditableText or Text semantics. */
 private fun SemanticsNodeInteraction.assertSubstringStyle(
     description: String,
     substring: String,
     requireFormatting: Boolean = true,
-    predicate: (SpanStyle) -> Boolean
+    predicate: (SpanStyle) -> Boolean,
 ): SemanticsNodeInteraction {
     return assert(
         SemanticsMatcher("has substring '$substring' with $description") { node ->
@@ -1150,11 +1098,15 @@ private fun SemanticsNodeInteraction.assertSubstringStyle(
                 (startIndex until endIndex).all { charIndex ->
                     if (requireFormatting) {
                         annotatedString.spanStyles.any { range ->
-                            range.start <= charIndex && range.end > charIndex && predicate(range.item)
+                            range.start <= charIndex &&
+                                range.end > charIndex &&
+                                predicate(range.item)
                         }
                     } else {
                         annotatedString.spanStyles.none { range ->
-                            range.start <= charIndex && range.end > charIndex && predicate(range.item)
+                            range.start <= charIndex &&
+                                range.end > charIndex &&
+                                predicate(range.item)
                         }
                     }
                 }
@@ -1166,32 +1118,31 @@ private fun SemanticsNodeInteraction.assertSubstringStyle(
 // 1. Bold Assertion
 fun SemanticsNodeInteraction.assertSubtextIsBold(
     substring: String,
-    expectedWeight: FontWeight = FontWeight.Bold
-): SemanticsNodeInteraction = assertSubstringStyle("bold weight ($expectedWeight)", substring) {
-    it.fontWeight == expectedWeight || (it.fontWeight != null && it.fontWeight!!.weight >= expectedWeight.weight)
-}
+    expectedWeight: FontWeight = FontWeight.Bold,
+): SemanticsNodeInteraction =
+    assertSubstringStyle("bold weight ($expectedWeight)", substring) {
+        it.fontWeight == expectedWeight ||
+            (it.fontWeight != null && it.fontWeight!!.weight >= expectedWeight.weight)
+    }
 
 // 2. Italic Assertion
-fun SemanticsNodeInteraction.assertSubtextIsItalic(
-    substring: String
-): SemanticsNodeInteraction = assertSubstringStyle("italic style", substring) {
-    it.fontStyle == FontStyle.Italic
-}
+fun SemanticsNodeInteraction.assertSubtextIsItalic(substring: String): SemanticsNodeInteraction =
+    assertSubstringStyle("italic style", substring) { it.fontStyle == FontStyle.Italic }
 
 // 3. Strikethrough Assertion
 fun SemanticsNodeInteraction.assertSubtextHasStrikethrough(
     substring: String
-): SemanticsNodeInteraction = assertSubstringStyle("strikethrough decoration", substring) {
-    it.textDecoration?.contains(TextDecoration.LineThrough) == true
-}
+): SemanticsNodeInteraction =
+    assertSubstringStyle("strikethrough decoration", substring) {
+        it.textDecoration?.contains(TextDecoration.LineThrough) == true
+    }
 
 // 4. Monospace Assertion
-fun SemanticsNodeInteraction.assertSubtextIsMonospace(
-    substring: String
-): SemanticsNodeInteraction = assertSubstringStyle("monospace font family", substring) {
-    it.fontFamily == FontFamily.Monospace ||
+fun SemanticsNodeInteraction.assertSubtextIsMonospace(substring: String): SemanticsNodeInteraction =
+    assertSubstringStyle("monospace font family", substring) {
+        it.fontFamily == FontFamily.Monospace ||
             it.fontFamily?.toString()?.contains("monospace", ignoreCase = true) == true
-}
+    }
 
 // 5. Unformatted / Plain Text Assertion
 fun SemanticsNodeInteraction.assertSubtextHasNoFormatting(
@@ -1207,7 +1158,10 @@ private fun AnnotatedString.hasLinkAtIndex(charIndex: Int, expectedUrl: String? 
     val stringAnnotations = getStringAnnotations(start = charIndex, end = charIndex + 1)
     val hasStringAnnotation = stringAnnotations.any { annotation ->
         val matchesUrl = expectedUrl == null || annotation.item == expectedUrl
-        matchesUrl && (annotation.tag.equals("URL", ignoreCase = true) || annotation.tag.equals("link", ignoreCase = true) || expectedUrl != null)
+        matchesUrl &&
+            (annotation.tag.equals("URL", ignoreCase = true) ||
+                annotation.tag.equals("link", ignoreCase = true) ||
+                expectedUrl != null)
     }
     if (hasStringAnnotation) return true
 
@@ -1230,7 +1184,7 @@ private fun AnnotatedString.hasLinkAtIndex(charIndex: Int, expectedUrl: String? 
 @OptIn(ExperimentalTextApi::class)
 fun SemanticsNodeInteraction.assertSubtextHasLink(
     substring: String,
-    url: String? = null
+    url: String? = null,
 ): SemanticsNodeInteraction {
     val description = if (url != null) "link to '$url'" else "a link"
     return assert(

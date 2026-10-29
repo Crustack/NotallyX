@@ -1,8 +1,8 @@
 package com.philkes.notallyx.viewmodel.main
 
 import android.app.Application
-import androidx.preference.PreferenceManager
 import androidx.test.core.app.ApplicationProvider
+import com.philkes.notallyx.core.common.extensions.getDefaultSharedPreferences
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.data.ShadowContextImplMedia
@@ -36,7 +36,7 @@ class NotesRouteViewModelTest {
     @Before
     fun setUp() {
         application = ApplicationProvider.getApplicationContext()
-        PreferenceManager.getDefaultSharedPreferences(application).edit().clear().commit()
+        application.getDefaultSharedPreferences().edit().clear().commit()
         NotallyXPreferences.clearInstance()
         preferences = NotallyXPreferences.getInstance(application)
         preferences.reset()
