@@ -204,17 +204,17 @@ fun atPosition(position: Int, itemMatcher: Matcher<View>): Matcher<View> {
  * Drags the receiver [SemanticsNodeInteraction] to a position relative to [targetNode].
  *
  * @param targetNode The destination node reference.
- * @param verticalOffset Extra spacing in pixels to place the drop point beyond the target's edge (default: 20px).
+ * @param verticalOffset Vertical offset in pixels relative to the target's center (default: 0px).
  * @param holdDurationMillis Time to hold before dragging (required for long-press drag detectors; default: 600ms).
- * @param dragDurationMillis Total duration over which the drag motion occurs (default: 500ms).
+ * @param dragDurationMillis Total duration over which the drag motion occurs (default: 200ms).
  * @param steps Number of intermediate steps for the drag motion (default: 30).
  * @param settleDelayMillis Time to hold at the destination before releasing (default: 200ms).
  */
 fun SemanticsNodeInteraction.dragAndDropTo(
     targetNode: SemanticsNodeInteraction,
-    verticalOffset: Float = 20f,
-    holdDurationMillis: Long = 600L,
-    dragDurationMillis: Long = 200L,
+    verticalOffset: Float = 0f,
+    holdDurationMillis: Long = 500L,
+    dragDurationMillis: Long = 50L,
     steps: Int = 30,
     settleDelayMillis: Long = 200L,
 ): SemanticsNodeInteraction {
@@ -222,16 +222,7 @@ fun SemanticsNodeInteraction.dragAndDropTo(
     val targetBounds = targetNode.fetchSemanticsNode().boundsInRoot
 
     val sourceCenter = sourceBounds.center
-
-    val isDraggingDown = targetBounds.center.y > sourceCenter.y
-    val targetY =
-        if (isDraggingDown) {
-            targetBounds.bottom + verticalOffset
-        } else {
-            targetBounds.top - verticalOffset
-        }
-
-    val destinationPoint = Offset(x = sourceCenter.x, y = targetY)
+    val destinationPoint = Offset(x = sourceCenter.x, y = targetBounds.center.y + verticalOffset)
 
     val totalDelta = destinationPoint - sourceCenter
     val stepDelta = totalDelta / steps.toFloat()
