@@ -35,10 +35,12 @@ fun <T> rememberDragDropState(
     lazyListState: LazyListState,
     items: List<T>,
     onMove: (fromIndex: Int, toIndex: Int, originalItem: T) -> Unit,
+    onDragEnd: (() -> Unit)? = null,
 ): DragDropState<T> {
     val scope = rememberCoroutineScope()
     val currentItems by rememberUpdatedState(items)
     val currentOnMove by rememberUpdatedState(onMove)
+    val currentOnDragEnd by rememberUpdatedState(onDragEnd)
     val state =
         remember(lazyListState) {
             DragDropState(
@@ -46,6 +48,7 @@ fun <T> rememberDragDropState(
                 scope = scope,
                 getItems = { currentItems },
                 onMove = { from, to, original -> currentOnMove(from, to, original) },
+                onDragEnd = { currentOnDragEnd?.invoke() },
             )
         }
     LaunchedEffect(state) {
@@ -75,6 +78,7 @@ internal constructor(
     private val scope: CoroutineScope,
     private val getItems: () -> List<T>,
     private val onMove: (fromIndex: Int, toIndex: Int, originalItem: T) -> Unit,
+    private val onDragEnd: (() -> Unit)? = null,
 ) {
     var draggingItemIndex by mutableStateOf<Int?>(null)
         private set
@@ -118,6 +122,7 @@ internal constructor(
     }
 
     internal fun onDragInterrupted() {
+        val wasDragging = draggingItemIndex != null
         if (draggingItemIndex != null) {
             previousIndexOfDraggedItem = draggingItemIndex
             val startOffset = draggingItemOffset
@@ -134,6 +139,9 @@ internal constructor(
         draggingItemIndex = null
         draggingItemInitialOffset = 0
         draggedOriginalItem = null
+        if (wasDragging) {
+            onDragEnd?.invoke()
+        }
     }
 
     internal fun onDrag(offset: Offset) {

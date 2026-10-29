@@ -2,10 +2,12 @@ package com.philkes.notallyx.activity.main.routes
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasAnySibling
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog as isComposeDialog
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
@@ -24,8 +26,10 @@ import com.philkes.notallyx.navigation.NotallyNavKey
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.createListItem
+import com.philkes.notallyx.test.dragAndDropTo
 import com.philkes.notallyx.test.navigateTo
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertTrue
 import org.junit.FixMethodOrder
 import org.junit.Rule
 import org.junit.Test
@@ -215,6 +219,267 @@ class LabelsRouteTest : UiTestBase() {
         composeTestRule.onNodeWithText("Personal Note 1").assertIsDisplayed()
         composeTestRule.onNodeWithText("Work Note 1").assertDoesNotExist()
         composeTestRule.onNodeWithText("Work Note 2").assertDoesNotExist()
+
+        scenario.close()
+    }
+
+    private fun labelOnScreen(label: String) = hasText(label) and !isSelectable()
+
+    private fun labelInDrawer(label: String) = hasText(label) and isSelectable()
+
+    @Test
+    fun reorderLabelsAndToggleHiddenFromDrawer() {
+        // 1. Insert initial labels and notes referencing them
+        runBlocking {
+            database
+                .getLabelDao()
+                .insert(
+                    listOf(
+                        Label("Work", 2),
+                        Label("Personal", 1),
+                        Label("Hobbies", 0),
+                    )
+                )
+            database
+                .getBaseNoteDao()
+                .insert(
+                    listOf(
+                        createBaseNote(
+                            title = "Work Note",
+                            body = "Work Note Body",
+                            labels = listOf("Work"),
+                        ),
+                        createBaseNote(
+                            title = "Hobbies Note",
+                            body = "Hobbies Note Body",
+                            labels = listOf("Hobbies"),
+                        ),
+                    )
+                )
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        // Verify initial notes are displayed on Notes screen
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(hasText("Work Note")).fetchSemanticsNodes().isNotEmpty() &&
+                composeTestRule
+                    .onAllNodes(hasText("Hobbies Note"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("Work Note").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Hobbies Note").assertIsDisplayed()
+
+        // Verify initial drawer order: Work -> Personal -> Hobbies
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.app_name))
+            .performClick()
+
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(labelInDrawer("Hobbies")).fetchSemanticsNodes().isNotEmpty()
+        }
+        val initialDrawerWorkY =
+            composeTestRule.onNode(labelInDrawer("Work")).fetchSemanticsNode().positionInWindow.y
+        val initialDrawerPersonalY =
+            composeTestRule
+                .onNode(labelInDrawer("Personal"))
+                .fetchSemanticsNode()
+                .positionInWindow
+                .y
+        val initialDrawerHobbiesY =
+            composeTestRule.onNode(labelInDrawer("Hobbies")).fetchSemanticsNode().positionInWindow.y
+
+        assertTrue(
+            "In drawer: Work should be above Personal initially",
+            initialDrawerWorkY < initialDrawerPersonalY,
+        )
+        assertTrue(
+            "In drawer: Personal should be above Hobbies initially",
+            initialDrawerPersonalY < initialDrawerHobbiesY,
+        )
+
+        // Close drawer and navigate to Labels screen
+        composeTestRule
+            .onAllNodes(hasText(context.getString(R.string.labels)))
+            .onLast()
+            .performClick()
+
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(labelOnScreen("Work")).fetchSemanticsNodes().isNotEmpty() &&
+                composeTestRule
+                    .onAllNodes(labelOnScreen("Personal"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty() &&
+                composeTestRule
+                    .onAllNodes(labelOnScreen("Hobbies"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+        }
+
+        // Verify initial vertical order on LabelsScreen: Work -> Personal -> Hobbies
+        val initialLabelsWorkY =
+            composeTestRule.onNode(labelOnScreen("Work")).fetchSemanticsNode().positionInWindow.y
+        val initialLabelsPersonalY =
+            composeTestRule
+                .onNode(labelOnScreen("Personal"))
+                .fetchSemanticsNode()
+                .positionInWindow
+                .y
+        val initialLabelsHobbiesY =
+            composeTestRule.onNode(labelOnScreen("Hobbies")).fetchSemanticsNode().positionInWindow.y
+
+        assertTrue(
+            "On LabelsScreen: Work should be above Personal initially",
+            initialLabelsWorkY < initialLabelsPersonalY,
+        )
+        assertTrue(
+            "On LabelsScreen: Personal should be above Hobbies initially",
+            initialLabelsPersonalY < initialLabelsHobbiesY,
+        )
+
+        // 2. Drag-and-drop reordering: Drag "Hobbies" drag handle above "Work"
+        val hobbiesDragHandle =
+            composeTestRule.onNode(
+                hasContentDescription(context.getString(R.string.drag_handle)) and
+                    hasAnySibling(hasText("Hobbies")),
+                useUnmergedTree = true,
+            )
+        val workNode = composeTestRule.onNode(labelOnScreen("Work"))
+
+        hobbiesDragHandle.dragAndDropTo(
+            targetNode = workNode,
+            verticalOffset = -15f,
+            holdDurationMillis = 600L,
+        )
+
+        // Wait until database reflects updated order: Hobbies should now be first (highest order)
+        composeTestRule.waitUntil(5_000) {
+            runBlocking {
+                val array = database.getLabelDao().getArrayOfAll()
+                array.isNotEmpty() && (array[0] == "Hobbies")
+            }
+        }
+
+        // Verify updated order on LabelsScreen: Hobbies is now above Work
+        val reorderedLabelsHobbiesY =
+            composeTestRule.onNode(labelOnScreen("Hobbies")).fetchSemanticsNode().positionInWindow.y
+        val reorderedLabelsWorkY =
+            composeTestRule.onNode(labelOnScreen("Work")).fetchSemanticsNode().positionInWindow.y
+        assertTrue(
+            "On LabelsScreen: Hobbies should be above Work after drag",
+            reorderedLabelsHobbiesY < reorderedLabelsWorkY,
+        )
+
+        // 3. Verify updated order in navigation drawer: Hobbies -> Work -> Personal
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.app_name))
+            .performClick()
+
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(labelInDrawer("Hobbies")).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        val reorderedDrawerHobbiesY =
+            composeTestRule.onNode(labelInDrawer("Hobbies")).fetchSemanticsNode().positionInWindow.y
+        val reorderedDrawerWorkY =
+            composeTestRule.onNode(labelInDrawer("Work")).fetchSemanticsNode().positionInWindow.y
+        val reorderedDrawerPersonalY =
+            composeTestRule
+                .onNode(labelInDrawer("Personal"))
+                .fetchSemanticsNode()
+                .positionInWindow
+                .y
+
+        assertTrue(
+            "In drawer: Hobbies should be above Work after reordering",
+            reorderedDrawerHobbiesY < reorderedDrawerWorkY,
+        )
+        assertTrue(
+            "In drawer: Work should be above Personal after reordering",
+            reorderedDrawerWorkY < reorderedDrawerPersonalY,
+        )
+
+        // Return to LabelsScreen
+        composeTestRule
+            .onAllNodes(hasText(context.getString(R.string.labels)))
+            .onLast()
+            .performClick()
+
+        // 4. Hide "Hobbies" label from navigation drawer & overview
+        composeTestRule
+            .onNode(
+                hasContentDescription(
+                    context.getString(R.string.labels_hidden_in_overview_title)
+                ) and hasAnyAncestor(labelOnScreen("Hobbies"))
+            )
+            .performClick()
+
+        composeTestRule.waitUntil(5_000) { preferences.labelsHidden.value.contains("Hobbies") }
+
+        // Open navigation drawer and verify "Hobbies" is excluded while "Work" and "Personal"
+        // remain
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.app_name))
+            .performClick()
+
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(labelInDrawer("Work")).fetchSemanticsNodes().isNotEmpty() &&
+                composeTestRule.onAllNodes(labelInDrawer("Hobbies")).fetchSemanticsNodes().isEmpty()
+        }
+        composeTestRule.onNode(labelInDrawer("Work")).assertIsDisplayed()
+        composeTestRule.onNode(labelInDrawer("Personal")).assertIsDisplayed()
+        composeTestRule.onNode(labelInDrawer("Hobbies")).assertDoesNotExist()
+
+        // 5. Navigate to Notes screen and verify "Hobbies Note" is excluded from notes overview
+        composeTestRule
+            .onAllNodes(hasText(context.getString(R.string.notes)))
+            .onLast()
+            .performClick()
+
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(hasText("Work Note")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("Work Note").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Hobbies Note").assertDoesNotExist()
+
+        // 6. Navigate back to Labels screen and unhide "Hobbies"
+        composeTestRule.navigateTo(NotallyNavKey.Labels)
+
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(labelOnScreen("Hobbies")).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        composeTestRule
+            .onNode(
+                hasContentDescription(
+                    context.getString(R.string.labels_hidden_in_overview_title)
+                ) and hasAnyAncestor(labelOnScreen("Hobbies"))
+            )
+            .performClick()
+
+        composeTestRule.waitUntil(5_000) { !preferences.labelsHidden.value.contains("Hobbies") }
+
+        // 7. Verify "Hobbies" is restored in both navigation drawer and notes overview
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.app_name))
+            .performClick()
+
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(labelInDrawer("Hobbies")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNode(labelInDrawer("Hobbies")).assertIsDisplayed()
+
+        // Navigate to Notes and verify "Hobbies Note" is visible again
+        composeTestRule
+            .onAllNodes(hasText(context.getString(R.string.notes)))
+            .onLast()
+            .performClick()
+
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(hasText("Hobbies Note")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("Hobbies Note").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Work Note").assertIsDisplayed()
 
         scenario.close()
     }
