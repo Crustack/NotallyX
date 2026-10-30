@@ -16,23 +16,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import coil3.compose.SubcomposeAsyncImage
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.error.*
-import com.philkes.notallyx.core.common.extensions.*
-import com.philkes.notallyx.core.common.result.*
-import com.philkes.notallyx.core.database.*
-import com.philkes.notallyx.core.preference.*
-import com.philkes.notallyx.core.security.*
-import com.philkes.notallyx.core.ui.components.*
-import com.philkes.notallyx.core.ui.dialog.*
-import com.philkes.notallyx.core.ui.extensions.*
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
-import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.model.FileAttachment
-import com.philkes.notallyx.data.model.extensions.*
 import com.philkes.notallyx.feature.editor.screens.ImagePreviewCard
 
 /** Composable replacing activity_view_image.xml layout. */
@@ -43,6 +35,7 @@ internal fun ViewImageScreen(
     modifier: Modifier = Modifier,
     initialPage: Int = 0,
     imageToDeletePosition: Int? = null,
+    resolveImageModel: (FileAttachment) -> Any? = { null },
     onBackClick: () -> Unit = {},
     onShareClick: (Int) -> Unit = {},
     onSaveClick: (Int) -> Unit = {},
@@ -115,8 +108,15 @@ internal fun ViewImageScreen(
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
-                ) {
-                    ImagePreviewCard()
+                ) { page ->
+                    val image = images[page]
+                    SubcomposeAsyncImage(
+                        model = resolveImageModel(image),
+                        contentDescription = image.originalName,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize(),
+                        error = { ImagePreviewCard() },
+                    )
                 }
             }
         }

@@ -19,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.now
 import com.philkes.notallyx.core.preference.NotallyXPreferences
+import com.philkes.notallyx.core.ui.extensions.checkAlarmPermission
 import com.philkes.notallyx.core.ui.extensions.checkNotificationPermission
 import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.extensions.getQuantityStringPlain
@@ -88,10 +89,46 @@ fun NoteRemindersRoute(
             }
         }
 
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted
+            ->
+            if (isGranted) {
+                activity?.checkAlarmPermission(
+                    alarmPermissionLauncher,
+                    onShowRationale = { msgResId, onConfirm ->
+                        dialogState =
+                            ReminderDialogState.Rationale(
+                                activity?.getString(msgResId) ?: "",
+                                onConfirm,
+                            )
+                    },
+                ) {
+                    selectedReminder?.let { r ->
+                        val usedCalendar = r.dateTime.toCalendar()
+                        val utcCalendar =
+                            Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                                clear()
+                                set(
+                                    usedCalendar.get(Calendar.YEAR),
+                                    usedCalendar.get(Calendar.MONTH),
+                                    usedCalendar.get(Calendar.DAY_OF_MONTH),
+                                )
+                            }
+                        dialogState =
+                            ReminderDialogState.DatePicker(
+                                reminder = r,
+                                calendar = usedCalendar,
+                                initialDateMillis = utcCalendar.timeInMillis,
+                            )
+                    }
+                }
+            }
+        }
+
     fun showDatePickerDialog(reminder: Reminder? = null, calendar: Calendar? = null) {
         selectedReminder = reminder
         activity?.checkNotificationPermission(
-            requestCode = 101,
+            permissionLauncher = notificationPermissionLauncher,
             alsoCheckAlarmPermission = true,
             alarmPermissionResultLauncher = alarmPermissionLauncher,
             onShowRationale = { msgResId, onConfirm ->
@@ -127,8 +164,9 @@ fun NoteRemindersRoute(
             showDatePickerDialog()
         } else if (!canScheduleAlarms()) {
             activity?.checkNotificationPermission(
-                requestCode = 102,
+                permissionLauncher = notificationPermissionLauncher,
                 alsoCheckAlarmPermission = true,
+                alarmPermissionResultLauncher = alarmPermissionLauncher,
                 onShowRationale = { msgResId, onConfirm ->
                     dialogState =
                         ReminderDialogState.Rationale(

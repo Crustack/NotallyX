@@ -255,4 +255,4 @@ When modifying Room entities (`BaseNote`, `Label`, etc.):
 - **Domain Docs**: Single-context layout (`GLOSSARY.md` + `docs/adr/`). See `docs/agents/domain.md`.
 - **UI Testing Guide**: Standardized patterns for instrumented Compose and hybrid tests (`UiTestBase`, `UiUtils`, `runBlocking` seeding). See `.agents/skills/write-ui-tests/SKILL.md`.
 - **Roborazzi Screenshot Tests**: Workflow and best practices for JVM screenshot tests. See `.agents/skills/roborazzi/SKILL.md`.
-- **Compose UI Elements (Creation & Evaluation)**: Canonical templates, guidelines, and audit checklists for creating new Compose screens, routes, components, and dialogs. See [.agents/skills/evaluate-jetpack-composables/SKILL.md](.agents/skills/create-compose-ui-elements/SKILL.md).
+- **Compose UI Elements (Creation & Evaluation)**: Canonical templates, guidelines, and audit checklists for creating new Compose screens, routes, components, and dialogs. See [.agents/skills/create-compose-ui-elements/SKILL.md](.agents/skills/create-compose-ui-elements/SKILL.md).

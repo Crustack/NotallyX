@@ -2,6 +2,7 @@ package com.philkes.notallyx.feature.main
 
 import android.app.Activity
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -119,6 +120,10 @@ fun NotallyApp(
             remember(navigationState, skipStartViewOnBack) {
                 Navigator(navigationState, skipStartViewOnBack = skipStartViewOnBack)
             }
+
+        val isActionModeEnabled by
+            notallyRouteModel.actionMode.enabled.collectAsStateWithLifecycle()
+        BackHandler(enabled = isActionModeEnabled) { notallyRouteModel.actionMode.close(true) }
 
         if (pendingNavKeyFlow != null) {
             val pendingNavKey by pendingNavKeyFlow.collectAsStateWithLifecycle()

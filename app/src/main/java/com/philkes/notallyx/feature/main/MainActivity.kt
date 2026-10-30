@@ -1,15 +1,13 @@
 package com.philkes.notallyx.feature.main
 
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import androidx.activity.OnBackPressedCallback
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
-import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
@@ -23,7 +21,6 @@ import com.philkes.notallyx.core.database.runMigrations
 import com.philkes.notallyx.core.preference.NotallyXPreferences.Companion.START_VIEW_DEFAULT
 import com.philkes.notallyx.core.preference.NotallyXPreferences.Companion.START_VIEW_UNLABELED
 import com.philkes.notallyx.core.security.AuthenticatorProvider
-import com.philkes.notallyx.core.security.ComposeBinding
 import com.philkes.notallyx.core.security.LockedActivity
 import com.philkes.notallyx.core.ui.extensions.checkNotificationPermission
 import com.philkes.notallyx.core.ui.extensions.collectIn
@@ -36,7 +33,6 @@ import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.extensions.generateBaseNote
-import com.philkes.notallyx.feature.editor.NoteActionHandler
 import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel
 import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel.Companion.CURRENT_LABEL_EMPTY
 import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel.Companion.CURRENT_LABEL_NONE
@@ -49,13 +45,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-class MainActivity : LockedActivity<ComposeBinding>() {
+class MainActivity : LockedActivity() {
 
     private val notallyRouteModel: NotesRouteViewModel by viewModel()
     val mainActivityViewModel: MainActivityViewModel by viewModel()
 
     private lateinit var exportFileActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var exportNotesActivityResultLauncher: ActivityResultLauncher<Intent>
+    private lateinit var notificationPermissionLauncher: ActivityResultLauncher<String>
 
     private val currentNavKeyFlow = MutableStateFlow<NotallyNavKey>(NotallyNavKey.Notes)
     private val currentTitleFlow = MutableStateFlow("")
@@ -63,19 +60,13 @@ class MainActivity : LockedActivity<ComposeBinding>() {
 
     private var isStartViewRoute = false
     private var lastSelectedNotePosition = -1
-    private val actionModeCancelCallback =
-        object : OnBackPressedCallback(false) {
-            override fun handleOnBackPressed() {
-                notallyRouteModel.actionMode.close(true)
-            }
-        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        enableEdgeToEdge()
 
         val composeView = androidx.compose.ui.platform.ComposeView(this)
-        binding = ComposeBinding(composeView)
+        rootView = composeView
         setContentView(composeView)
 
         setupActivityResultLaunchers()
@@ -98,7 +89,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                 onDeleteSelectedNotesForever = { deleteSelectedNotesForever() },
                 onRequestNotificationPermission = {
                     checkNotificationPermission(
-                        NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
+                        permissionLauncher = notificationPermissionLauncher,
                         onShowRationale = { msgResId, onConfirm ->
                             mainActivityViewModel.activeDialog.value =
                                 MainActiveDialog.Confirm(
@@ -127,7 +118,6 @@ class MainActivity : LockedActivity<ComposeBinding>() {
             launch { preferences.alwaysShowSearchBar.flow.collect { invalidateOptionsMenu() } }
             launch {
                 notallyRouteModel.actionMode.enabled.collect { enabled ->
-                    actionModeCancelCallback.isEnabled = enabled
                     if (!enabled) {
                         lastSelectedNotePosition = -1
                     }
@@ -154,8 +144,6 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                     },
                 )
         }
-
-        onBackPressedDispatcher.addCallback(this, actionModeCancelCallback)
 
         checkForMigrations(savedInstanceState)
     }
@@ -221,28 +209,6 @@ class MainActivity : LockedActivity<ComposeBinding>() {
         } else {
             notallyRouteModel.actionMode.add(id, baseNote)
             lastSelectedNotePosition = position
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray,
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS -> {
-                if (
-                    grantResults.isNotEmpty() &&
-                        grantResults[0] == PackageManager.PERMISSION_GRANTED
-                ) {
-                    val baseNotes = notallyRouteModel.actionMode.selectedNotes.values
-                    notallyRouteModel.pinBaseNotesToStatusBar(
-                        this@MainActivity,
-                        baseNotes.any { !it.isPinnedToStatus },
-                    )
-                } else handleRejection(R.string.to_pin_note_status_bar)
-            }
         }
     }
 
@@ -399,11 +365,23 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     }
 
     private fun setupActivityResultLaunchers() {
+        notificationPermissionLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+                if (isGranted) {
+                    val baseNotes = notallyRouteModel.actionMode.selectedNotes.values
+                    notallyRouteModel.pinBaseNotesToStatusBar(
+                        this@MainActivity,
+                        baseNotes.any { !it.isPinnedToStatus },
+                    )
+                } else {
+                    handleRejection(R.string.to_pin_note_status_bar)
+                }
+            }
         exportFileActivityResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
                     result.data?.data?.let { uri ->
-                        notallyRouteModel.exportSelectedNoteToFile(uri, binding.root)
+                        notallyRouteModel.exportSelectedNoteToFile(uri, rootView)
                     }
                 }
             }
@@ -411,7 +389,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
                     result.data?.data?.let { uri ->
-                        notallyRouteModel.exportSelectedNotesToFolder(uri, binding.root)
+                        notallyRouteModel.exportSelectedNotesToFolder(uri, rootView)
                     }
                 }
             }
@@ -439,7 +417,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                     notallyRouteModel.actionMode.setLoading(false)
                 }
             Snackbar.make(
-                    binding.root,
+                    rootView,
                     getQuantityString(folderTo.movedToResId(), ids.size),
                     Snackbar.LENGTH_SHORT,
                 )
@@ -457,7 +435,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
         lifecycleScope.launch {
             val deletedNotes = notallyRouteModel.deleteSelectedBaseNotes()
             Snackbar.make(
-                    binding.root,
+                    rootView,
                     getQuantityString(
                         R.plurals.deleted_selected_notes,
                         removedNotes.size,

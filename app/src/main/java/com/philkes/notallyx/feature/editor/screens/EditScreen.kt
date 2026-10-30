@@ -1,6 +1,5 @@
 package com.philkes.notallyx.feature.editor.screens
 
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -54,7 +53,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -70,6 +68,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil3.compose.SubcomposeAsyncImage
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.findAllOccurrences
 import com.philkes.notallyx.core.common.extensions.isPreview
@@ -271,31 +270,19 @@ private fun AttachedImages(
     }
 
     if (imageFile?.exists() == true) {
-        val bitmap =
-            remember(imageFile) {
-                try {
-                    BitmapFactory.decodeFile(imageFile.absolutePath)
-                } catch (e: Exception) {
-                    null
-                }
-            }
-
-        if (bitmap != null) {
-            Image(
-                bitmap = bitmap.asImageBitmap(),
-                contentDescription = imageAttachment.originalName,
-                contentScale = ContentScale.Crop,
-                modifier =
-                    Modifier.fillMaxWidth().height(400.dp).clickable {
-                        onImageClick(imageAttachment)
-                    },
-            )
-        } else {
-            ImagePreviewCard(
-                onClick = { onImageClick(imageAttachment) },
-                modifier = Modifier.fillMaxWidth().height(250.dp),
-            )
-        }
+        SubcomposeAsyncImage(
+            model = imageFile,
+            contentDescription = imageAttachment.originalName,
+            contentScale = ContentScale.Crop,
+            modifier =
+                Modifier.fillMaxWidth().height(400.dp).clickable { onImageClick(imageAttachment) },
+            error = {
+                ImagePreviewCard(
+                    onClick = { onImageClick(imageAttachment) },
+                    modifier = Modifier.fillMaxWidth().height(250.dp),
+                )
+            },
+        )
     } else {
         ImagePreviewCard(
             onClick = { onImageClick(imageAttachment) },
