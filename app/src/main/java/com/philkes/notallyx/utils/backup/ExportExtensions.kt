@@ -68,7 +68,7 @@ import com.philkes.notallyx.utils.getLogFileUri
 import com.philkes.notallyx.utils.keepOnlyNewest
 import com.philkes.notallyx.utils.listZipFiles
 import com.philkes.notallyx.utils.log
-import com.philkes.notallyx.utils.md5Hash
+import com.philkes.notallyx.utils.sha256Hash
 import com.philkes.notallyx.utils.resolveAttachmentFile
 import com.philkes.notallyx.utils.security.decryptDatabase
 import com.philkes.notallyx.utils.security.getInitializedCipherForDecryption
@@ -465,8 +465,8 @@ private fun ContextWrapper.writeFileVerified(source: File, target: Uri) {
         FileInputStream(source).use { input -> input.copyToLarge(out) }
         out.flush()
     }
-    val targetMd5 = runCatching { md5Hash(target) }.getOrNull()
-    if (targetMd5 == null || !targetMd5.contentEquals(source.md5Hash())) {
+    val targetSha256 = runCatching { sha256Hash(target) }.getOrNull()
+    if (targetSha256 == null || !targetSha256.contentEquals(source.sha256Hash())) {
         throw IOException("Writing '$target' failed, its content does not match '${source.name}'")
     }
 }
@@ -703,10 +703,14 @@ suspend fun ContextWrapper.exportAsZip(
             }
         }
         // Guard against null/IO issues when immediately reopening fileUri via SAF
-        val sourceMd5 = runCatching { zipFile.file.md5Hash() }.getOrNull()
-        val targetMd5 = runCatching { md5Hash(fileUri) }.getOrNull()
-        if (sourceMd5 == null || targetMd5 == null || !targetMd5.contentEquals(sourceMd5)) {
-            log(TAG, stackTrace = "Exported zipFile '$fileUri' has wrong MD5 hash!")
+        val sourceSha256 = runCatching { zipFile.file.sha256Hash() }.getOrNull()
+        val targetSha256 = runCatching { sha256Hash(fileUri) }.getOrNull()
+        if (
+            sourceSha256 == null ||
+                targetSha256 == null ||
+                !targetSha256.contentEquals(sourceSha256)
+        ) {
+            log(TAG, stackTrace = "Exported zipFile '$fileUri' has wrong SHA-256 hash!")
             if (retryOnFail) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     try {
@@ -720,7 +724,7 @@ suspend fun ContextWrapper.exportAsZip(
                 return exportAsZip(fileUri, compress, password, backupProgress, false)
             } else {
                 throw IOException(
-                    "exportAsZip failed because created '$fileUri' has wrong or unverifiable MD5 hash!"
+                    "exportAsZip failed because created '$fileUri' has wrong or unverifiable SHA-256 hash!"
                 )
             }
         }
