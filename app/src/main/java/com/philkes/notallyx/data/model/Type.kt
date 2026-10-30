@@ -1,5 +1,8 @@
 package com.philkes.notallyx.data.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class Type {
     NOTE,
     LIST;

@@ -4,8 +4,9 @@ package com.philkes.notallyx.data.imports
 //  see https://github.com/robolectric/robolectric/pull/9680
 
 import android.app.Application
+import android.os.Environment
 import androidx.core.net.toUri
-import androidx.room.Room
+import androidx.room3.Room
 import androidx.test.core.app.ApplicationProvider
 import com.philkes.notallyx.core.common.error.*
 import com.philkes.notallyx.core.common.extensions.*
@@ -17,6 +18,7 @@ import com.philkes.notallyx.core.ui.components.*
 import com.philkes.notallyx.core.ui.dialog.*
 import com.philkes.notallyx.core.ui.extensions.*
 import com.philkes.notallyx.core.ui.views.*
+import com.philkes.notallyx.data.ShadowContextImplMedia
 import com.philkes.notallyx.data.model.extensions.*
 import com.philkes.notallyx.feature.migration.imports.ImportSource
 import com.philkes.notallyx.feature.migration.imports.NotesImporter
@@ -30,19 +32,21 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowEnvironment
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
+@Config(manifest = Config.NONE, sdk = [35], shadows = [ShadowContextImplMedia::class])
 class NotesImporterTest {
     private lateinit var application: Application
     private lateinit var database: NotallyDatabase
 
     @Before
     fun setup() {
+        ShadowEnvironment.setExternalStorageState(Environment.MEDIA_MOUNTED)
         application = ApplicationProvider.getApplicationContext()
         database =
             Room.inMemoryDatabaseBuilder(application, NotallyDatabase::class.java)
-                .allowMainThreadQueries()
+                .setDriver(BackupSQLiteDriver(application))
                 .build()
     }
 

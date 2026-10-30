@@ -245,6 +245,12 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     ksp(libs.androidx.room.compiler)
     implementation(libs.bundles.room)
+    ksp(libs.androidx.room3.compiler)
+    implementation(libs.androidx.room3.common)
+    implementation(libs.androidx.room3.runtime)
+    implementation(libs.androidx.room3.sqlite.wrapper)
+    implementation(libs.sqlite.bundled)
+    implementation(libs.sqlite.framework)
     implementation(libs.androidx.security.crypto)
     implementation(libs.androidx.sqlite)
     implementation(libs.androidx.work)
@@ -283,7 +289,7 @@ dependencies {
 
     androidTestImplementation(libs.androidx.test.espresso.intents)
     androidTestUtil(libs.androidx.test.orchestrator)
-    androidTestImplementation(libs.androidx.room.testing)
+    androidTestImplementation(libs.androidx.room3.testing)
     androidTestImplementation(libs.androidx.work.testing)
     androidTestImplementation(project(":test-lib"))
 

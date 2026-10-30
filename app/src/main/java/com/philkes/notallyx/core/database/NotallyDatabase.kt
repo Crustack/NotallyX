@@ -4,13 +4,14 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.util.Log
 import androidx.annotation.VisibleForTesting
-import androidx.room.Database
-import androidx.room.Room
-import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SimpleSQLiteQuery
-import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.room3.ColumnTypeConverters
+import androidx.room3.Database
+import androidx.room3.Room
+import androidx.room3.RoomDatabase
+import androidx.room3.RoomRawQuery
+import androidx.room3.migration.Migration
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.execSQL
 import com.philkes.notallyx.NotallyXApplication.Companion.isTestRunner
 import com.philkes.notallyx.core.common.extensions.getExternalMediaDirectory
 import com.philkes.notallyx.core.common.extensions.log
@@ -31,7 +32,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
-@TypeConverters(Converters::class)
+@ColumnTypeConverters(Converters::class)
 @Database(entities = [BaseNote::class, Label::class], version = 11)
 abstract class NotallyDatabase : RoomDatabase() {
 
@@ -41,17 +42,16 @@ abstract class NotallyDatabase : RoomDatabase() {
 
     abstract fun getBaseNoteDao(): BaseNoteDao
 
-    fun checkpoint(): Boolean {
+    suspend fun checkpoint(): Boolean {
         return try {
-            val result =
-                getBaseNoteDao().query(SimpleSQLiteQuery("pragma wal_checkpoint(TRUNCATE)"))
+            val result = getBaseNoteDao().query(RoomRawQuery("pragma wal_checkpoint(TRUNCATE)"))
             result == 0
         } catch (_: Exception) {
             false
         }
     }
 
-    fun ping() = getBaseNoteDao().query(SimpleSQLiteQuery("SELECT 1")) == 1
+    suspend fun ping() = getBaseNoteDao().query(RoomRawQuery("SELECT 1")) == 1
 
     companion object {
 
@@ -137,14 +137,10 @@ abstract class NotallyDatabase : RoomDatabase() {
             synchronized(this) {
                 instance.value?.let { database ->
                     instance.value = null
-                    if (database.isOpen) {
-                        database.close()
-                    }
+                    database.close()
                 }
                 testInstance?.let { database ->
-                    if (database.isOpen) {
-                        database.close()
-                    }
+                    database.close()
                     testInstance = null
                 }
             }
@@ -203,7 +199,7 @@ abstract class NotallyDatabase : RoomDatabase() {
             clearInstance()
             val instanceBuilder =
                 builder(context, dataInPublic)
-                    .openHelperFactory(BackupOpenHelperFactory(context))
+                    .setDriver(BackupSQLiteDriver(context, BackupOpenHelperFactory(context)))
                     .setupEncryption(context, preferences, biometricLock)
             return instanceBuilder.build()
         }
@@ -216,6 +212,12 @@ abstract class NotallyDatabase : RoomDatabase() {
                     context,
                     NotallyDatabase::class.java,
                     getCurrentDatabaseName(context, dataInPublic),
+                )
+                .setDriver(
+                    BackupSQLiteDriver(
+                        context,
+                        androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory(),
+                    )
                 )
                 .addMigrations(
                     Migration2,
@@ -271,7 +273,7 @@ abstract class NotallyDatabase : RoomDatabase() {
             val encryptedPassphrase = preferences.databaseEncryptionKey.value
             val passphrase = cipher.doFinal(encryptedPassphrase)
             val factory = BackupOpenHelperFactory(context, SupportOpenHelperFactory(passphrase))
-            instanceBuilder.openHelperFactory(factory)
+            instanceBuilder.setDriver(BackupSQLiteDriver(context, factory))
         }
 
         fun postNewInstance(
@@ -298,8 +300,8 @@ abstract class NotallyDatabase : RoomDatabase() {
 
         object Migration2 : Migration(1, 2) {
 
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
+            override suspend fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
                     "ALTER TABLE `BaseNote` ADD COLUMN `color` TEXT NOT NULL DEFAULT 'DEFAULT'"
                 )
             }
@@ -307,29 +309,35 @@ abstract class NotallyDatabase : RoomDatabase() {
 
         object Migration3 : Migration(2, 3) {
 
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE `BaseNote` ADD COLUMN `images` TEXT NOT NULL DEFAULT `[]`")
+            override suspend fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
+                    "ALTER TABLE `BaseNote` ADD COLUMN `images` TEXT NOT NULL DEFAULT `[]`"
+                )
             }
         }
 
         object Migration4 : Migration(3, 4) {
 
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE `BaseNote` ADD COLUMN `audios` TEXT NOT NULL DEFAULT `[]`")
+            override suspend fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
+                    "ALTER TABLE `BaseNote` ADD COLUMN `audios` TEXT NOT NULL DEFAULT `[]`"
+                )
             }
         }
 
         object Migration5 : Migration(4, 5) {
 
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE `BaseNote` ADD COLUMN `files` TEXT NOT NULL DEFAULT `[]`")
+            override suspend fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
+                    "ALTER TABLE `BaseNote` ADD COLUMN `files` TEXT NOT NULL DEFAULT `[]`"
+                )
             }
         }
 
         object Migration6 : Migration(5, 6) {
 
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
+            override suspend fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
                     "ALTER TABLE `BaseNote` ADD COLUMN `modifiedTimestamp` INTEGER NOT NULL DEFAULT 'timestamp'"
                 )
             }
@@ -337,34 +345,40 @@ abstract class NotallyDatabase : RoomDatabase() {
 
         object Migration7 : Migration(6, 7) {
 
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
+            override suspend fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
                     "ALTER TABLE `BaseNote` ADD COLUMN `reminders` TEXT NOT NULL DEFAULT `[]`"
                 )
             }
         }
 
         object Migration8 : Migration(7, 8) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                val cursor = db.query("SELECT id, color FROM BaseNote")
-                while (cursor.moveToNext()) {
-                    val id = cursor.getLong(cursor.getColumnIndexOrThrow("id"))
-                    val colorString = cursor.getString(cursor.getColumnIndexOrThrow("color"))
-                    val color = Color.valueOfOrDefault(colorString)
-                    val hexColor = color.toColorString()
-                    db.execSQL(
-                        "UPDATE BaseNote SET color = ? WHERE id = ?",
-                        arrayOf<Any>(hexColor, id),
-                    )
+            override suspend fun migrate(connection: SQLiteConnection) {
+                val updates = mutableListOf<Pair<String, Long>>()
+                connection.prepare("SELECT id, color FROM BaseNote").use { stmt ->
+                    while (stmt.step()) {
+                        val id = stmt.getLong(0)
+                        val colorString = if (stmt.isNull(1)) "" else stmt.getText(1)
+                        val color = Color.valueOfOrDefault(colorString)
+                        val hexColor = color.toColorString()
+                        updates.add(Pair(hexColor, id))
+                    }
                 }
-                cursor.close()
+                connection.prepare("UPDATE BaseNote SET color = ? WHERE id = ?").use { stmt ->
+                    for ((hexColor, id) in updates) {
+                        stmt.bindText(1, hexColor)
+                        stmt.bindLong(2, id)
+                        stmt.step()
+                        stmt.reset()
+                    }
+                }
             }
         }
 
         object Migration9 : Migration(8, 9) {
 
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
+            override suspend fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
                     "ALTER TABLE `BaseNote` ADD COLUMN `viewMode` TEXT NOT NULL DEFAULT '${NoteViewMode.EDIT.name}'"
                 )
             }
@@ -372,8 +386,8 @@ abstract class NotallyDatabase : RoomDatabase() {
 
         object Migration10 : Migration(9, 10) {
 
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
+            override suspend fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
                     "ALTER TABLE `BaseNote` ADD COLUMN `isPinnedToStatus` INTEGER NOT NULL DEFAULT 0"
                 )
             }
@@ -381,19 +395,24 @@ abstract class NotallyDatabase : RoomDatabase() {
 
         object Migration11 : Migration(10, 11) {
 
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE `Label` ADD COLUMN `order` INTEGER NOT NULL DEFAULT 0")
-                val cursor = db.query("SELECT value FROM Label ORDER BY value DESC")
-                var order = 0
-                while (cursor.moveToNext()) {
-                    val value = cursor.getString(0)
-                    db.execSQL(
-                        "UPDATE Label SET `order` = ? WHERE value = ?",
-                        arrayOf(order, value),
-                    )
-                    order++
+            override suspend fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
+                    "ALTER TABLE `Label` ADD COLUMN `order` INTEGER NOT NULL DEFAULT 0"
+                )
+                val values = mutableListOf<String>()
+                connection.prepare("SELECT value FROM Label ORDER BY value DESC").use { stmt ->
+                    while (stmt.step()) {
+                        values.add(stmt.getText(0))
+                    }
                 }
-                cursor.close()
+                connection.prepare("UPDATE Label SET `order` = ? WHERE value = ?").use { stmt ->
+                    values.forEachIndexed { order, value ->
+                        stmt.bindLong(1, order.toLong())
+                        stmt.bindText(2, value)
+                        stmt.step()
+                        stmt.reset()
+                    }
+                }
             }
         }
     }

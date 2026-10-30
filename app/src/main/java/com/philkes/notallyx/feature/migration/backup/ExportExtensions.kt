@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
+import androidx.room3.support.getSupportWrapper
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.SUBFOLDER_AUDIOS
 import com.philkes.notallyx.core.common.extensions.SUBFOLDER_FILES
@@ -227,7 +228,7 @@ suspend fun ContextWrapper.copyDatabase(
             databaseFile.copyToLarge(dbFile, overwrite = true)
         } else {
             dbFile.delete()
-            database.openHelper.writableDatabase.execSQL("VACUUM INTO '${dbFile.absolutePath}'")
+            database.getSupportWrapper().execSQL("VACUUM INTO '${dbFile.absolutePath}'")
         }
         Pair(database, dbFile)
     }

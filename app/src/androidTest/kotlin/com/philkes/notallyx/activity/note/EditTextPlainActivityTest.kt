@@ -24,6 +24,7 @@ import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.appendText
 import com.philkes.notallyx.test.waitUntil
 import java.io.File
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.FixMethodOrder
 import org.junit.Rule
@@ -184,10 +185,12 @@ class EditTextPlainActivityTest : UiTestBase() {
             .performClick()
 
         waitUntil {
-            database.getBaseNoteDao().getByTitle("Converted Plain Note").any { note ->
-                (note.title == noteTitle) &&
-                    (note.body.equals(noteBody, ignoreCase = true)) &&
-                    (note.type == Type.NOTE)
+            runBlocking {
+                database.getBaseNoteDao().getByTitle("Converted Plain Note").any { note ->
+                    (note.title == noteTitle) &&
+                        (note.body.equals(noteBody, ignoreCase = true)) &&
+                        (note.type == Type.NOTE)
+                }
             }
         }
 

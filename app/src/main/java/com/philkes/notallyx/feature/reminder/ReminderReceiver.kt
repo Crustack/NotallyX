@@ -157,7 +157,7 @@ class ReminderReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun reNotifyStatusNotification(context: Context, noteId: Long) {
+    private suspend fun reNotifyStatusNotification(context: Context, noteId: Long) {
         getDatabase(context)?.getBaseNoteDao()?.get(noteId)?.let { note ->
             if (note.isPinnedToStatus) {
                 PinnedNotificationManager.notify(context, note)
@@ -165,7 +165,7 @@ class ReminderReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun unpinNote(context: Context, noteId: Long) {
+    private suspend fun unpinNote(context: Context, noteId: Long) {
         getDatabase(context)?.getBaseNoteDao()?.updatePinnedToStatus(noteId, false)
         PinnedNotificationManager.cancel(context, noteId)
     }
