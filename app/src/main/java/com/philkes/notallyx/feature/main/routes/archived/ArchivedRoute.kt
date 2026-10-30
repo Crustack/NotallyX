@@ -5,50 +5,45 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.philkes.notallyx.R
-import com.philkes.notallyx.core.preference.NotallyXPreferences
-import com.philkes.notallyx.core.preference.NotesView
 import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.data.model.BaseNote
-import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Item
-import com.philkes.notallyx.feature.main.routes.NotesGridScreen
 import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel
-import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel.Companion.CURRENT_LABEL_EMPTY
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ArchivedRoute(
-    displayConfig: NoteCardDisplayConfig,
     onNoteClick: (BaseNote, Int) -> Unit,
     onNoteLongClick: (BaseNote, Int, List<Item>) -> Unit,
     onReminderClick: (BaseNote) -> Unit,
     modifier: Modifier = Modifier,
+    displayConfig: NoteCardDisplayConfig = NoteCardDisplayConfig(),
     archivedViewModel: ArchivedViewModel = koinViewModel(),
-    notallyRouteModel: NotesRouteViewModel = koinViewModel(),
-    preferences: NotallyXPreferences = notallyRouteModel.preferences,
+    @Suppress("UNUSED_PARAMETER") notallyRouteModel: NotesRouteViewModel? = null,
 ) {
-    val items by archivedViewModel.archivedNotes.collectAsStateWithLifecycle(emptyList())
-    val selectedIds by
-        notallyRouteModel.actionMode.selectedIdsFlow.collectAsStateWithLifecycle(emptySet())
-    val notesView by
-        preferences.notesView.flow.collectAsStateWithLifecycle(preferences.notesView.value)
+    val uiState by archivedViewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        notallyRouteModel.setFolder(Folder.ARCHIVED)
-        notallyRouteModel.currentLabel = CURRENT_LABEL_EMPTY
+        archivedViewModel.sideEffects.collect { effect ->
+            when (effect) {
+                is ArchivedSideEffect.OpenNote -> onNoteClick(effect.note, effect.position)
+                is ArchivedSideEffect.SelectNote ->
+                    onNoteLongClick(effect.note, effect.position, effect.items)
+                is ArchivedSideEffect.OpenReminder -> onReminderClick(effect.note)
+            }
+        }
     }
 
-    NotesGridScreen(
-        items = items,
-        isGrid = notesView == NotesView.GRID,
-        selectedNoteIds = selectedIds,
-        displayConfig = displayConfig,
-        backgroundResId = R.drawable.archive,
-        imageRoot = notallyRouteModel.imageRoot,
-        onNoteClick = onNoteClick,
-        onNoteLongClick = onNoteLongClick,
-        onReminderClick = { note, _ -> onReminderClick(note) },
+    val effectiveState =
+        if (displayConfig != NoteCardDisplayConfig()) {
+            uiState.copy(displayConfig = displayConfig)
+        } else {
+            uiState
+        }
+
+    ArchivedScreen(
+        state = effectiveState,
+        onAction = archivedViewModel::onAction,
         modifier = modifier,
     )
 }

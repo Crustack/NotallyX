@@ -47,6 +47,7 @@ import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.core.preference.displayBodySize
 import com.philkes.notallyx.core.preference.displaySmallerSize
 import com.philkes.notallyx.core.preference.displayTitleSize
+import com.philkes.notallyx.core.preference.model.UserPreferences
 import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.extensions.toAnnotatedString
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
@@ -81,6 +82,19 @@ data class NoteCardDisplayConfig(
     val hideLabels: Boolean = false,
     val hideImages: Boolean = false,
 )
+
+fun UserPreferences.toDisplayConfig(): NoteCardDisplayConfig =
+    NoteCardDisplayConfig(
+        dateFormat = dateFormatOverview,
+        timeFormat = timeFormatOverview,
+        sortBy = notesSorting.sortedBy,
+        textSize = textSizeOverview,
+        maxTitleLines = maxTitle,
+        maxLines = maxLines,
+        maxItems = maxItems,
+        hideLabels = labelTagsHiddenInOverview,
+        hideImages = imagesHiddenInOverview,
+    )
 
 /** Composable replacing recycler_base_note.xml layout. Exactly 1 BaseNoteCard composable. */
 @Composable
