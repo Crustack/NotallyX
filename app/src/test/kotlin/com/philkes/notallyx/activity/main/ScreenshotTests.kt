@@ -25,7 +25,6 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
-import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.intent.Intents
@@ -59,7 +58,6 @@ import com.philkes.notallyx.test.generateNotes
 import com.philkes.notallyx.test.preferences
 import com.philkes.notallyx.test.toMillis
 import com.philkes.notallyx.test.waitUntil
-import io.mockk.clearStaticMockk
 import java.io.File
 import java.util.Date
 import kotlinx.coroutines.Dispatchers
@@ -120,8 +118,6 @@ class ScreenshotTests {
 
     @After
     fun tearDown() {
-        // Clean up static mocks after each test
-        clearStaticMockk(EncryptedSharedPreferences::class)
         runBlocking {
             withContext(Dispatchers.IO) {
                 database.getBaseNoteDao().deleteFrom(Folder.ARCHIVED)
@@ -363,7 +359,7 @@ class ScreenshotTests {
             composeTestRule
                 .onNodeWithText(context.getString(R.string.date_format_note_view), substring = true)
                 .performClick()
-            composeTestRule.mainClock.advanceTimeByFrame()
+            composeTestRule.mainClock.advanceTimeBy(500)
             ShadowLooper.idleMainLooper()
             composeTestRule
                 .onNode(isDialog())
@@ -371,7 +367,9 @@ class ScreenshotTests {
                     "${ScreenshotTests::class.java.simpleName}/settings/${"%02d".format(imageCount++)}_dialog_date_time_format.png"
                 )
 
-            composeTestRule.onNodeWithText(context.getString(R.string.save)).performClick()
+            Espresso.pressBack()
+            composeTestRule.mainClock.advanceTimeBy(1000)
+            ShadowLooper.idleMainLooper()
 
             // 2. Scroll to top and touch down on Text Size slider to capture screenshot while
             // dragging

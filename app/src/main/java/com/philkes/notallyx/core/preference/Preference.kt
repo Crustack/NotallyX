@@ -1,16 +1,8 @@
 package com.philkes.notallyx.core.preference
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.os.Build
-import androidx.core.content.edit
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.extensions.deserializeEnums
-import com.philkes.notallyx.core.common.extensions.fromCamelCaseToEnumName
-import com.philkes.notallyx.core.common.extensions.serializeEnums
-import com.philkes.notallyx.core.common.extensions.toCamelCase
-import com.philkes.notallyx.core.common.extensions.toPreservedByteArray
-import com.philkes.notallyx.core.common.extensions.toPreservedString
 import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.NoteViewMode
@@ -20,276 +12,183 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.crypto.Cipher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.scan
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import org.ocpsoft.prettytime.PrettyTime
 
-/**
- * Every Preference can be observed as a [StateFlow].
- *
- * @param titleResId Optional string resource id, if preference can be set via the UI.
- */
-abstract class BasePreference<T>(
-    private val sharedPreferences: SharedPreferences,
-    val defaultValue: T,
-    val titleResId: Int? = null,
-) {
-    private var dataFlow: MutableStateFlow<T>? = null
-    private var isCached = false
-    private var cachedValue: T? = null
-
+/** Common interface for observable preferences backed by StateFlow and async updates. */
+interface Preference<T> {
+    val key: String
     val value: T
-        get() {
-            if (!isCached) {
-                cachedValue = getValue(sharedPreferences)
-                isCached = true
-            }
-            @Suppress("UNCHECKED_CAST")
-            return cachedValue as T
-        }
-
-    protected abstract fun getValue(sharedPreferences: SharedPreferences): T
-
     val flow: StateFlow<T>
-        get() {
-            if (dataFlow == null) {
-                dataFlow = MutableStateFlow(value)
+    val defaultValue: T
+    val titleResId: Int?
+
+    fun save(value: T)
+
+    suspend fun update(value: T)
+}
+
+typealias BasePreference<T> = Preference<T>
+
+fun <T, R> StateFlow<T>.mapState(
+    scope: CoroutineScope,
+    transform: (T) -> R,
+): StateFlow<R> {
+    return map { transform(it) }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = scope,
+            started = SharingStarted.Eagerly,
+            initialValue = transform(value),
+        )
+}
+
+open class PreferenceHolder<T>(
+    override val key: String,
+    override val defaultValue: T,
+    override val titleResId: Int? = null,
+    override val flow: StateFlow<T>,
+    private val onUpdate: suspend (T) -> Unit,
+    private val scope: CoroutineScope,
+) : Preference<T> {
+
+    @Volatile private var localOverride: T? = null
+
+    override val value: T
+        get() = localOverride ?: flow.value
+
+    override fun save(value: T) {
+        localOverride = value
+        scope.launch {
+            try {
+                onUpdate(value)
+            } finally {
+                localOverride = null
             }
-            return dataFlow!!.asStateFlow()
-        }
-
-    fun getData(): MutableStateFlow<T> {
-        if (dataFlow == null) {
-            dataFlow = MutableStateFlow(value)
-        }
-        return dataFlow!!
-    }
-
-    fun save(value: T) {
-        sharedPreferences.edit(true) { put(value) }
-        cachedValue = value
-        isCached = true
-        getData().value = value
-    }
-
-    protected abstract fun SharedPreferences.Editor.put(value: T)
-
-    fun refresh() {
-        isCached = false
-        cachedValue = null
-        getData().value = value
-    }
-
-    fun getFreshValue() = getValue(sharedPreferences)
-}
-
-fun <T> Flow<T>.withPrevious(): Flow<Pair<T?, T>> {
-    return scan<T, Pair<T?, T>?>(null) { prev, current -> Pair(prev?.second, current) }
-        .filterNotNull()
-}
-
-interface TextProvider {
-    fun getText(context: Context): String
-}
-
-interface StaticTextProvider : TextProvider {
-    val textResId: Int
-
-    override fun getText(context: Context): String {
-        return context.getString(textResId)
-    }
-}
-
-class EnumPreference<T>(
-    sharedPreferences: SharedPreferences,
-    val key: String,
-    defaultValue: T,
-    private val enumClass: Class<T>,
-    titleResId: Int? = null,
-) : BasePreference<T>(sharedPreferences, defaultValue, titleResId)
-    where T : Enum<T>, T : TextProvider {
-
-    override fun getValue(sharedPreferences: SharedPreferences): T {
-        val storedValue = sharedPreferences.getString(key, null)
-        return try {
-            storedValue?.let { java.lang.Enum.valueOf(enumClass, it.fromCamelCaseToEnumName()) }
-                ?: defaultValue
-        } catch (e: IllegalArgumentException) {
-            defaultValue
         }
     }
 
-    override fun SharedPreferences.Editor.put(value: T) {
-        putString(key, value.name.toCamelCase())
-    }
-}
-
-class StringSetPreference(
-    private val key: String,
-    sharedPreferences: SharedPreferences,
-    defaultValue: Set<String>,
-    titleResId: Int? = null,
-) : BasePreference<Set<String>>(sharedPreferences, defaultValue, titleResId) {
-
-    override fun getValue(sharedPreferences: SharedPreferences): Set<String> {
-        return sharedPreferences.getStringSet(key, defaultValue)!!
+    override suspend fun update(value: T) {
+        localOverride = value
+        try {
+            onUpdate(value)
+        } finally {
+            localOverride = null
+        }
     }
 
-    override fun SharedPreferences.Editor.put(value: Set<String>) {
-        putStringSet(key, value)
-    }
-}
+    fun refresh() {}
 
-class EnumListPreference<T>(
-    private val key: String,
-    sharedPreferences: SharedPreferences,
-    private val enumClass: Class<T>,
-    defaultValue: List<T>,
-    titleResId: Int? = null,
-) : BasePreference<List<T>>(sharedPreferences, defaultValue, titleResId) where T : Enum<T> {
-
-    override fun getValue(sharedPreferences: SharedPreferences): List<T> {
-        return sharedPreferences.getString(key, null)?.let { enumClass.deserializeEnums(it) }
-            ?: defaultValue
-    }
-
-    override fun SharedPreferences.Editor.put(value: List<T>) {
-        putString(key, value.serializeEnums())
-    }
-}
-
-inline fun <reified T> createEnumListPreference(
-    sharedPreferences: SharedPreferences,
-    key: String,
-    defaultValue: List<T>,
-    titleResId: Int? = null,
-): EnumListPreference<T> where T : Enum<T> {
-    return EnumListPreference(key, sharedPreferences, T::class.java, defaultValue, titleResId)
-}
-
-inline fun <reified T> createEnumPreference(
-    sharedPreferences: SharedPreferences,
-    key: String,
-    defaultValue: T,
-    titleResId: Int? = null,
-): EnumPreference<T> where T : Enum<T>, T : TextProvider {
-    return EnumPreference(sharedPreferences, key, defaultValue, T::class.java, titleResId)
+    fun getFreshValue(): T = value
 }
 
 class IntPreference(
-    val key: String,
-    sharedPreferences: SharedPreferences,
+    key: String,
     defaultValue: Int,
     val min: Int,
     val max: Int,
     titleResId: Int? = null,
-) : BasePreference<Int>(sharedPreferences, defaultValue, titleResId) {
-
-    override fun getValue(sharedPreferences: SharedPreferences): Int {
-        return sharedPreferences.getInt(key, defaultValue)
-    }
-
-    override fun SharedPreferences.Editor.put(value: Int) {
-        putInt(key, value)
-    }
-}
+    flow: StateFlow<Int>,
+    onUpdate: suspend (Int) -> Unit,
+    scope: CoroutineScope,
+) : PreferenceHolder<Int>(key, defaultValue, titleResId, flow, onUpdate, scope)
 
 class FloatPreference(
-    val key: String,
-    sharedPreferences: SharedPreferences,
+    key: String,
     defaultValue: Float,
     val min: Float,
     val max: Float,
     titleResId: Int? = null,
-) : BasePreference<Float>(sharedPreferences, defaultValue, titleResId) {
+    flow: StateFlow<Float>,
+    onUpdate: suspend (Float) -> Unit,
+    scope: CoroutineScope,
+) : PreferenceHolder<Float>(key, defaultValue, titleResId, flow, onUpdate, scope)
 
-    override fun getValue(sharedPreferences: SharedPreferences): Float {
-        return sharedPreferences.getFloat(key, defaultValue)
-    }
+class LongPreference(
+    key: String,
+    defaultValue: Long,
+    titleResId: Int? = null,
+    flow: StateFlow<Long>,
+    onUpdate: suspend (Long) -> Unit,
+    scope: CoroutineScope,
+) : PreferenceHolder<Long>(key, defaultValue, titleResId, flow, onUpdate, scope)
 
-    override fun SharedPreferences.Editor.put(value: Float) {
-        putFloat(key, value)
-    }
-}
-
-class LongPreference(val key: String, sharedPreferences: SharedPreferences, defaultValue: Long) :
-    BasePreference<Long>(sharedPreferences, defaultValue) {
-
-    override fun getValue(sharedPreferences: SharedPreferences): Long {
-        return sharedPreferences.getLong(key, defaultValue)
-    }
-
-    override fun SharedPreferences.Editor.put(value: Long) {
-        putLong(key, value)
-    }
-}
-
-class StringPreference(
-    private val key: String,
-    sharedPreferences: SharedPreferences,
+open class StringPreference(
+    key: String,
     defaultValue: String,
     titleResId: Int? = null,
-) : BasePreference<String>(sharedPreferences, defaultValue, titleResId) {
-
-    override fun getValue(sharedPreferences: SharedPreferences): String {
-        return sharedPreferences.getString(key, defaultValue)!!
-    }
-
-    override fun SharedPreferences.Editor.put(value: String) {
-        putString(key, value)
-    }
-}
+    flow: StateFlow<String>,
+    onUpdate: suspend (String) -> Unit,
+    scope: CoroutineScope,
+) : PreferenceHolder<String>(key, defaultValue, titleResId, flow, onUpdate, scope)
 
 class BooleanPreference(
-    val key: String,
-    sharedPreferences: SharedPreferences,
+    key: String,
     defaultValue: Boolean,
     titleResId: Int? = null,
-) : BasePreference<Boolean>(sharedPreferences, defaultValue, titleResId) {
+    flow: StateFlow<Boolean>,
+    onUpdate: suspend (Boolean) -> Unit,
+    scope: CoroutineScope,
+) : PreferenceHolder<Boolean>(key, defaultValue, titleResId, flow, onUpdate, scope)
 
-    override fun getValue(sharedPreferences: SharedPreferences): Boolean {
-        return sharedPreferences.getBoolean(key, defaultValue)
-    }
+class StringSetPreference(
+    key: String,
+    defaultValue: Set<String>,
+    titleResId: Int? = null,
+    flow: StateFlow<Set<String>>,
+    onUpdate: suspend (Set<String>) -> Unit,
+    scope: CoroutineScope,
+) : PreferenceHolder<Set<String>>(key, defaultValue, titleResId, flow, onUpdate, scope)
 
-    override fun SharedPreferences.Editor.put(value: Boolean) {
-        putBoolean(key, value)
-    }
-}
+class EnumPreference<T>(
+    key: String,
+    defaultValue: T,
+    val enumClass: Class<T>,
+    titleResId: Int? = null,
+    flow: StateFlow<T>,
+    onUpdate: suspend (T) -> Unit,
+    scope: CoroutineScope,
+) : PreferenceHolder<T>(key, defaultValue, titleResId, flow, onUpdate, scope)
+    where T : Enum<T>, T : TextProvider
+
+class EnumListPreference<T>(
+    key: String,
+    defaultValue: List<T>,
+    val enumClass: Class<T>,
+    titleResId: Int? = null,
+    flow: StateFlow<List<T>>,
+    onUpdate: suspend (List<T>) -> Unit,
+    scope: CoroutineScope,
+) : PreferenceHolder<List<T>>(key, defaultValue, titleResId, flow, onUpdate, scope)
+    where T : Enum<T>
 
 class ByteArrayPreference(
-    val key: String,
-    sharedPreferences: SharedPreferences,
+    key: String,
     defaultValue: ByteArray?,
     titleResId: Int? = null,
-) : BasePreference<ByteArray?>(sharedPreferences, defaultValue, titleResId) {
-
-    override fun getValue(sharedPreferences: SharedPreferences): ByteArray? {
-        return sharedPreferences.getString(key, null)?.toPreservedByteArray ?: defaultValue
-    }
-
-    override fun SharedPreferences.Editor.put(value: ByteArray?) {
-        putString(key, value?.toPreservedString)
-    }
-}
+    flow: StateFlow<ByteArray?>,
+    onUpdate: suspend (ByteArray?) -> Unit,
+    scope: CoroutineScope,
+) : PreferenceHolder<ByteArray?>(key, defaultValue, titleResId, flow, onUpdate, scope)
 
 class EncryptedPassphrasePreference(
-    val key: String,
-    sharedPreferences: SharedPreferences,
+    key: String,
     defaultValue: ByteArray,
     titleResId: Int? = null,
-) : BasePreference<ByteArray>(sharedPreferences, defaultValue, titleResId) {
-
-    override fun getValue(sharedPreferences: SharedPreferences): ByteArray {
-        return sharedPreferences.getString(key, null)?.toPreservedByteArray ?: defaultValue
-    }
-
-    override fun SharedPreferences.Editor.put(value: ByteArray) {
-        putString(key, value.toPreservedString)
-    }
+    flow: StateFlow<ByteArray>,
+    onUpdate: suspend (ByteArray) -> Unit,
+    scope: CoroutineScope,
+) : PreferenceHolder<ByteArray>(key, defaultValue, titleResId, flow, onUpdate, scope) {
 
     fun init(cipher: Cipher): ByteArray {
         val random =
@@ -313,11 +212,30 @@ class EncryptedPassphrasePreference(
     }
 }
 
+fun <T> Flow<T>.withPrevious(): Flow<Pair<T?, T>> {
+    return scan<T, Pair<T?, T>?>(null) { prev, current -> Pair(prev?.second, current) }
+        .filterNotNull()
+}
+
+interface TextProvider {
+    fun getText(context: Context): String
+}
+
+interface StaticTextProvider : TextProvider {
+    val textResId: Int
+
+    override fun getText(context: Context): String {
+        return context.getString(textResId)
+    }
+}
+
+@Serializable
 enum class NotesView(override val textResId: Int) : StaticTextProvider {
     LIST(R.string.list),
     GRID(R.string.grid),
 }
 
+@Serializable
 enum class Theme(override val textResId: Int) : StaticTextProvider {
     LIGHT(R.string.light),
     DARK(R.string.dark),
@@ -364,6 +282,7 @@ private val DD_MM_YY_FORMAT = ThreadLocalDateFormat("dd/MM/yy", Locale.UK)
 private val DD_MM_YY_FORMAT_GER = ThreadLocalDateFormat("dd.MM.yy", Locale.GERMANY)
 private val FULL_FORMAT = ThreadLocalDateInstance(java.text.DateFormat.FULL)
 
+@Serializable
 enum class DateFormat(val format: (Date) -> String, private val textHint: String = "") :
     TextProvider {
     NONE({ "" }),
@@ -385,6 +304,7 @@ enum class DateFormat(val format: (Date) -> String, private val textHint: String
 private val TWENTY_FOUR_H_FORMAT = ThreadLocalDateFormat("HH:mm", Locale.GERMANY)
 private val AM_PM_FORMAT = ThreadLocalDateFormat("hh:mm a", Locale.US)
 
+@Serializable
 enum class TimeFormat(val format: (Date) -> String) : TextProvider {
     NONE({ "" }),
     TWENTY_FOUR_H(TWENTY_FOUR_H_FORMAT::format),
@@ -409,12 +329,14 @@ val TextSizeSp.displaySmallerSize: Float
 val TextSizeSp.displayTitleSize: Float
     get() = this
 
+@Serializable
 enum class ListItemSort(override val textResId: Int) : StaticTextProvider {
     NO_AUTO_SORT(R.string.no_auto_sort),
     AUTO_SORT_BY_CHECKED(R.string.auto_sort_by_checked),
     AUTO_SORT_BY_CHECKED_TIMESTAMP(R.string.auto_sort_by_checked_timestamp),
 }
 
+@Serializable
 enum class DefaultListNoteViewMode(override val textResId: Int) : StaticTextProvider {
     READ_ONLY(R.string.read_only),
     EDIT(R.string.edit),
@@ -429,6 +351,7 @@ enum class DefaultListNoteViewMode(override val textResId: Int) : StaticTextProv
     }
 }
 
+@Serializable
 enum class BiometricLock(override val textResId: Int) : StaticTextProvider {
     ENABLED(R.string.enabled),
     DISABLED(R.string.disabled);
@@ -436,6 +359,7 @@ enum class BiometricLock(override val textResId: Int) : StaticTextProvider {
     override fun getText(context: Context): String = context.getString(textResId)
 }
 
+@Serializable
 enum class EditAction(override val textResId: Int, val drawableResId: Int) : StaticTextProvider {
     SEARCH(R.string.search, R.drawable.search),
     PIN(R.string.pin, R.drawable.pin),

@@ -1,29 +1,28 @@
 package com.philkes.notallyx.core.preference
 
-import android.content.SharedPreferences
-import android.content.SharedPreferences.Editor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.Serializable
 
-class PeriodicBackupsPreference(sharedPreferences: SharedPreferences) :
-    BasePreference<PeriodicBackup>(sharedPreferences, PeriodicBackup()) {
-
-    override fun getValue(sharedPreferences: SharedPreferences): PeriodicBackup {
-        val periodInDays =
-            sharedPreferences.getInt(BACKUP_PERIOD_DAYS_KEY, defaultValue.periodInDays)
-        val maxBackups = sharedPreferences.getInt(BACKUP_MAX_KEY, defaultValue.maxBackups)
-        return PeriodicBackup(periodInDays, maxBackups)
-    }
-
-    override fun Editor.put(value: PeriodicBackup) {
-        putInt(BACKUP_PERIOD_DAYS_KEY, value.periodInDays)
-        putInt(BACKUP_MAX_KEY, value.maxBackups)
-    }
-
+class PeriodicBackupsPreference(
+    flow: StateFlow<PeriodicBackup>,
+    onUpdate: suspend (PeriodicBackup) -> Unit,
+    scope: CoroutineScope,
+) :
+    PreferenceHolder<PeriodicBackup>(
+        key = BACKUP_PERIOD_DAYS_KEY,
+        defaultValue = PeriodicBackup(),
+        flow = flow,
+        onUpdate = onUpdate,
+        scope = scope,
+    ) {
     companion object {
         const val BACKUP_PERIOD_DAYS_KEY = "autoBackupPeriodDays"
         const val BACKUP_MAX_KEY = "maxBackups"
     }
 }
 
+@Serializable
 data class PeriodicBackup(val periodInDays: Int = 1, val maxBackups: Int = 3) {
     companion object {
 
