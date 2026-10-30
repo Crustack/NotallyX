@@ -561,16 +561,16 @@ private fun ZipFile.verifyEncryptedArchive() {
     }
 }
 
-fun Context.md5Hash(uri: Uri): ByteArray? {
-    return contentResolver.openInputStream(uri)?.md5Hash()
+fun Context.sha256Hash(uri: Uri): ByteArray? {
+    return contentResolver.openInputStream(uri)?.sha256Hash()
 }
 
-fun File.md5Hash(): ByteArray {
-    return inputStream().md5Hash()
+fun File.sha256Hash(): ByteArray {
+    return inputStream().sha256Hash()
 }
 
-fun InputStream.md5Hash(): ByteArray {
-    val digest = MessageDigest.getInstance("MD5")
+fun InputStream.sha256Hash(): ByteArray {
+    val digest = MessageDigest.getInstance("SHA-256")
     use { fis ->
         val buffer = ByteArray(BUFFER_SIZE / 2)
         var bytes = fis.read(buffer)
