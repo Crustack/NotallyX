@@ -52,7 +52,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder
-class EditListActivityTest : UiTestBase() {
+class EditListRouteTest : UiTestBase() {
 
     @get:Rule val composeTestRule = createEmptyComposeRule()
 

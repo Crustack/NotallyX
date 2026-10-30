@@ -2,6 +2,9 @@ package com.philkes.notallyx.di
 
 import com.philkes.notallyx.core.common.error.*
 import com.philkes.notallyx.feature.editor.EditActivityViewModel
+import com.philkes.notallyx.feature.editor.EditListViewModel
+import com.philkes.notallyx.feature.editor.EditNoteViewModel
+import com.philkes.notallyx.feature.editor.EditTextPlainViewModel
 import com.philkes.notallyx.feature.editor.NoteModel
 import com.philkes.notallyx.feature.labels.DisplayLabelViewModel
 import com.philkes.notallyx.feature.labels.LabelsViewModel
@@ -32,5 +35,8 @@ val featureModule = module {
     viewModelOf(::UnlabeledViewModel)
     viewModelOf(::NoteModel)
     viewModelOf(::EditActivityViewModel)
+    viewModelOf(::EditNoteViewModel)
+    viewModelOf(::EditListViewModel)
+    viewModelOf(::EditTextPlainViewModel)
     viewModelOf(::ErrorActivityViewModel)
 }
