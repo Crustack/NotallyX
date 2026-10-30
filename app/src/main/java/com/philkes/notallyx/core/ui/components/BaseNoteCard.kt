@@ -88,7 +88,7 @@ internal fun BaseNoteCard(
     baseNote: BaseNote,
     modifier: Modifier = Modifier,
     config: NoteCardDisplayConfig = NoteCardDisplayConfig(),
-    imageRoot: File? = LocalContext.current.getCurrentImagesDirectory(),
+    imageRoot: File? = if (isPreview()) null else LocalContext.current.getCurrentImagesDirectory(),
     isSelected: Boolean = false,
     onClick: () -> Unit = {},
     onLongClick: (() -> Unit)? = null,
