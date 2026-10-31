@@ -38,15 +38,14 @@ internal data class LabelsScreenActions(
     val onLabelsReordered: (List<LabelData>) -> Unit = {},
 )
 
-/** Composable replacing fragment_notes.xml layout for LabelsFragment. */
+/** MVI Composable for LabelsScreen. */
 @Composable
 internal fun LabelsScreen(
-    labels: List<LabelData>,
+    state: LabelsUiState,
+    onAction: (LabelsAction) -> Unit,
     modifier: Modifier = Modifier,
-    dialogState: LabelDialogState? = null,
-    actions: LabelsScreenActions = LabelsScreenActions(),
 ) {
-    var currentLabels by remember(labels) { mutableStateOf(labels) }
+    var currentLabels by remember(state.labels) { mutableStateOf(state.labels) }
     val listState = rememberLazyListState()
     val dragDropState =
         rememberDragDropState(
@@ -56,14 +55,14 @@ internal fun LabelsScreen(
                 currentLabels =
                     currentLabels.toMutableList().apply { add(toIndex, removeAt(fromIndex)) }
             },
-            onDragEnd = { actions.onLabelsReordered(currentLabels) },
+            onDragEnd = { onAction(LabelsAction.ReorderLabels(currentLabels)) },
         )
 
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        if (labels.isEmpty()) {
+        if (state.labels.isEmpty()) {
             Image(
                 painter = painterResource(id = R.drawable.label),
                 contentDescription = null,
@@ -79,51 +78,83 @@ internal fun LabelsScreen(
                         modifier = draggableModifier(dragDropState, index),
                         label = label.value,
                         isVisibleInNavigation = label.visibleInNavigation,
-                        onClick = { actions.onLabelClick(label) },
-                        onEdit = { actions.onEditClick(label) },
-                        onDelete = { actions.onDeleteClick(label) },
-                        onToggleVisibility = { actions.onToggleVisibilityClick(label) },
+                        onClick = { onAction(LabelsAction.LabelClicked(label)) },
+                        onEdit = { onAction(LabelsAction.RequestEditLabel(label)) },
+                        onDelete = { onAction(LabelsAction.RequestDeleteLabel(label)) },
+                        onToggleVisibility = { onAction(LabelsAction.ToggleVisibility(label)) },
                     )
                 }
             }
         }
     }
 
-    when (val state = dialogState) {
+    when (val dialog = state.activeDialog) {
         is LabelDialogState.Add -> {
             TextInputDialog(
                 title = stringResource(R.string.add_label),
-                onDismissRequest = actions.onDismissDialog,
+                onDismissRequest = { onAction(LabelsAction.DismissDialog) },
                 onConfirm = { value ->
                     if (value.isNotEmpty()) {
-                        actions.onConfirmAddLabel(value)
+                        onAction(LabelsAction.ConfirmAddLabel(value))
                     }
                 },
             )
         }
+
         is LabelDialogState.Edit -> {
             TextInputDialog(
                 title = stringResource(R.string.edit_label),
-                initialValue = state.label,
-                onDismissRequest = actions.onDismissDialog,
+                initialValue = dialog.label,
+                onDismissRequest = { onAction(LabelsAction.DismissDialog) },
                 onConfirm = { value ->
                     if (value.isNotEmpty()) {
-                        actions.onConfirmEditLabel(state.label, value)
+                        onAction(LabelsAction.ConfirmEditLabel(dialog.label, value))
                     }
                 },
             )
         }
+
         is LabelDialogState.Delete -> {
             ConfirmDialog(
                 title = stringResource(R.string.delete_label),
                 message = stringResource(R.string.your_notes_associated),
                 positiveButtonText = stringResource(R.string.delete),
-                onDismissRequest = actions.onDismissDialog,
-                onConfirm = { actions.onConfirmDeleteLabel(state.label) },
+                onDismissRequest = { onAction(LabelsAction.DismissDialog) },
+                onConfirm = { onAction(LabelsAction.ConfirmDeleteLabel(dialog.label)) },
             )
         }
+
         null -> {}
     }
+}
+
+/** Backwards-compatible overload for existing preview tests. */
+@Composable
+internal fun LabelsScreen(
+    labels: List<LabelData>,
+    modifier: Modifier = Modifier,
+    dialogState: LabelDialogState? = null,
+    actions: LabelsScreenActions = LabelsScreenActions(),
+) {
+    LabelsScreen(
+        state = LabelsUiState(labels = labels, activeDialog = dialogState),
+        onAction = { action ->
+            when (action) {
+                is LabelsAction.LabelClicked -> actions.onLabelClick(action.label)
+                is LabelsAction.RequestEditLabel -> actions.onEditClick(action.label)
+                is LabelsAction.RequestDeleteLabel -> actions.onDeleteClick(action.label)
+                is LabelsAction.ToggleVisibility -> actions.onToggleVisibilityClick(action.label)
+                is LabelsAction.DismissDialog -> actions.onDismissDialog()
+                is LabelsAction.ConfirmAddLabel -> actions.onConfirmAddLabel(action.value)
+                is LabelsAction.ConfirmEditLabel ->
+                    actions.onConfirmEditLabel(action.oldLabel, action.newLabel)
+                is LabelsAction.ConfirmDeleteLabel -> actions.onConfirmDeleteLabel(action.label)
+                is LabelsAction.ReorderLabels -> actions.onLabelsReordered(action.reorderedLabels)
+                is LabelsAction.RequestAddLabel -> actions.onConfirmAddLabel("")
+            }
+        },
+        modifier = modifier,
+    )
 }
 
 @Preview(showBackground = true)
@@ -131,11 +162,15 @@ internal fun LabelsScreen(
 private fun LabelsScreenPreview() {
     NotallyXTheme {
         LabelsScreen(
-            labels =
-                listOf(
-                    LabelData("Personal", true, 0),
-                    LabelData("Work", false, 1),
-                )
+            state =
+                LabelsUiState(
+                    labels =
+                        listOf(
+                            LabelData("Personal", true, 0),
+                            LabelData("Work", false, 1),
+                        )
+                ),
+            onAction = {},
         )
     }
 }

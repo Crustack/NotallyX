@@ -7,11 +7,12 @@ import com.philkes.notallyx.feature.editor.EditListViewModel
 import com.philkes.notallyx.feature.editor.EditNoteViewModel
 import com.philkes.notallyx.feature.editor.EditTextPlainViewModel
 import com.philkes.notallyx.feature.editor.NoteModel
-import com.philkes.notallyx.feature.labels.DisplayLabelViewModel
 import com.philkes.notallyx.feature.labels.LabelsViewModel
+import com.philkes.notallyx.feature.labels.SelectLabelsViewModel
 import com.philkes.notallyx.feature.main.MainActivityViewModel
 import com.philkes.notallyx.feature.main.routes.archived.ArchivedViewModel
 import com.philkes.notallyx.feature.main.routes.deleted.DeletedViewModel
+import com.philkes.notallyx.feature.main.routes.labels.DisplayLabelViewModel
 import com.philkes.notallyx.feature.main.routes.labels.UnlabeledViewModel
 import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel
 import com.philkes.notallyx.feature.main.routes.notes.NotesViewModel
@@ -33,6 +34,7 @@ val featureModule = module {
     viewModelOf(::DeletedViewModel)
     viewModelOf(::DisplayLabelViewModel)
     viewModelOf(::LabelsViewModel)
+    viewModelOf(::SelectLabelsViewModel)
     viewModelOf(::RemindersViewModel)
     viewModelOf(::NoteRemindersViewModel)
     viewModelOf(::SettingsViewModel)
