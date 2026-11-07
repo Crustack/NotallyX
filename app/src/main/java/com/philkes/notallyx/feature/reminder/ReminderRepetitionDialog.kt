@@ -94,10 +94,7 @@ internal fun ReminderRepetitionDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = {
-                    onOptionSelected(selectedOption)
-                    onDismissRequest()
-                },
+                onClick = { onOptionSelected(selectedOption) },
                 modifier = Modifier.testTag("button1"),
             ) {
                 Text(stringResource(R.string.save))
@@ -197,7 +194,6 @@ internal fun CustomRepetitionDialog(
                 onClick = {
                     val parsedVal = valueText.toIntOrNull() ?: 1
                     onConfirm(parsedVal, selectedUnit)
-                    onDismissRequest()
                 },
                 enabled = valueText.toIntOrNull() != null && valueText.toInt() > 0,
                 modifier = Modifier.testTag("button1"),
