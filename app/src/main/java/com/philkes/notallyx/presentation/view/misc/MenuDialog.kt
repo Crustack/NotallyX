@@ -3,9 +3,11 @@ package com.philkes.notallyx.presentation.view.misc
 import android.content.Context
 import android.view.ViewGroup.LayoutParams
 import android.widget.LinearLayout
+import androidx.compose.ui.platform.ComposeView
 import androidx.core.widget.NestedScrollView
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.philkes.notallyx.databinding.MenuItemBinding
+import com.philkes.notallyx.presentation.theme.NotallyXTheme
+import com.philkes.notallyx.presentation.view.components.MenuItemRow
 
 class MenuDialog(context: Context) : BottomSheetDialog(context) {
 
@@ -26,13 +28,22 @@ class MenuDialog(context: Context) : BottomSheetDialog(context) {
     }
 
     fun add(title: String, drawable: Int = 0, onClick: () -> Unit): MenuDialog {
-        val item = MenuItemBinding.inflate(layoutInflater, linearLayout, true).root
-        item.text = title
-        item.setCompoundDrawablesRelativeWithIntrinsicBounds(drawable, 0, 0, 0)
-        item.setOnClickListener {
-            dismiss()
-            onClick()
-        }
+        val composeView =
+            ComposeView(context).apply {
+                setContent {
+                    NotallyXTheme {
+                        MenuItemRow(
+                            title = title,
+                            iconResId = if (drawable != 0) drawable else null,
+                            onClick = {
+                                dismiss()
+                                onClick()
+                            },
+                        )
+                    }
+                }
+            }
+        linearLayout.addView(composeView)
         return this
     }
 

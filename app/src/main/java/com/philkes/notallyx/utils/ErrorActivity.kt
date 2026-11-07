@@ -3,16 +3,12 @@ package com.philkes.notallyx.utils
 import android.content.Intent
 import android.os.Bundle
 import android.provider.DocumentsContract
-import android.text.SpannableString
-import android.text.Spanned
-import android.text.method.LinkMovementMethod
-import android.text.style.ClickableSpan
 import android.util.Log
-import android.view.View
-import android.widget.TextView
+import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.lifecycleScope
 import cat.ereza.customactivityoncrash.CustomActivityOnCrash
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -21,13 +17,14 @@ import com.philkes.notallyx.R.string.auto_backup_failed
 import com.philkes.notallyx.R.string.crash_export_backup_failed
 import com.philkes.notallyx.R.string.report_bug
 import com.philkes.notallyx.data.NotallyDatabase
-import com.philkes.notallyx.databinding.ActivityErrorBinding
 import com.philkes.notallyx.presentation.exportedText
 import com.philkes.notallyx.presentation.restartApplication
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.setupProgressDialog
 import com.philkes.notallyx.presentation.showToast
+import com.philkes.notallyx.presentation.theme.NotallyXTheme
 import com.philkes.notallyx.presentation.view.misc.Progress
+import com.philkes.notallyx.presentation.view.screens.ErrorScreen
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.utils.backup.FILE_TIMESTAMP_FORMAT
@@ -55,58 +52,57 @@ class ErrorActivity : AppCompatActivity() {
     private var backupPath: File? = null
     private var appLogs: File? = null
     private val backupProgress = MutableStateFlow<Progress?>(null)
+    private val crashLogsLinkState = mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val binding = ActivityErrorBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        binding.apply {
-            RestartButton.setOnClickListener {
-                CustomActivityOnCrash.restartApplication(
-                    this@ErrorActivity,
-                    CustomActivityOnCrash.getConfigFromIntent(intent)!!,
+        val preferences = NotallyXPreferences.getInstance(this)
+        val stacktrace = CustomActivityOnCrash.getStackTraceFromIntent(intent)
+        val exceptionTitle = stacktrace?.lines()?.firstOrNull()?.replaceFirst(":", ":\n") ?: ""
+        val exceptionDetails = stacktrace?.lines()?.drop(1)?.joinToString("\n") ?: ""
+
+        if (stacktrace != null) {
+            application.log(TAG, stackTrace = stacktrace)
+        }
+
+        setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                ErrorScreen(
+                    exceptionTitle = exceptionTitle,
+                    stackTrace = exceptionDetails,
+                    crashLogsLinkText = crashLogsLinkState.value,
+                    onRestartClick = {
+                        CustomActivityOnCrash.restartApplication(
+                            this@ErrorActivity,
+                            CustomActivityOnCrash.getConfigFromIntent(intent)!!,
+                        )
+                    },
+                    onReportBugClick = { reportBug(stacktrace) },
+                    onExportBackupClick = { onExportBackupRequested(stacktrace) },
+                    onViewLogsClick = { viewLogs() },
+                    onCopyStackTraceClick = {
+                        if (stacktrace != null) {
+                            copyToClipBoard(stacktrace)
+                        }
+                    },
+                    onCrashLogsLinkClick = {
+                        appLogs?.let { viewFile(getUriForFile(it), ExportMimeType.TXT.mimeType) }
+                    },
                 )
             }
-            val stacktrace = CustomActivityOnCrash.getStackTraceFromIntent(intent)
-            stacktrace?.let {
-                application.log(TAG, stackTrace = it)
-                ExceptionTitle.text = stacktrace.lines().firstOrNull()?.replaceFirst(":", ":\n")
-                ExceptionDetails.text = stacktrace.lines().drop(1).joinToString("\n")
-                CopyButton.setOnClickListener { copyToClipBoard(stacktrace) }
-            }
-            ReportButton.setOnClickListener { reportBug(stacktrace) }
-            ViewLogsButton.setOnClickListener { viewLogs() }
-            setupExportBackup(binding, stacktrace)
         }
+
+        setupExportBackup(stacktrace)
+
         val now = Date()
         lifecycleScope.launch(
             CoroutineExceptionHandler { _, throwable ->
                 log(TAG, msg = "Creating crash database dump failed", throwable = throwable)
             }
         ) {
-            backupPath =
-                withContext(Dispatchers.IO) { application.backupDatabaseFiles(now) }
-                    ?.also { dumpFolder ->
-                        binding.CrashLogsInfo.apply {
-                            visibility = View.VISIBLE
-                            setOnClickListener { view ->
-                                // Show popup dialog with backup location details
-                                MaterialAlertDialogBuilder(this@ErrorActivity)
-                                    .setMessage(
-                                        getString(
-                                            R.string.database_dump_created,
-                                            dumpFolder.absolutePath,
-                                        )
-                                    )
-                                    .setPositiveButton(android.R.string.ok, null)
-                                    .setNeutralButton(R.string.copy) { _, _ ->
-                                        copyToClipBoard(dumpFolder.absolutePath)
-                                    }
-                                    .show()
-                            }
-                        }
-                    }
+            backupPath = withContext(Dispatchers.IO) { application.backupDatabaseFiles(now) }
         }
+
         lifecycleScope.launch(
             CoroutineExceptionHandler { _, throwable ->
                 log(TAG, msg = "Creating crash logs dump failed", throwable = throwable)
@@ -118,58 +114,38 @@ class ErrorActivity : AppCompatActivity() {
                             application.exportCrashLogs(it, now)
                         }
                     }
-                    ?.also {
-                        setupLink(
-                            binding.CrashLogsLink,
-                            this@ErrorActivity.getString(R.string.view_crash_logs),
-                        ) { widget ->
-                            widget.context.viewFile(getUriForFile(it), ExportMimeType.TXT.mimeType)
-                        }
-                    }
+                    ?.also { crashLogsLinkState.value = getString(R.string.view_crash_logs) }
         }
     }
 
-    fun setupLink(textView: TextView, linkText: String, onClick: (View) -> Unit) {
-        val spannable = SpannableString(linkText)
-        val clickableSpan =
-            object : ClickableSpan() {
-                override fun onClick(widget: View) {
-                    onClick.invoke(widget)
-                }
-            }
-        spannable.setSpan(clickableSpan, 0, linkText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        textView.text = spannable
-        // Required for ClickableSpan to handle clicks
-        textView.movementMethod = LinkMovementMethod.getInstance()
-    }
-
-    private fun setupExportBackup(binding: ActivityErrorBinding, stacktrace: String?) {
-        binding.ExportBackupButton.setOnClickListener {
-            MaterialAlertDialogBuilder(this)
-                .setMessage(
-                    getString(
-                        R.string.crash_export_backup_message,
-                        getString(R.string.continue_),
-                        getString(R.string.report_bug),
-                    )
+    private fun onExportBackupRequested(stacktrace: String?) {
+        MaterialAlertDialogBuilder(this)
+            .setMessage(
+                getString(
+                    R.string.crash_export_backup_message,
+                    getString(R.string.continue_),
+                    getString(report_bug),
                 )
-                .setPositiveButton(R.string.continue_) { _, _ ->
-                    val intent =
-                        Intent(Intent.ACTION_CREATE_DOCUMENT)
-                            .apply {
-                                type = MIME_TYPE_ZIP
-                                addCategory(Intent.CATEGORY_OPENABLE)
-                                putExtra(
-                                    Intent.EXTRA_TITLE,
-                                    "NotallyX_Crash_Backup-${FILE_TIMESTAMP_FORMAT.format(Date())}",
-                                )
-                            }
-                            .wrapWithChooser(this@ErrorActivity)
-                    exportBackupActivityResultLauncher.launch(intent)
-                }
-                .setCancelButton()
-                .show()
-        }
+            )
+            .setPositiveButton(R.string.continue_) { _, _ ->
+                val intent =
+                    Intent(Intent.ACTION_CREATE_DOCUMENT)
+                        .apply {
+                            type = MIME_TYPE_ZIP
+                            addCategory(Intent.CATEGORY_OPENABLE)
+                            putExtra(
+                                Intent.EXTRA_TITLE,
+                                "NotallyX_Crash_Backup-${FILE_TIMESTAMP_FORMAT.format(Date())}",
+                            )
+                        }
+                        .wrapWithChooser(this@ErrorActivity)
+                exportBackupActivityResultLauncher.launch(intent)
+            }
+            .setCancelButton()
+            .show()
+    }
+
+    private fun setupExportBackup(stacktrace: String?) {
         exportBackupActivityResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
@@ -263,7 +239,7 @@ class ErrorActivity : AppCompatActivity() {
                             if (exportException != null) {
                                 showErrorDialog(
                                     exportException,
-                                    R.string.auto_backup_failed,
+                                    auto_backup_failed,
                                     getString(
                                         R.string.crash_export_raw_backup_failed,
                                         backupPath ?: "null",

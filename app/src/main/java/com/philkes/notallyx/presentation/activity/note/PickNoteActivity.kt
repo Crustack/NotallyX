@@ -2,141 +2,62 @@ package com.philkes.notallyx.presentation.activity.note
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
-import android.view.ViewGroup
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.mutableStateOf
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.model.BaseNote
-import com.philkes.notallyx.databinding.ActivityPickNoteBinding
-import com.philkes.notallyx.presentation.activity.LockedActivity
 import com.philkes.notallyx.presentation.collectIn
-import com.philkes.notallyx.presentation.createItemsFromNotes
-import com.philkes.notallyx.presentation.view.main.BaseNoteAdapter
-import com.philkes.notallyx.presentation.view.main.BaseNoteVHPreferences
-import com.philkes.notallyx.presentation.view.main.createCallback
-import com.philkes.notallyx.presentation.view.misc.ItemListener
+import com.philkes.notallyx.presentation.theme.NotallyXTheme
+import com.philkes.notallyx.presentation.view.screens.PickNoteScreen
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotesView
-import com.philkes.notallyx.utils.getCurrentImagesDirectory
-import java.util.Collections
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.koin.android.ext.android.inject
 
-open class PickNoteActivity : LockedActivity<ActivityPickNoteBinding>(), ItemListener {
+open class PickNoteActivity : AppCompatActivity() {
 
-    protected lateinit var adapter: BaseNoteAdapter
-
+    protected val preferences: NotallyXPreferences by inject()
     private val excludedNoteId by lazy { intent.getLongExtra(EXTRA_EXCLUDE_NOTE_ID, -1L) }
+    private val notesState = mutableStateOf<List<BaseNote>>(emptyList())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityPickNoteBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        configureEdgeToEdgeInsets()
 
         val result = Intent()
         setResult(RESULT_CANCELED, result)
 
-        adapter =
-            with(preferences) {
-                BaseNoteAdapter(
-                    Collections.emptySet(),
-                    dateFormatOverview.value,
-                    timeFormatOverview.value,
-                    { adapter -> notesSorting.value.createCallback(adapter) },
-                    BaseNoteVHPreferences(
-                        textSizeOverview.value,
-                        maxItems.value,
-                        maxLines.value,
-                        maxTitle.value,
-                        labelTagsHiddenInOverview.value,
-                        imagesHiddenInOverview.value,
-                        notesSorting.value.sortedBy,
-                    ),
-                    application.getCurrentImagesDirectory(),
-                    this@PickNoteActivity,
+        setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                PickNoteScreen(
+                    notes = notesState.value,
+                    isGrid = preferences.notesView.value == NotesView.GRID,
+                    onNoteClick = { note -> onNotePicked(note) },
+                    onBackClick = { finish() },
                 )
             }
-
-        binding.MainListView.apply {
-            adapter = this@PickNoteActivity.adapter
-            setHasFixedSize(true)
-            layoutManager =
-                if (preferences.notesView.value == NotesView.GRID) {
-                    StaggeredGridLayoutManager(2, RecyclerView.VERTICAL)
-                } else LinearLayoutManager(this@PickNoteActivity)
         }
 
         NotallyDatabase.getDatabase(this.application).collectIn(this) { database ->
             val notes =
                 database?.let { db ->
                     withContext(Dispatchers.IO) {
-                        val raw =
-                            db.getBaseNoteDao().getAllNotes().filter { it.id != excludedNoteId }
-                        this@PickNoteActivity.createItemsFromNotes(raw)
+                        db.getBaseNoteDao().getAllNotes().filter { it.id != excludedNoteId }
                     }
                 } ?: return@collectIn
-            adapter.submitList(notes)
-            binding.EmptyView.visibility = if (notes.isEmpty()) View.VISIBLE else View.GONE
+            notesState.value = notes
         }
     }
 
-    private fun configureEdgeToEdgeInsets() {
-        // 1. Enable edge-to-edge display for the activity window.
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
-        // 3. Apply window insets to specific views to prevent content from being obscured.
-        // Set an OnApplyWindowInsetsListener on the root layout.
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
-            val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
-
-            // Adjust the top margin of the Toolbar to account for the status bar.
-            binding.Toolbar.apply {
-                (layoutParams as ViewGroup.MarginLayoutParams).topMargin = systemBarsInsets.top
-                requestLayout()
-            }
-
-            // Apply padding to the RecyclerView and EmptyView to account for the navigation bar and
-            // keyboard.
-            // Preserve existing horizontal padding.
-            binding.MainListView.apply {
-                setPadding(
-                    paddingLeft,
-                    paddingTop,
-                    paddingRight,
-                    systemBarsInsets.bottom + imeInsets.bottom,
-                )
-            }
-            binding.EmptyView.apply {
-                setPadding(
-                    paddingLeft,
-                    paddingTop,
-                    paddingRight,
-                    systemBarsInsets.bottom + imeInsets.bottom,
-                )
-            }
-            insets
-        }
+    open fun onNotePicked(note: BaseNote) {
+        val success = Intent()
+        success.putExtra(EXTRA_PICKED_NOTE_ID, note.id)
+        success.putExtra(EXTRA_PICKED_NOTE_TITLE, note.title)
+        success.putExtra(EXTRA_PICKED_NOTE_TYPE, note.type.name)
+        setResult(RESULT_OK, success)
+        finish()
     }
-
-    override fun onClick(position: Int) {
-        if (position != -1) {
-            val note = (adapter.getItem(position) as BaseNote)
-            val success = Intent()
-            success.putExtra(EXTRA_PICKED_NOTE_ID, note.id)
-            success.putExtra(EXTRA_PICKED_NOTE_TITLE, note.title)
-            success.putExtra(EXTRA_PICKED_NOTE_TYPE, note.type.name)
-            setResult(RESULT_OK, success)
-            finish()
-        }
-    }
-
-    override fun onLongClick(position: Int) {}
 
     companion object {
         const val EXTRA_EXCLUDE_NOTE_ID = "notallyx.intent.extra.EXCLUDE_NOTE_ID"
