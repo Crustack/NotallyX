@@ -388,7 +388,7 @@ class WidgetTest : UiTestBase() {
     private fun findWidgetOnHomeScreen(
         device: UiDevice,
         text: String,
-        timeout: Long = 5_000,
+        timeout: Long = 2_000,
     ): Boolean {
         val selector = UiSelector().text(text)
         if (device.findObject(selector).waitForExists(timeout)) return true
@@ -397,14 +397,13 @@ class WidgetTest : UiTestBase() {
         val width = device.displayWidth
         val height = device.displayHeight
         device.swipe(width * 4 / 5, height / 2, width / 5, height / 2, 10)
-        if (device.findObject(selector).waitForExists(2_000)) return true
+        if (device.findObject(selector).waitForExists(1_000)) return true
 
         device.swipe(width * 4 / 5, height / 2, width / 5, height / 2, 10)
-        if (device.findObject(selector).waitForExists(2_000)) return true
+        if (device.findObject(selector).waitForExists(1_000)) return true
 
-        // Swipe back right to restore launcher page 1
-        device.swipe(width / 5, height / 2, width * 4 / 5, height / 2, 10)
-        device.swipe(width / 5, height / 2, width * 4 / 5, height / 2, 10)
+        // Reset launcher back to home screen page 1
+        device.pressHome()
         return false
     }
 }
