@@ -51,8 +51,9 @@ class WidgetTest : UiTestBase() {
     fun addWidgetToHomeScreenAndSelectNote() {
         val noteTitle1 = "Widget Note 1"
         val noteTitle2 = "Widget Note 2"
+        val noteTitle3 = "Widget Note 3"
 
-        val (note1Id, note2Id) =
+        val (note1Id, note2Id, note3Id) =
             runBlocking {
                 val id1 =
                     database
@@ -71,7 +72,17 @@ class WidgetTest : UiTestBase() {
                                 color = Color.CORAL.toColorString(),
                             )
                         )
-                Pair(id1, id2)
+                val id3 =
+                    database
+                        .getBaseNoteDao()
+                        .insert(
+                            createBaseNote(
+                                title = noteTitle3,
+                                body = "Body 3",
+                                type = Type.NOTE,
+                            )
+                        )
+                Triple(id1, id2, id3)
             }
 
         val appWidgetManager = AppWidgetManager.getInstance(context)
@@ -84,162 +95,345 @@ class WidgetTest : UiTestBase() {
             val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
             val initialWidgetIds = appWidgetManager.getAppWidgetIds(myProvider).toSet()
 
-            // Request pinning the app widget
-            appWidgetManager.requestPinAppWidget(myProvider, null, null)
+            fun pinWidget(knownIds: Set<Int>): Int {
+                val initialCount = knownIds.size
+                appWidgetManager.requestPinAppWidget(myProvider, null, null)
 
-            // Look for system "Add automatically" or "Add to Home screen" or "Add" button
-            val addWidgetButton =
-                device.findObject(
-                    UiSelector().textMatches("(?i).*(add automatically|add to home|add).*")
+                val addWidgetButton =
+                    device.findObject(
+                        UiSelector().textMatches("(?i).*(add automatically|add to home|add).*")
+                    )
+                if (addWidgetButton.waitForExists(5000)) {
+                    addWidgetButton.click()
+                }
+
+                var assignedId: Int? = null
+                waitUntil(10_000) {
+                    val currentIds = appWidgetManager.getAppWidgetIds(myProvider).toSet()
+                    val diff = currentIds - knownIds
+                    if (diff.isNotEmpty()) {
+                        assertEquals(
+                            "Only exactly one widget ID should be created per pin request",
+                            1,
+                            diff.size,
+                        )
+                        assignedId = diff.first()
+                        true
+                    } else false
+                }
+
+                assertNotNull("New widget ID should be assigned by the system", assignedId)
+                val afterIds = appWidgetManager.getAppWidgetIds(myProvider).toSet()
+                val diff = afterIds - knownIds
+                assertEquals("Exactly one new widget should be added", 1, diff.size)
+                assertEquals(
+                    "Total widget count should increase by exactly 1",
+                    initialCount + 1,
+                    afterIds.size,
                 )
-            if (addWidgetButton.waitForExists(5000)) {
-                addWidgetButton.click()
+                return assignedId!!
             }
 
-            // Wait for the system launcher to assign a new widget ID
-            var newWidgetId: Int? = null
-            waitUntil(10000) {
-                val currentIds = appWidgetManager.getAppWidgetIds(myProvider).toSet()
-                val diff = currentIds - initialWidgetIds
-                if (diff.isNotEmpty()) {
-                    newWidgetId = diff.first()
-                    true
-                } else false
-            }
+            // Pin first widget and verify exactly one widget is created
+            val widget1Id = pinWidget(initialWidgetIds)
+            val idsAfterWidget1 = appWidgetManager.getAppWidgetIds(myProvider).toSet()
+            assertEquals(initialWidgetIds.size + 1, idsAfterWidget1.size)
+            assertTrue(idsAfterWidget1.contains(widget1Id))
 
-            assertNotNull("New widget ID should be assigned by the system", newWidgetId)
-            val id = newWidgetId!!
-
-            // Launch ConfigureWidgetActivity for the newly added widget
+            // Configure first widget to select Note 1
             val intent1 =
                 Intent(context, ConfigureWidgetActivity::class.java).apply {
                     action = AppWidgetManager.ACTION_APPWIDGET_CONFIGURE
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widget1Id)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
             val scenario1 = ActivityScenario.launch<ConfigureWidgetActivity>(intent1)
 
-            // Select the first note
             composeTestRule.waitUntil(10_000) {
                 composeTestRule.onAllNodes(hasText(noteTitle1)).fetchSemanticsNodes().isNotEmpty()
             }
             composeTestRule.onNodeWithText(noteTitle1).performClick()
 
-            // Verify widget preference was saved for Note 1
-            waitUntil { preferences.getWidgetData(id) == note1Id }
-
-            assertEquals(note1Id, preferences.getWidgetData(id))
-            assertEquals(Type.NOTE, preferences.getWidgetNoteType(id))
-
+            waitUntil { preferences.getWidgetData(widget1Id) == note1Id }
+            assertEquals(note1Id, preferences.getWidgetData(widget1Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(widget1Id))
             scenario1.close()
 
             // Trigger Glance widget update and verify UI content on home screen
-            runBlocking { NoteWidget.updateWidgetSuspend(context, id) }
+            runBlocking { NoteWidget.updateWidgetSuspend(context, widget1Id) }
             device.pressHome()
 
             waitUntil(10_000) { findWidgetOnHomeScreen(device, noteTitle1) }
             assertTrue(
-                "Widget UI on home screen should display note title '$noteTitle1'",
+                "Widget 1 UI on home screen should display note title '$noteTitle1'",
                 findWidgetOnHomeScreen(device, noteTitle1),
             )
             assertTrue(
-                "Widget UI on home screen should display note body 'Body 1'",
+                "Widget 1 UI on home screen should display note body 'Body 1'",
                 findWidgetOnHomeScreen(device, "Body 1"),
             )
 
-            // Re-open ConfigureWidgetActivity for the same widget to select Note 2
+            // Pin second widget and verify only exactly one additional widget is created
+            val widget2Id = pinWidget(idsAfterWidget1)
+            val idsAfterWidget2 = appWidgetManager.getAppWidgetIds(myProvider).toSet()
+            assertEquals(initialWidgetIds.size + 2, idsAfterWidget2.size)
+            assertTrue(idsAfterWidget2.contains(widget2Id))
+            assertTrue("Widget 1 and Widget 2 must have distinct IDs", widget1Id != widget2Id)
+
+            // Configure second widget to select Note 2
             val intent2 =
                 Intent(context, ConfigureWidgetActivity::class.java).apply {
                     action = AppWidgetManager.ACTION_APPWIDGET_CONFIGURE
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widget2Id)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
             val scenario2 = ActivityScenario.launch<ConfigureWidgetActivity>(intent2)
 
-            // Select the second note
             composeTestRule.waitUntil(10_000) {
                 composeTestRule.onAllNodes(hasText(noteTitle2)).fetchSemanticsNodes().isNotEmpty()
             }
             composeTestRule.onNodeWithText(noteTitle2).performClick()
 
-            // Verify widget preference was updated to Note 2
-            waitUntil { preferences.getWidgetData(id) == note2Id }
+            waitUntil { preferences.getWidgetData(widget2Id) == note2Id }
+            assertEquals(note2Id, preferences.getWidgetData(widget2Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(widget2Id))
 
-            assertEquals(note2Id, preferences.getWidgetData(id))
-            assertEquals(Type.NOTE, preferences.getWidgetNoteType(id))
-
+            // Verify Widget 1 preference remained intact when configuring Widget 2
+            assertEquals(note1Id, preferences.getWidgetData(widget1Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(widget1Id))
             scenario2.close()
 
-            // Verify updated widget UI on home screen for Note 2
-            runBlocking { NoteWidget.updateWidgetSuspend(context, id) }
+            runBlocking {
+                NoteWidget.updateWidgetSuspend(context, widget1Id)
+                NoteWidget.updateWidgetSuspend(context, widget2Id)
+            }
             device.pressHome()
 
-            waitUntil(10_000) { findWidgetOnHomeScreen(device, noteTitle2) }
+            // Verify both widgets are simultaneously present on the home screen
+            waitUntil(20_000) {
+                findWidgetOnHomeScreen(device, noteTitle1) &&
+                    findWidgetOnHomeScreen(device, noteTitle2)
+            }
             assertTrue(
-                "Widget UI on home screen should display note title '$noteTitle2'",
+                "Widget 1 UI should display note title '$noteTitle1'",
+                findWidgetOnHomeScreen(device, noteTitle1),
+            )
+            assertTrue(
+                "Widget 1 UI should display note body 'Body 1'",
+                findWidgetOnHomeScreen(device, "Body 1"),
+            )
+            assertTrue(
+                "Widget 2 UI should display note title '$noteTitle2'",
                 findWidgetOnHomeScreen(device, noteTitle2),
             )
             assertTrue(
-                "Widget UI on home screen should display note body 'Body 2'",
+                "Widget 2 UI should display note body 'Body 2'",
                 findWidgetOnHomeScreen(device, "Body 2"),
             )
 
-            // Open MainActivity, click Note 2, edit its title in EditNoteActivity, and exit
+            // Re-open ConfigureWidgetActivity for Widget 2 to change it to Note 3
+            val intent3 =
+                Intent(context, ConfigureWidgetActivity::class.java).apply {
+                    action = AppWidgetManager.ACTION_APPWIDGET_CONFIGURE
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widget2Id)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            val scenario3 = ActivityScenario.launch<ConfigureWidgetActivity>(intent3)
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle3)).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(noteTitle3).performClick()
+
+            waitUntil { preferences.getWidgetData(widget2Id) == note3Id }
+            assertEquals(note3Id, preferences.getWidgetData(widget2Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(widget2Id))
+
+            // Verify changing Widget 2 did NOT change Widget 1's preferences
+            assertEquals(note1Id, preferences.getWidgetData(widget1Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(widget1Id))
+            scenario3.close()
+
+            runBlocking {
+                NoteWidget.updateWidgetSuspend(context, widget1Id)
+                NoteWidget.updateWidgetSuspend(context, widget2Id)
+            }
+            device.pressHome()
+
+            // Verify Widget 2 now displays Note 3, while Widget 1 still displays Note 1
+            waitUntil(20_000) {
+                findWidgetOnHomeScreen(device, noteTitle3) &&
+                    findWidgetOnHomeScreen(device, noteTitle1)
+            }
+            assertTrue(
+                "Widget 2 UI should display updated note title '$noteTitle3'",
+                findWidgetOnHomeScreen(device, noteTitle3),
+            )
+            assertTrue(
+                "Widget 2 UI should display updated note body 'Body 3'",
+                findWidgetOnHomeScreen(device, "Body 3"),
+            )
+            assertTrue(
+                "Widget 1 UI must still display note title '$noteTitle1' without changing",
+                findWidgetOnHomeScreen(device, noteTitle1),
+            )
+            assertTrue(
+                "Widget 1 UI must still display note body 'Body 1' without changing",
+                findWidgetOnHomeScreen(device, "Body 1"),
+            )
+            assertTrue(
+                "Previous note title '$noteTitle2' should no longer be present on any widget",
+                !findWidgetOnHomeScreen(device, noteTitle2, timeout = 300),
+            )
+
+            // Open MainActivity, click Note 3, edit its title in EditNoteActivity, and exit
             val mainScenario = ActivityScenario.launch(MainActivity::class.java)
 
             composeTestRule.waitUntil(10_000) {
-                composeTestRule.onAllNodes(hasText(noteTitle2)).fetchSemanticsNodes().isNotEmpty()
+                composeTestRule.onAllNodes(hasText(noteTitle3)).fetchSemanticsNodes().isNotEmpty()
             }
-            composeTestRule.onNodeWithText(noteTitle2).performClick()
+            composeTestRule.onNodeWithText(noteTitle3).performClick()
 
-            val appendedText = " Updated"
-            val expectedUpdatedTitle = "$noteTitle2$appendedText"
+            val appendedText3 = " Updated"
+            val expectedUpdatedTitle3 = "$noteTitle3$appendedText3"
 
             composeTestRule.waitUntil(10_000) {
                 composeTestRule
                     .onAllNodes(
                         hasContentDescription(context.getString(R.string.title)) and
-                            hasText(noteTitle2)
+                            hasText(noteTitle3)
                     )
                     .fetchSemanticsNodes()
                     .isNotEmpty()
             }
             composeTestRule
                 .onNodeWithContentDescription(context.getString(R.string.title))
-                .appendText(appendedText)
+                .appendText(appendedText3)
 
             // Exit EditNoteActivity to trigger save & widget update
             composeTestRule
                 .onNodeWithContentDescription(context.getString(R.string.back))
                 .performClick()
 
-            // Verify database contains the updated note title
+            // Verify database contains the updated note 3 title
             waitUntil(10_000) {
                 runBlocking {
-                    database.getBaseNoteDao().get(note2Id)?.title == expectedUpdatedTitle
+                    database.getBaseNoteDao().get(note3Id)?.title == expectedUpdatedTitle3
                 }
             }
 
-            assertEquals(note2Id, preferences.getWidgetData(id))
-            assertEquals(Type.NOTE, preferences.getWidgetNoteType(id))
+            assertEquals(note3Id, preferences.getWidgetData(widget2Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(widget2Id))
+            assertEquals(note1Id, preferences.getWidgetData(widget1Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(widget1Id))
 
             mainScenario.close()
 
-            // Verify updated title appears on home screen widget UI
-            runBlocking { NoteWidget.updateWidgetSuspend(context, id) }
+            // Verify updated title appears on Widget 2 while Widget 1 still displays Note 1
+            runBlocking {
+                NoteWidget.updateWidgetSuspend(context, widget1Id)
+                NoteWidget.updateWidgetSuspend(context, widget2Id)
+            }
             device.pressHome()
 
-            waitUntil(10_000) { findWidgetOnHomeScreen(device, expectedUpdatedTitle) }
+            waitUntil(20_000) {
+                findWidgetOnHomeScreen(device, expectedUpdatedTitle3) &&
+                    findWidgetOnHomeScreen(device, noteTitle1)
+            }
             assertTrue(
-                "Widget UI on home screen should display updated note title '$expectedUpdatedTitle'",
-                findWidgetOnHomeScreen(device, expectedUpdatedTitle),
+                "Widget 2 should display updated note title '$expectedUpdatedTitle3'",
+                findWidgetOnHomeScreen(device, expectedUpdatedTitle3),
+            )
+            assertTrue(
+                "Widget 1 must still display note title '$noteTitle1'",
+                findWidgetOnHomeScreen(device, noteTitle1),
+            )
+            assertTrue(
+                "Widget 1 must still display note body 'Body 1'",
+                findWidgetOnHomeScreen(device, "Body 1"),
+            )
+
+            // Now edit Note 1 in MainActivity and verify Widget 1 updates without altering Widget 2
+            val mainScenario2 = ActivityScenario.launch(MainActivity::class.java)
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle1)).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(noteTitle1).performClick()
+
+            val appendedText1 = " Updated"
+            val expectedUpdatedTitle1 = "$noteTitle1$appendedText1"
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(
+                        hasContentDescription(context.getString(R.string.title)) and
+                            hasText(noteTitle1)
+                    )
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.title))
+                .appendText(appendedText1)
+
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.back))
+                .performClick()
+
+            waitUntil(10_000) {
+                runBlocking {
+                    database.getBaseNoteDao().get(note1Id)?.title == expectedUpdatedTitle1
+                }
+            }
+
+            assertEquals(note1Id, preferences.getWidgetData(widget1Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(widget1Id))
+            assertEquals(note3Id, preferences.getWidgetData(widget2Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(widget2Id))
+
+            mainScenario2.close()
+
+            runBlocking {
+                NoteWidget.updateWidgetSuspend(context, widget1Id)
+                NoteWidget.updateWidgetSuspend(context, widget2Id)
+            }
+            device.pressHome()
+
+            waitUntil(20_000) {
+                findWidgetOnHomeScreen(device, expectedUpdatedTitle1) &&
+                    findWidgetOnHomeScreen(device, expectedUpdatedTitle3)
+            }
+            assertTrue(
+                "Widget 1 should display updated note title '$expectedUpdatedTitle1'",
+                findWidgetOnHomeScreen(device, expectedUpdatedTitle1),
+            )
+            assertTrue(
+                "Widget 2 must still display note title '$expectedUpdatedTitle3'",
+                findWidgetOnHomeScreen(device, expectedUpdatedTitle3),
+            )
+
+            // Verify final total widget count: exactly 2 widgets were created in total
+            val finalIds = appWidgetManager.getAppWidgetIds(myProvider).toSet()
+            assertEquals(
+                "Total widgets created must be exactly 2",
+                initialWidgetIds.size + 2,
+                finalIds.size,
+            )
+            assertEquals(
+                "Created widget IDs set must match widget1Id and widget2Id",
+                setOf(widget1Id, widget2Id),
+                finalIds - initialWidgetIds,
             )
         } else {
             // Fallback for environments without pin widget support
-            val testWidgetId = 5555
+            val testWidget1Id = 5555
+            val testWidget2Id = 5556
+
+            // Configure widget 1 with Note 1
             val intent1 =
                 Intent(context, ConfigureWidgetActivity::class.java).apply {
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, testWidgetId)
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, testWidget1Id)
                 }
             val scenario1 = ActivityScenario.launch<ConfigureWidgetActivity>(intent1)
 
@@ -248,16 +442,15 @@ class WidgetTest : UiTestBase() {
             }
             composeTestRule.onNodeWithText(noteTitle1).performClick()
 
-            waitUntil { preferences.getWidgetData(testWidgetId) == note1Id }
-            assertEquals(note1Id, preferences.getWidgetData(testWidgetId))
-            assertEquals(Type.NOTE, preferences.getWidgetNoteType(testWidgetId))
-
+            waitUntil { preferences.getWidgetData(testWidget1Id) == note1Id }
+            assertEquals(note1Id, preferences.getWidgetData(testWidget1Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(testWidget1Id))
             scenario1.close()
 
-            // Re-open ConfigureWidgetActivity for the same widget to select Note 2
+            // Configure widget 2 with Note 2
             val intent2 =
                 Intent(context, ConfigureWidgetActivity::class.java).apply {
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, testWidgetId)
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, testWidget2Id)
                 }
             val scenario2 = ActivityScenario.launch<ConfigureWidgetActivity>(intent2)
 
@@ -266,35 +459,57 @@ class WidgetTest : UiTestBase() {
             }
             composeTestRule.onNodeWithText(noteTitle2).performClick()
 
-            waitUntil { preferences.getWidgetData(testWidgetId) == note2Id }
-            assertEquals(note2Id, preferences.getWidgetData(testWidgetId))
-            assertEquals(Type.NOTE, preferences.getWidgetNoteType(testWidgetId))
-
+            waitUntil { preferences.getWidgetData(testWidget2Id) == note2Id }
+            assertEquals(note2Id, preferences.getWidgetData(testWidget2Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(testWidget2Id))
+            // Verify widget 1 data did not change
+            assertEquals(note1Id, preferences.getWidgetData(testWidget1Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(testWidget1Id))
             scenario2.close()
 
-            // Open MainActivity, click Note 2, edit its title in EditNoteActivity, and exit
+            // Reconfigure widget 2 with Note 3
+            val intent3 =
+                Intent(context, ConfigureWidgetActivity::class.java).apply {
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, testWidget2Id)
+                }
+            val scenario3 = ActivityScenario.launch<ConfigureWidgetActivity>(intent3)
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle3)).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(noteTitle3).performClick()
+
+            waitUntil { preferences.getWidgetData(testWidget2Id) == note3Id }
+            assertEquals(note3Id, preferences.getWidgetData(testWidget2Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(testWidget2Id))
+            // Verify widget 1 data still did not change
+            assertEquals(note1Id, preferences.getWidgetData(testWidget1Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(testWidget1Id))
+            scenario3.close()
+
+            // Open MainActivity, click Note 3, edit its title in EditNoteActivity, and exit
             val mainScenario = ActivityScenario.launch(MainActivity::class.java)
 
             composeTestRule.waitUntil(10_000) {
-                composeTestRule.onAllNodes(hasText(noteTitle2)).fetchSemanticsNodes().isNotEmpty()
+                composeTestRule.onAllNodes(hasText(noteTitle3)).fetchSemanticsNodes().isNotEmpty()
             }
-            composeTestRule.onNodeWithText(noteTitle2).performClick()
+            composeTestRule.onNodeWithText(noteTitle3).performClick()
 
-            val appendedText = " Updated"
-            val expectedUpdatedTitle = "$noteTitle2$appendedText"
+            val appendedText3 = " Updated"
+            val expectedUpdatedTitle3 = "$noteTitle3$appendedText3"
 
             composeTestRule.waitUntil(10_000) {
                 composeTestRule
                     .onAllNodes(
                         hasContentDescription(context.getString(R.string.title)) and
-                            hasText(noteTitle2)
+                            hasText(noteTitle3)
                     )
                     .fetchSemanticsNodes()
                     .isNotEmpty()
             }
             composeTestRule
                 .onNodeWithContentDescription(context.getString(R.string.title))
-                .appendText(appendedText)
+                .appendText(appendedText3)
 
             composeTestRule
                 .onNodeWithContentDescription(context.getString(R.string.back))
@@ -302,14 +517,57 @@ class WidgetTest : UiTestBase() {
 
             waitUntil(10_000) {
                 runBlocking {
-                    database.getBaseNoteDao().get(note2Id)?.title == expectedUpdatedTitle
+                    database.getBaseNoteDao().get(note3Id)?.title == expectedUpdatedTitle3
                 }
             }
 
-            assertEquals(note2Id, preferences.getWidgetData(testWidgetId))
-            assertEquals(Type.NOTE, preferences.getWidgetNoteType(testWidgetId))
+            assertEquals(note3Id, preferences.getWidgetData(testWidget2Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(testWidget2Id))
+            assertEquals(note1Id, preferences.getWidgetData(testWidget1Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(testWidget1Id))
 
             mainScenario.close()
+
+            // Open MainActivity, click Note 1, edit its title, and exit
+            val mainScenario2 = ActivityScenario.launch(MainActivity::class.java)
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle1)).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(noteTitle1).performClick()
+
+            val appendedText1 = " Updated"
+            val expectedUpdatedTitle1 = "$noteTitle1$appendedText1"
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(
+                        hasContentDescription(context.getString(R.string.title)) and
+                            hasText(noteTitle1)
+                    )
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.title))
+                .appendText(appendedText1)
+
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.back))
+                .performClick()
+
+            waitUntil(10_000) {
+                runBlocking {
+                    database.getBaseNoteDao().get(note1Id)?.title == expectedUpdatedTitle1
+                }
+            }
+
+            assertEquals(note1Id, preferences.getWidgetData(testWidget1Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(testWidget1Id))
+            assertEquals(note3Id, preferences.getWidgetData(testWidget2Id))
+            assertEquals(Type.NOTE, preferences.getWidgetNoteType(testWidget2Id))
+
+            mainScenario2.close()
         }
     }
 
@@ -669,22 +927,24 @@ class WidgetTest : UiTestBase() {
     private fun findWidgetOnHomeScreen(
         device: UiDevice,
         text: String,
-        timeout: Long = 2_000,
+        timeout: Long = 500,
     ): Boolean {
+        device.pressHome()
+        device.waitForIdle()
         val selector = UiSelector().text(text)
         if (device.findObject(selector).waitForExists(timeout)) return true
 
-        // Try swiping left on the launcher home screen to check page 2/3
         val width = device.displayWidth
         val height = device.displayHeight
-        device.swipe(width * 4 / 5, height / 2, width / 5, height / 2, 10)
-        if (device.findObject(selector).waitForExists(1_000)) return true
-
-        device.swipe(width * 4 / 5, height / 2, width / 5, height / 2, 10)
-        if (device.findObject(selector).waitForExists(1_000)) return true
+        repeat(4) {
+            device.swipe(width * 4 / 5, height / 2, width / 5, height / 2, 10)
+            device.waitForIdle()
+            if (device.findObject(selector).waitForExists(timeout)) return true
+        }
 
         // Reset launcher back to home screen page 1
         device.pressHome()
+        device.waitForIdle()
         return false
     }
 }
