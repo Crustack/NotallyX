@@ -1,6 +1,5 @@
 package com.philkes.notallyx.core.ui.components
 
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
@@ -27,7 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -38,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
+import coil3.compose.SubcomposeAsyncImage
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getCurrentImagesDirectory
 import com.philkes.notallyx.core.common.extensions.isPreview
@@ -332,33 +331,41 @@ private fun ImagePreview(
     baseNote: BaseNote,
 ) {
     val isPreview = isPreview()
-    val bitmap =
-        remember(imageFile) {
-            if (!isPreview && imageFile?.exists() == true) {
-                try {
-                    BitmapFactory.decodeFile(imageFile.absolutePath)?.asImageBitmap()
-                } catch (_: Exception) {
-                    null
-                }
-            } else null
-        }
-    if (isPreview || bitmap != null) {
+    if (isPreview) {
         Box(modifier = Modifier.fillMaxWidth().aspectRatio(8f / 5f)) {
-            if (isPreview) {
-                Image(
-                    painter = painterResource(id = R.drawable.vacation),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.matchParentSize(),
-                )
-            } else if (bitmap != null) {
-                Image(
-                    bitmap = bitmap,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.matchParentSize(),
+            Image(
+                painter = painterResource(id = R.drawable.vacation),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize(),
+            )
+            if (baseNote.images.size > 1) {
+                ImageCountChip(
+                    count = baseNote.images.size,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
                 )
             }
+        }
+    } else if (imageFile?.exists() == true) {
+        Box(modifier = Modifier.fillMaxWidth().aspectRatio(8f / 5f)) {
+            SubcomposeAsyncImage(
+                model = imageFile,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize(),
+                error = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.cant_load_image),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = LocalContentColor.current,
+                        )
+                    }
+                },
+            )
             if (baseNote.images.size > 1) {
                 ImageCountChip(
                     count = baseNote.images.size,
@@ -575,34 +582,57 @@ object SampleNotes {
 @Preview(showBackground = true, name = "Lorem Ipsum Note")
 @Composable
 private fun LoremIpsumNotePreview() {
-    NotallyXTheme { BaseNoteCard(baseNote = SampleNotes.LOREM_IPSUM_NOTE) }
+    NotallyXTheme {
+        BaseNoteCard(
+            baseNote = SampleNotes.LOREM_IPSUM_NOTE,
+            imageRoot = null,
+        )
+    }
 }
 
 @Preview(showBackground = true, name = "List Note")
 @Composable
 private fun ListNotePreview() {
-    NotallyXTheme { BaseNoteCard(baseNote = SampleNotes.LIST_NOTE) }
+    NotallyXTheme {
+        BaseNoteCard(
+            baseNote = SampleNotes.LIST_NOTE,
+            imageRoot = null,
+        )
+    }
 }
 
 @Preview(showBackground = true, name = "Rich Text Note With Everything")
 @Preview(name = "Dark Mode", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun RichTextNotePreview() {
-    NotallyXTheme { BaseNoteCard(baseNote = SampleNotes.RICH_TEXT_NOTE) }
+    NotallyXTheme {
+        BaseNoteCard(
+            baseNote = SampleNotes.RICH_TEXT_NOTE,
+            imageRoot = null,
+        )
+    }
 }
 
 @Preview(showBackground = true, name = "Generated List Note")
 @Preview(name = "Dark Mode", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun GeneratedListNotePreview() {
-    NotallyXTheme { BaseNoteCard(baseNote = SampleNotes.GENERATED_LIST_NOTE) }
+    NotallyXTheme {
+        BaseNoteCard(
+            baseNote = SampleNotes.GENERATED_LIST_NOTE,
+            imageRoot = null,
+        )
+    }
 }
 
 @Preview(showBackground = true, name = "Dark List Note")
 @Composable
 private fun DarkListNotePreview() {
     NotallyXTheme {
-        BaseNoteCard(baseNote = SampleNotes.GENERATED_LIST_NOTE.copy(color = "#111111"))
+        BaseNoteCard(
+            baseNote = SampleNotes.GENERATED_LIST_NOTE.copy(color = "#111111"),
+            imageRoot = null,
+        )
     }
 }
 
@@ -610,7 +640,9 @@ private fun DarkListNotePreview() {
 @Preview(name = "Dark Mode", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun LoremIpsumNoteSelectedPreview() {
-    NotallyXTheme { BaseNoteCard(baseNote = SampleNotes.LOREM_IPSUM_NOTE, isSelected = true) }
+    NotallyXTheme {
+        BaseNoteCard(baseNote = SampleNotes.LOREM_IPSUM_NOTE, isSelected = true, imageRoot = null)
+    }
 }
 
 @Preview(showBackground = true)
@@ -628,6 +660,7 @@ private fun NoteWithEverythingMinimalDisplayPreview() {
                     hideLabels = true,
                     hideImages = true,
                 ),
+            imageRoot = null,
             isSelected = true,
         )
     }

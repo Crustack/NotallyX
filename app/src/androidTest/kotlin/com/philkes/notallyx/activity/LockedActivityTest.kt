@@ -129,9 +129,7 @@ class LockedActivityTest : UiTestBase() {
                 .isNotEmpty()
         }
         composeTestRule.onNodeWithText("Confidential Note").assertIsDisplayed()
-        scenario.onActivity { activity ->
-            assertEquals(View.VISIBLE, activity.binding.root.visibility)
-        }
+        scenario.onActivity { activity -> assertEquals(View.VISIBLE, activity.rootView.visibility) }
 
         // Simulate device screen turning off / screen lock via PhoneLockReceiver
         fakeBiometric.deferAuthentication = true
@@ -142,7 +140,7 @@ class LockedActivityTest : UiTestBase() {
         // Activity moves to paused/stopped when screen turns off
         scenario.moveToState(Lifecycle.State.CREATED)
         scenario.onActivity { activity ->
-            assertEquals(View.INVISIBLE, activity.binding.root.visibility)
+            assertEquals(View.INVISIBLE, activity.rootView.visibility)
         }
 
         // Screen turned back on / activity returns to foreground
@@ -151,7 +149,7 @@ class LockedActivityTest : UiTestBase() {
 
         // While authentication is pending, root view remains hidden (lock overlay protection)
         scenario.onActivity { activity ->
-            assertEquals(View.INVISIBLE, activity.binding.root.visibility)
+            assertEquals(View.INVISIBLE, activity.rootView.visibility)
         }
         assertTrue(application.locked.value)
 
@@ -159,9 +157,7 @@ class LockedActivityTest : UiTestBase() {
         fakeBiometric.completeAuthentication()
         waitUntil(5_000) { !application.locked.value }
 
-        scenario.onActivity { activity ->
-            assertEquals(View.VISIBLE, activity.binding.root.visibility)
-        }
+        scenario.onActivity { activity -> assertEquals(View.VISIBLE, activity.rootView.visibility) }
         composeTestRule.onNodeWithText("Confidential Note").assertIsDisplayed()
 
         scenario.close()
@@ -246,16 +242,14 @@ class LockedActivityTest : UiTestBase() {
 
         // Content is hidden while authentication is pending
         scenario.onActivity { activity ->
-            assertEquals(View.INVISIBLE, activity.binding.root.visibility)
+            assertEquals(View.INVISIBLE, activity.rootView.visibility)
         }
 
         // Complete authentication
         fakeBiometric.completeAuthentication()
         waitUntil(5_000) { !application.locked.value }
 
-        scenario.onActivity { activity ->
-            assertEquals(View.VISIBLE, activity.binding.root.visibility)
-        }
+        scenario.onActivity { activity -> assertEquals(View.VISIBLE, activity.rootView.visibility) }
         composeTestRule.onNodeWithContentDescription(takeNoteLabel).assertIsDisplayed()
 
         scenario.close()
@@ -284,9 +278,7 @@ class LockedActivityTest : UiTestBase() {
         scenario.moveToState(Lifecycle.State.RESUMED)
 
         assertFalse(application.locked.value)
-        scenario.onActivity { activity ->
-            assertEquals(View.VISIBLE, activity.binding.root.visibility)
-        }
+        scenario.onActivity { activity -> assertEquals(View.VISIBLE, activity.rootView.visibility) }
         composeTestRule.onNodeWithContentDescription(takeNoteLabel).assertIsDisplayed()
 
         scenario.close()

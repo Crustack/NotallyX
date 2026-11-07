@@ -69,7 +69,7 @@ inline fun <T> Flow<T>.collectIn(
 }
 
 fun Activity.checkNotificationPermission(
-    requestCode: Int,
+    permissionLauncher: ActivityResultLauncher<String>? = null,
     alsoCheckAlarmPermission: Boolean = false,
     alarmPermissionResultLauncher: ActivityResultLauncher<Intent>? = null,
     onShowRationale: ((messageResId: Int, onConfirm: () -> Unit) -> Unit)? = null,
@@ -78,20 +78,26 @@ fun Activity.checkNotificationPermission(
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         val permission = Manifest.permission.POST_NOTIFICATIONS
         if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+            val onConfirm: () -> Unit = { permissionLauncher?.launch(permission) }
             if (shouldShowRequestPermissionRationale(permission)) {
-                val onConfirm = { requestPermissions(arrayOf(permission), requestCode) }
                 if (onShowRationale != null) {
                     onShowRationale(R.string.please_grant_notally_notification, onConfirm)
                 } else {
                     onConfirm()
                 }
-            } else requestPermissions(arrayOf(permission), requestCode)
-        } else if (alsoCheckAlarmPermission)
+            } else {
+                onConfirm()
+            }
+        } else if (alsoCheckAlarmPermission) {
             checkAlarmPermission(alarmPermissionResultLauncher, onShowRationale, onSuccess)
-        else onSuccess()
-    } else if (alsoCheckAlarmPermission)
+        } else {
+            onSuccess()
+        }
+    } else if (alsoCheckAlarmPermission) {
         checkAlarmPermission(alarmPermissionResultLauncher, onShowRationale, onSuccess)
-    else onSuccess()
+    } else {
+        onSuccess()
+    }
 }
 
 fun Activity.checkAlarmPermission(

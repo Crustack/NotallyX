@@ -126,8 +126,6 @@ android {
     }
 
     buildFeatures {
-        viewBinding = true
-        dataBinding = true
         buildConfig = true
         resValues = true
         compose = true
@@ -270,12 +268,13 @@ dependencies {
     // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
+    implementation(libs.coil.compose)
     implementation(libs.compose.colorpicker)
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.preview)
     debugImplementation(libs.androidx.glance.appwidgetPreview)
     debugImplementation(libs.androidx.compose.ui.tooling)
-    debugImplementation("androidx.compose.material:material-icons-extended:1.7.8")
+    debugImplementation(libs.androidx.compose.material.icons.extended)
 
     screenshotTestImplementation(libs.screenshot.validation.api)
     screenshotTestImplementation(libs.androidx.compose.ui.tooling)

@@ -170,6 +170,9 @@ fun SettingsRoute(
             }
         }
 
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
     val chooseBackupFolderActivityResultLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result
             ->
@@ -193,7 +196,7 @@ fun SettingsRoute(
                                         positiveButtonText = act.getString(R.string.continue_),
                                         negativeButtonText = act.getString(R.string.skip),
                                         onConfirm = {
-                                            act.requestPermissions(arrayOf(permission), 0)
+                                            notificationPermissionLauncher.launch(permission)
                                         },
                                     )
                             }

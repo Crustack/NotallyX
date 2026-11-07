@@ -459,6 +459,28 @@ fun EditListRoute(
             }
         }
 
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            val act = activity ?: return@rememberLauncherForActivityResult
+            if (granted) {
+                notallyModel.isPinnedToStatus = true
+                act.refreshStatusBarPin(notallyModel.getBaseNote())
+            } else {
+                notallyModel.activeDialog.value =
+                    EditorDialogState.RejectionConfirm(
+                        msgResId = R.string.to_pin_note_status_bar,
+                        onConfirm = {
+                            val intent =
+                                Intent(
+                                    android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                                )
+                            intent.data = Uri.parse("package:${context.packageName}")
+                            context.startActivity(intent)
+                        },
+                    )
+            }
+        }
+
     fun moveNote(toFolder: Folder) {
         if (toFolder != Folder.NOTES) {
             activity?.cancelPinAndReminders(notallyModel.id, notallyModel.reminders.value)
@@ -472,13 +494,13 @@ fun EditListRoute(
 
     // --- Action Handler ---
     val actionHandler =
-        remember(notallyModel, navigator, activity) {
+        remember(notallyModel, navigator, activity, notificationPermissionLauncher) {
             object : NoteActionHandler {
                 override fun pinToStatus() {
                     val act = activity ?: return
                     if (!notallyModel.isPinnedToStatus) {
                         act.checkNotificationPermission(
-                            NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
+                            permissionLauncher = notificationPermissionLauncher,
                             onShowRationale = { msgResId, onConfirm ->
                                 notallyModel.activeDialog.value =
                                     EditorDialogState.PermissionRationale(msgResId, onConfirm)

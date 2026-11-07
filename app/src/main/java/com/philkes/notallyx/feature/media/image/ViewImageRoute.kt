@@ -19,6 +19,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.SUBFOLDER_IMAGES
@@ -160,6 +161,13 @@ fun ViewImageRoute(
         images = images,
         initialPage = key.initialIndex,
         imageToDeletePosition = imageToDeletePosition,
+        resolveImageModel = { image ->
+            if (image.localName.startsWith("content://") || image.localName.startsWith("file://")) {
+                image.localName.toUri()
+            } else {
+                activity.application.resolveAttachmentFile(SUBFOLDER_IMAGES, image.localName)
+            }
+        },
         onBackClick = handleBack,
         onShareClick = { pos ->
             if (pos in images.indices) {

@@ -13,7 +13,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.viewbinding.ViewBinding
 import com.google.android.material.color.DynamicColors
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
@@ -32,11 +31,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
 
-class ComposeBinding(private val rootView: View) : ViewBinding {
-    override fun getRoot(): View = rootView
-}
-
-abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
+abstract class LockedActivity : AppCompatActivity() {
 
     private lateinit var notallyXApplication: NotallyXApplication
     private lateinit var biometricAuthenticationActivityResultLauncher:
@@ -49,7 +44,7 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
         migrationProgress.value = progress
     }
 
-    internal lateinit var binding: T
+    internal lateinit var rootView: View
     internal val preferences: NotallyXPreferences by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -150,11 +145,15 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
     }
 
     protected fun show() {
-        binding.root.visibility = VISIBLE
+        if (::rootView.isInitialized) {
+            rootView.visibility = VISIBLE
+        }
     }
 
     protected fun hide() {
-        binding.root.visibility = INVISIBLE
+        if (::rootView.isInitialized) {
+            rootView.visibility = INVISIBLE
+        }
     }
 
     private fun hasToAuthenticateWithBiometric(): Boolean {
