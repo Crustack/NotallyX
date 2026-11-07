@@ -42,4 +42,5 @@ val featureModule = module {
     viewModelOf(::UnlabeledViewModel)
     viewModelOf(::NoteModel)
     viewModelOf(::EditActivityViewModel)
+    viewModelOf(::ErrorActivityViewModel)
 }
