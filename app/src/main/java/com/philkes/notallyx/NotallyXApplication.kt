@@ -37,6 +37,7 @@ import com.philkes.notallyx.feature.migration.backup.containsNonCancelled
 import com.philkes.notallyx.feature.migration.backup.createBackup
 import com.philkes.notallyx.feature.migration.backup.isEqualTo
 import com.philkes.notallyx.feature.migration.backup.modifiedNoteBackupExists
+import com.philkes.notallyx.feature.migration.backup.performCheckBackupOnSave
 import com.philkes.notallyx.feature.migration.backup.scheduleAutoBackup
 import com.philkes.notallyx.feature.migration.backup.updateAutoBackup
 import com.philkes.notallyx.feature.reminder.PinnedNotificationManager
@@ -73,6 +74,11 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
             com.philkes.notallyx.core.security.SystemBiometricAuthenticator()
         }
         com.philkes.notallyx.core.security.AuthenticatorProvider.reset()
+        com.philkes.notallyx.feature.migration.backup.AutoBackupHandler.onCheckBackupOnSave =
+            { context, prefs, note, forceFullBackup ->
+                val wrapper = context as? ContextWrapper ?: ContextWrapper(context)
+                wrapper.performCheckBackupOnSave(prefs, note, forceFullBackup)
+            }
         if (GlobalContext.getOrNull() == null) {
             startKoin {
                 androidLogger(Level.DEBUG)
@@ -96,18 +102,20 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
 
         applicationScope.launch {
             preferences.theme.flow.withPrevious().collect { (oldTheme, theme) ->
-                when (theme) {
-                    Theme.DARK,
-                    Theme.SUPER_DARK ->
-                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                if (!isInstrumentationTest()) {
+                    when (theme) {
+                        Theme.DARK,
+                        Theme.SUPER_DARK ->
+                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 
-                    Theme.LIGHT ->
-                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                        Theme.LIGHT ->
+                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 
-                    Theme.FOLLOW_SYSTEM ->
-                        AppCompatDelegate.setDefaultNightMode(
-                            AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-                        )
+                        Theme.FOLLOW_SYSTEM ->
+                            AppCompatDelegate.setDefaultNightMode(
+                                AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+                            )
+                    }
                 }
                 if (oldTheme != null) {
                     NoteWidget.updateWidgets(this@NotallyXApplication)
@@ -316,6 +324,14 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
 
         fun isTestRunner(): Boolean {
             return Build.FINGERPRINT.equals("robolectric", ignoreCase = true)
+        }
+
+        fun isInstrumentationTest(): Boolean {
+            return try {
+                Class.forName("androidx.test.platform.app.InstrumentationRegistry") != null
+            } catch (_: Throwable) {
+                false
+            }
         }
     }
 }

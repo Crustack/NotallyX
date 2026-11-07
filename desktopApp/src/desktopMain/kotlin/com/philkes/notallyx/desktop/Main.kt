@@ -62,6 +62,6 @@ fun main() = application {
             }
         }
 
-        NotallyXTheme { DesktopAppNavHost(database = database) }
+        NotallyXTheme { DesktopNavDisplay(database = database) }
     }
 }

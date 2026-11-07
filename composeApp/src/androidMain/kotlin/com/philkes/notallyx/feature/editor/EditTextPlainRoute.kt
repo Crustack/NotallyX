@@ -33,7 +33,11 @@ fun EditTextPlainRoute(
             ->
             if (result.resultCode == Activity.RESULT_OK) {
                 result.data?.data?.let { uri ->
-                    viewModel.onAction(EditTextPlainAction.SaveToUri(uri))
+                    viewModel.onAction(
+                        EditTextPlainAction.SaveToUri(
+                            com.philkes.notallyx.core.platform.PlatformUri(uri.toString())
+                        )
+                    )
                 }
             }
         }

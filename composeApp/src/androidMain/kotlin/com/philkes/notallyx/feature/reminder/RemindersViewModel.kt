@@ -122,6 +122,8 @@ class RemindersViewModel(
                     _sideEffects.send(RemindersSideEffect.OpenReminder(action.note))
                 }
             }
+
+            is RemindersAction.BackClicked -> {}
         }
     }
 }

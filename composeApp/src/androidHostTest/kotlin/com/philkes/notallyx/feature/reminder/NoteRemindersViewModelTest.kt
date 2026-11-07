@@ -90,7 +90,9 @@ class NoteRemindersViewModelTest {
         runBlocking { database.getBaseNoteDao().insert(note) }
 
         viewModel.onAction(NoteRemindersAction.Init(100L))
-        waitUntil { viewModel.uiState.value.reminders.size == 2 }
+        waitUntil {
+            !viewModel.uiState.value.isLoading && viewModel.uiState.value.reminders.size == 2
+        }
 
         assertThat(viewModel.uiState.value.reminders).hasSize(2)
         assertThat(viewModel.uiState.value.reminders[0].id).isEqualTo(1L)

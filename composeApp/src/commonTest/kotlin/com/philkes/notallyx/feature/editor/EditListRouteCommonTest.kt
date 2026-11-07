@@ -2,8 +2,7 @@ package com.philkes.notallyx.feature.editor
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.onAllNodesWithContentDescription
-import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -32,7 +31,7 @@ class EditListRouteCommonTest : CommonComposeUiTestBase() {
 
         setContent {
             NotallyXTheme {
-                CommonEditListScreen(
+                EditListRoute(
                     noteId = 0L,
                     noteDao = noteDao,
                     onBack = { backCalled = true },
@@ -41,11 +40,11 @@ class EditListRouteCommonTest : CommonComposeUiTestBase() {
         }
 
         onNodeWithTag(TestTags.NOTE_TITLE_INPUT).performTextInput("Weekend Shopping")
-        onNodeWithTag(TestTags.CHECKLIST_NEW_ITEM_INPUT).performTextInput("Milk")
         onNodeWithTag(TestTags.CHECKLIST_ADD_BUTTON).performClick()
+        onAllNodesWithTag(TestTags.CHECKLIST_ITEM_INPUT)[0].performTextInput("Milk")
 
-        onNodeWithTag(TestTags.CHECKLIST_NEW_ITEM_INPUT).performTextInput("Eggs")
         onNodeWithTag(TestTags.CHECKLIST_ADD_BUTTON).performClick()
+        onAllNodesWithTag(TestTags.CHECKLIST_ITEM_INPUT)[1].performTextInput("Eggs")
 
         onNodeWithText("Milk").assertIsDisplayed()
         onNodeWithText("Eggs").assertIsDisplayed()
@@ -87,6 +86,7 @@ class EditListRouteCommonTest : CommonComposeUiTestBase() {
                 items =
                     listOf(
                         ListItem(
+                            id = 0,
                             body = "Passport",
                             checked = false,
                             isChild = false,
@@ -94,6 +94,7 @@ class EditListRouteCommonTest : CommonComposeUiTestBase() {
                             children = mutableListOf(),
                         ),
                         ListItem(
+                            id = 1,
                             body = "Extra Shoes",
                             checked = false,
                             isChild = false,
@@ -113,7 +114,7 @@ class EditListRouteCommonTest : CommonComposeUiTestBase() {
 
         setContent {
             NotallyXTheme {
-                CommonEditListScreen(
+                EditListRoute(
                     noteId = noteId,
                     noteDao = noteDao,
                     onBack = { backCalled = true },
@@ -124,13 +125,14 @@ class EditListRouteCommonTest : CommonComposeUiTestBase() {
         onNodeWithText("Passport").assertIsDisplayed()
         onNodeWithText("Extra Shoes").assertIsDisplayed()
 
-        // Toggle checkbox for Passport
-        onNodeWithContentDescription("Passport").performClick()
+        // Delete "Extra Shoes" using test tag
+        onAllNodesWithTag(TestTags.CHECKLIST_ITEM_DELETE)[1].performClick()
 
-        // Delete "Extra Shoes" - find delete icon button (contentDescription = "Delete")
-        onAllNodesWithContentDescription("Delete")[1].performClick()
+        // Toggle checkbox for the remaining item (Passport)
+        onNodeWithTag(TestTags.CHECKLIST_ITEM_CHECKBOX).performClick()
 
         onNodeWithTag(TestTags.SAVE_AND_CLOSE_BUTTON).performClick()
+        waitUntil(timeoutMillis = 5_000) { backCalled }
 
         assertTrue("Expected onBack to be called after editing checklist", backCalled)
 
@@ -162,6 +164,7 @@ class EditListRouteCommonTest : CommonComposeUiTestBase() {
                 items =
                     listOf(
                         ListItem(
+                            id = 0,
                             body = "Item 1",
                             checked = false,
                             isChild = false,
@@ -181,7 +184,7 @@ class EditListRouteCommonTest : CommonComposeUiTestBase() {
 
         setContent {
             NotallyXTheme {
-                CommonEditListScreen(
+                EditListRoute(
                     noteId = noteId,
                     noteDao = noteDao,
                     onBack = { backCalled = true },

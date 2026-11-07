@@ -23,7 +23,7 @@ class LabelsRouteCommonTest : CommonComposeUiTestBase() {
     fun emptyLabels_displaysEmptyState() = runUiTest {
         setContent {
             NotallyXTheme {
-                CommonLabelsScreen(
+                LabelsRoute(
                     labelDao = labelDao,
                     onBack = {},
                 )
@@ -37,7 +37,7 @@ class LabelsRouteCommonTest : CommonComposeUiTestBase() {
     fun addLabel_persistsToDatabase() = runUiTest {
         setContent {
             NotallyXTheme {
-                CommonLabelsScreen(
+                LabelsRoute(
                     labelDao = labelDao,
                     onBack = {},
                 )
@@ -64,7 +64,7 @@ class LabelsRouteCommonTest : CommonComposeUiTestBase() {
 
         setContent {
             NotallyXTheme {
-                CommonLabelsScreen(
+                LabelsRoute(
                     labelDao = labelDao,
                     onBack = {},
                 )
@@ -73,7 +73,7 @@ class LabelsRouteCommonTest : CommonComposeUiTestBase() {
 
         onNodeWithText("Urgent").assertIsDisplayed()
 
-        onAllNodesWithContentDescription("Delete label")[0].performClick()
+        onAllNodesWithContentDescription("Delete")[0].performClick()
         onNodeWithTag("ConfirmDialog_Confirm").performClick()
 
         waitUntil(timeoutMillis = 5_000) { runBlocking { labelDao.getAll().first().isEmpty() } }

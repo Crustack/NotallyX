@@ -11,8 +11,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.philkes.notallyx.core.common.extensions.SUBFOLDER_IMAGES
+import com.philkes.notallyx.core.common.extensions.resolveAttachmentFile
 import com.philkes.notallyx.core.common.extensions.wrapWithChooser
+import com.philkes.notallyx.core.platform.PlatformUri
+import com.philkes.notallyx.core.platform.toAndroidUri
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.navigation.NotallyNavKey
 import org.koin.androidx.compose.koinViewModel
@@ -37,7 +42,7 @@ fun ViewImageRoute(
             ->
             if (result.resultCode == Activity.RESULT_OK) {
                 result.data?.data?.let { uri ->
-                    viewModel.onAction(ViewImageAction.ExportConfirmed(uri))
+                    viewModel.onAction(ViewImageAction.ExportConfirmed(PlatformUri(uri.toString())))
                 }
             }
         }
@@ -46,12 +51,13 @@ fun ViewImageRoute(
         viewModel.sideEffects.collect { effect ->
             when (effect) {
                 is ViewImageSideEffect.ShareImage -> {
+                    val androidUri = effect.uri.toAndroidUri()
                     val intent =
                         Intent(Intent.ACTION_SEND)
                             .apply {
                                 type = effect.mimeType
-                                putExtra(Intent.EXTRA_STREAM, effect.uri)
-                                clipData = ClipData.newRawUri(null, effect.uri)
+                                putExtra(Intent.EXTRA_STREAM, androidUri)
+                                clipData = ClipData.newRawUri(null, androidUri)
                                 flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                             }
                             .wrapWithChooser(context)
@@ -88,6 +94,16 @@ fun ViewImageRoute(
     ViewImageScreen(
         state = uiState.copy(initialPage = key.initialIndex),
         onAction = viewModel::onAction,
+        resolveImageModel = { image ->
+            if (image.localName.startsWith("content://") || image.localName.startsWith("file://")) {
+                image.localName.toUri()
+            } else {
+                context.applicationContext.resolveAttachmentFile(
+                    SUBFOLDER_IMAGES,
+                    image.localName,
+                )
+            }
+        },
         modifier = modifier,
     )
 }

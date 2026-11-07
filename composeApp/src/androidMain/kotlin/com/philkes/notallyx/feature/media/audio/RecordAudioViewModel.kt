@@ -51,11 +51,7 @@ class RecordAudioViewModel(
     private val _activeDialog = MutableStateFlow<RecordAudioDialogState?>(null)
 
     init {
-        viewModelScope.launch {
-            audioRecorder.isRecording.collect { isRec ->
-                _status.value = if (isRec) Status.RECORDING else Status.READY
-            }
-        }
+        viewModelScope.launch { audioRecorder.status.collect { status -> _status.value = status } }
         viewModelScope.launch {
             audioRecorder.elapsedDurationMs.collect { duration -> _baseTime.value = duration }
         }
@@ -78,7 +74,11 @@ class RecordAudioViewModel(
     fun onAction(action: RecordAudioAction) {
         when (action) {
             is RecordAudioAction.MainClicked -> {
-                audioRecorder.startRecording()
+                when (_status.value) {
+                    Status.READY -> audioRecorder.startRecording()
+                    Status.RECORDING -> audioRecorder.pauseRecording()
+                    Status.PAUSED -> audioRecorder.resumeRecording()
+                }
             }
 
             is RecordAudioAction.StopClicked -> {

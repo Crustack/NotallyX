@@ -4,110 +4,12 @@ import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.preference.Theme
-
-private val LightColorScheme =
-    lightColorScheme(
-        primary = MdThemePrimary,
-        onPrimary = MdThemeOnPrimary,
-        primaryContainer = MdThemePrimaryContainer,
-        onPrimaryContainer = MdThemeOnPrimaryContainer,
-        secondary = MdThemeSecondary,
-        onSecondary = MdThemeOnSecondary,
-        secondaryContainer = MdThemeSecondaryContainer,
-        onSecondaryContainer = MdThemeOnSecondaryContainer,
-        tertiary = MdThemeTertiary,
-        onTertiary = MdThemeOnTertiary,
-        tertiaryContainer = MdThemeTertiaryContainer,
-        onTertiaryContainer = MdThemeOnTertiaryContainer,
-        error = MdThemeError,
-        onError = MdThemeOnError,
-        errorContainer = MdThemeErrorContainer,
-        onErrorContainer = MdThemeOnErrorContainer,
-        background = ContainerLight,
-        onBackground = MdThemeOnBackgroundLight,
-        surface = ContainerLight,
-        onSurface = MdThemeOnBackgroundLight,
-        surfaceVariant = MdThemeSurfaceVariantLight,
-        onSurfaceVariant = MdThemeOnSurfaceVariantLight,
-        outline = MdThemeOutline,
-        outlineVariant = MdThemeOutlineVariant,
-        scrim = ContainerSuperDark,
-        inverseSurface = MdThemeInverseSurface,
-        inverseOnSurface = MdThemeInverseOnSurface,
-        inversePrimary = MdThemeInversePrimary,
-    )
-
-private val DarkColorScheme =
-    darkColorScheme(
-        primary = MdThemePrimary,
-        onPrimary = MdThemeOnPrimary,
-        primaryContainer = MdThemePrimaryContainer,
-        onPrimaryContainer = MdThemeOnPrimaryContainer,
-        secondary = MdThemeSecondary,
-        onSecondary = MdThemeOnSecondary,
-        secondaryContainer = MdThemeSecondaryContainer,
-        onSecondaryContainer = MdThemeOnSecondaryContainer,
-        tertiary = MdThemeTertiary,
-        onTertiary = MdThemeOnTertiary,
-        tertiaryContainer = MdThemeTertiaryContainer,
-        onTertiaryContainer = MdThemeOnTertiaryContainer,
-        error = MdThemeError,
-        onError = MdThemeOnError,
-        errorContainer = MdThemeErrorContainer,
-        onErrorContainer = MdThemeOnErrorContainer,
-        background = MdThemeSurfaceContainerLowDark,
-        onBackground = MdThemeOnBackgroundDark,
-        surface = MdThemeSurfaceContainerLowDark,
-        onSurface = MdThemeOnBackgroundDark,
-        surfaceVariant = MdThemeSurfaceContainerDark,
-        onSurfaceVariant = MdThemeOnSurfaceVariantDark,
-        outline = MdThemeOutline,
-        outlineVariant = MdThemeOutlineVariant,
-        scrim = ContainerSuperDark,
-        inverseSurface = MdThemeInverseSurface,
-        inverseOnSurface = MdThemeInverseOnSurface,
-        inversePrimary = MdThemeInversePrimary,
-    )
-
-private val SuperDarkColorScheme =
-    darkColorScheme(
-        primary = MdThemePrimary,
-        onPrimary = ContainerSuperDark,
-        primaryContainer = MdThemePrimaryContainer,
-        onPrimaryContainer = MdThemeOnPrimaryContainer,
-        secondary = MdThemeSecondary,
-        onSecondary = MdThemeOnSecondary,
-        secondaryContainer = MdThemeSecondaryContainer,
-        onSecondaryContainer = MdThemeOnSecondaryContainer,
-        tertiary = MdThemeTertiary,
-        onTertiary = MdThemeOnTertiary,
-        tertiaryContainer = MdThemeTertiaryContainer,
-        onTertiaryContainer = MdThemeOnTertiaryContainer,
-        error = MdThemeError,
-        onError = MdThemeOnError,
-        errorContainer = MdThemeErrorContainer,
-        onErrorContainer = MdThemeOnErrorContainer,
-        background = ContainerSuperDark,
-        onBackground = MdThemeOnBackgroundDark,
-        surface = ContainerSuperDark,
-        onSurface = MdThemeOnBackgroundDark,
-        surfaceVariant = ContainerSuperDark,
-        onSurfaceVariant = MdThemeOnSurfaceVariantDark,
-        outline = MdThemeOutline,
-        outlineVariant = MdThemeOutlineVariant,
-        scrim = ContainerSuperDark,
-        inverseSurface = MdThemeInverseSurface,
-        inverseOnSurface = MdThemeInverseOnSurface,
-        inversePrimary = MdThemeInversePrimary,
-    )
 
 /**
  * Main Composable Theme for NotallyX.

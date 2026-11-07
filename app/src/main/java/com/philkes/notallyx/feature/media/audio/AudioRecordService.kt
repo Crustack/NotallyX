@@ -10,66 +10,125 @@ import com.philkes.notallyx.feature.media.audio.Status.PAUSED
 import com.philkes.notallyx.feature.media.audio.Status.RECORDING
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class AudioRecordService : Service() {
 
-    val status: StateFlow<Status>
-        field = MutableStateFlow(Status.READY)
+    private val _status = MutableStateFlow(Status.READY)
+    val status: StateFlow<Status> = _status.asStateFlow()
+
     private var lastStart = 0L
     private var audioDuration = 0L
 
-    private lateinit var recorder: MediaRecorder
+    private var recorder: MediaRecorder? = null
 
     override fun onCreate() {
-        recorder =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                MediaRecorder(this)
-            } else MediaRecorder()
+        super.onCreate()
+        prepareRecorder()
+    }
 
-        recorder.apply {
-            setAudioSource(MediaRecorder.AudioSource.MIC)
-            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+    private fun prepareRecorder() {
+        try {
+            val r =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    MediaRecorder(this)
+                } else {
+                    @Suppress("DEPRECATION") MediaRecorder()
+                }
 
-            val output = this@AudioRecordService.getTempAudioFile()
-            setOutputFile(output.path)
-            prepare()
+            r.apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+
+                val output = this@AudioRecordService.getTempAudioFile()
+                output.parentFile?.mkdirs()
+                setOutputFile(output.path)
+                prepare()
+            }
+            recorder = r
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
     override fun onDestroy() {
-        recorder.release()
+        try {
+            recorder?.release()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        recorder = null
+        super.onDestroy()
     }
 
     override fun onBind(intent: Intent?) = LocalBinder(this)
 
     fun start() {
-        recorder.start()
-        status.value = RECORDING
-        lastStart = SystemClock.elapsedRealtime()
+        try {
+            if (recorder == null) {
+                prepareRecorder()
+            }
+            audioDuration = 0L
+            recorder?.start()
+            _status.value = RECORDING
+            lastStart = SystemClock.elapsedRealtime()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun resume() {
-        recorder.resume()
-        status.value = RECORDING
-        lastStart = SystemClock.elapsedRealtime()
+        try {
+            recorder?.resume()
+            _status.value = RECORDING
+            lastStart = SystemClock.elapsedRealtime()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun pause() {
-        recorder.pause()
-        status.value = PAUSED
-        audioDuration += SystemClock.elapsedRealtime() - lastStart
-        lastStart = 0L
+        try {
+            recorder?.pause()
+            _status.value = PAUSED
+            if (lastStart != 0L) {
+                audioDuration += SystemClock.elapsedRealtime() - lastStart
+            }
+            lastStart = 0L
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun stop() {
-        recorder.stop()
-        stopSelf()
+        try {
+            if (_status.value == RECORDING || _status.value == PAUSED) {
+                recorder?.stop()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            try {
+                recorder?.release()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            recorder = null
+            _status.value = Status.READY
+            audioDuration = 0L
+            lastStart = 0L
+            stopSelf()
+        }
     }
 
-    fun getBase(): Long {
-        return if (lastStart != 0L) {
-            lastStart - audioDuration
-        } else SystemClock.elapsedRealtime() - audioDuration
+    fun getElapsedDurationMs(): Long {
+        return if (_status.value == RECORDING && lastStart != 0L) {
+            audioDuration + (SystemClock.elapsedRealtime() - lastStart)
+        } else {
+            audioDuration
+        }
     }
+
+    fun getBase(): Long = getElapsedDurationMs()
 }

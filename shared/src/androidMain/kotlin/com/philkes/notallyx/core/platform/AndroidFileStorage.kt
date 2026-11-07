@@ -18,14 +18,14 @@ import java.io.OutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class AndroidFileStorage(private val context: Context) : FileStorage {
+fun PlatformUri.toAndroidUri(): Uri =
+    if (uriString.startsWith("/") && !uriString.startsWith("//")) {
+        Uri.fromFile(File(uriString))
+    } else {
+        uriString.toUri()
+    }
 
-    private fun PlatformUri.toAndroidUri(): Uri =
-        if (uriString.startsWith("/") && !uriString.startsWith("//")) {
-            Uri.fromFile(File(uriString))
-        } else {
-            uriString.toUri()
-        }
+class AndroidFileStorage(private val context: Context) : FileStorage {
 
     override suspend fun openInputStream(uri: PlatformUri): InputStream? =
         withContext(Dispatchers.IO) {

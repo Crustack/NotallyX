@@ -1,7 +1,6 @@
 package com.philkes.notallyx.feature.media.image
 
 import android.app.Application
-import android.net.Uri
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.BaseViewModel
@@ -133,7 +132,9 @@ class ViewImageViewModel(
         if (file != null && file.exists() && hasApp) {
             val uri = app.getUriForFile(file)
             viewModelScope.launch {
-                _sideEffects.send(ViewImageSideEffect.ShareImage(uri, image.mimeType))
+                _sideEffects.send(
+                    ViewImageSideEffect.ShareImage(PlatformUri(uri.toString()), image.mimeType)
+                )
             }
         }
     }
@@ -148,7 +149,7 @@ class ViewImageViewModel(
         }
     }
 
-    private fun exportImage(destinationUri: Uri) {
+    private fun exportImage(destinationUri: PlatformUri) {
         val image = _currentImageToExport.value ?: return
         val file =
             pathProvider.resolveAttachmentFile(
@@ -158,8 +159,7 @@ class ViewImageViewModel(
             ) ?: return
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                fileStorage.openOutputStream(PlatformUri(destinationUri.toString()))?.use { output
-                    ->
+                fileStorage.openOutputStream(destinationUri)?.use { output ->
                     FileInputStream(file).use { input -> input.copyTo(output) }
                 }
                 _sideEffects.send(ViewImageSideEffect.ShowToast(R.string.saved_to_device))

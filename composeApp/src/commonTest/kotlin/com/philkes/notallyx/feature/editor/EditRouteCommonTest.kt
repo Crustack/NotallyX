@@ -25,7 +25,7 @@ class EditRouteCommonTest : CommonComposeUiTestBase() {
 
         setContent {
             NotallyXTheme {
-                CommonEditNoteScreen(
+                EditNoteRoute(
                     noteId = 0L,
                     noteDao = noteDao,
                     onBack = { backCalled = true },
@@ -56,7 +56,7 @@ class EditRouteCommonTest : CommonComposeUiTestBase() {
 
         setContent {
             NotallyXTheme {
-                CommonEditNoteScreen(
+                EditNoteRoute(
                     noteId = noteId,
                     noteDao = noteDao,
                     onBack = { backCalled = true },
@@ -87,7 +87,7 @@ class EditRouteCommonTest : CommonComposeUiTestBase() {
 
         setContent {
             NotallyXTheme {
-                CommonEditNoteScreen(
+                EditNoteRoute(
                     noteId = noteId,
                     noteDao = noteDao,
                     onBack = { backCalled = true },

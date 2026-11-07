@@ -51,6 +51,10 @@ object TestTags {
     // Settings
     const val SETTINGS_LIST = "SettingsList"
     const val SETTINGS_THEME = "SettingsTheme"
+    const val SETTINGS_THEME_DYNAMIC_COLORS = "SettingsThemeDynamicColors"
     const val SETTINGS_NOTES_VIEW = "SettingsNotesView"
     const val SETTINGS_SORTING = "SettingsSorting"
+    const val SETTINGS_BIOMETRIC_LOCK = "SettingsBiometricLock"
+    const val DATE_FORMAT_ITEM_PREFIX = "DateFormatItem_"
+    const val TIME_FORMAT_ITEM_PREFIX = "TimeFormatItem_"
 }

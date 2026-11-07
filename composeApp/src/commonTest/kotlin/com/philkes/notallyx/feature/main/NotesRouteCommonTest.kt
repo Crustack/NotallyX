@@ -9,7 +9,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.core.ui.views.TestTags
-import com.philkes.notallyx.feature.main.routes.notes.CommonNotesScreen
+import com.philkes.notallyx.feature.main.routes.notes.NotesRoute
 import com.philkes.notallyx.test.CommonComposeUiTestBase
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -22,7 +22,7 @@ class NotesRouteCommonTest : CommonComposeUiTestBase() {
     fun emptyNotes_displaysEmptyState() = runUiTest {
         setContent {
             NotallyXTheme {
-                CommonNotesScreen(
+                NotesRoute(
                     noteDao = noteDao,
                     onOpenNote = {},
                     onOpenList = {},
@@ -43,7 +43,7 @@ class NotesRouteCommonTest : CommonComposeUiTestBase() {
 
         setContent {
             NotallyXTheme {
-                CommonNotesScreen(
+                NotesRoute(
                     noteDao = noteDao,
                     onOpenNote = { openedNoteId = it },
                     onOpenList = {},
@@ -67,7 +67,7 @@ class NotesRouteCommonTest : CommonComposeUiTestBase() {
 
         setContent {
             NotallyXTheme {
-                CommonNotesScreen(
+                NotesRoute(
                     noteDao = noteDao,
                     onOpenNote = {},
                     onOpenList = {},
@@ -98,7 +98,7 @@ class NotesRouteCommonTest : CommonComposeUiTestBase() {
 
         setContent {
             NotallyXTheme {
-                CommonNotesScreen(
+                NotesRoute(
                     noteDao = noteDao,
                     onOpenNote = {},
                     onOpenList = {},

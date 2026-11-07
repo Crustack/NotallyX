@@ -25,18 +25,13 @@ import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
-data class IconListItem(
-    val iconResId: Int,
-    val text: String,
-)
-
 @Composable
-internal fun IconListDialog(
+actual fun IconListDialog(
     title: String,
     items: List<IconListItem>,
     onDismissRequest: () -> Unit,
     onItemClick: (index: Int) -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     AlertDialog(
         modifier = modifier,

@@ -311,8 +311,8 @@ class NoteRemindersViewModel(
             try {
                 val note = baseNoteDao?.get(id)
                 val loadedReminders = note?.reminders ?: emptyList()
-                _reminders.value = loadedReminders
                 _isLoading.value = false
+                _reminders.value = loadedReminders
                 if (loadedReminders.isEmpty()) {
                     checkPermissionsAndOpenDatePicker(null, null)
                 } else if (!reminderScheduler.canScheduleExactAlarms()) {

@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.philkes.notallyx.data.model.BaseNote
+import com.philkes.notallyx.feature.main.PickNoteScreen
 import org.koin.androidx.compose.koinViewModel
 
 @Composable

@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ktfmt)
@@ -43,6 +44,7 @@ kotlin {
             api(libs.compose.colorpicker)
             api(project.dependencies.platform(libs.koin.bom))
             api(libs.koin.core)
+            api(compose.components.resources)
         }
 
         androidMain.dependencies {
@@ -94,6 +96,11 @@ kotlin {
             }
         }
     }
+}
+
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "com.philkes.notallyx"
 }
 
 ktfmt { kotlinLangStyle() }

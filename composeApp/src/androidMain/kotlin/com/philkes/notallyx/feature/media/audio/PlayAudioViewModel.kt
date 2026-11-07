@@ -1,7 +1,6 @@
 package com.philkes.notallyx.feature.media.audio
 
 import android.app.Application
-import android.net.Uri
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.BaseViewModel
@@ -147,7 +146,9 @@ class PlayAudioViewModel(
         val file = java.io.File(audioRoot, audio.name)
         if (file.exists() && hasApp) {
             val uri = app.getUriForFile(file)
-            viewModelScope.launch { _sideEffects.send(PlayAudioSideEffect.ShareAudio(uri)) }
+            viewModelScope.launch {
+                _sideEffects.send(PlayAudioSideEffect.ShareAudio(PlatformUri(uri.toString())))
+            }
         }
     }
 
@@ -158,7 +159,7 @@ class PlayAudioViewModel(
         viewModelScope.launch { _sideEffects.send(PlayAudioSideEffect.LaunchExport(defaultName)) }
     }
 
-    private fun exportConfirmed(destinationUri: Uri) {
+    private fun exportConfirmed(destinationUri: PlatformUri) {
         val audio = _audio.value ?: return
         val audioRoot =
             pathProvider.getMediaDirectory(SUBFOLDER_AUDIOS, preferences.dataInPublicFolder.value)
@@ -166,8 +167,7 @@ class PlayAudioViewModel(
         if (file.exists()) {
             viewModelScope.launch(Dispatchers.IO) {
                 try {
-                    fileStorage.openOutputStream(PlatformUri(destinationUri.toString()))?.use {
-                        output ->
+                    fileStorage.openOutputStream(destinationUri)?.use { output ->
                         FileInputStream(file).use { input -> input.copyTo(output) }
                     }
                     _sideEffects.send(PlayAudioSideEffect.ShowToast(R.string.saved_to_device))

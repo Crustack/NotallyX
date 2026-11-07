@@ -30,6 +30,7 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasType
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.Suppress as SuppressTest
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.philkes.notallyx.NotallyXApplication
@@ -45,6 +46,7 @@ import com.philkes.notallyx.core.preference.PeriodicBackup
 import com.philkes.notallyx.core.preference.Theme
 import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.core.preference.getText
+import com.philkes.notallyx.core.preference.textResId
 import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.model.Folder
@@ -53,10 +55,11 @@ import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.main.routes.settings.removeOldDeletedNotes
 import com.philkes.notallyx.feature.migration.backup.ON_SAVE_BACKUP_FILE
 import com.philkes.notallyx.feature.migration.backup.PERIODIC_BACKUP_FILE_PREFIX
+import com.philkes.notallyx.feature.migration.backup.autoBackupOnSaveFileExists
+import com.philkes.notallyx.feature.migration.backup.deleteModifiedNoteBackup
 import com.philkes.notallyx.navigation.NotallyNavKey
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.appendText
-import com.philkes.notallyx.test.assertLogAppeared
 import com.philkes.notallyx.test.checkAndUpdateNoteTitle
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.createListItem
@@ -359,6 +362,7 @@ class SettingsRouteTest : UiTestBase() {
     fun autoSaveBackupCreatedAndImport() {
         Intents.init()
         val backupPath = context.getExternalBackupsDirectory().toUri()
+        context.deleteModifiedNoteBackup(backupPath.toString())
         runBlocking {
             database
                 .getBaseNoteDao()
@@ -400,7 +404,7 @@ class SettingsRouteTest : UiTestBase() {
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.back))
             .performClick()
-        assertLogAppeared("AutoBackupExtensions", "Finished backup ")
+        waitUntil(10_000) { context.autoBackupOnSaveFileExists(backupPath.toString()) }
 
         composeTestRule.onNodeWithText("Test Foo").performTouchInput { longClick() }
         composeTestRule
@@ -496,6 +500,7 @@ class SettingsRouteTest : UiTestBase() {
         assertEquals(expectedDecrypt2, fakeBiometricAuthenticator.getDecryptionCounter())
     }
 
+    @SuppressTest
     @Ignore("Disabled while FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB is false")
     @Test
     fun biometricLock_with_encryption() {
@@ -692,7 +697,10 @@ class SettingsRouteTest : UiTestBase() {
         if (initialDynamicColors) {
             composeTestRule.onNodeWithText(themeLabel).performScrollTo().performClick()
             composeTestRule
-                .onNode(hasText(dynamicColorsLabel) and hasAnyAncestor(isComposeDialog()))
+                .onNode(
+                    hasTestTag(TestTags.SETTINGS_THEME_DYNAMIC_COLORS) or
+                        (hasText(dynamicColorsLabel) and hasAnyAncestor(isComposeDialog()))
+                )
                 .performClick()
             composeTestRule.onNodeWithText(saveLabel).performClick()
             waitUntil(10_000) { !preferences.useDynamicColors.value }
@@ -745,7 +753,10 @@ class SettingsRouteTest : UiTestBase() {
         // 6. Test Dynamic Colors: toggle dynamic colors
         composeTestRule.onNodeWithText(themeLabel).performScrollTo().performClick()
         composeTestRule
-            .onNode(hasText(dynamicColorsLabel) and hasAnyAncestor(isComposeDialog()))
+            .onNode(
+                hasTestTag(TestTags.SETTINGS_THEME_DYNAMIC_COLORS) or
+                    (hasText(dynamicColorsLabel) and hasAnyAncestor(isComposeDialog()))
+            )
             .performClick()
         composeTestRule.onNodeWithText(saveLabel).performClick()
         waitUntil(10_000) { preferences.useDynamicColors.value }
@@ -755,7 +766,10 @@ class SettingsRouteTest : UiTestBase() {
         if (preferences.useDynamicColors.value != initialDynamicColors) {
             composeTestRule.onNodeWithText(themeLabel).performScrollTo().performClick()
             composeTestRule
-                .onNode(hasText(dynamicColorsLabel) and hasAnyAncestor(isComposeDialog()))
+                .onNode(
+                    hasTestTag(TestTags.SETTINGS_THEME_DYNAMIC_COLORS) or
+                        (hasText(dynamicColorsLabel) and hasAnyAncestor(isComposeDialog()))
+                )
                 .performClick()
             composeTestRule.onNodeWithText(saveLabel).performClick()
             waitUntil(10_000) { preferences.useDynamicColors.value == initialDynamicColors }
@@ -1130,6 +1144,7 @@ class SettingsRouteTest : UiTestBase() {
         }
     }
 
+    @SuppressTest
     @Ignore("Disabled while FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB is false")
     @Test
     fun encryptAndDecryptDatabaseWithPassphrase() {
@@ -1326,7 +1341,12 @@ class SettingsRouteTest : UiTestBase() {
             .performClick()
 
         val targetDateFormat = DateFormat.SHORT_ISO
-        composeTestRule.onNodeWithText(targetDateFormat.getText(context)).performClick()
+        composeTestRule
+            .onNode(
+                hasTestTag(TestTags.DATE_FORMAT_ITEM_PREFIX + targetDateFormat.name) or
+                    hasText(targetDateFormat.getText(context))
+            )
+            .performClick()
 
         // 3. Select Time format: click Time dropdown anchor
         composeTestRule
@@ -1334,7 +1354,12 @@ class SettingsRouteTest : UiTestBase() {
             .performClick()
 
         val targetTimeFormat = TimeFormat.TWENTY_FOUR_H
-        composeTestRule.onNodeWithText(targetTimeFormat.getText(context)).performClick()
+        composeTestRule
+            .onNode(
+                hasTestTag(TestTags.TIME_FORMAT_ITEM_PREFIX + targetTimeFormat.name) or
+                    hasText(targetTimeFormat.getText(context))
+            )
+            .performClick()
 
         // 4. Save dialog
         composeTestRule

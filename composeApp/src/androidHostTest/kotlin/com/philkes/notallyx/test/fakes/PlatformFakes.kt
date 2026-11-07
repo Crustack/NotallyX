@@ -18,6 +18,7 @@ import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.feature.media.audio.AudioPlayer
 import com.philkes.notallyx.feature.media.audio.AudioRecorder
+import com.philkes.notallyx.feature.media.audio.Status
 import com.philkes.notallyx.feature.migration.backup.PdfExporter
 import com.philkes.notallyx.feature.reminder.ReminderScheduler
 import java.io.File
@@ -233,6 +234,9 @@ class FakeAudioRecorder(
     override val isSupported: Boolean = true,
     var outputFile: File? = null,
 ) : AudioRecorder {
+    private val _status = MutableStateFlow(Status.READY)
+    override val status: StateFlow<Status> = _status.asStateFlow()
+
     private val _isRecording = MutableStateFlow(false)
     override val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
 
@@ -240,15 +244,28 @@ class FakeAudioRecorder(
     override val elapsedDurationMs: StateFlow<Long> = _elapsedDurationMs.asStateFlow()
 
     override fun startRecording() {
+        _status.value = Status.RECORDING
+        _isRecording.value = true
+    }
+
+    override fun pauseRecording() {
+        _status.value = Status.PAUSED
+        _isRecording.value = false
+    }
+
+    override fun resumeRecording() {
+        _status.value = Status.RECORDING
         _isRecording.value = true
     }
 
     override fun stopRecording(): File? {
+        _status.value = Status.READY
         _isRecording.value = false
         return outputFile
     }
 
     override fun release() {
+        _status.value = Status.READY
         _isRecording.value = false
     }
 }

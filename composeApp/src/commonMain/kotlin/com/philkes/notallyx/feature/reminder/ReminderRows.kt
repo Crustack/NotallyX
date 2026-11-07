@@ -1,0 +1,170 @@
+package com.philkes.notallyx.feature.reminder
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.philkes.notallyx.Res
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
+import com.philkes.notallyx.delete
+import com.philkes.notallyx.edit
+import com.philkes.notallyx.event
+import com.philkes.notallyx.notifications
+import com.philkes.notallyx.schedule
+import com.philkes.notallyx.text_file
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
+
+/** Row for displaying a note reminder (inside note edit). */
+@Composable
+fun NoteReminderRow(
+    dateTimeText: String,
+    repetitionText: String? = null,
+    modifier: Modifier = Modifier,
+    onEdit: () -> Unit = {},
+    onDelete: () -> Unit = {},
+) {
+    Row(
+        modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(Res.drawable.event),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = dateTimeText,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            if (!repetitionText.isNullOrEmpty()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 4.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.schedule),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = repetitionText,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+        IconButton(onClick = onEdit) {
+            Icon(
+                painter = painterResource(Res.drawable.edit),
+                contentDescription = stringResource(Res.string.edit),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        IconButton(onClick = onDelete) {
+            Icon(
+                painter = painterResource(Res.drawable.delete),
+                contentDescription = stringResource(Res.string.delete),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** Row for displaying reminder in [RemindersScreen] */
+@Composable
+fun ReminderRow(
+    title: String,
+    nextNotificationText: String,
+    remindersCountText: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
+    onOpenNote: () -> Unit = {},
+) {
+    Row(
+        modifier = modifier.fillMaxWidth().clickable(onClick = onClick).padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            if (nextNotificationText.isNotEmpty()) {
+                Text(
+                    text = nextNotificationText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (remindersCountText.isNotEmpty()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 8.dp),
+            ) {
+                Icon(
+                    painter = painterResource(Res.drawable.notifications),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = remindersCountText,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        IconButton(onClick = onOpenNote) {
+            Icon(
+                painter = painterResource(Res.drawable.text_file),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun NoteReminderRowPreview() {
+    NotallyXTheme {
+        NoteReminderRow(
+            dateTimeText = "Tomorrow, 09:00 AM",
+            repetitionText = "Repeats daily",
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ReminderRowPreview() {
+    NotallyXTheme {
+        ReminderRow(
+            title = "Doctor Appointment",
+            nextNotificationText = "In 2 hours",
+            remindersCountText = "1",
+        )
+    }
+}

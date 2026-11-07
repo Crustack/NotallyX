@@ -4,7 +4,6 @@ import android.content.Context
 import com.philkes.notallyx.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.serialization.Serializable
 
 class NotesSortPreference(
     flow: StateFlow<NotesSort>,
@@ -25,11 +24,19 @@ class NotesSortPreference(
     }
 }
 
-@Serializable
-enum class SortDirection(val textResId: Int, val iconResId: Int) {
-    ASC(R.string.ascending, R.drawable.arrow_upward),
-    DESC(R.string.descending, R.drawable.arrow_downward),
-}
+val SortDirection.textResId: Int
+    get() =
+        when (this) {
+            SortDirection.ASC -> R.string.ascending
+            SortDirection.DESC -> R.string.descending
+        }
+
+val SortDirection.iconResId: Int
+    get() =
+        when (this) {
+            SortDirection.ASC -> R.drawable.arrow_upward
+            SortDirection.DESC -> R.drawable.arrow_downward
+        }
 
 val NotesSortBy.textResId: Int
     get() =
@@ -58,12 +65,6 @@ val NotesSortBy.value: String
             NotesSortBy.COLOR -> "autoSortByColor"
         }
 
-@Serializable
-data class NotesSort(
-    val sortedBy: NotesSortBy = NotesSortBy.CREATION_DATE,
-    val sortDirection: SortDirection = SortDirection.DESC,
-) : TextProvider {
-    override fun getText(context: Context): String {
-        return "${context.getString(sortedBy.textResId)} (${context.getString(sortDirection.textResId)})"
-    }
+fun NotesSort.getText(context: Context): String {
+    return "${context.getString(sortedBy.textResId)} (${context.getString(sortDirection.textResId)})"
 }

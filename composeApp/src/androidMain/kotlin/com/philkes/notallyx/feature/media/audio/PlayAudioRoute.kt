@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.philkes.notallyx.core.common.extensions.wrapWithChooser
+import com.philkes.notallyx.core.platform.PlatformUri
+import com.philkes.notallyx.core.platform.toAndroidUri
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.navigation.NotallyNavKey
 import org.koin.androidx.compose.koinViewModel
@@ -33,7 +35,7 @@ fun PlayAudioRoute(
             ->
             if (result.resultCode == Activity.RESULT_OK) {
                 result.data?.data?.let { uri ->
-                    viewModel.onAction(PlayAudioAction.ExportConfirmed(uri))
+                    viewModel.onAction(PlayAudioAction.ExportConfirmed(PlatformUri(uri.toString())))
                 }
             }
         }
@@ -46,7 +48,7 @@ fun PlayAudioRoute(
                         Intent(Intent.ACTION_SEND)
                             .apply {
                                 type = "audio/mp4"
-                                putExtra(Intent.EXTRA_STREAM, effect.uri)
+                                putExtra(Intent.EXTRA_STREAM, effect.uri.toAndroidUri())
                                 flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                             }
                             .wrapWithChooser(context)

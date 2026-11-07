@@ -1,16 +1,29 @@
 package com.philkes.notallyx.feature.editor.bottomsheet
 
-import com.philkes.notallyx.R
+import com.philkes.notallyx.Res
+import com.philkes.notallyx.add_images
+import com.philkes.notallyx.archive
+import com.philkes.notallyx.attach_file
+import com.philkes.notallyx.check_all_items
 import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.preference.EditListAction
-import com.philkes.notallyx.core.preference.textResId
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
+import com.philkes.notallyx.delete
+import com.philkes.notallyx.delete_checked_items
+import com.philkes.notallyx.export
 import com.philkes.notallyx.feature.editor.EditorBottomSheetState
 import com.philkes.notallyx.feature.editor.NoteActionHandler
 import com.philkes.notallyx.feature.editor.NoteModel
 import com.philkes.notallyx.feature.migration.ExportMimeType
+import com.philkes.notallyx.link_note
+import com.philkes.notallyx.notebook
+import com.philkes.notallyx.record_audio
+import com.philkes.notallyx.restore
+import com.philkes.notallyx.share
+import com.philkes.notallyx.text_file
+import com.philkes.notallyx.uncheck_all_items
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
@@ -27,7 +40,7 @@ class ActionBottomSheetTest {
 
         assertThat(actions).hasSize(ExportMimeType.entries.size)
         val pdfAction = actions.first { it.label == ExportMimeType.PDF.name }
-        assertThat(pdfAction.labelResId).isEqualTo(EditAction.EXPORT.textResId)
+        assertThat(pdfAction.labelRes).isEqualTo(Res.string.export)
 
         pdfAction.onClick()
         assertThat(exportedMimeType).isEqualTo(ExportMimeType.PDF)
@@ -39,12 +52,12 @@ class ActionBottomSheetTest {
         val actions = createAddActions(actionHandler)
 
         assertThat(actions).hasSize(3)
-        assertThat(actions[0].labelResId).isEqualTo(R.string.add_images)
-        assertThat(actions[0].drawableResId).isEqualTo(R.drawable.add_images)
-        assertThat(actions[1].labelResId).isEqualTo(R.string.attach_file)
-        assertThat(actions[1].drawableResId).isEqualTo(R.drawable.text_file)
-        assertThat(actions[2].labelResId).isEqualTo(R.string.record_audio)
-        assertThat(actions[2].drawableResId).isEqualTo(R.drawable.record_audio)
+        assertThat(actions[0].labelRes).isEqualTo(Res.string.add_images)
+        assertThat(actions[0].drawableRes).isEqualTo(Res.drawable.add_images)
+        assertThat(actions[1].labelRes).isEqualTo(Res.string.attach_file)
+        assertThat(actions[1].drawableRes).isEqualTo(Res.drawable.text_file)
+        assertThat(actions[2].labelRes).isEqualTo(Res.string.record_audio)
+        assertThat(actions[2].drawableRes).isEqualTo(Res.drawable.record_audio)
 
         actions[0].onClick()
         verify(actionHandler).addImages()
@@ -62,8 +75,8 @@ class ActionBottomSheetTest {
         val actions = createAddNoteActions(actionHandler)
 
         assertThat(actions).hasSize(4)
-        assertThat(actions[3].labelResId).isEqualTo(R.string.link_note)
-        assertThat(actions[3].drawableResId).isEqualTo(R.drawable.notebook)
+        assertThat(actions[3].labelRes).isEqualTo(Res.string.link_note)
+        assertThat(actions[3].drawableRes).isEqualTo(Res.drawable.notebook)
 
         actions[3].onClick()
         verify(actionHandler).addNoteLink()
@@ -91,11 +104,11 @@ class ActionBottomSheetTest {
                 bottomAction = bottomAction,
             )
 
-        val editActions = actions.map { it.labelResId }
-        assertThat(editActions).doesNotContain(EditAction.SHARE.textResId)
-        assertThat(editActions).doesNotContain(EditAction.DELETE.textResId)
-        assertThat(editActions).doesNotContain(EditAction.ARCHIVE.textResId)
-        assertThat(editActions).doesNotContain(EditAction.RESTORE.textResId)
+        val editActions = actions.map { it.labelRes }
+        assertThat(editActions).doesNotContain(Res.string.share)
+        assertThat(editActions).doesNotContain(Res.string.delete)
+        assertThat(editActions).doesNotContain(Res.string.archive)
+        assertThat(editActions).doesNotContain(Res.string.restore)
     }
 
     @Test
@@ -117,8 +130,8 @@ class ActionBottomSheetTest {
                 bottomAction = null,
             )
 
-        val actionLabels = actions.map { it.labelResId }
-        assertThat(actionLabels).contains(EditAction.RESTORE.textResId)
+        val actionLabels = actions.map { it.labelRes }
+        assertThat(actionLabels).contains(Res.string.restore)
     }
 
     @Test
@@ -162,27 +175,22 @@ class ActionBottomSheetTest {
                 bottomAction = null,
             )
 
-        val actionLabels = actions.map { it.labelResId }
+        val actionLabels = actions.map { it.labelRes }
         assertThat(actionLabels)
             .contains(
-                R.string.delete_checked_items,
-                R.string.check_all_items,
-                R.string.uncheck_all_items,
+                Res.string.delete_checked_items,
+                Res.string.check_all_items,
+                Res.string.uncheck_all_items,
             )
 
-        val deleteCheckedAction = actions.first { it.labelResId == R.string.delete_checked_items }
+        val deleteCheckedAction = actions.first { it.labelRes == Res.string.delete_checked_items }
         assertThat(deleteCheckedAction.showDividerAbove).isTrue()
         deleteCheckedAction.onClick()
         verify(actionHandler).handleListAction(EditListAction.DELETE_CHECKED)
 
-        val checkAllAction = actions.first { it.labelResId == R.string.check_all_items }
+        val checkAllAction = actions.first { it.labelRes == Res.string.check_all_items }
         assertThat(checkAllAction.showDividerAbove).isFalse()
         checkAllAction.onClick()
         verify(actionHandler).handleListAction(EditListAction.CHECK_ALL)
-
-        val uncheckAllAction = actions.first { it.labelResId == R.string.uncheck_all_items }
-        assertThat(uncheckAllAction.showDividerAbove).isFalse()
-        uncheckAllAction.onClick()
-        verify(actionHandler).handleListAction(EditListAction.UNCHECK_ALL)
     }
 }

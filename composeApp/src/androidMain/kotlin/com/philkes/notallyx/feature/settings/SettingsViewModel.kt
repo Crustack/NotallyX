@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.Intent
 import android.hardware.biometrics.BiometricManager
 import android.net.Uri
+import android.os.Build
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -25,7 +26,9 @@ import com.philkes.notallyx.core.platform.AppInfo
 import com.philkes.notallyx.core.platform.AppInfoProvider
 import com.philkes.notallyx.core.platform.NoOpTaskScheduler
 import com.philkes.notallyx.core.platform.PathProvider
+import com.philkes.notallyx.core.platform.PlatformUri
 import com.philkes.notallyx.core.platform.TaskScheduler
+import com.philkes.notallyx.core.platform.toAndroidUri
 import com.philkes.notallyx.core.preference.BasePreference
 import com.philkes.notallyx.core.preference.BiometricLock
 import com.philkes.notallyx.core.preference.Constants.PASSWORD_EMPTY
@@ -40,8 +43,10 @@ import com.philkes.notallyx.core.preference.NotesView
 import com.philkes.notallyx.core.preference.PeriodicBackup.Companion.BACKUP_MAX_MIN
 import com.philkes.notallyx.core.preference.PeriodicBackup.Companion.BACKUP_PERIOD_DAYS_MIN
 import com.philkes.notallyx.core.preference.Theme
+import com.philkes.notallyx.core.preference.getText
 import com.philkes.notallyx.core.preference.model.SecurePreferences
 import com.philkes.notallyx.core.preference.model.UserPreferences
+import com.philkes.notallyx.core.preference.textResId
 import com.philkes.notallyx.core.security.AuthenticatorProvider
 import com.philkes.notallyx.core.ui.dialog.IconListItem
 import com.philkes.notallyx.core.ui.dialog.SelectionItem
@@ -160,6 +165,15 @@ class SettingsViewModel(
                     ),
             )
 
+    private val isBiometricsAvailable: Boolean
+        get() =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                AuthenticatorProvider.instance.canAuthenticateWithBiometrics(app) !=
+                    BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE
+            } else {
+                true
+            }
+
     val uiState: StateFlow<SettingsUiState> =
         combine(
                 preferencesUiModel,
@@ -174,6 +188,7 @@ class SettingsViewModel(
                     importProgress = prog,
                     activeDialog = dialog,
                     isLoading = loading,
+                    isBiometricsAvailable = isBiometricsAvailable,
                 )
             }
             .stateIn(
@@ -186,6 +201,7 @@ class SettingsViewModel(
                         importProgress = importProgress.value,
                         activeDialog = _activeDialog.value,
                         isLoading = _isLoading.value,
+                        isBiometricsAvailable = isBiometricsAvailable,
                     ),
             )
 
@@ -218,6 +234,10 @@ class SettingsViewModel(
         when (action) {
             SettingsAction.DismissDialog -> {
                 _activeDialog.update { null }
+            }
+
+            SettingsAction.BackClicked -> {
+                // Handled by route / navigation
             }
 
             // Appearance
@@ -429,9 +449,10 @@ class SettingsViewModel(
                 emitSideEffect(SettingsSideEffect.LaunchImportBackup)
             }
             is SettingsAction.ImportBackupSelected -> {
-                val mimeType = action.mimeType ?: app.contentResolver.getType(action.uri)
-                if (mimeType == "text/xml" || action.uri.toString().endsWith(".xml")) {
-                    importXmlBackup(action.uri)
+                val mimeType =
+                    action.mimeType ?: app.contentResolver.getType(action.uri.toAndroidUri())
+                if (mimeType == "text/xml" || action.uri.uriString.endsWith(".xml")) {
+                    importXmlBackup(action.uri.toAndroidUri())
                 } else {
                     val defaultPassword =
                         preferences.backupPassword.value.takeIf { it != PASSWORD_EMPTY } ?: ""
@@ -453,7 +474,7 @@ class SettingsViewModel(
             }
             is SettingsAction.ImportZipConfirmed -> {
                 _activeDialog.update { null }
-                importZipBackup(action.uri, action.password, action.checkDuplicates)
+                importZipBackup(action.uri.toAndroidUri(), action.password, action.checkDuplicates)
             }
             SettingsAction.ShowImportOtherDialog -> {
                 showImportOtherDialog()
@@ -462,16 +483,18 @@ class SettingsViewModel(
                 handleImportSourceSelection(action.which)
             }
             is SettingsAction.ImportRawDatabaseSelected -> {
-                importRawDatabase(action.uri, false)
+                importRawDatabase(action.uri.toAndroidUri(), false)
             }
             is SettingsAction.ImportOtherFileSelected -> {
-                selectedImportSource?.let { source -> importFromOtherApp(action.uri, source) }
+                selectedImportSource?.let { source ->
+                    importFromOtherApp(action.uri.toAndroidUri(), source)
+                }
             }
             SettingsAction.RequestExportBackup -> {
                 emitSideEffect(SettingsSideEffect.LaunchExportBackup(buildBackupTitle()))
             }
             is SettingsAction.ExportBackupConfirmed -> {
-                exportBackup(action.uri)
+                exportBackup(action.uri.toAndroidUri())
             }
             SettingsAction.ClickBackupsFolder -> {
                 val folder = preferences.backupsFolder.value
@@ -500,7 +523,7 @@ class SettingsViewModel(
                 }
             }
             is SettingsAction.SetupBackupsFolder -> {
-                setupBackupsFolder(action.uri)
+                setupBackupsFolder(action.uri.toAndroidUri())
                 if (!permissionChecker.isGranted(AppPermission.POST_NOTIFICATIONS)) {
                     val permission = Manifest.permission.POST_NOTIFICATIONS
                     _activeDialog.update {
@@ -678,7 +701,7 @@ class SettingsViewModel(
                 }
             }
             is SettingsAction.ImportSettingsConfirmed -> {
-                importSettings(action.uri)
+                importSettings(action.uri.toAndroidUri())
             }
             SettingsAction.RequestExportSettings -> {
                 _activeDialog.update {
@@ -696,7 +719,7 @@ class SettingsViewModel(
                 }
             }
             is SettingsAction.ExportSettingsConfirmed -> {
-                exportSettings(action.uri)
+                exportSettings(action.uri.toAndroidUri())
             }
             SettingsAction.RequestResetSettings -> {
                 _activeDialog.update {
@@ -776,7 +799,10 @@ class SettingsViewModel(
                         )
                     2 -> {
                         val log = app.getLogFile()
-                        val uri = if (log.exists()) app.getUriForFile(log) else null
+                        val uri =
+                            if (log.exists())
+                                app.getUriForFile(log)?.let { PlatformUri(it.toString()) }
+                            else null
                         emitSideEffect(SettingsSideEffect.SendFeedbackEmail(uri))
                     }
                 }
@@ -1326,7 +1352,11 @@ class SettingsViewModel(
                 useDynamicColorsBefore,
                 oldStartView,
                 askForUriPermissions = { folderUri ->
-                    emitSideEffect(SettingsSideEffect.LaunchChooseBackupFolder(folderUri))
+                    emitSideEffect(
+                        SettingsSideEffect.LaunchChooseBackupFolder(
+                            folderUri?.let { PlatformUri(it.toString()) }
+                        )
+                    )
                 },
             ) {
                 if (success) {

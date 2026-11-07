@@ -53,5 +53,21 @@ class RecordAudioViewModelTest {
         // Dismiss dialog
         viewModel.onAction(RecordAudioAction.DismissDialog)
         assertThat(viewModel.uiState.value.activeDialog).isNull()
+
+        // MainClicked starts recording
+        viewModel.onAction(RecordAudioAction.MainClicked)
+        assertThat(viewModel.uiState.value.status).isEqualTo(Status.RECORDING)
+
+        // MainClicked pauses recording
+        viewModel.onAction(RecordAudioAction.MainClicked)
+        assertThat(viewModel.uiState.value.status).isEqualTo(Status.PAUSED)
+
+        // MainClicked resumes recording
+        viewModel.onAction(RecordAudioAction.MainClicked)
+        assertThat(viewModel.uiState.value.status).isEqualTo(Status.RECORDING)
+
+        // StopClicked finishes recording
+        viewModel.onAction(RecordAudioAction.StopClicked)
+        assertThat(viewModel.uiState.value.status).isEqualTo(Status.READY)
     }
 }

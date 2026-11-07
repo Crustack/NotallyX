@@ -3,6 +3,12 @@ package com.philkes.notallyx.core.preference
 import kotlinx.serialization.Serializable
 
 @Serializable
+enum class SortDirection {
+    ASC,
+    DESC,
+}
+
+@Serializable
 enum class NotesSortBy {
     TITLE,
     CREATION_DATE,
@@ -23,3 +29,9 @@ enum class NotesSortBy {
         }
     }
 }
+
+@Serializable
+data class NotesSort(
+    val sortedBy: NotesSortBy = NotesSortBy.CREATION_DATE,
+    val sortDirection: SortDirection = SortDirection.DESC,
+)

@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.firebase.testlab) apply false
     alias(libs.plugins.roborazzi) apply false
     alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.compose.multiplatform) apply false
 }
 
 tasks.register<Delete>("clean") {

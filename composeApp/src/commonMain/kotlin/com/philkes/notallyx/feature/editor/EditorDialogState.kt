@@ -5,6 +5,7 @@ import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.feature.editor.bottomsheet.ActionItem
 import com.philkes.notallyx.feature.migration.ExportMimeType
+import org.jetbrains.compose.resources.StringResource
 
 sealed interface EditorDialogState {
     data class ColorPicker(
@@ -22,19 +23,35 @@ sealed interface EditorDialogState {
     data class AudioPermissionRationale(val onConfirm: () -> Unit) : EditorDialogState
 
     data class PermissionRationale(
-        val messageResId: Int,
+        val messageResId: Int = 0,
+        val messageRes: StringResource? = null,
+        val message: String? = null,
         val onConfirm: () -> Unit,
-    ) : EditorDialogState
+    ) : EditorDialogState {
+        constructor(
+            messageResId: Int,
+            onConfirm: () -> Unit,
+        ) : this(
+            messageResId = messageResId,
+            messageRes = null,
+            message = null,
+            onConfirm = onConfirm,
+        )
+    }
 
     data class RejectionConfirm(
-        val msgResId: Int,
+        val msgResId: Int = 0,
+        val msgRes: StringResource? = null,
+        val message: String? = null,
         val onConfirm: () -> Unit,
     ) : EditorDialogState
 
     data class FileErrors(val errors: List<FileError>) : EditorDialogState
 
     data class Error(
-        val titleResId: Int,
+        val titleResId: Int = 0,
+        val titleRes: StringResource? = null,
+        val title: String? = null,
         val message: String?,
     ) : EditorDialogState
 

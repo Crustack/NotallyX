@@ -1,11 +1,9 @@
 package com.philkes.notallyx.feature.editor
 
 import android.app.Application
-import android.net.Uri
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.core.net.toUri
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.findAllOccurrences
@@ -43,7 +41,7 @@ class EditTextPlainViewModel(
 
     private val _title = MutableStateFlow("")
     private val _bodyValue = MutableStateFlow(TextFieldValue())
-    private val _fileUri = MutableStateFlow<Uri?>(null)
+    private val _fileUri = MutableStateFlow<PlatformUri?>(null)
     private val _isLoading = MutableStateFlow(false)
     private val _searchState = MutableStateFlow(SearchState())
     private val _dialogState = MutableStateFlow<EditTextPlainDialogState?>(null)
@@ -54,7 +52,7 @@ class EditTextPlainViewModel(
     private data class FileData(
         val title: String,
         val body: TextFieldValue,
-        val uri: Uri?,
+        val uri: PlatformUri?,
         val loading: Boolean,
     )
 
@@ -129,12 +127,11 @@ class EditTextPlainViewModel(
             changeHistory.reset()
             setState(0L, createInDb = false)
 
-            val uri = fileUriString?.toUri()
+            val uri = fileUriString?.let { PlatformUri(it) }
             _fileUri.value = uri
 
             if (uri != null) {
-                val platformUri = PlatformUri(uri.toString())
-                val fileName = fileStorage.getFileName(platformUri) ?: ""
+                val fileName = fileStorage.getFileName(uri) ?: ""
                 _title.value = fileName
                 title = fileName
 
@@ -142,7 +139,7 @@ class EditTextPlainViewModel(
                 val text =
                     withContext(Dispatchers.IO) {
                         try {
-                            fileStorage.openInputStream(platformUri)?.use { stream ->
+                            fileStorage.openInputStream(uri)?.use { stream ->
                                 stream.bufferedReader().readText()
                             } ?: ""
                         } catch (e: Exception) {
@@ -242,18 +239,17 @@ class EditTextPlainViewModel(
         _searchState.value = SearchState()
     }
 
-    private fun saveToUri(uri: Uri) {
+    private fun saveToUri(uri: PlatformUri) {
         val textToSave = _bodyValue.value.text
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val platformUri = PlatformUri(uri.toString())
                 val outputStream =
-                    fileStorage.openOutputStream(platformUri)
+                    fileStorage.openOutputStream(uri)
                         ?: throw IOException("Failed to open output stream for URI: $uri")
                 outputStream.use { it.write(textToSave.toByteArray()) }
 
                 _fileUri.value = uri
-                val fileName = fileStorage.getFileName(platformUri)
+                val fileName = fileStorage.getFileName(uri)
                 if (!fileName.isNullOrEmpty()) {
                     _title.value = fileName
                     title = fileName

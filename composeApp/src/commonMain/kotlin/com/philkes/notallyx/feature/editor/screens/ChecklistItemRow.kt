@@ -46,6 +46,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -53,6 +54,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.core.ui.theme.contentColorFor
+import com.philkes.notallyx.core.ui.views.TestTags
 
 fun createSwipeModifier(onSwipeRight: (() -> Unit), onSwipeLeft: (() -> Unit)): Modifier {
     return Modifier.pointerInput(onSwipeRight, onSwipeLeft) {
@@ -131,7 +133,8 @@ fun ChecklistItemRow(
 
     val contentColor = contentColorFor(backgroundColor)
     Surface(
-        modifier = modifier.fillMaxWidth().then(borderModifier),
+        modifier =
+            modifier.fillMaxWidth().then(borderModifier).testTag(TestTags.CHECKLIST_ITEM_ROW),
         shape = RoundedCornerShape(0.dp),
         shadowElevation = shadowElevation,
         color = backgroundColor,
@@ -161,7 +164,9 @@ fun ChecklistItemRow(
                 Checkbox(
                     checked = isChecked,
                     onCheckedChange = onCheckedChange,
-                    modifier = Modifier.semantics { contentDescription = value },
+                    modifier =
+                        Modifier.semantics { contentDescription = value }
+                            .testTag(TestTags.CHECKLIST_ITEM_CHECKBOX),
                     colors =
                         CheckboxDefaults.colors(
                             checkedColor = contentColor,
@@ -181,6 +186,7 @@ fun ChecklistItemRow(
 
                     val textFieldModifier =
                         Modifier.fillMaxWidth()
+                            .testTag(TestTags.CHECKLIST_ITEM_INPUT)
                             .then(
                                 if (focusRequester != null) Modifier.focusRequester(focusRequester)
                                 else Modifier
@@ -227,7 +233,10 @@ fun ChecklistItemRow(
                 }
 
                 if (showDelete) {
-                    IconButton(onClick = onDelete) {
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.testTag(TestTags.CHECKLIST_ITEM_DELETE),
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = deleteContentDescription,

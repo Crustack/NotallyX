@@ -9,8 +9,8 @@ import androidx.compose.ui.test.performClick
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.model.Folder
-import com.philkes.notallyx.feature.main.routes.archived.CommonArchivedScreen
-import com.philkes.notallyx.feature.main.routes.deleted.CommonDeletedScreen
+import com.philkes.notallyx.feature.main.routes.archived.ArchivedRoute
+import com.philkes.notallyx.feature.main.routes.deleted.DeletedRoute
 import com.philkes.notallyx.test.CommonComposeUiTestBase
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -28,7 +28,7 @@ class ArchivedDeletedRouteCommonTest : CommonComposeUiTestBase() {
 
         setContent {
             NotallyXTheme {
-                CommonArchivedScreen(
+                ArchivedRoute(
                     noteDao = noteDao,
                     onBack = {},
                     onOpenNote = {},
@@ -62,7 +62,7 @@ class ArchivedDeletedRouteCommonTest : CommonComposeUiTestBase() {
 
         setContent {
             NotallyXTheme {
-                CommonDeletedScreen(
+                DeletedRoute(
                     noteDao = noteDao,
                     onBack = {},
                 )

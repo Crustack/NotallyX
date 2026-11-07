@@ -25,6 +25,8 @@ import com.philkes.notallyx.core.common.extensions.openExternalMediaFolder
 import com.philkes.notallyx.core.common.extensions.reportBug
 import com.philkes.notallyx.core.common.extensions.viewLogs
 import com.philkes.notallyx.core.common.extensions.wrapWithChooser
+import com.philkes.notallyx.core.platform.PlatformUri
+import com.philkes.notallyx.core.platform.toAndroidUri
 import com.philkes.notallyx.core.security.AuthenticatorProvider
 import com.philkes.notallyx.core.ui.extensions.setEnabledSecureFlag
 import com.philkes.notallyx.core.ui.extensions.showToast
@@ -36,6 +38,7 @@ import com.philkes.notallyx.feature.settings.SettingsScreen
 import com.philkes.notallyx.feature.settings.SettingsSideEffect
 import com.philkes.notallyx.feature.settings.SettingsViewModel
 import java.io.File
+import javax.crypto.Cipher
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -58,7 +61,7 @@ fun SettingsRoute(
                 result.data?.data?.let { uri ->
                     settingsViewModel.onAction(
                         SettingsAction.ImportBackupSelected(
-                            uri,
+                            PlatformUri(uri.toString()),
                             context.contentResolver.getType(uri),
                         )
                     )
@@ -71,7 +74,9 @@ fun SettingsRoute(
             ->
             if (result.resultCode == Activity.RESULT_OK) {
                 result.data?.data?.let { uri ->
-                    settingsViewModel.onAction(SettingsAction.ImportRawDatabaseSelected(uri))
+                    settingsViewModel.onAction(
+                        SettingsAction.ImportRawDatabaseSelected(PlatformUri(uri.toString()))
+                    )
                 }
             }
         }
@@ -81,7 +86,9 @@ fun SettingsRoute(
             ->
             if (result.resultCode == Activity.RESULT_OK) {
                 result.data?.data?.let { uri ->
-                    settingsViewModel.onAction(SettingsAction.ImportOtherFileSelected(uri))
+                    settingsViewModel.onAction(
+                        SettingsAction.ImportOtherFileSelected(PlatformUri(uri.toString()))
+                    )
                 }
             }
         }
@@ -91,7 +98,9 @@ fun SettingsRoute(
             ->
             if (result.resultCode == Activity.RESULT_OK) {
                 result.data?.data?.let { uri ->
-                    settingsViewModel.onAction(SettingsAction.ExportBackupConfirmed(uri))
+                    settingsViewModel.onAction(
+                        SettingsAction.ExportBackupConfirmed(PlatformUri(uri.toString()))
+                    )
                 }
             } else {
                 settingsViewModel.onAction(SettingsAction.CancelBiometricFlow)
@@ -103,7 +112,9 @@ fun SettingsRoute(
             ->
             if (result.resultCode == Activity.RESULT_OK) {
                 result.data?.data?.let { uri ->
-                    settingsViewModel.onAction(SettingsAction.SetupBackupsFolder(uri))
+                    settingsViewModel.onAction(
+                        SettingsAction.SetupBackupsFolder(PlatformUri(uri.toString()))
+                    )
                 }
             } else {
                 settingsViewModel.onAction(SettingsAction.CancelBackupsFolderSelection)
@@ -118,7 +129,9 @@ fun SettingsRoute(
             ->
             if (result.resultCode == Activity.RESULT_OK) {
                 result.data?.data?.let { uri ->
-                    settingsViewModel.onAction(SettingsAction.ImportSettingsConfirmed(uri))
+                    settingsViewModel.onAction(
+                        SettingsAction.ImportSettingsConfirmed(PlatformUri(uri.toString()))
+                    )
                 }
             }
         }
@@ -128,7 +141,9 @@ fun SettingsRoute(
             ->
             if (result.resultCode == Activity.RESULT_OK) {
                 result.data?.data?.let { uri ->
-                    settingsViewModel.onAction(SettingsAction.ExportSettingsConfirmed(uri))
+                    settingsViewModel.onAction(
+                        SettingsAction.ExportSettingsConfirmed(PlatformUri(uri.toString()))
+                    )
                 }
             }
         }
@@ -176,12 +191,13 @@ fun SettingsRoute(
                     }
                 }
                 is SettingsSideEffect.StartBiometricDatabaseTransition -> {
+                    val cipher = effect.cipher as? Cipher ?: return@collect
                     if (activity != null) {
                         DatabaseTransitionLauncher.start(
                             activity,
                             enableBiometricLock = effect.enableBiometricLock,
                             encryptDatabase = effect.encryptDatabase,
-                            cipher = effect.cipher,
+                            cipher = cipher,
                         )
                     }
                 }
@@ -257,7 +273,7 @@ fun SettingsRoute(
                                 ) {
                                     putExtra(
                                         DocumentsContract.EXTRA_INITIAL_URI,
-                                        effect.initialUri,
+                                        effect.initialUri.toAndroidUri(),
                                     )
                                 }
                             }
@@ -307,7 +323,9 @@ fun SettingsRoute(
                                 selector = Intent(Intent.ACTION_SENDTO, "mailto:".toUri())
                                 putExtra(Intent.EXTRA_EMAIL, arrayOf("notallyx@yahoo.com"))
                                 putExtra(Intent.EXTRA_SUBJECT, "NotallyX [Feedback]")
-                                effect.logUri?.let { putExtra(Intent.EXTRA_STREAM, it) }
+                                effect.logUri?.let {
+                                    putExtra(Intent.EXTRA_STREAM, it.toAndroidUri())
+                                }
                             }
                             .wrapWithChooser(context)
                     try {

@@ -12,7 +12,7 @@ import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.model.Folder
-import com.philkes.notallyx.feature.main.routes.search.CommonSearchScreen
+import com.philkes.notallyx.feature.main.routes.search.SearchRoute
 import com.philkes.notallyx.test.CommonComposeUiTestBase
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -27,7 +27,7 @@ class SearchRouteCommonTest : CommonComposeUiTestBase() {
 
         setContent {
             NotallyXTheme {
-                CommonSearchScreen(
+                SearchRoute(
                     noteDao = noteDao,
                     onBack = {},
                     onOpenNote = {},
@@ -58,7 +58,7 @@ class SearchRouteCommonTest : CommonComposeUiTestBase() {
 
         setContent {
             NotallyXTheme {
-                CommonSearchScreen(
+                SearchRoute(
                     noteDao = noteDao,
                     onBack = {},
                     onOpenNote = {},

@@ -225,19 +225,25 @@ interface StaticTextProvider : TextProvider {
     }
 }
 
-@Serializable
-enum class NotesView(override val textResId: Int) : StaticTextProvider {
-    LIST(R.string.list),
-    GRID(R.string.grid),
-}
+val NotesView.textResId: Int
+    get() =
+        when (this) {
+            NotesView.LIST -> R.string.list
+            NotesView.GRID -> R.string.grid
+        }
 
-@Serializable
-enum class Theme(override val textResId: Int) : StaticTextProvider {
-    LIGHT(R.string.light),
-    DARK(R.string.dark),
-    SUPER_DARK(R.string.super_dark),
-    FOLLOW_SYSTEM(R.string.follow_system),
-}
+fun NotesView.getText(context: Context): String = context.getString(textResId)
+
+val Theme.textResId: Int
+    get() =
+        when (this) {
+            Theme.LIGHT -> R.string.light
+            Theme.DARK -> R.string.dark
+            Theme.SUPER_DARK -> R.string.super_dark
+            Theme.FOLLOW_SYSTEM -> R.string.follow_system
+        }
+
+fun Theme.getText(context: Context): String = context.getString(textResId)
 
 private fun oneDayAgo(): Date =
     java.util.Calendar.getInstance().apply { add(java.util.Calendar.DAY_OF_YEAR, -1) }.time
@@ -267,35 +273,34 @@ val TextSizeSp.displaySmallerSize: Float
 val TextSizeSp.displayTitleSize: Float
     get() = this
 
-@Serializable
-enum class ListItemSort(override val textResId: Int) : StaticTextProvider {
-    NO_AUTO_SORT(R.string.no_auto_sort),
-    AUTO_SORT_BY_CHECKED(R.string.auto_sort_by_checked),
-    AUTO_SORT_BY_CHECKED_TIMESTAMP(R.string.auto_sort_by_checked_timestamp),
-}
-
-@Serializable
-enum class DefaultListNoteViewMode(override val textResId: Int) : StaticTextProvider {
-    READ_ONLY(R.string.read_only),
-    EDIT(R.string.edit),
-    LAST_USED(R.string.last_used);
-
-    fun toNoteViewMode(lastUsed: NoteViewMode): NoteViewMode {
-        return when (this) {
-            READ_ONLY -> NoteViewMode.READ_ONLY
-            EDIT -> NoteViewMode.EDIT
-            LAST_USED -> lastUsed
+val ListItemSort.textResId: Int
+    get() =
+        when (this) {
+            ListItemSort.NO_AUTO_SORT -> R.string.no_auto_sort
+            ListItemSort.AUTO_SORT_BY_CHECKED -> R.string.auto_sort_by_checked
+            ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP -> R.string.auto_sort_by_checked_timestamp
         }
-    }
-}
 
-@Serializable
-enum class BiometricLock(override val textResId: Int) : StaticTextProvider {
-    ENABLED(R.string.enabled),
-    DISABLED(R.string.disabled);
+fun ListItemSort.getText(context: Context): String = context.getString(textResId)
 
-    override fun getText(context: Context): String = context.getString(textResId)
-}
+val DefaultListNoteViewMode.textResId: Int
+    get() =
+        when (this) {
+            DefaultListNoteViewMode.READ_ONLY -> R.string.read_only
+            DefaultListNoteViewMode.EDIT -> R.string.edit
+            DefaultListNoteViewMode.LAST_USED -> R.string.last_used
+        }
+
+fun DefaultListNoteViewMode.getText(context: Context): String = context.getString(textResId)
+
+val BiometricLock.textResId: Int
+    get() =
+        when (this) {
+            BiometricLock.ENABLED -> R.string.enabled
+            BiometricLock.DISABLED -> R.string.disabled
+        }
+
+fun BiometricLock.getText(context: Context): String = context.getString(textResId)
 
 @Serializable
 val EditAction.textResId: Int

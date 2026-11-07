@@ -32,12 +32,18 @@ abstract class UiTestBase : KoinComponent {
     @Before
     fun setup() {
         val packageName = context.packageName
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
             uiAutomation.grantRuntimePermission(
                 packageName,
-                Manifest.permission.POST_NOTIFICATIONS,
+                Manifest.permission.RECORD_AUDIO,
             )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                uiAutomation.grantRuntimePermission(
+                    packageName,
+                    Manifest.permission.POST_NOTIFICATIONS,
+                )
+            }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())

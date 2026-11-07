@@ -54,6 +54,7 @@ configurations
         exclude(group = "androidx.compose.foundation")
         exclude(group = "androidx.compose.material")
         exclude(group = "androidx.compose.material3")
+        exclude(group = "androidx.compose.material3.adaptive")
         exclude(group = "androidx.compose.animation")
         exclude(group = "androidx.compose", module = "compose-bom")
     }

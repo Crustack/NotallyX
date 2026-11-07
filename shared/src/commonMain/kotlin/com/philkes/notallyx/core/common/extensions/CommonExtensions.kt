@@ -126,3 +126,22 @@ operator fun Date.plus(duration: Duration): Date {
 operator fun Date.minus(duration: Duration): Date {
     return Date(this.time - duration.inWholeMilliseconds)
 }
+
+/**
+ * Formats elapsed time in seconds to a "MM:SS" or "H:MM:SS" string without depending on Android
+ * DateUtils.
+ */
+fun formatElapsedTime(seconds: Long): String {
+    val s = if (seconds < 0) 0 else seconds
+    val hours = s / 3600
+    val minutes = (s % 3600) / 60
+    val secs = s % 60
+    val mStr = if (minutes < 10) "0$minutes" else minutes.toString()
+    val sStr = if (secs < 10) "0$secs" else secs.toString()
+    return if (hours > 0) {
+        val hStr = hours.toString()
+        "$hStr:$mStr:$sStr"
+    } else {
+        "$mStr:$sStr"
+    }
+}

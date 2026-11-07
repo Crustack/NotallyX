@@ -57,6 +57,7 @@ val androidHostModule = module {
     viewModelOf(::MainActivityViewModel)
     viewModelOf(::EditActivityViewModel)
     viewModelOf(::ErrorActivityViewModel)
+    factory { com.philkes.notallyx.core.common.extensions.ActionMode() }
     viewModelOf(::NotesRouteViewModel)
 }
 
