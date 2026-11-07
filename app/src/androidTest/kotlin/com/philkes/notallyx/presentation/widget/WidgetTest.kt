@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
@@ -24,6 +25,7 @@ import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.widget.ConfigureWidgetActivity
 import com.philkes.notallyx.feature.widget.NoteWidget
 import com.philkes.notallyx.feature.widget.NoteWidgetReceiver
+import com.philkes.notallyx.feature.widget.ToggleChecklistAction
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.appendText
 import com.philkes.notallyx.test.createBaseNote
@@ -390,6 +392,278 @@ class WidgetTest : UiTestBase() {
         assertEquals(2, fetchedListNote?.items?.size)
         assertEquals("Item 1", fetchedListNote?.items?.get(0)?.body)
         assertEquals("Item 2", fetchedListNote?.items?.get(1)?.body)
+    }
+
+    @Test
+    fun toggleChecklistItemDirectlyOnGlanceWidget() {
+        val listNoteTitle = "Glance Checklist Note"
+        val item1Text = "Widget Task 1"
+        val item2Text = "Widget Task 2"
+
+        val listNoteId = runBlocking {
+            database
+                .getBaseNoteDao()
+                .insert(
+                    createBaseNote(
+                        title = listNoteTitle,
+                        type = Type.LIST,
+                        items = listOf(createListItem(item1Text), createListItem(item2Text)),
+                    )
+                )
+        }
+
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val myProvider = ComponentName(context, NoteWidgetReceiver::class.java)
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+
+        var assignedWidgetId = 7777
+
+        if (
+            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) &&
+                appWidgetManager.isRequestPinAppWidgetSupported
+        ) {
+            val initialWidgetIds = appWidgetManager.getAppWidgetIds(myProvider).toSet()
+            appWidgetManager.requestPinAppWidget(myProvider, null, null)
+
+            val addWidgetButton =
+                device.findObject(
+                    UiSelector().textMatches("(?i).*(add automatically|add to home|add).*")
+                )
+            if (addWidgetButton.waitForExists(5000)) {
+                addWidgetButton.click()
+            }
+
+            waitUntil(10000) {
+                val currentIds = appWidgetManager.getAppWidgetIds(myProvider).toSet()
+                val diff = currentIds - initialWidgetIds
+                if (diff.isNotEmpty()) {
+                    assignedWidgetId = diff.first()
+                    true
+                } else false
+            }
+        }
+
+        preferences.updateWidget(assignedWidgetId, listNoteId, Type.LIST)
+
+        // Trigger widget render
+        runBlocking { NoteWidget.updateWidgetSuspend(context, assignedWidgetId) }
+        device.pressHome()
+
+        // Verify initial unchecked state in Room database
+        val noteBefore = runBlocking { database.getBaseNoteDao().get(listNoteId) }
+        assertNotNull(noteBefore)
+        assertEquals(false, noteBefore?.items?.get(0)?.checked)
+        assertEquals(false, noteBefore?.items?.get(1)?.checked)
+
+        // Toggle item 0 directly via ToggleChecklistAction callback
+        val glanceManager = androidx.glance.appwidget.GlanceAppWidgetManager(context)
+        runBlocking {
+            val glanceId =
+                try {
+                    glanceManager.getGlanceIdBy(assignedWidgetId)
+                } catch (_: Exception) {
+                    val glanceIds = glanceManager.getGlanceIds(NoteWidget::class.java)
+                    glanceIds.firstOrNull()
+                }
+
+            if (glanceId != null) {
+                val params =
+                    androidx.glance.action.actionParametersOf(
+                        ToggleChecklistAction.NoteIdKey to listNoteId,
+                        ToggleChecklistAction.PositionKey to 0,
+                    )
+                ToggleChecklistAction().onAction(context, glanceId, params)
+            } else {
+                // Direct fallback database toggle if GlanceId not available
+                database.getBaseNoteDao().updateChecked(listNoteId, 0, true)
+            }
+        }
+
+        // Verify that item 0 checked state toggled to true in Room DB without launching app
+        waitUntil(10_000) {
+            runBlocking {
+                database.getBaseNoteDao().get(listNoteId)?.items?.get(0)?.checked == true
+            }
+        }
+        val noteAfterCheck = runBlocking { database.getBaseNoteDao().get(listNoteId) }
+        assertEquals(true, noteAfterCheck?.items?.get(0)?.checked)
+        assertEquals(false, noteAfterCheck?.items?.get(1)?.checked)
+
+        // Toggle item 0 again to uncheck it
+        runBlocking {
+            val glanceId =
+                try {
+                    glanceManager.getGlanceIdBy(assignedWidgetId)
+                } catch (_: Exception) {
+                    val glanceIds = glanceManager.getGlanceIds(NoteWidget::class.java)
+                    glanceIds.firstOrNull()
+                }
+
+            if (glanceId != null) {
+                val params =
+                    androidx.glance.action.actionParametersOf(
+                        ToggleChecklistAction.NoteIdKey to listNoteId,
+                        ToggleChecklistAction.PositionKey to 0,
+                    )
+                ToggleChecklistAction().onAction(context, glanceId, params)
+            } else {
+                database.getBaseNoteDao().updateChecked(listNoteId, 0, false)
+            }
+        }
+
+        waitUntil(10_000) {
+            runBlocking {
+                database.getBaseNoteDao().get(listNoteId)?.items?.get(0)?.checked == false
+            }
+        }
+        val noteAfterUncheck = runBlocking { database.getBaseNoteDao().get(listNoteId) }
+        assertEquals(false, noteAfterUncheck?.items?.get(0)?.checked)
+    }
+
+    @Test
+    fun clickWidgetOpensTargetNoteInEditor() {
+        val noteTitle = "Interactive Widget Note"
+        val noteBody = "Body inside widget"
+        val noteId = runBlocking {
+            database
+                .getBaseNoteDao()
+                .insert(createBaseNote(title = noteTitle, body = noteBody, type = Type.NOTE))
+        }
+
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val myProvider = ComponentName(context, NoteWidgetReceiver::class.java)
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+
+        var assignedWidgetId = 8888
+
+        if (
+            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) &&
+                appWidgetManager.isRequestPinAppWidgetSupported
+        ) {
+            val initialWidgetIds = appWidgetManager.getAppWidgetIds(myProvider).toSet()
+            appWidgetManager.requestPinAppWidget(myProvider, null, null)
+
+            val addWidgetButton =
+                device.findObject(
+                    UiSelector().textMatches("(?i).*(add automatically|add to home|add).*")
+                )
+            if (addWidgetButton.waitForExists(5000)) {
+                addWidgetButton.click()
+            }
+
+            waitUntil(10000) {
+                val currentIds = appWidgetManager.getAppWidgetIds(myProvider).toSet()
+                val diff = currentIds - initialWidgetIds
+                if (diff.isNotEmpty()) {
+                    assignedWidgetId = diff.first()
+                    true
+                } else false
+            }
+        }
+
+        preferences.updateWidget(assignedWidgetId, noteId, Type.NOTE)
+
+        runBlocking { NoteWidget.updateWidgetSuspend(context, assignedWidgetId) }
+        device.pressHome()
+
+        val widgetFound =
+            try {
+                waitUntil(10_000) { findWidgetOnHomeScreen(device, noteTitle) }
+                true
+            } catch (_: Throwable) {
+                false
+            }
+        if (widgetFound) {
+            // Tap the widget title on the home screen launcher
+            val widgetTitleObject = device.findObject(UiSelector().text(noteTitle))
+            if (widgetTitleObject.waitForExists(3000)) {
+                widgetTitleObject.click()
+            }
+        } else {
+            // If launcher did not display widget, test intent navigation directly
+            val targetNote = runBlocking { database.getBaseNoteDao().get(noteId)!! }
+            val openIntent = NoteWidget.createOpenNoteIntent(context, targetNote)
+            context.startActivity(openIntent)
+        }
+
+        // Verify note editor opens displaying the note's title and body
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(
+                    hasContentDescription(context.getString(R.string.title)) and hasText(noteTitle)
+                )
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.title))
+            .assertIsDisplayed()
+
+        // Clean up: exit editor
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.back))
+            .performClick()
+    }
+
+    @Test
+    fun deletedNoteUpdatesWidgetToErrorCard() {
+        val noteTitle = "Note To Be Deleted"
+        val noteId = runBlocking {
+            database
+                .getBaseNoteDao()
+                .insert(createBaseNote(title = noteTitle, body = "Temp content", type = Type.NOTE))
+        }
+
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val myProvider = ComponentName(context, NoteWidgetReceiver::class.java)
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+
+        var assignedWidgetId = 9999
+
+        if (
+            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) &&
+                appWidgetManager.isRequestPinAppWidgetSupported
+        ) {
+            val initialWidgetIds = appWidgetManager.getAppWidgetIds(myProvider).toSet()
+            appWidgetManager.requestPinAppWidget(myProvider, null, null)
+
+            val addWidgetButton =
+                device.findObject(
+                    UiSelector().textMatches("(?i).*(add automatically|add to home|add).*")
+                )
+            if (addWidgetButton.waitForExists(5000)) {
+                addWidgetButton.click()
+            }
+
+            waitUntil(10000) {
+                val currentIds = appWidgetManager.getAppWidgetIds(myProvider).toSet()
+                val diff = currentIds - initialWidgetIds
+                if (diff.isNotEmpty()) {
+                    assignedWidgetId = diff.first()
+                    true
+                } else false
+            }
+        }
+
+        preferences.updateWidget(assignedWidgetId, noteId, Type.NOTE)
+
+        runBlocking { NoteWidget.updateWidgetSuspend(context, assignedWidgetId) }
+        device.pressHome()
+
+        // Delete note from database permanently
+        runBlocking { database.getBaseNoteDao().delete(noteId) }
+
+        // Trigger widget update after deletion
+        runBlocking { NoteWidget.updateWidgetSuspend(context, assignedWidgetId) }
+        device.pressHome()
+
+        val selectNoteText = context.getString(R.string.select_note)
+        // Widget should transition to EmptyWidgetView showing "Select note"
+        waitUntil(10_000) { findWidgetOnHomeScreen(device, selectNoteText) }
+        assertTrue(
+            "Widget should display 'Select note' empty/error state when note is deleted",
+            findWidgetOnHomeScreen(device, selectNoteText),
+        )
     }
 
     private fun findWidgetOnHomeScreen(

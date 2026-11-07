@@ -1021,4 +1021,187 @@ class SettingsRouteTest : UiTestBase() {
         }
         composeTestRule.onNodeWithText(activeNoteTitle).assertIsDisplayed()
     }
+
+    @Test
+    fun importNotesDialog_importsGoogleKeepZip() {
+        Intents.init()
+        try {
+            // 1. Create a minimal Google Keep Takeout zip file
+            val zipFile = File(context.cacheDir, "test_keep_takeout.zip")
+            if (zipFile.exists()) zipFile.delete()
+
+            val keepNoteJson =
+                """
+                {
+                  "color": "DEFAULT",
+                  "isTrashed": false,
+                  "isPinned": false,
+                  "isArchived": false,
+                  "textContent": "Imported Google Keep Body",
+                  "title": "Imported Keep Note",
+                  "userEditedTimestampUsec": 1729518341059120,
+                  "createdTimestampUsec": 1729518341059000,
+                  "labels": []
+                }
+                """
+                    .trimIndent()
+
+            java.util.zip.ZipOutputStream(java.io.FileOutputStream(zipFile)).use { zos ->
+                val entry = java.util.zip.ZipEntry("Takeout/Keep/keep_note.json")
+                zos.putNextEntry(entry)
+                zos.write(keepNoteJson.toByteArray())
+                zos.closeEntry()
+            }
+
+            // 2. Intercept ACTION_OPEN_DOCUMENT intent and return the test zip
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(`is`(Intent.EXTRA_INTENT), hasAction(Intent.ACTION_OPEN_DOCUMENT)),
+                    )
+                )
+                .respondWithFunction {
+                    Instrumentation.ActivityResult(
+                        Activity.RESULT_OK,
+                        Intent().apply {
+                            data = context.getUriForFile(zipFile)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        },
+                    )
+                }
+
+            // 3. Navigate to Settings
+            composeTestRule.navigateTo(NotallyNavKey.Settings)
+
+            // 4. Scroll to and click "Import from other apps" (R.string.import_other)
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.import_other))
+                .performScrollTo()
+                .performClick()
+
+            // 5. In "Choose other app" dialog, select Google Keep
+            val keepLabel = context.getString(R.string.google_keep)
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodes(hasText(keepLabel)).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(keepLabel).performClick()
+
+            // 6. In confirmation dialog, click "Import" (R.string.import_action)
+            val importActionLabel = context.getString(R.string.import_action)
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule
+                    .onAllNodes(hasText(importActionLabel) and hasAnyAncestor(isComposeDialog()))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule
+                .onNode(hasText(importActionLabel) and hasAnyAncestor(isComposeDialog()))
+                .performClick()
+
+            // 7. Wait for import to complete and note to be in database
+            waitUntil(15_000) {
+                runBlocking {
+                    database.getBaseNoteDao().getAll().any { it.title == "Imported Keep Note" }
+                }
+            }
+
+            // 8. Navigate back to Notes and verify imported note is displayed
+            composeTestRule.navigateTo(NotallyNavKey.Notes)
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Imported Keep Note"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("Imported Keep Note").assertIsDisplayed()
+        } finally {
+            Intents.release()
+        }
+    }
+
+    @Test
+    fun encryptAndDecryptDatabaseWithPassphrase() {
+        initFakeBiometric()
+        runBlocking {
+            withContext(Dispatchers.Main) {
+                database
+                    .getBaseNoteDao()
+                    .insert(
+                        createBaseNote(
+                            title = "Crypto Note",
+                            body = "Secret Data",
+                            labels = listOf("crypto"),
+                        )
+                    )
+            }
+        }
+
+        // 1. Navigate to Settings
+        composeTestRule.navigateTo(NotallyNavKey.Settings)
+
+        // 2. Click Biometric Lock row
+        val biometricLockText = context.getString(R.string.biometric_lock)
+        composeTestRule.onNodeWithText(biometricLockText).performScrollTo().performClick()
+
+        // 3. Select Enabled and click Save
+        composeTestRule
+            .onNode(
+                hasText(context.getString(R.string.enabled)) and hasAnyAncestor(isComposeDialog())
+            )
+            .performClick()
+        composeTestRule.onNodeWithText(context.getString(R.string.save)).performClick()
+
+        // 4. In first advice dialog, click Continue
+        val continueText = context.getString(R.string.continue_)
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(continueText)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(continueText).performClick()
+
+        // 5. Verify EncryptDatabaseDialog is displayed with advice message and checkbox
+        val encryptAdviceText = context.getString(R.string.encrypt_database_advice)
+        val encryptViaBiometricText = context.getString(R.string.encrypt_database_via_biometric)
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText(encryptAdviceText))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(encryptAdviceText).assertIsDisplayed()
+
+        // 6. Check the "Encrypt database via biometric" checkbox in EncryptDatabaseDialog
+        composeTestRule.onNodeWithText(encryptViaBiometricText).performClick()
+
+        // 7. Click Continue to trigger SQLCipher encryption
+        composeTestRule.onNodeWithText(continueText).performClick()
+
+        // 8. Verify biometric lock with encryption is enabled
+        composeTestRule.waitUntilSettingsValue(
+            R.string.biometric_lock,
+            R.string.biometric_lock_enabled_with_encryption,
+        )
+        assertTrue(preferences.biometricLockEncryptsDb.value)
+        assertTrue(preferences.isLockEnabled)
+
+        // 9. Navigate to Notes, verify note is accessible
+        composeTestRule.navigateTo(NotallyNavKey.Notes)
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("Crypto Note")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("Crypto Note").assertIsDisplayed()
+
+        // 10. Disable biometric lock, triggering decryption back to plain SQLite
+        composeTestRule.navigateTo(NotallyNavKey.Settings)
+        composeTestRule.disableBiometricLock()
+
+        assertFalse(preferences.biometricLockEncryptsDb.value)
+        assertFalse(preferences.isLockEnabled)
+
+        // 11. Verify notes still intact after decryption
+        composeTestRule.navigateTo(NotallyNavKey.Notes)
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("Crypto Note")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("Crypto Note").assertIsDisplayed()
+    }
 }

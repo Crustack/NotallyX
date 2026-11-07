@@ -57,6 +57,7 @@ import com.philkes.notallyx.core.common.extensions.getUriForFile
 import com.philkes.notallyx.core.ui.extensions.extractColor
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Color
+import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.toColorString
 import com.philkes.notallyx.feature.editor.EditActivity
 import com.philkes.notallyx.feature.main.MainActivity
@@ -2617,5 +2618,101 @@ class EditActivityTest : UiTestBase() {
             preferences.defaultNoteColor.save(BaseNote.COLOR_DEFAULT)
             scenario.close()
         }
+    }
+
+    @Test
+    fun insertAndClickInternalNoteLink() {
+        val targetNoteTitle = "Target Linked Note"
+        val targetNoteBody = "Content of the target note"
+        runBlocking {
+            database
+                .getBaseNoteDao()
+                .insert(
+                    createBaseNote(
+                        title = targetNoteTitle,
+                        body = targetNoteBody,
+                        type = Type.NOTE,
+                    )
+                )
+        }
+
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        val takeNoteLabel = context.getString(R.string.take_note)
+        val titleLabel = context.getString(R.string.title)
+        val bodyLabel = context.getString(R.string.note)
+
+        // 1. Click "Take note" button on main screen
+        composeTestRule.onNodeWithContentDescription(takeNoteLabel).performClick()
+
+        // 2. Type title and body prefix
+        composeTestRule.onNodeWithContentDescription(titleLabel).performTextInput("Source Note")
+        composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput("Check out ")
+
+        // 3. Open Add Item bottom sheet
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.add_item))
+            .performClick()
+
+        // 4. Click "Link to note" option
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule
+                .onAllNodes(hasText(context.getString(R.string.link_note)))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(context.getString(R.string.link_note)).performClick()
+
+        // 5. PickNoteActivity opens: select the target note
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(targetNoteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(targetNoteTitle).performClick()
+
+        // 6. Verify link text is inserted into the editor body
+        val bodyNode = composeTestRule.onNodeWithContentDescription(bodyLabel)
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText(targetNoteTitle, substring = true))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        // 7. Click on the inserted note link in the editor
+        bodyNode.performClickOnSubtext(targetNoteTitle)
+
+        // 8. In LinkOptionsDialog, click "Open"
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule
+                .onAllNodes(
+                    hasText(context.getString(R.string.open_note)) and
+                        hasAnyAncestor(isComposeDialog())
+                )
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule
+            .onNode(
+                hasText(context.getString(R.string.open_note)) and hasAnyAncestor(isComposeDialog())
+            )
+            .performClick()
+
+        // 9. Verify the referenced target note opens in the editor
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(titleLabel) and hasText(targetNoteTitle))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule
+            .onNode(hasContentDescription(titleLabel) and hasText(targetNoteTitle))
+            .assertIsDisplayed()
+
+        // 10. Clean up and exit editor
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.back))
+            .performClick()
+
+        scenario.close()
     }
 }
