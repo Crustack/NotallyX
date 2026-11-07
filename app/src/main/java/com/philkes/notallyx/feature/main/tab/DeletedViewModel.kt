@@ -15,6 +15,7 @@ import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Item
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -26,6 +27,21 @@ import kotlinx.coroutines.withContext
 
 class DeletedViewModel(app: Application, preferences: NotallyXPreferences) :
     BaseViewModel(app, preferences) {
+
+    val showConfirmDeleteAllDialog = MutableStateFlow(false)
+
+    fun showDeleteAllDialog() {
+        showConfirmDeleteAllDialog.value = true
+    }
+
+    fun dismissDeleteAllDialog() {
+        showConfirmDeleteAllDialog.value = false
+    }
+
+    fun confirmDeleteAll() {
+        deleteAllTrashedBaseNotes()
+        dismissDeleteAllDialog()
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val deletedNotes: StateFlow<List<Item>> =

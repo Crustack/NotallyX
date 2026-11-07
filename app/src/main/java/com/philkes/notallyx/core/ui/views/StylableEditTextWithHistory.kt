@@ -1,7 +1,5 @@
 package com.philkes.notallyx.core.ui.views
 
-import android.app.Activity
-import android.app.Dialog
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Typeface
@@ -14,21 +12,17 @@ import android.text.style.TypefaceSpan
 import android.text.style.URLSpan
 import android.util.AttributeSet
 import android.view.ActionMode
-import android.view.Window
 import androidx.appcompat.widget.AppCompatEditText
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
-import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.findWebUrls
 import com.philkes.notallyx.core.common.extensions.getLatestText
 import com.philkes.notallyx.core.common.extensions.isWebUrl
-import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.extensions.clone
 import com.philkes.notallyx.core.ui.extensions.createTextWatcherWithHistory
 import com.philkes.notallyx.core.ui.extensions.removeSelectionFromSpans
-import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.extensions.isNoteUrl
+import com.philkes.notallyx.feature.editor.EditActivity
+import com.philkes.notallyx.feature.editor.EditorDialogState
 import com.philkes.notallyx.feature.editor.history.ChangeHistory
 import com.philkes.notallyx.feature.editor.history.changes.EditTextState
 import com.philkes.notallyx.feature.editor.history.changes.EditTextWithHistoryChange
@@ -339,53 +333,17 @@ class StylableEditTextWithHistory(context: Context, attrs: AttributeSet) :
         onSuccess: (urlAfter: String?, displayTextAfter: String) -> Unit,
     ) {
         val isNoteUrl = urlBefore.isNoteUrl()
-        val activity = context as? Activity ?: return
-        val preferences = NotallyXPreferences.getInstance(activity)
-        val composeView = ComposeView(context)
-        val dialog =
-            Dialog(context).apply {
-                requestWindowFeature(Window.FEATURE_NO_TITLE)
-                window?.setBackgroundDrawableResource(android.R.color.transparent)
-                setContentView(composeView)
-            }
-
-        composeView.setContent {
-            NotallyXTheme(theme = preferences.theme.value) {
-                if (isNoteUrl) {
-                    com.philkes.notallyx.core.ui.dialog.TextInputDialog(
-                        title = stringResource(R.string.edit_link),
-                        initialValue = displayTextBefore,
-                        hint = stringResource(R.string.display_text),
-                        onDismissRequest = {
-                            dialog.dismiss()
-                            onClose?.invoke()
-                        },
-                        onConfirm = { displayTextAfter ->
-                            onSuccess.invoke(urlBefore, displayTextAfter)
-                            onClose?.invoke()
-                            dialog.dismiss()
-                        },
-                    )
-                } else {
-                    com.philkes.notallyx.core.ui.dialog.DualTextInputDialog(
-                        title = stringResource(R.string.edit_link),
-                        initialValue1 = displayTextBefore,
-                        initialValue2 = urlBefore,
-                        hint1 = stringResource(R.string.display_text),
-                        hint2 = stringResource(R.string.link),
-                        onDismissRequest = {
-                            dialog.dismiss()
-                            onClose?.invoke()
-                        },
-                        onConfirm = { displayTextAfter, urlAfter ->
-                            onSuccess.invoke(urlAfter, displayTextAfter)
-                            onClose?.invoke()
-                            dialog.dismiss()
-                        },
-                    )
-                }
-            }
-        }
-        dialog.show()
+        val activity = context as? EditActivity ?: return
+        activity.notallyModel.activeDialog.value =
+            EditorDialogState.EditLink(
+                urlBefore = urlBefore,
+                displayTextBefore = displayTextBefore,
+                isNoteUrl = isNoteUrl,
+                onDismiss = { onClose?.invoke() },
+                onConfirm = { urlAfter, displayTextAfter ->
+                    onSuccess.invoke(urlAfter, displayTextAfter)
+                    onClose?.invoke()
+                },
+            )
     }
 }

@@ -6,8 +6,8 @@ import android.os.Bundle
 import android.widget.TimePicker
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.philkes.notallyx.R
@@ -16,7 +16,6 @@ import com.philkes.notallyx.core.security.ComposeBinding
 import com.philkes.notallyx.core.security.LockedActivity
 import com.philkes.notallyx.core.ui.extensions.checkAlarmPermission
 import com.philkes.notallyx.core.ui.extensions.checkNotificationPermission
-import com.philkes.notallyx.core.ui.extensions.createComposeDialog
 import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.extensions.getQuantityStringPlain
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
@@ -38,6 +37,7 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
     private lateinit var alarmPermissionActivityResultLauncher: ActivityResultLauncher<Intent>
     private val model: NoteModel by viewModel()
     private var selectedReminder: Reminder? = null
+    private val dialogStateState = mutableStateOf<ReminderDialogState?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,10 +54,25 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
                     reminders = remindersState.value,
                     dateFormat = preferences.dateFormatNoteView.value,
                     timeFormat = preferences.timeFormatNoteView.value,
+                    dialogState = dialogStateState.value,
                     onAddReminderClick = { showDatePickerDialog() },
                     onEditReminder = { reminder -> edit(reminder) },
                     onDeleteReminder = { reminder -> delete(reminder) },
                     onBackClick = { finish() },
+                    onDismissDialog = { dialogStateState.value = null },
+                    onRepetitionOptionSelected = { reminder, calendar, selected ->
+                        handleRepetitionOptionSelected(reminder, calendar, selected)
+                    },
+                    onMonthlyAdvancedSelected = { reminder, calendar, which, dayOfWeek ->
+                        handleMonthlyAdvancedSelected(reminder, calendar, which, dayOfWeek)
+                    },
+                    onCustomRepetitionSelected = { reminder, calendar, valInt, unitEnum ->
+                        handleCustomRepetitionSelected(reminder, calendar, valInt, unitEnum)
+                    },
+                    onConfirmDeleteReminder = { reminder ->
+                        dialogStateState.value = null
+                        lifecycleScope.launch { model.removeReminder(reminder) }
+                    },
                 )
             }
         }
@@ -129,19 +144,7 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
                     override fun onTimeSet(view: TimePicker?, hourOfDay: Int, minute: Int) {
                         calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
                         calendar.set(Calendar.MINUTE, minute)
-                        showRepetitionDialog(reminder, calendar) { updatedRepetition ->
-                            val updatedReminder =
-                                Reminder(
-                                    reminder?.id ?: NEW_REMINDER_ID,
-                                    calendar.time,
-                                    updatedRepetition,
-                                )
-                            if (reminder != null) {
-                                lifecycleScope.launch { model.updateReminder(updatedReminder) }
-                            } else {
-                                lifecycleScope.launch { model.addReminder(updatedReminder) }
-                            }
-                        }
+                        showRepetitionDialog(reminder, calendar)
                     }
                 },
             )
@@ -152,7 +155,6 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
         reminder: Reminder? = null,
         calendar: Calendar,
         fromCustomRepetitionDialog: Boolean = false,
-        onRepetitionSelected: (Repetition?) -> Unit,
     ) {
         val repetition = reminder?.repetition
         val initialOption =
@@ -171,48 +173,35 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
             }
 
         if (initialOption == RepetitionOption.CUSTOM && !fromCustomRepetitionDialog) {
-            showCustomRepetitionDialog(reminder, calendar, onRepetitionSelected)
+            showCustomRepetitionDialog(reminder, calendar)
             return
         }
 
-        val composeView = ComposeView(this)
-        val dialog = createComposeDialog(this, composeView)
+        dialogStateState.value = ReminderDialogState.Repetition(reminder, calendar, initialOption)
+    }
 
-        composeView.setContent {
-            NotallyXTheme(theme = preferences.theme.value) {
-                ReminderRepetitionDialog(
-                    initialOption = initialOption,
-                    onDismissRequest = { dialog.dismiss() },
-                    onOptionSelected = { selected ->
-                        dialog.dismiss()
-                        when (selected) {
-                            RepetitionOption.NONE -> onRepetitionSelected(null)
-                            RepetitionOption.DAILY ->
-                                onRepetitionSelected(Repetition(1, RepetitionTimeUnit.DAYS))
-                            RepetitionOption.WEEKLY ->
-                                onRepetitionSelected(Repetition(1, RepetitionTimeUnit.WEEKS))
-                            RepetitionOption.MONTHLY ->
-                                showMonthlyAdvancedRepetitionDialog(
-                                    reminder,
-                                    calendar,
-                                    onRepetitionSelected,
-                                )
-                            RepetitionOption.YEARLY ->
-                                onRepetitionSelected(Repetition(1, RepetitionTimeUnit.YEARS))
-                            RepetitionOption.CUSTOM ->
-                                showCustomRepetitionDialog(reminder, calendar, onRepetitionSelected)
-                        }
-                    },
-                )
-            }
+    private fun handleRepetitionOptionSelected(
+        reminder: Reminder?,
+        calendar: Calendar,
+        selected: RepetitionOption,
+    ) {
+        dialogStateState.value = null
+        when (selected) {
+            RepetitionOption.NONE -> saveReminder(reminder, calendar, null)
+            RepetitionOption.DAILY ->
+                saveReminder(reminder, calendar, Repetition(1, RepetitionTimeUnit.DAYS))
+            RepetitionOption.WEEKLY ->
+                saveReminder(reminder, calendar, Repetition(1, RepetitionTimeUnit.WEEKS))
+            RepetitionOption.MONTHLY -> showMonthlyAdvancedRepetitionDialog(reminder, calendar)
+            RepetitionOption.YEARLY ->
+                saveReminder(reminder, calendar, Repetition(1, RepetitionTimeUnit.YEARS))
+            RepetitionOption.CUSTOM -> showCustomRepetitionDialog(reminder, calendar)
         }
-        dialog.show()
     }
 
     private fun showMonthlyAdvancedRepetitionDialog(
         reminder: Reminder? = null,
         calendar: Calendar,
-        onRepetitionSelected: (Repetition?) -> Unit,
     ) {
         val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
         val dayOfWeekStr = SimpleDateFormat("EEEE", Locale.getDefault()).format(calendar.time)
@@ -252,56 +241,40 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
             }
         }
 
-        val composeView = ComposeView(this)
-        val dialog = createComposeDialog(this, composeView)
+        dialogStateState.value =
+            ReminderDialogState.MonthlyAdvanced(
+                reminder = reminder,
+                calendar = calendar,
+                options = options,
+                selectedIndex = selectedIndex,
+                dayOfWeek = dayOfWeek,
+            )
+    }
 
-        val items = options.mapIndexed { index, option ->
-            com.philkes.notallyx.core.ui.dialog.SelectionItem(index, option)
-        }
-
-        composeView.setContent {
-            NotallyXTheme(theme = preferences.theme.value) {
-                com.philkes.notallyx.core.ui.dialog.SingleSelectionDialog(
-                    title = stringResource(R.string.monthly),
-                    items = items,
-                    selectedItem = selectedIndex,
-                    onDismissRequest = {
-                        dialog.dismiss()
-                        showRepetitionDialog(
-                            reminder,
-                            calendar,
-                            fromCustomRepetitionDialog = true,
-                            onRepetitionSelected = onRepetitionSelected,
-                        )
-                    },
-                    onConfirm = { which ->
-                        val repetition =
-                            when (which) {
-                                0 -> Repetition(1, RepetitionTimeUnit.MONTHS)
-                                1 -> Repetition(1, RepetitionTimeUnit.MONTHS, 1, dayOfWeek)
-                                2 -> Repetition(1, RepetitionTimeUnit.MONTHS, 2, dayOfWeek)
-                                3 -> Repetition(1, RepetitionTimeUnit.MONTHS, 3, dayOfWeek)
-                                4 -> Repetition(1, RepetitionTimeUnit.MONTHS, 4, dayOfWeek)
-                                5 -> Repetition(1, RepetitionTimeUnit.MONTHS, -1, dayOfWeek)
-                                else -> Repetition(1, RepetitionTimeUnit.MONTHS)
-                            }
-                        onRepetitionSelected(repetition)
-                        dialog.dismiss()
-                    },
-                )
+    private fun handleMonthlyAdvancedSelected(
+        reminder: Reminder?,
+        calendar: Calendar,
+        which: Int,
+        dayOfWeek: Int,
+    ) {
+        dialogStateState.value = null
+        val repetition =
+            when (which) {
+                0 -> Repetition(1, RepetitionTimeUnit.MONTHS)
+                1 -> Repetition(1, RepetitionTimeUnit.MONTHS, 1, dayOfWeek)
+                2 -> Repetition(1, RepetitionTimeUnit.MONTHS, 2, dayOfWeek)
+                3 -> Repetition(1, RepetitionTimeUnit.MONTHS, 3, dayOfWeek)
+                4 -> Repetition(1, RepetitionTimeUnit.MONTHS, 4, dayOfWeek)
+                5 -> Repetition(1, RepetitionTimeUnit.MONTHS, -1, dayOfWeek)
+                else -> Repetition(1, RepetitionTimeUnit.MONTHS)
             }
-        }
-        dialog.show()
+        saveReminder(reminder, calendar, repetition)
     }
 
     private fun showCustomRepetitionDialog(
         reminder: Reminder? = null,
         calendar: Calendar,
-        onRepetitionSelected: (Repetition?) -> Unit,
     ) {
-        val composeView = ComposeView(this)
-        val dialog = createComposeDialog(this, composeView)
-
         val initialValue = reminder?.repetition?.value?.toString() ?: "1"
         val initialUnit =
             when (reminder?.repetition?.unit) {
@@ -314,68 +287,68 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
                 else -> TimeUnit.WEEKS
             }
 
-        composeView.setContent {
-            NotallyXTheme(theme = preferences.theme.value) {
-                CustomRepetitionDialog(
-                    initialValue = initialValue,
-                    initialTimeUnit = initialUnit,
-                    onDismissRequest = {
-                        dialog.dismiss()
-                        showRepetitionDialog(
-                            reminder,
-                            calendar,
-                            fromCustomRepetitionDialog = true,
-                            onRepetitionSelected = onRepetitionSelected,
-                        )
-                    },
-                    onConfirm = { valInt, unitEnum ->
-                        dialog.dismiss()
-                        val targetUnit =
-                            when (unitEnum) {
-                                TimeUnit.MINUTES -> RepetitionTimeUnit.MINUTES
-                                TimeUnit.HOURS -> RepetitionTimeUnit.HOURS
-                                TimeUnit.DAYS -> RepetitionTimeUnit.DAYS
-                                TimeUnit.WEEKS -> RepetitionTimeUnit.WEEKS
-                                TimeUnit.MONTHS -> RepetitionTimeUnit.MONTHS
-                                TimeUnit.YEARS -> RepetitionTimeUnit.YEARS
-                            }
-                        if (targetUnit == RepetitionTimeUnit.MONTHS && valInt == 1) {
-                            showMonthlyAdvancedRepetitionDialog(
-                                reminder,
-                                calendar,
-                                onRepetitionSelected,
-                            )
-                        } else {
-                            onRepetitionSelected(Repetition(valInt, targetUnit))
-                        }
-                    },
-                )
+        dialogStateState.value =
+            ReminderDialogState.CustomRepetition(
+                reminder = reminder,
+                calendar = calendar,
+                initialValue = initialValue,
+                initialUnit = initialUnit,
+            )
+    }
+
+    private fun handleCustomRepetitionSelected(
+        reminder: Reminder?,
+        calendar: Calendar,
+        valInt: Int,
+        unitEnum: TimeUnit,
+    ) {
+        val targetUnit =
+            when (unitEnum) {
+                TimeUnit.MINUTES -> RepetitionTimeUnit.MINUTES
+                TimeUnit.HOURS -> RepetitionTimeUnit.HOURS
+                TimeUnit.DAYS -> RepetitionTimeUnit.DAYS
+                TimeUnit.WEEKS -> RepetitionTimeUnit.WEEKS
+                TimeUnit.MONTHS -> RepetitionTimeUnit.MONTHS
+                TimeUnit.YEARS -> RepetitionTimeUnit.YEARS
             }
+        if (targetUnit == RepetitionTimeUnit.MONTHS && valInt == 1) {
+            showMonthlyAdvancedRepetitionDialog(reminder, calendar)
+        } else {
+            dialogStateState.value = null
+            saveReminder(reminder, calendar, Repetition(valInt, targetUnit))
         }
-        dialog.show()
     }
 
     private fun confirmDeletion(reminder: Reminder) {
-        val composeView = ComposeView(this)
-        val dialog = createComposeDialog(this, composeView)
+        val formattedDateTime =
+            reminder.dateTime.format(
+                preferences.dateFormatNoteView.value,
+                preferences.timeFormatNoteView.value,
+                ensureFullFormat = true,
+            )
+        val repetitionText =
+            reminder.repetition?.toText(this) ?: getString(R.string.reminder_no_repetition)
 
-        composeView.setContent {
-            NotallyXTheme(theme = preferences.theme.value) {
-                com.philkes.notallyx.core.ui.dialog.ConfirmDialog(
-                    title = stringResource(R.string.delete_reminder_question),
-                    message =
-                        "${reminder.dateTime.format(
-                            preferences.dateFormatNoteView.value,
-                            preferences.timeFormatNoteView.value,
-                            ensureFullFormat = true,
-                        )}\n${reminder.repetition?.toText(this@RemindersActivity) ?: stringResource(R.string.reminder_no_repetition)}",
-                    positiveButtonText = stringResource(R.string.delete),
-                    onDismissRequest = { dialog.dismiss() },
-                    onConfirm = { lifecycleScope.launch { model.removeReminder(reminder) } },
-                )
-            }
+        dialogStateState.value =
+            ReminderDialogState.ConfirmDelete(
+                reminder = reminder,
+                formattedDateTime = formattedDateTime,
+                repetitionText = repetitionText,
+            )
+    }
+
+    private fun saveReminder(reminder: Reminder?, calendar: Calendar, repetition: Repetition?) {
+        val updatedReminder =
+            Reminder(
+                reminder?.id ?: NEW_REMINDER_ID,
+                calendar.time,
+                repetition,
+            )
+        if (reminder != null) {
+            lifecycleScope.launch { model.updateReminder(updatedReminder) }
+        } else {
+            lifecycleScope.launch { model.addReminder(updatedReminder) }
         }
-        dialog.show()
     }
 
     override fun delete(reminder: Reminder) {

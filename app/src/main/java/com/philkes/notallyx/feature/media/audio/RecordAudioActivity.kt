@@ -1,22 +1,17 @@
 package com.philkes.notallyx.feature.media.audio
 
-import android.app.Dialog
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
-import android.view.Window
 import androidx.activity.OnBackPressedCallback
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.res.stringResource
-import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getTempAudioFile
 import com.philkes.notallyx.core.security.ComposeBinding
 import com.philkes.notallyx.core.security.LockedActivity
-import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.extensions.collectIn
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
@@ -28,6 +23,7 @@ class RecordAudioActivity : LockedActivity<ComposeBinding>() {
 
     private val statusState = mutableStateOf(Status.READY)
     private val baseTimeState = mutableLongStateOf(0L)
+    private val showSaveConfirmState = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +37,7 @@ class RecordAudioActivity : LockedActivity<ComposeBinding>() {
                 RecordAudioScreen(
                     status = statusState.value,
                     baseTime = baseTimeState.longValue,
+                    showSaveConfirmDialog = showSaveConfirmState.value,
                     onMainClick = {
                         val s = service ?: return@RecordAudioScreen
                         when (s.status.value) {
@@ -54,6 +51,15 @@ class RecordAudioActivity : LockedActivity<ComposeBinding>() {
                         stopRecording(s)
                     },
                     onBackClick = { onBackPressedDispatcher.onBackPressed() },
+                    onDismissSaveConfirm = { showSaveConfirmState.value = false },
+                    onSaveConfirm = {
+                        showSaveConfirmState.value = false
+                        service?.let { stopRecording(it) }
+                    },
+                    onDiscardConfirm = {
+                        showSaveConfirmState.value = false
+                        service?.let { discard(it) }
+                    },
                 )
             }
         }
@@ -85,27 +91,7 @@ class RecordAudioActivity : LockedActivity<ComposeBinding>() {
                     if (s == null || statusState.value == Status.READY) {
                         finish()
                     } else {
-                        val composeView = ComposeView(this@RecordAudioActivity)
-                        val dialog =
-                            Dialog(this@RecordAudioActivity).apply {
-                                requestWindowFeature(Window.FEATURE_NO_TITLE)
-                                window?.setBackgroundDrawableResource(android.R.color.transparent)
-                                setContentView(composeView)
-                            }
-
-                        composeView.setContent {
-                            NotallyXTheme(theme = preferences.theme.value) {
-                                ConfirmDialog(
-                                    message = stringResource(R.string.save_recording),
-                                    positiveButtonText = stringResource(R.string.save),
-                                    neutralButtonText = stringResource(R.string.discard),
-                                    onNeutralButtonClick = { discard(s) },
-                                    onDismissRequest = { dialog.dismiss() },
-                                    onConfirm = { stopRecording(s) },
-                                )
-                            }
-                        }
-                        dialog.show()
+                        showSaveConfirmState.value = true
                     }
                 }
             }

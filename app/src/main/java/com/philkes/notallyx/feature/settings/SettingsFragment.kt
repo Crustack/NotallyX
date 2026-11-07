@@ -20,8 +20,8 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity.RESULT_OK
 import androidx.compose.foundation.ScrollState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,20 +53,11 @@ import com.philkes.notallyx.core.preference.NotallyXPreferences.Companion.START_
 import com.philkes.notallyx.core.preference.PeriodicBackup.Companion.BACKUP_MAX_MIN
 import com.philkes.notallyx.core.preference.PeriodicBackup.Companion.BACKUP_PERIOD_DAYS_MIN
 import com.philkes.notallyx.core.preference.TextProvider
-import com.philkes.notallyx.core.preference.Theme
 import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.core.security.AuthenticatorProvider
-import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
-import com.philkes.notallyx.core.ui.dialog.IconListDialog
 import com.philkes.notallyx.core.ui.dialog.IconListItem
-import com.philkes.notallyx.core.ui.dialog.ListDialog
-import com.philkes.notallyx.core.ui.dialog.MenuDialog
 import com.philkes.notallyx.core.ui.dialog.SelectionItem
-import com.philkes.notallyx.core.ui.dialog.SingleSelectionDialog
-import com.philkes.notallyx.core.ui.extensions.createComposeDialog
 import com.philkes.notallyx.core.ui.extensions.setEnabledSecureFlag
-import com.philkes.notallyx.core.ui.extensions.setupImportProgressDialog
-import com.philkes.notallyx.core.ui.extensions.showDialog
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.feature.main.MainActivity
@@ -77,10 +68,6 @@ import com.philkes.notallyx.feature.migration.imports.Display
 import com.philkes.notallyx.feature.migration.imports.FOLDER_OR_FILE_MIMETYPE
 import com.philkes.notallyx.feature.migration.imports.ImportSource
 import com.philkes.notallyx.feature.migration.imports.txt.APPLICATION_TEXT_MIME_TYPES
-import com.philkes.notallyx.feature.settings.dialogs.DateTimeFormatDialog
-import com.philkes.notallyx.feature.settings.dialogs.EncryptDatabaseDialog
-import com.philkes.notallyx.feature.settings.dialogs.ImportNotesDialog
-import com.philkes.notallyx.feature.settings.dialogs.NotesSortDialog
 import com.philkes.notallyx.scheduleAutoRemoveOldDeletedNotes
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -92,6 +79,7 @@ class SettingsFragment : Fragment() {
 
     private val model: SettingsViewModel by viewModel()
     val scrollState = ScrollState(0)
+    private val activeDialogState = mutableStateOf<SettingsDialogState?>(null)
 
     private lateinit var importBackupActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var importRawDatabaseActivityResultLauncher: ActivityResultLauncher<Intent>
@@ -118,11 +106,16 @@ class SettingsFragment : Fragment() {
                             model.preferences.theme.value
                         )
                     val labelsState = model.labels.collectAsStateWithLifecycle(emptyList())
+                    val importProgressState = model.importProgress.collectAsStateWithLifecycle(null)
+
                     NotallyXTheme(theme = themeState.value) {
                         val uiState = requireContext().createFromPreferences(model.preferences)
                         SettingsScreen(
                             state = uiState,
                             scrollState = scrollState,
+                            dialogState = activeDialogState.value,
+                            importProgress = importProgressState.value,
+                            onDismissDialog = { activeDialogState.value = null },
                             onNotesViewClick = {
                                 showEnumChoiceDialog(model.preferences.notesView) { newValue ->
                                     model.savePreference(model.preferences.notesView, newValue)
@@ -273,12 +266,21 @@ class SettingsFragment : Fragment() {
                                 if (folder == EMPTY_PATH) {
                                     displayChooseBackupFolderDialog()
                                 } else {
-                                    MenuDialog(requireContext())
-                                        .add(R.string.clear) { model.disableBackups() }
-                                        .add(R.string.choose_another_folder) {
-                                            displayChooseBackupFolderDialog()
-                                        }
-                                        .show()
+                                    activeDialogState.value =
+                                        SettingsDialogState.ListSelection(
+                                            title = getString(R.string.auto_backups_folder),
+                                            items =
+                                                listOf(
+                                                    getString(R.string.clear),
+                                                    getString(R.string.choose_another_folder),
+                                                ),
+                                            onItemClick = { which ->
+                                                when (which) {
+                                                    0 -> model.disableBackups()
+                                                    1 -> displayChooseBackupFolderDialog()
+                                                }
+                                            },
+                                        )
                                 }
                             },
                             onBackupOnSaveClick = {
@@ -316,57 +318,63 @@ class SettingsFragment : Fragment() {
                                 }
                             },
                             onImportSettingsClick = {
-                                showDialog(
-                                    R.string.import_settings_message,
-                                    R.string.import_action,
-                                    { _, _ ->
-                                        val intent =
-                                            Intent(Intent.ACTION_OPEN_DOCUMENT)
-                                                .apply {
-                                                    type = MIME_TYPE_JSON
-                                                    addCategory(Intent.CATEGORY_OPENABLE)
-                                                    putExtra(
-                                                        Intent.EXTRA_TITLE,
-                                                        "NotallyX_Settings.json",
-                                                    )
-                                                }
-                                                .wrapWithChooser(requireContext())
-                                        importSettingsActivityResultLauncher.launch(intent)
-                                    },
-                                )
+                                activeDialogState.value =
+                                    SettingsDialogState.Confirm(
+                                        message = getString(R.string.import_settings_message),
+                                        positiveButtonText = getString(R.string.import_action),
+                                        negativeButtonText = getString(R.string.cancel),
+                                        onConfirm = {
+                                            val intent =
+                                                Intent(Intent.ACTION_OPEN_DOCUMENT)
+                                                    .apply {
+                                                        type = MIME_TYPE_JSON
+                                                        addCategory(Intent.CATEGORY_OPENABLE)
+                                                        putExtra(
+                                                            Intent.EXTRA_TITLE,
+                                                            "NotallyX_Settings.json",
+                                                        )
+                                                    }
+                                                    .wrapWithChooser(requireContext())
+                                            importSettingsActivityResultLauncher.launch(intent)
+                                        },
+                                    )
                             },
                             onExportSettingsClick = {
-                                showDialog(
-                                    R.string.export_settings_message,
-                                    R.string.export,
-                                    { _, _ ->
-                                        val intent =
-                                            Intent(Intent.ACTION_CREATE_DOCUMENT)
-                                                .apply {
-                                                    type = MIME_TYPE_JSON
-                                                    addCategory(Intent.CATEGORY_OPENABLE)
-                                                    putExtra(
-                                                        Intent.EXTRA_TITLE,
-                                                        "NotallyX_Settings.json",
-                                                    )
-                                                }
-                                                .wrapWithChooser(requireContext())
-                                        exportSettingsActivityResultLauncher.launch(intent)
-                                    },
-                                )
+                                activeDialogState.value =
+                                    SettingsDialogState.Confirm(
+                                        message = getString(R.string.export_settings_message),
+                                        positiveButtonText = getString(R.string.export),
+                                        negativeButtonText = getString(R.string.cancel),
+                                        onConfirm = {
+                                            val intent =
+                                                Intent(Intent.ACTION_CREATE_DOCUMENT)
+                                                    .apply {
+                                                        type = MIME_TYPE_JSON
+                                                        addCategory(Intent.CATEGORY_OPENABLE)
+                                                        putExtra(
+                                                            Intent.EXTRA_TITLE,
+                                                            "NotallyX_Settings.json",
+                                                        )
+                                                    }
+                                                    .wrapWithChooser(requireContext())
+                                            exportSettingsActivityResultLauncher.launch(intent)
+                                        },
+                                    )
                             },
                             onResetSettingsClick = {
-                                showDialog(
-                                    R.string.reset_settings_message,
-                                    R.string.reset_settings,
-                                    { _, _ ->
-                                        lifecycleScope.launch {
-                                            model.resetPreferences { _ ->
-                                                showToast(R.string.reset_settings_success)
+                                activeDialogState.value =
+                                    SettingsDialogState.Confirm(
+                                        message = getString(R.string.reset_settings_message),
+                                        positiveButtonText = getString(R.string.reset_settings),
+                                        negativeButtonText = getString(R.string.cancel),
+                                        onConfirm = {
+                                            lifecycleScope.launch {
+                                                model.resetPreferences { _ ->
+                                                    showToast(R.string.reset_settings_success)
+                                                }
                                             }
-                                        }
-                                    },
-                                )
+                                        },
+                                    )
                             },
                             onDataInPublicFolderClick = {
                                 showBooleanPreferenceDialog(
@@ -387,26 +395,13 @@ class SettingsFragment : Fragment() {
                                 }
                             },
                             onClearDataClick = {
-                                val composeView = ComposeView(requireContext())
-                                val dialog =
-                                    createComposeDialog(
-                                        requireContext(),
-                                        composeView,
-                                        viewLifecycleOwner,
+                                activeDialogState.value =
+                                    SettingsDialogState.Confirm(
+                                        message = getString(R.string.clear_data_message),
+                                        positiveButtonText = getString(R.string.delete_all),
+                                        negativeButtonText = getString(R.string.cancel),
+                                        onConfirm = { model.deleteAll() },
                                     )
-
-                                composeView.setContent {
-                                    NotallyXTheme(theme = model.preferences.theme.value) {
-                                        ConfirmDialog(
-                                            message = stringResource(R.string.clear_data_message),
-                                            positiveButtonText =
-                                                stringResource(R.string.delete_all),
-                                            onDismissRequest = { dialog.dismiss() },
-                                            onConfirm = { model.deleteAll() },
-                                        )
-                                    }
-                                }
-                                dialog.show()
                             },
                             onSendFeedbackClick = { showFeedbackDialog() },
                             onRateClick = {
@@ -427,7 +422,6 @@ class SettingsFragment : Fragment() {
                     }
                 }
             }
-        model.importProgress.setupImportProgressDialog(this@SettingsFragment)
         return composeView
     }
 
@@ -443,8 +437,15 @@ class SettingsFragment : Fragment() {
         showImportBackupsFolder.let {
             if (it) {
                 model.refreshBackupsFolder(
-                    requireContext(),
-                    askForUriPermissions = ::askForUriPermissions,
+                    askForUriPermissions = { backupFolderUri ->
+                        activeDialogState.value =
+                            SettingsDialogState.Confirm(
+                                message = getString(R.string.auto_backups_folder_rechoose),
+                                positiveButtonText = getString(R.string.choose_folder),
+                                negativeButtonText = getString(R.string.cancel),
+                                onConfirm = { askForUriPermissions(backupFolderUri) },
+                            )
+                    }
                 )
             }
         }
@@ -503,29 +504,19 @@ class SettingsFragment : Fragment() {
                                     it.checkSelfPermission(permission) !=
                                         PackageManager.PERMISSION_GRANTED
                                 ) {
-                                    val composeView = ComposeView(it)
-                                    val dialog =
-                                        createComposeDialog(it, composeView, viewLifecycleOwner)
-
-                                    composeView.setContent {
-                                        NotallyXTheme(theme = model.preferences.theme.value) {
-                                            com.philkes.notallyx.core.ui.dialog.ConfirmDialog(
-                                                message =
-                                                    stringResource(
-                                                        R.string
-                                                            .please_grant_notally_notification_auto_backup
-                                                    ),
-                                                positiveButtonText =
-                                                    stringResource(R.string.continue_),
-                                                negativeButtonText = stringResource(R.string.skip),
-                                                onDismissRequest = { dialog.dismiss() },
-                                                onConfirm = {
-                                                    it.requestPermissions(arrayOf(permission), 0)
-                                                },
-                                            )
-                                        }
-                                    }
-                                    dialog.show()
+                                    activeDialogState.value =
+                                        SettingsDialogState.Confirm(
+                                            message =
+                                                getString(
+                                                    R.string
+                                                        .please_grant_notally_notification_auto_backup
+                                                ),
+                                            positiveButtonText = getString(R.string.continue_),
+                                            negativeButtonText = getString(R.string.skip),
+                                            onConfirm = {
+                                                it.requestPermissions(arrayOf(permission), 0)
+                                            },
+                                        )
                                 }
                             }
                         }
@@ -583,27 +574,15 @@ class SettingsFragment : Fragment() {
             }
 
             MIME_TYPE_ZIP -> {
-                val composeView = ComposeView(requireContext())
-                val dialog = createComposeDialog(requireContext(), composeView, viewLifecycleOwner)
                 val defaultPassword =
                     model.preferences.backupPassword.value.takeIf { it != PASSWORD_EMPTY } ?: ""
-
-                composeView.setContent {
-                    NotallyXTheme(theme = model.preferences.theme.value) {
-                        ImportNotesDialog(
-                            title = stringResource(R.string.backup_password),
-                            initialText = defaultPassword,
-                            message = stringResource(R.string.import_backup_password_hint),
-                            initialCheckDuplicates = true,
-                            onDismissRequest = { dialog.dismiss() },
-                            onConfirm = { usedPassword, checkDuplicates ->
-                                model.importZipBackup(uri, usedPassword, checkDuplicates)
-                                dialog.dismiss()
-                            },
-                        )
-                    }
-                }
-                dialog.show()
+                activeDialogState.value =
+                    SettingsDialogState.ImportNotesPassword(
+                        initialPassword = defaultPassword,
+                        onConfirm = { usedPassword, checkDuplicates ->
+                            model.importZipBackup(uri, usedPassword, checkDuplicates)
+                        },
+                    )
             }
         }
     }
@@ -615,63 +594,36 @@ class SettingsFragment : Fragment() {
         val context = requireContext()
         val enumEntries = T::class.java.enumConstants!!.toList()
         val items = enumEntries.map { SelectionItem(it, it.getText(context)) }
-        val composeView = ComposeView(context)
-        val dialog = createComposeDialog(context, composeView, viewLifecycleOwner)
-
-        composeView.setContent {
-            NotallyXTheme(theme = model.preferences.theme.value) {
-                SingleSelectionDialog(
-                    title = stringResource(enumPreference.titleResId!!),
-                    items = items,
-                    selectedItem = enumPreference.value,
-                    onDismissRequest = { dialog.dismiss() },
-                    onConfirm = { newValue -> onSave(newValue) },
-                )
-            }
-        }
-        dialog.show()
+        activeDialogState.value =
+            SettingsDialogState.SingleSelection(
+                title = getString(enumPreference.titleResId!!),
+                items = items,
+                selectedItem = enumPreference.value,
+                onConfirm = { newValue -> onSave(newValue) },
+            )
     }
 
     private fun showThemeDialog() {
-        val context = requireContext()
-        val composeView = ComposeView(context)
-        val dialog = createComposeDialog(context, composeView, viewLifecycleOwner)
-
-        composeView.setContent {
-            NotallyXTheme(theme = model.preferences.theme.value) {
-                PreferenceEnumWithToggleDialog(
-                    title = stringResource(model.preferences.theme.titleResId!!),
-                    hint = null,
-                    items =
-                        Theme.entries.map {
-                            com.philkes.notallyx.core.ui.dialog.SelectionItem(
-                                it,
-                                it.getText(context),
-                            )
-                        },
-                    selectedItem = model.preferences.theme.value,
-                    toggleLabel = stringResource(R.string.theme_use_dynamic_colors),
-                    initialToggleValue = model.preferences.useDynamicColors.value,
-                    onDismissRequest = { dialog.dismiss() },
-                    onConfirm = { newTheme, useDynamicColors ->
-                        model.savePreference(model.preferences.theme, newTheme)
-                        model.savePreference(model.preferences.useDynamicColors, useDynamicColors)
-                        dialog.dismiss()
-                        val packageManager = context.packageManager
-                        val intent = packageManager.getLaunchIntentForPackage(context.packageName)
-                        val componentName = intent!!.component
-                        val mainIntent =
-                            Intent.makeRestartActivityTask(componentName).apply {
-                                putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, R.id.Settings)
-                            }
-                        mainIntent.setPackage(context.packageName)
-                        context.startActivity(mainIntent)
-                        Runtime.getRuntime().exit(0)
-                    },
-                )
-            }
-        }
-        dialog.show()
+        activeDialogState.value =
+            SettingsDialogState.Theme(
+                initialTheme = model.preferences.theme.value,
+                initialUseDynamicColors = model.preferences.useDynamicColors.value,
+                onConfirm = { newTheme, useDynamicColors ->
+                    model.savePreference(model.preferences.theme, newTheme)
+                    model.savePreference(model.preferences.useDynamicColors, useDynamicColors)
+                    val context = requireContext()
+                    val packageManager = context.packageManager
+                    val intent = packageManager.getLaunchIntentForPackage(context.packageName)
+                    val componentName = intent!!.component
+                    val mainIntent =
+                        Intent.makeRestartActivityTask(componentName).apply {
+                            putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, R.id.Settings)
+                        }
+                    mainIntent.setPackage(context.packageName)
+                    context.startActivity(mainIntent)
+                    Runtime.getRuntime().exit(0)
+                },
+            )
     }
 
     private fun showDateTimeFormatDialog(
@@ -680,42 +632,22 @@ class SettingsFragment : Fragment() {
         timePreference: EnumPreference<TimeFormat>,
         onSave: (dateFormat: DateFormat, timeFormat: TimeFormat) -> Unit,
     ) {
-        val composeView = ComposeView(requireContext())
-        val dialog = createComposeDialog(requireContext(), composeView, viewLifecycleOwner)
-
-        composeView.setContent {
-            NotallyXTheme(theme = model.preferences.theme.value) {
-                DateTimeFormatDialog(
-                    initialDateFormat = datePreference.value,
-                    initialTimeFormat = timePreference.value,
-                    onDismissRequest = { dialog.dismiss() },
-                    onConfirm = { newDate, newTime ->
-                        onSave(newDate, newTime)
-                        dialog.dismiss()
-                    },
-                )
-            }
-        }
-        dialog.show()
+        activeDialogState.value =
+            SettingsDialogState.DateTimeFormat(
+                initialDate = datePreference.value,
+                initialTime = timePreference.value,
+                onConfirm = onSave,
+            )
     }
 
     private fun showNotesSortDialog() {
-        val composeView = ComposeView(requireContext())
-        val dialog = createComposeDialog(requireContext(), composeView, viewLifecycleOwner)
-
-        composeView.setContent {
-            NotallyXTheme(theme = model.preferences.theme.value) {
-                NotesSortDialog(
-                    currentSort = model.preferences.notesSorting.value,
-                    onDismissRequest = { dialog.dismiss() },
-                    onConfirm = { newSort ->
-                        model.savePreference(model.preferences.notesSorting, newSort)
-                        dialog.dismiss()
-                    },
-                )
-            }
-        }
-        dialog.show()
+        activeDialogState.value =
+            SettingsDialogState.NotesSort(
+                currentSort = model.preferences.notesSorting.value,
+                onConfirm = { newSort ->
+                    model.savePreference(model.preferences.notesSorting, newSort)
+                },
+            )
     }
 
     fun showDateTimeFormatNoteViewDialog() {
@@ -737,24 +669,13 @@ class SettingsFragment : Fragment() {
         onSave: (newValue: Boolean) -> Unit,
     ) {
         if (!enabled) return
-        val composeView = ComposeView(requireContext())
-        val dialog = createComposeDialog(requireContext(), composeView, viewLifecycleOwner)
-
-        composeView.setContent {
-            NotallyXTheme(theme = model.preferences.theme.value) {
-                PreferenceBooleanDialog(
-                    title = stringResource(preference.titleResId!!),
-                    message = messageResId?.let { stringResource(it) },
-                    initialValue = preference.value,
-                    onDismissRequest = { dialog.dismiss() },
-                    onConfirm = { newValue ->
-                        onSave(newValue)
-                        dialog.dismiss()
-                    },
-                )
-            }
-        }
-        dialog.show()
+        activeDialogState.value =
+            SettingsDialogState.BooleanPref(
+                title = getString(preference.titleResId!!),
+                message = messageResId?.let { getString(it) },
+                initialValue = preference.value,
+                onConfirm = onSave,
+            )
     }
 
     private fun showStartViewDialog(labels: List<String>?) {
@@ -769,94 +690,60 @@ class SettingsFragment : Fragment() {
             mutableListOf(notesText to START_VIEW_DEFAULT, unlabeledText to START_VIEW_UNLABELED)
                 .apply { labels?.forEach { add(it to it) } }
 
-        val items = values.map {
-            com.philkes.notallyx.core.ui.dialog.SelectionItem(it.second, it.first)
-        }
-        val composeView = ComposeView(context)
-        val dialog = createComposeDialog(context, composeView, viewLifecycleOwner)
-
-        composeView.setContent {
-            NotallyXTheme(theme = model.preferences.theme.value) {
-                com.philkes.notallyx.core.ui.dialog.SingleSelectionDialog(
-                    title = stringResource(preference.titleResId!!),
-                    items = items,
-                    selectedItem = value,
-                    onDismissRequest = { dialog.dismiss() },
-                    onConfirm = { newValue ->
-                        model.savePreference(preference, newValue)
-                        dialog.dismiss()
-                    },
-                )
-            }
-        }
-        dialog.show()
+        val items = values.map { SelectionItem(it.second, it.first) }
+        activeDialogState.value =
+            SettingsDialogState.SingleSelection(
+                title = getString(preference.titleResId!!),
+                items = items,
+                selectedItem = value,
+                onConfirm = { newValue -> model.savePreference(preference, newValue) },
+            )
     }
 
     private fun showPeriodicBackupDialog() {
         val backupFolder = model.preferences.backupsFolder.value
         if (backupFolder == EMPTY_PATH) return
-        val composeView = ComposeView(requireContext())
-        val dialog = createComposeDialog(requireContext(), composeView, viewLifecycleOwner)
-
-        composeView.setContent {
-            NotallyXTheme(theme = model.preferences.theme.value) {
-                PreferenceBooleanDialog(
-                    title = stringResource(R.string.backup_periodic),
-                    message = stringResource(R.string.backup_periodic_hint),
-                    initialValue = model.preferences.periodicBackups.value.periodInDays > 0,
-                    onDismissRequest = { dialog.dismiss() },
-                    onConfirm = { enabled ->
-                        if (enabled) {
-                            val periodInDays =
-                                model.preferences.periodicBackups.value.periodInDays.let {
-                                    if (it >= BACKUP_PERIOD_DAYS_MIN) it else BACKUP_PERIOD_DAYS_MIN
-                                }
-                            val maxBackups =
-                                model.preferences.periodicBackups.value.maxBackups.let {
-                                    if (it >= BACKUP_MAX_MIN) it else BACKUP_MAX_MIN
-                                }
-                            model.savePreference(
-                                model.preferences.periodicBackups,
-                                model.preferences.periodicBackups.value.copy(
-                                    periodInDays = periodInDays,
-                                    maxBackups = maxBackups,
-                                ),
-                            )
-                        } else {
-                            model.savePreference(
-                                model.preferences.periodicBackups,
-                                model.preferences.periodicBackups.value.copy(periodInDays = 0),
-                            )
-                        }
-                        dialog.dismiss()
-                    },
-                )
-            }
-        }
-        dialog.show()
+        activeDialogState.value =
+            SettingsDialogState.BooleanPref(
+                title = getString(R.string.backup_periodic),
+                message = getString(R.string.backup_periodic_hint),
+                initialValue = model.preferences.periodicBackups.value.periodInDays > 0,
+                onConfirm = { enabled ->
+                    if (enabled) {
+                        val periodInDays =
+                            model.preferences.periodicBackups.value.periodInDays.let {
+                                if (it >= BACKUP_PERIOD_DAYS_MIN) it else BACKUP_PERIOD_DAYS_MIN
+                            }
+                        val maxBackups =
+                            model.preferences.periodicBackups.value.maxBackups.let {
+                                if (it >= BACKUP_MAX_MIN) it else BACKUP_MAX_MIN
+                            }
+                        model.savePreference(
+                            model.preferences.periodicBackups,
+                            model.preferences.periodicBackups.value.copy(
+                                periodInDays = periodInDays,
+                                maxBackups = maxBackups,
+                            ),
+                        )
+                    } else {
+                        model.savePreference(
+                            model.preferences.periodicBackups,
+                            model.preferences.periodicBackups.value.copy(periodInDays = 0),
+                        )
+                    }
+                },
+            )
     }
 
     private fun showBackupPasswordDialog() {
-        val composeView = ComposeView(requireContext())
-        val dialog = createComposeDialog(requireContext(), composeView, viewLifecycleOwner)
         val password = model.preferences.backupPassword.value.takeIf { it != PASSWORD_EMPTY } ?: ""
-
-        composeView.setContent {
-            NotallyXTheme(theme = model.preferences.theme.value) {
-                com.philkes.notallyx.core.ui.dialog.TextInputDialog(
-                    title = stringResource(model.preferences.backupPassword.titleResId!!),
-                    initialValue = password,
-                    message = stringResource(R.string.backup_password_hint),
-                    isPassword = true,
-                    onDismissRequest = { dialog.dismiss() },
-                    onConfirm = { updatedPassword ->
-                        model.savePreference(model.preferences.backupPassword, updatedPassword)
-                        dialog.dismiss()
-                    },
-                )
-            }
-        }
-        dialog.show()
+        activeDialogState.value =
+            SettingsDialogState.BackupPassword(
+                password = password,
+                onConfirm = { updatedPassword ->
+                    model.savePreference(model.preferences.backupPassword, updatedPassword)
+                },
+            )
     }
 
     private fun showBiometricLockDialog() {
@@ -866,63 +753,51 @@ class SettingsFragment : Fragment() {
         val enumEntries = BiometricLock.entries
         val items = enumEntries.map { SelectionItem(it, context.getString(it.textResId)) }
 
-        val composeView = ComposeView(context)
-        val dialog = createComposeDialog(context, composeView, viewLifecycleOwner)
-
-        composeView.setContent {
-            NotallyXTheme(theme = model.preferences.theme.value) {
-                SingleSelectionDialog(
-                    title = stringResource(preference.titleResId!!),
-                    items = items,
-                    selectedItem = value,
-                    onDismissRequest = { dialog.dismiss() },
-                    onConfirm = { newValue ->
-                        if (newValue == value) {
-                            return@SingleSelectionDialog
-                        }
-                        if (newValue == BiometricLock.ENABLED) {
-                            when (
-                                AuthenticatorProvider.instance.canAuthenticateWithBiometrics(
-                                    context
-                                )
-                            ) {
-                                BiometricManager.BIOMETRIC_SUCCESS -> showEnableBiometricLock()
-                                BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {
-                                    context.showToast(R.string.biometrics_no_support)
-                                }
-
-                                BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED ->
-                                    showBiometricsNotSetupDialog()
+        activeDialogState.value =
+            SettingsDialogState.SingleSelection(
+                title = getString(preference.titleResId!!),
+                items = items,
+                selectedItem = value,
+                onConfirm = { newValue ->
+                    if (newValue == value) {
+                        return@SingleSelection
+                    }
+                    if (newValue == BiometricLock.ENABLED) {
+                        when (
+                            AuthenticatorProvider.instance.canAuthenticateWithBiometrics(context)
+                        ) {
+                            BiometricManager.BIOMETRIC_SUCCESS -> showEnableBiometricLock()
+                            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {
+                                context.showToast(R.string.biometrics_no_support)
                             }
-                        } else {
-                            when (
-                                AuthenticatorProvider.instance.canAuthenticateWithBiometrics(
-                                    context
-                                )
-                            ) {
-                                BiometricManager.BIOMETRIC_SUCCESS -> showDisableBiometricLock()
-                                BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {
-                                    context.showToast(R.string.biometrics_no_support)
-                                    model.savePreference(
-                                        model.preferences.biometricLock,
-                                        BiometricLock.DISABLED,
-                                    )
-                                }
 
-                                BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
-                                    showBiometricsNotSetupDialog()
-                                    model.savePreference(
-                                        model.preferences.biometricLock,
-                                        BiometricLock.DISABLED,
-                                    )
-                                }
+                            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED ->
+                                showBiometricsNotSetupDialog()
+                        }
+                    } else {
+                        when (
+                            AuthenticatorProvider.instance.canAuthenticateWithBiometrics(context)
+                        ) {
+                            BiometricManager.BIOMETRIC_SUCCESS -> showDisableBiometricLock()
+                            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {
+                                context.showToast(R.string.biometrics_no_support)
+                                model.savePreference(
+                                    model.preferences.biometricLock,
+                                    BiometricLock.DISABLED,
+                                )
+                            }
+
+                            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
+                                showBiometricsNotSetupDialog()
+                                model.savePreference(
+                                    model.preferences.biometricLock,
+                                    BiometricLock.DISABLED,
+                                )
                             }
                         }
-                    },
-                )
-            }
-        }
-        dialog.show()
+                    }
+                },
+            )
     }
 
     private fun importFromOtherApp() {
@@ -954,45 +829,27 @@ class SettingsFragment : Fragment() {
                 text = getString(item.getTextId()),
             )
         }
-        val context = requireContext()
-        val composeView = ComposeView(context)
-        val dialog = createComposeDialog(context, composeView, viewLifecycleOwner)
-
-        composeView.setContent {
-            NotallyXTheme(theme = model.preferences.theme.value) {
-                IconListDialog(
-                    title = stringResource(R.string.choose_other_app),
-                    items = iconListItems,
-                    onDismissRequest = { dialog.dismiss() },
-                    onItemClick = { which -> handleImportSourceSelection(which, notallyItems) },
-                )
-            }
-        }
-        dialog.show()
+        activeDialogState.value =
+            SettingsDialogState.IconList(
+                title = getString(R.string.choose_other_app),
+                items = iconListItems,
+                onItemClick = { which -> handleImportSourceSelection(which, notallyItems) },
+            )
     }
 
     private fun handleImportSourceSelection(which: Int, notallyItems: List<Display>) {
-        val context = requireContext()
         when (which) {
             0 -> {
-                val composeView = ComposeView(context)
-                val dialog = createComposeDialog(context, composeView, viewLifecycleOwner)
-                composeView.setContent {
-                    NotallyXTheme(theme = model.preferences.theme.value) {
-                        ConfirmDialog(
-                            message =
-                                stringResource(
-                                    R.string.import_from_notally,
-                                    stringResource(R.string.import_backup),
-                                ),
-                            positiveButtonText = stringResource(android.R.string.ok),
-                            negativeButtonText = "",
-                            onDismissRequest = { dialog.dismiss() },
-                            onConfirm = {},
-                        )
-                    }
-                }
-                dialog.show()
+                activeDialogState.value =
+                    SettingsDialogState.Confirm(
+                        message =
+                            getString(
+                                R.string.import_from_notally,
+                                getString(R.string.import_backup),
+                            ),
+                        positiveButtonText = getString(android.R.string.ok),
+                        negativeButtonText = "",
+                    )
                 return
             }
 
@@ -1006,87 +863,72 @@ class SettingsFragment : Fragment() {
                                 arrayOf("application/octet-stream", "application/x-sqlite3")
                             putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
                         }
-                        .wrapWithChooser(context)
+                        .wrapWithChooser(requireContext())
                 )
                 return
             }
         }
 
         selectedImportSource = ImportSource.entries[which - notallyItems.size]
-        val composeView = ComposeView(context)
-        val dialog = createComposeDialog(context, composeView, viewLifecycleOwner)
         val docUrl = selectedImportSource.documentationUrl
 
-        composeView.setContent {
-            NotallyXTheme(theme = model.preferences.theme.value) {
-                ConfirmDialog(
-                    message = stringResource(selectedImportSource.helpTextResId),
-                    positiveButtonText = stringResource(R.string.import_action),
-                    negativeButtonText = stringResource(R.string.cancel),
-                    neutralButtonText = docUrl?.let { stringResource(R.string.help) },
-                    onNeutralButtonClick =
-                        docUrl?.let { url ->
-                            {
-                                val intent =
-                                    Intent(Intent.ACTION_VIEW)
-                                        .apply { data = Uri.parse(url) }
-                                        .wrapWithChooser(context)
-                                startActivity(intent)
-                            }
-                        },
-                    onDismissRequest = { dialog.dismiss() },
-                    onConfirm = { showImportSourceActionDialog() },
-                )
-            }
-        }
-        dialog.show()
+        activeDialogState.value =
+            SettingsDialogState.Confirm(
+                message = getString(selectedImportSource.helpTextResId),
+                positiveButtonText = getString(R.string.import_action),
+                negativeButtonText = getString(R.string.cancel),
+                neutralButtonText = docUrl?.let { getString(R.string.help) },
+                onNeutralButtonClick =
+                    docUrl?.let { url ->
+                        {
+                            val intent =
+                                Intent(Intent.ACTION_VIEW)
+                                    .apply { data = Uri.parse(url) }
+                                    .wrapWithChooser(requireContext())
+                            startActivity(intent)
+                        }
+                    },
+                onConfirm = { showImportSourceActionDialog() },
+            )
     }
 
     private fun showImportSourceActionDialog() {
         val context = requireContext()
         when (selectedImportSource.mimeType) {
             FOLDER_OR_FILE_MIMETYPE -> {
-                val composeView = ComposeView(context)
-                val dialog = createComposeDialog(context, composeView, viewLifecycleOwner)
-                composeView.setContent {
-                    NotallyXTheme(theme = model.preferences.theme.value) {
-                        ListDialog(
-                            title = stringResource(selectedImportSource.displayNameResId),
-                            items =
-                                listOf(
-                                    stringResource(R.string.folder),
-                                    stringResource(R.string.single_file),
-                                ),
-                            onDismissRequest = { dialog.dismiss() },
-                            onItemClick = { choice ->
-                                when (choice) {
-                                    0 ->
-                                        importOtherActivityResultLauncher.launch(
-                                            Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-                                                .apply { addCategory(Intent.CATEGORY_DEFAULT) }
-                                                .wrapWithChooser(context)
-                                        )
+                activeDialogState.value =
+                    SettingsDialogState.ListSelection(
+                        title = getString(selectedImportSource.displayNameResId),
+                        items =
+                            listOf(
+                                getString(R.string.folder),
+                                getString(R.string.single_file),
+                            ),
+                        onItemClick = { choice ->
+                            when (choice) {
+                                0 ->
+                                    importOtherActivityResultLauncher.launch(
+                                        Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+                                            .apply { addCategory(Intent.CATEGORY_DEFAULT) }
+                                            .wrapWithChooser(context)
+                                    )
 
-                                    1 ->
-                                        importOtherActivityResultLauncher.launch(
-                                            Intent(Intent.ACTION_OPEN_DOCUMENT)
-                                                .apply {
-                                                    type = "text/*"
-                                                    addCategory(Intent.CATEGORY_OPENABLE)
-                                                    putExtra(
-                                                        Intent.EXTRA_MIME_TYPES,
-                                                        arrayOf("text/*") +
-                                                            APPLICATION_TEXT_MIME_TYPES,
-                                                    )
-                                                }
-                                                .wrapWithChooser(context)
-                                        )
-                                }
-                            },
-                        )
-                    }
-                }
-                dialog.show()
+                                1 ->
+                                    importOtherActivityResultLauncher.launch(
+                                        Intent(Intent.ACTION_OPEN_DOCUMENT)
+                                            .apply {
+                                                type = "text/*"
+                                                addCategory(Intent.CATEGORY_OPENABLE)
+                                                putExtra(
+                                                    Intent.EXTRA_MIME_TYPES,
+                                                    arrayOf("text/*") + APPLICATION_TEXT_MIME_TYPES,
+                                                )
+                                            }
+                                            .wrapWithChooser(context)
+                                    )
+                            }
+                        },
+                    )
             }
 
             else ->
@@ -1106,115 +948,100 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showFeedbackDialog() {
-        val context = requireContext()
         val options =
             listOf(
                 getString(R.string.report_bug),
                 getString(R.string.make_feature_request),
                 getString(R.string.send_feedback),
             )
-        val composeView = ComposeView(context)
-        val dialog = createComposeDialog(context, composeView, viewLifecycleOwner)
+        activeDialogState.value =
+            SettingsDialogState.ListSelection(
+                title = getString(R.string.send_feedback),
+                items = options,
+                onItemClick = { which ->
+                    when (which) {
+                        0 -> {
+                            val app = requireContext().applicationContext as Application
+                            val logs = app.getLastExceptionLog()
+                            reportBug(logs)
+                        }
 
-        composeView.setContent {
-            NotallyXTheme(theme = model.preferences.theme.value) {
-                ListDialog(
-                    title = stringResource(R.string.send_feedback),
-                    items = options,
-                    onDismissRequest = { dialog.dismiss() },
-                    onItemClick = { which ->
-                        when (which) {
-                            0 -> {
-                                val app = context.applicationContext as Application
-                                val logs = app.getLastExceptionLog()
-                                reportBug(logs)
+                        1 ->
+                            requireContext().catchNoBrowserInstalled {
+                                startActivity(
+                                    Intent(
+                                            Intent.ACTION_VIEW,
+                                            Uri.parse(
+                                                "https://github.com/Crustack/NotallyX/issues/new?labels=enhancement&template=feature_request.md"
+                                            ),
+                                        )
+                                        .wrapWithChooser(requireContext())
+                                )
                             }
 
-                            1 ->
-                                context.catchNoBrowserInstalled {
-                                    startActivity(
-                                        Intent(
-                                                Intent.ACTION_VIEW,
-                                                Uri.parse(
-                                                    "https://github.com/Crustack/NotallyX/issues/new?labels=enhancement&template=feature_request.md"
-                                                ),
-                                            )
-                                            .wrapWithChooser(context)
-                                    )
-                                }
-
-                            2 -> {
-                                val intent =
-                                    Intent(Intent.ACTION_SEND)
-                                        .apply {
-                                            selector =
-                                                Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"))
-                                            putExtra(
-                                                Intent.EXTRA_EMAIL,
-                                                arrayOf("notallyx@yahoo.com"),
-                                            )
-                                            putExtra(Intent.EXTRA_SUBJECT, "NotallyX [Feedback]")
-                                            val app = context.applicationContext as Application
-                                            val log = app.getLogFile()
-                                            if (log.exists()) {
-                                                val uri = app.getUriForFile(log)
-                                                putExtra(Intent.EXTRA_STREAM, uri)
-                                            }
+                        2 -> {
+                            val intent =
+                                Intent(Intent.ACTION_SEND)
+                                    .apply {
+                                        selector =
+                                            Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"))
+                                        putExtra(
+                                            Intent.EXTRA_EMAIL,
+                                            arrayOf("notallyx@yahoo.com"),
+                                        )
+                                        putExtra(Intent.EXTRA_SUBJECT, "NotallyX [Feedback]")
+                                        val app = requireContext().applicationContext as Application
+                                        val log = app.getLogFile()
+                                        if (log.exists()) {
+                                            val uri = app.getUriForFile(log)
+                                            putExtra(Intent.EXTRA_STREAM, uri)
                                         }
-                                        .wrapWithChooser(context)
-                                try {
-                                    startActivity(intent)
-                                } catch (exception: ActivityNotFoundException) {
-                                    showToast(R.string.install_an_email)
-                                }
+                                    }
+                                    .wrapWithChooser(requireContext())
+                            try {
+                                startActivity(intent)
+                            } catch (exception: ActivityNotFoundException) {
+                                showToast(R.string.install_an_email)
                             }
                         }
-                    },
-                )
-            }
-        }
-        dialog.show()
+                    }
+                },
+            )
     }
 
     private fun showCrashesDialog() {
         (requireContext() as ContextWrapper).let { context ->
             val externalCrashesDirectory = context.getExternalCrashesDirectory()
-            val composeView = ComposeView(context)
-            val dialog = createComposeDialog(context, composeView, viewLifecycleOwner)
-
-            composeView.setContent {
-                NotallyXTheme(theme = model.preferences.theme.value) {
-                    ConfirmDialog(
-                        message =
-                            "${stringResource(R.string.view_crash_logs)}: ${externalCrashesDirectory.absolutePath}",
-                        positiveButtonText = stringResource(android.R.string.ok),
-                        negativeButtonText = stringResource(R.string.cancel),
-                        neutralButtonText = stringResource(R.string.copy),
-                        onNeutralButtonClick = {
-                            context.copyToClipBoard(externalCrashesDirectory.absolutePath)
-                        },
-                        onDismissRequest = { dialog.dismiss() },
-                        onConfirm = {},
-                    )
-                }
-            }
-            dialog.show()
+            activeDialogState.value =
+                SettingsDialogState.Confirm(
+                    message =
+                        "${getString(R.string.view_crash_logs)}: ${externalCrashesDirectory.absolutePath}",
+                    positiveButtonText = getString(android.R.string.ok),
+                    negativeButtonText = getString(R.string.cancel),
+                    neutralButtonText = getString(R.string.copy),
+                    onNeutralButtonClick = {
+                        context.copyToClipBoard(externalCrashesDirectory.absolutePath)
+                    },
+                )
             context.openExternalMediaFolder(externalCrashesDirectory)
         }
     }
 
     private fun displayChooseBackupFolderDialog() {
-        showDialog(
-            getString(R.string.auto_backups_folder_hint),
-            R.string.choose_folder,
-            { _, _ ->
-                val intent = Intent(ACTION_OPEN_DOCUMENT_TREE).wrapWithChooser(requireContext())
-                chooseBackupFolderActivityResultLauncher.launch(intent)
-            },
-            R.string.documentation,
-            { _, _ -> openDocsLink("features/backups#using-cloud-storagewebdav") },
-            fullSize = true,
-        )
+        activeDialogState.value =
+            SettingsDialogState.Confirm(
+                message = getString(R.string.auto_backups_folder_hint),
+                positiveButtonText = getString(R.string.choose_folder),
+                negativeButtonText = getString(R.string.cancel),
+                neutralButtonText = getString(R.string.documentation),
+                onNeutralButtonClick = {
+                    openDocsLink("features/backups#using-cloud-storagewebdav")
+                },
+                onConfirm = {
+                    val intent = Intent(ACTION_OPEN_DOCUMENT_TREE).wrapWithChooser(requireContext())
+                    chooseBackupFolderActivityResultLauncher.launch(intent)
+                },
+            )
     }
 
     private var pendingBiometricContinuation: (() -> Unit)? = null
@@ -1224,43 +1051,32 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showEncryptDatabaseDialog() {
-        val context = requireContext()
-        val composeView = ComposeView(context)
-        val dialog = createComposeDialog(context, composeView, viewLifecycleOwner)
-
-        composeView.setContent {
-            NotallyXTheme(theme = model.preferences.theme.value) {
-                EncryptDatabaseDialog(
-                    onDismissRequest = { dialog.dismiss() },
-                    onContinue = { shouldEncrypt ->
-                        if (shouldEncrypt) {
-                            AuthenticatorProvider.instance.authenticate(
-                                requireActivity(),
-                                isForDecrypt = false,
-                                onSuccess = { cipher ->
-                                    requireNotNull(cipher) {
-                                        "Missing cipher for biometric encryption"
-                                    }
-                                    DatabaseTransitionActivity.start(
-                                        requireActivity(),
-                                        enableBiometricLock = true,
-                                        encryptDatabase = true,
-                                        cipher = cipher,
-                                    )
-                                },
-                            ) {
-                                showBiometricsNotSetupDialog()
-                            }
-                        } else {
-                            model.preferences.biometricLockEncryptsDb.save(false)
-                            model.preferences.biometricLock.save(BiometricLock.ENABLED)
-                            showToast(R.string.biometrics_setup_success)
+        activeDialogState.value =
+            SettingsDialogState.EncryptDatabase(
+                onContinue = { shouldEncrypt ->
+                    if (shouldEncrypt) {
+                        AuthenticatorProvider.instance.authenticate(
+                            requireActivity(),
+                            isForDecrypt = false,
+                            onSuccess = { cipher ->
+                                requireNotNull(cipher) { "Missing cipher for biometric encryption" }
+                                DatabaseTransitionActivity.start(
+                                    requireActivity(),
+                                    enableBiometricLock = true,
+                                    encryptDatabase = true,
+                                    cipher = cipher,
+                                )
+                            },
+                        ) {
+                            showBiometricsNotSetupDialog()
                         }
-                    },
-                )
-            }
-        }
-        dialog.show()
+                    } else {
+                        model.preferences.biometricLockEncryptsDb.save(false)
+                        model.preferences.biometricLock.save(BiometricLock.ENABLED)
+                        showToast(R.string.biometrics_setup_success)
+                    }
+                }
+            )
     }
 
     private fun showDisableBiometricLock() {
@@ -1288,35 +1104,26 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showBiometricBackupAdvice(onContinue: () -> Unit) {
-        val context = requireContext()
-        val composeView = ComposeView(context)
-        val dialog = createComposeDialog(context, composeView, viewLifecycleOwner)
-
-        composeView.setContent {
-            NotallyXTheme(theme = model.preferences.theme.value) {
-                ConfirmDialog(
-                    message = stringResource(R.string.biometric_backup_advice),
-                    positiveButtonText = stringResource(R.string.export),
-                    negativeButtonText = stringResource(R.string.cancel),
-                    neutralButtonText = stringResource(R.string.continue_),
-                    onNeutralButtonClick = { onContinue() },
-                    onDismissRequest = { dialog.dismiss() },
-                    onConfirm = {
-                        pendingBiometricContinuation = onContinue
-                        val intent =
-                            Intent(Intent.ACTION_CREATE_DOCUMENT)
-                                .apply {
-                                    type = MIME_TYPE_ZIP
-                                    addCategory(Intent.CATEGORY_OPENABLE)
-                                    putExtra(Intent.EXTRA_TITLE, buildBackupTitle())
-                                }
-                                .wrapWithChooser(context)
-                        exportBackupActivityResultLauncher.launch(intent)
-                    },
-                )
-            }
-        }
-        dialog.show()
+        activeDialogState.value =
+            SettingsDialogState.Confirm(
+                message = getString(R.string.biometric_backup_advice),
+                positiveButtonText = getString(R.string.export),
+                negativeButtonText = getString(R.string.cancel),
+                neutralButtonText = getString(R.string.continue_),
+                onNeutralButtonClick = { onContinue() },
+                onConfirm = {
+                    pendingBiometricContinuation = onContinue
+                    val intent =
+                        Intent(Intent.ACTION_CREATE_DOCUMENT)
+                            .apply {
+                                type = MIME_TYPE_ZIP
+                                addCategory(Intent.CATEGORY_OPENABLE)
+                                putExtra(Intent.EXTRA_TITLE, buildBackupTitle())
+                            }
+                            .wrapWithChooser(requireContext())
+                    exportBackupActivityResultLauncher.launch(intent)
+                },
+            )
     }
 
     private fun buildBackupTitle(): String {
@@ -1326,21 +1133,23 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showBiometricsNotSetupDialog() {
-        showDialog(
-            R.string.biometrics_not_setup,
-            R.string.tap_to_set_up,
-            { _, _ ->
-                val intent =
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        Intent(Settings.ACTION_BIOMETRIC_ENROLL)
-                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        Intent(Settings.ACTION_FINGERPRINT_ENROLL)
-                    } else {
-                        Intent(Settings.ACTION_SECURITY_SETTINGS)
-                    }
-                setupLockActivityResultLauncher.launch(intent)
-            },
-        )
+        activeDialogState.value =
+            SettingsDialogState.Confirm(
+                message = getString(R.string.biometrics_not_setup),
+                positiveButtonText = getString(R.string.tap_to_set_up),
+                negativeButtonText = getString(R.string.cancel),
+                onConfirm = {
+                    val intent =
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            Intent(Settings.ACTION_BIOMETRIC_ENROLL)
+                        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            Intent(Settings.ACTION_FINGERPRINT_ENROLL)
+                        } else {
+                            Intent(Settings.ACTION_SECURITY_SETTINGS)
+                        }
+                    setupLockActivityResultLauncher.launch(intent)
+                },
+            )
     }
 
     private fun openLink(link: String) {

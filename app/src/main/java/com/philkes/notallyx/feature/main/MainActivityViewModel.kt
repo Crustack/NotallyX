@@ -1,6 +1,7 @@
 package com.philkes.notallyx.feature.main
 
 import android.app.Application
+import androidx.compose.ui.state.ToggleableState
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.core.common.result.Progress
@@ -9,7 +10,9 @@ import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.dao.LabelDao
+import com.philkes.notallyx.data.model.ColorString
 import com.philkes.notallyx.data.model.Label
+import com.philkes.notallyx.feature.migration.ExportMimeType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,12 +24,49 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+sealed interface MainActiveDialog {
+    data class ColorPicker(
+        val colors: Set<ColorString>,
+        val currentColor: ColorString?,
+        val onColorSelected: (selectedColor: ColorString) -> Unit,
+    ) : MainActiveDialog
+
+    data class ExportFormat(
+        val formats: List<ExportMimeType>,
+        val onFormatSelected: (mimeType: ExportMimeType) -> Unit,
+    ) : MainActiveDialog
+
+    data class SelectLabels(
+        val labels: Array<String>,
+        val initialStates: Array<ToggleableState>,
+        val onConfirm: (finalStates: Array<ToggleableState>) -> Unit,
+    ) : MainActiveDialog
+
+    data class Confirm(
+        val title: String? = null,
+        val message: String,
+        val positiveButtonText: String? = null,
+        val negativeButtonText: String? = null,
+        val onConfirm: () -> Unit,
+    ) : MainActiveDialog
+
+    data class Error(
+        val title: String,
+        val message: String,
+        val details: String,
+        val neutralButtonText: String? = null,
+        val onNeutralButtonClick: (() -> Unit)? = null,
+    ) : MainActiveDialog
+}
+
 class MainActivityViewModel(app: Application, val preferences: NotallyXPreferences) :
     AndroidViewModel(app) {
 
     private var database: NotallyDatabase? = null
     private lateinit var baseNoteDao: BaseNoteDao
     private lateinit var labelDao: LabelDao
+
+    val activeDialog = MutableStateFlow<MainActiveDialog?>(null)
 
     val progress: StateFlow<Progress?>
         field = MutableStateFlow<Progress?>(null)

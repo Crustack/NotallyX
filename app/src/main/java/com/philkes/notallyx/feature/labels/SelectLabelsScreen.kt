@@ -23,6 +23,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.ui.dialog.TextInputDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.Label
 
@@ -33,9 +34,12 @@ internal fun SelectLabelsScreen(
     labels: List<Label>,
     selectedLabels: List<String>,
     modifier: Modifier = Modifier,
+    dialogState: LabelDialogState? = null,
     onLabelToggle: (String, Boolean) -> Unit = { _, _ -> },
     onAddLabelClick: () -> Unit = {},
     onBackClick: () -> Unit = {},
+    onDismissDialog: () -> Unit = {},
+    onConfirmAddLabel: (String) -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize().semantics { testTagsAsResourceId = true },
@@ -92,6 +96,19 @@ internal fun SelectLabelsScreen(
                 }
             }
         }
+    }
+
+    if (dialogState is LabelDialogState.Add) {
+        TextInputDialog(
+            title = stringResource(R.string.add_label),
+            initialValue = "",
+            onDismissRequest = onDismissDialog,
+            onConfirm = { value ->
+                if (value.isNotEmpty()) {
+                    onConfirmAddLabel(value)
+                }
+            },
+        )
     }
 }
 

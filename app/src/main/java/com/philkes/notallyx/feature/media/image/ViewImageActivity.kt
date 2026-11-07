@@ -1,19 +1,15 @@
 package com.philkes.notallyx.feature.media.image
 
-import android.app.Dialog
 import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.view.Window
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.res.stringResource
 import androidx.core.os.BundleCompat
 import androidx.lifecycle.lifecycleScope
 import com.philkes.notallyx.R
@@ -24,7 +20,6 @@ import com.philkes.notallyx.core.common.extensions.wrapWithChooser
 import com.philkes.notallyx.core.database.Converters
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.NotallyXPreferences
-import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.extensions.collectIn
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.FileAttachment
@@ -42,6 +37,7 @@ class ViewImageActivity : AppCompatActivity() {
     private lateinit var exportFileActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var preferences: NotallyXPreferences
     private val imagesState = mutableStateOf<List<FileAttachment>>(emptyList())
+    private val imageToDeletePositionState = mutableStateOf<Int?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,6 +71,7 @@ class ViewImageActivity : AppCompatActivity() {
                 ViewImageScreen(
                     images = imagesState.value,
                     initialPage = initial,
+                    imageToDeletePosition = imageToDeletePositionState.value,
                     onBackClick = { finish() },
                     onShareClick = { pos ->
                         if (pos in imagesState.value.indices) {
@@ -86,7 +83,20 @@ class ViewImageActivity : AppCompatActivity() {
                             saveToDevice(imagesState.value[pos])
                         }
                     },
-                    onDeleteClick = { pos -> delete(pos) },
+                    onDeleteClick = { pos -> imageToDeletePositionState.value = pos },
+                    onDismissDeleteConfirm = { imageToDeletePositionState.value = null },
+                    onConfirmDelete = { pos ->
+                        imageToDeletePositionState.value = null
+                        val currentList = imagesState.value.toMutableList()
+                        if (pos in currentList.indices) {
+                            val image = currentList.removeAt(pos)
+                            deletedImages.add(image)
+                            imagesState.value = currentList
+                            if (currentList.isEmpty()) {
+                                finish()
+                            }
+                        }
+                    },
                 )
             }
         }
@@ -169,38 +179,6 @@ class ViewImageActivity : AppCompatActivity() {
             Toast.makeText(this@ViewImageActivity, R.string.saved_to_device, Toast.LENGTH_LONG)
                 .show()
         }
-    }
-
-    private fun delete(position: Int) {
-        val composeView = ComposeView(this)
-        val dialog =
-            Dialog(this).apply {
-                requestWindowFeature(Window.FEATURE_NO_TITLE)
-                window?.setBackgroundDrawableResource(android.R.color.transparent)
-                setContentView(composeView)
-            }
-
-        composeView.setContent {
-            NotallyXTheme(theme = preferences.theme.value) {
-                ConfirmDialog(
-                    message = stringResource(R.string.delete_image_forever),
-                    positiveButtonText = stringResource(R.string.delete),
-                    onDismissRequest = { dialog.dismiss() },
-                    onConfirm = {
-                        val currentList = imagesState.value.toMutableList()
-                        if (position in currentList.indices) {
-                            val image = currentList.removeAt(position)
-                            deletedImages.add(image)
-                            imagesState.value = currentList
-                            if (currentList.isEmpty()) {
-                                finish()
-                            }
-                        }
-                    },
-                )
-            }
-        }
-        dialog.show()
     }
 
     companion object {

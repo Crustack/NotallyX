@@ -1,6 +1,5 @@
 package com.philkes.notallyx.feature.editor
 
-import android.app.Dialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -10,14 +9,15 @@ import android.text.Editable
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
-import android.view.Window
 import android.view.inputmethod.InputMethodManager
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.changeStatusAndNavigationBarColor
@@ -27,13 +27,18 @@ import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.security.ComposeBinding
 import com.philkes.notallyx.core.security.LockedActivity
+import com.philkes.notallyx.core.ui.dialog.ColorPickerDialog
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
+import com.philkes.notallyx.core.ui.dialog.DualTextInputDialog
+import com.philkes.notallyx.core.ui.dialog.ErrorDialog
 import com.philkes.notallyx.core.ui.dialog.ListDialog
+import com.philkes.notallyx.core.ui.dialog.ProgressDialog
+import com.philkes.notallyx.core.ui.dialog.TextInputDialog
 import com.philkes.notallyx.core.ui.extensions.collectIn
 import com.philkes.notallyx.core.ui.extensions.extractColor
 import com.philkes.notallyx.core.ui.extensions.isLightColor
 import com.philkes.notallyx.core.ui.extensions.repeatOnLifecycleScope
 import com.philkes.notallyx.core.ui.extensions.setLightStatusAndNavBar
-import com.philkes.notallyx.core.ui.extensions.setupProgressDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.NoteViewMode
@@ -151,7 +156,12 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
 
         val composeView =
             ComposeView(this).apply {
-                setContent { NotallyXTheme(theme = preferences.theme.value) { RenderScreen() } }
+                setContent {
+                    NotallyXTheme(theme = preferences.theme.value) {
+                        RenderScreen()
+                        EditActivityDialogs()
+                    }
+                }
             }
         binding = ComposeBinding(composeView)
         setContentView(composeView)
@@ -177,7 +187,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
     }
 
     private fun initialiseBinding() {
-        notallyModel.addingFiles.setupProgressDialog(this)
         repeatOnLifecycleScope {
             launch {
                 notallyModel.eventBus.collect { event ->
@@ -431,25 +440,130 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
     }
 
     private fun displayFileErrors(errors: List<FileError>) {
-        val messages = errors.map { "${it.name}: ${it.description}" }
-        val composeView = ComposeView(this)
-        val dialog =
-            Dialog(this).apply {
-                requestWindowFeature(Window.FEATURE_NO_TITLE)
-                window?.setBackgroundDrawableResource(android.R.color.transparent)
-                setContentView(composeView)
-            }
-        val preferences = NotallyXPreferences.getInstance(this)
-        composeView.setContent {
-            NotallyXTheme(theme = preferences.theme.value) {
-                ListDialog(
-                    title = stringResource(R.string.cant_load_file),
-                    items = messages,
-                    onDismissRequest = { dialog.dismiss() },
+        notallyModel.activeDialog.value = EditorDialogState.FileErrors(errors)
+    }
+
+    @Composable
+    protected fun EditActivityDialogs() {
+        val activeDialog by notallyModel.activeDialog.collectAsStateWithLifecycle()
+        val addingFilesProgress by notallyModel.addingFiles.collectAsStateWithLifecycle()
+
+        if (addingFilesProgress?.inProgress == true) {
+            val progress = addingFilesProgress!!
+            val msg =
+                when {
+                    progress.indeterminate -> stringResource(R.string.calculating)
+                    else ->
+                        stringResource(R.string.count, progress.current, progress.total) +
+                            (progress.countSuffix?.let { " $it" } ?: "")
+                }
+            val progressValue =
+                if (progress.indeterminate || progress.total == 0) null
+                else progress.current.toFloat() / progress.total.toFloat()
+
+            ProgressDialog(
+                title = stringResource(progress.titleId),
+                message = msg,
+                progress = progressValue,
+            )
+        }
+
+        when (val dialogState = activeDialog) {
+            is EditorDialogState.ColorPicker -> {
+                ColorPickerDialog(
+                    currentColor = dialogState.currentColor,
+                    onDismissRequest = { notallyModel.activeDialog.value = null },
+                    onColorSelected = { selectedColor ->
+                        dialogState.onColorSelected(selectedColor)
+                        notallyModel.activeDialog.value = null
+                    },
                 )
             }
+            is EditorDialogState.DeleteForeverConfirm -> {
+                ConfirmDialog(
+                    message = stringResource(R.string.delete_note_forever),
+                    positiveButtonText = stringResource(R.string.delete),
+                    negativeButtonText = stringResource(R.string.cancel),
+                    onDismissRequest = { notallyModel.activeDialog.value = null },
+                    onConfirm = {
+                        dialogState.onConfirm()
+                        notallyModel.activeDialog.value = null
+                    },
+                )
+            }
+            is EditorDialogState.AudioPermissionRationale -> {
+                ConfirmDialog(
+                    message = stringResource(R.string.please_grant_notally_audio),
+                    positiveButtonText = stringResource(R.string.continue_),
+                    negativeButtonText = stringResource(R.string.cancel),
+                    onDismissRequest = { notallyModel.activeDialog.value = null },
+                    onConfirm = {
+                        dialogState.onConfirm()
+                        notallyModel.activeDialog.value = null
+                    },
+                )
+            }
+            is EditorDialogState.RejectionConfirm -> {
+                ConfirmDialog(
+                    message = stringResource(dialogState.msgResId),
+                    positiveButtonText = stringResource(R.string.settings),
+                    negativeButtonText = stringResource(R.string.cancel),
+                    onDismissRequest = { notallyModel.activeDialog.value = null },
+                    onConfirm = {
+                        dialogState.onConfirm()
+                        notallyModel.activeDialog.value = null
+                    },
+                )
+            }
+            is EditorDialogState.FileErrors -> {
+                ListDialog(
+                    title = stringResource(R.string.cant_load_file),
+                    items = dialogState.errors.map { "${it.name}: ${it.description}" },
+                    onDismissRequest = { notallyModel.activeDialog.value = null },
+                )
+            }
+            is EditorDialogState.Error -> {
+                ErrorDialog(
+                    title = stringResource(dialogState.titleResId),
+                    message = dialogState.message,
+                    onDismissRequest = { notallyModel.activeDialog.value = null },
+                )
+            }
+            is EditorDialogState.EditLink -> {
+                if (dialogState.isNoteUrl) {
+                    TextInputDialog(
+                        title = stringResource(R.string.edit_link),
+                        initialValue = dialogState.displayTextBefore,
+                        hint = stringResource(R.string.display_text),
+                        onDismissRequest = {
+                            dialogState.onDismiss()
+                            notallyModel.activeDialog.value = null
+                        },
+                        onConfirm = { displayTextAfter ->
+                            dialogState.onConfirm(dialogState.urlBefore, displayTextAfter)
+                            notallyModel.activeDialog.value = null
+                        },
+                    )
+                } else {
+                    DualTextInputDialog(
+                        title = stringResource(R.string.edit_link),
+                        initialValue1 = dialogState.displayTextBefore,
+                        initialValue2 = dialogState.urlBefore,
+                        hint1 = stringResource(R.string.display_text),
+                        hint2 = stringResource(R.string.link),
+                        onDismissRequest = {
+                            dialogState.onDismiss()
+                            notallyModel.activeDialog.value = null
+                        },
+                        onConfirm = { displayTextAfter, urlAfter ->
+                            dialogState.onConfirm(urlAfter, displayTextAfter)
+                            notallyModel.activeDialog.value = null
+                        },
+                    )
+                }
+            }
+            null -> {}
         }
-        dialog.show()
     }
 
     open fun setColor() {

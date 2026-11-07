@@ -20,6 +20,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+data class ErrorDialogState(
+    val titleResId: Int,
+    val message: String,
+    val details: String,
+    val neutralButtonTextResId: Int? = null,
+    val onNeutralButtonClick: (() -> Unit)? = null,
+)
+
 class ErrorActivityViewModel(app: Application) : AndroidViewModel(app) {
 
     var backupPath: File? = null
@@ -27,6 +35,8 @@ class ErrorActivityViewModel(app: Application) : AndroidViewModel(app) {
     var pendingImportUri: Uri? = null
 
     val backupProgress = MutableStateFlow<Progress?>(null)
+
+    val errorDialogState = MutableStateFlow<ErrorDialogState?>(null)
 
     val crashLogsLinkText: StateFlow<String?>
         field = MutableStateFlow<String?>(null)

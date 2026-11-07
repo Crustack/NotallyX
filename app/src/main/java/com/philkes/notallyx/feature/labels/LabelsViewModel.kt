@@ -13,6 +13,7 @@ import com.philkes.notallyx.data.dao.LabelDao
 import com.philkes.notallyx.data.model.Label
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -20,12 +21,38 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+sealed interface LabelDialogState {
+    data object Add : LabelDialogState
+
+    data class Edit(val label: String) : LabelDialogState
+
+    data class Delete(val label: String) : LabelDialogState
+}
+
 class LabelsViewModel(app: Application, val preferences: NotallyXPreferences) :
     AndroidViewModel(app) {
 
     private var database: NotallyDatabase? = null
     private lateinit var labelDao: LabelDao
     private lateinit var commonDao: CommonDao
+
+    val dialogState = MutableStateFlow<LabelDialogState?>(null)
+
+    fun showAddDialog() {
+        dialogState.value = LabelDialogState.Add
+    }
+
+    fun showEditDialog(label: String) {
+        dialogState.value = LabelDialogState.Edit(label)
+    }
+
+    fun showDeleteDialog(label: String) {
+        dialogState.value = LabelDialogState.Delete(label)
+    }
+
+    fun dismissDialog() {
+        dialogState.value = null
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val labels: StateFlow<List<Label>> =

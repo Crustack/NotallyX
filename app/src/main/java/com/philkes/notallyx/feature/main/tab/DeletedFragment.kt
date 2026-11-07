@@ -1,17 +1,16 @@
 package com.philkes.notallyx.feature.main.tab
 
-import android.app.Dialog
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.View
-import android.view.Window
-import androidx.compose.ui.platform.ComposeView
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.extensions.add
-import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.Folder
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -25,28 +24,24 @@ class DeletedFragment : NotesFragment() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        menu.add(R.string.delete_all, R.drawable.delete_all) { deleteAllNotes() }
+        menu.add(R.string.delete_all, R.drawable.delete_all) {
+            deletedViewModel.showDeleteAllDialog()
+        }
     }
 
-    private fun deleteAllNotes() {
-        val composeView = ComposeView(requireContext())
-        val dialog =
-            Dialog(requireContext()).apply {
-                requestWindowFeature(Window.FEATURE_NO_TITLE)
-                window?.setBackgroundDrawableResource(android.R.color.transparent)
-                setContentView(composeView)
-            }
-        composeView.setContent {
-            NotallyXTheme(theme = deletedViewModel.preferences.theme.value) {
-                ConfirmDialog(
-                    message = stringResource(R.string.delete_all_notes),
-                    positiveButtonText = stringResource(R.string.delete),
-                    onDismissRequest = { dialog.dismiss() },
-                    onConfirm = { deletedViewModel.deleteAllTrashedBaseNotes() },
-                )
-            }
+    @Composable
+    override fun ContentOverlay() {
+        val showConfirmDeleteAllDialog by
+            deletedViewModel.showConfirmDeleteAllDialog.collectAsStateWithLifecycle()
+
+        if (showConfirmDeleteAllDialog) {
+            ConfirmDialog(
+                message = stringResource(R.string.delete_all_notes),
+                positiveButtonText = stringResource(R.string.delete),
+                onDismissRequest = { deletedViewModel.dismissDeleteAllDialog() },
+                onConfirm = { deletedViewModel.confirmDeleteAll() },
+            )
         }
-        dialog.show()
     }
 
     override fun getBackgroundResId() = R.drawable.delete

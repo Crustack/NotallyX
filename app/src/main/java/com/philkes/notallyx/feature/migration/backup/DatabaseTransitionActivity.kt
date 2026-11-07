@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.lifecycleScope
 import com.philkes.notallyx.NotallyXApplication
@@ -14,7 +15,6 @@ import com.philkes.notallyx.core.common.extensions.copyToLarge
 import com.philkes.notallyx.core.common.extensions.getExternalBackupsDirectory
 import com.philkes.notallyx.core.common.extensions.log
 import com.philkes.notallyx.core.common.extensions.migrateAllAttachments
-import com.philkes.notallyx.core.common.extensions.showErrorDialog
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.database.NotallyDatabase.Companion.DATABASE_NAME
 import com.philkes.notallyx.core.preference.BiometricLock
@@ -39,6 +39,7 @@ import org.koin.android.ext.android.inject
 class DatabaseTransitionActivity : AppCompatActivity() {
 
     private val preferences: NotallyXPreferences by inject()
+    private val errorDataState = mutableStateOf<ErrorDialogData?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,7 +79,11 @@ class DatabaseTransitionActivity : AppCompatActivity() {
 
         setContent {
             NotallyXTheme(theme = preferences.theme.value) {
-                DatabaseTransitionScreen(statusText = stringResource(id = messageResId))
+                DatabaseTransitionScreen(
+                    statusText = stringResource(id = messageResId),
+                    errorData = errorDataState.value,
+                    onErrorDismiss = { launchMainActivity() },
+                )
             }
         }
 
@@ -124,41 +129,32 @@ class DatabaseTransitionActivity : AppCompatActivity() {
                 launchMainActivity()
             } catch (e: Exception) {
                 notallyXApplication.log(TAG, throwable = e)
-                when (e) {
-                    is EncryptionException -> {
-                        val dialog =
-                            showErrorDialog(
-                                e,
+                val (titleRes, message) =
+                    when (e) {
+                        is EncryptionException ->
+                            Pair(
                                 R.string.biometrics_setup_failure,
                                 getString(
                                     R.string.biometrics_setup_failure_encrypt,
                                     getString(R.string.report_bug),
                                 ),
                             )
-                        dialog?.setOnDismissListener { launchMainActivity() }
-                    }
-                    is DecryptionException -> {
-                        val dialog =
-                            showErrorDialog(
-                                e,
+                        is DecryptionException ->
+                            Pair(
                                 R.string.biometrics_setup_failure,
                                 getString(
                                     R.string.biometrics_setup_failure_decrypt,
                                     getString(R.string.report_bug),
                                 ),
                             )
-                        dialog?.setOnDismissListener { launchMainActivity() }
+                        else -> Pair(R.string.error, e.message ?: "Database migration failed")
                     }
-                    else -> {
-                        val dialog =
-                            showErrorDialog(
-                                e,
-                                R.string.error,
-                                e.message ?: "Database migration failed",
-                            )
-                        dialog?.setOnDismissListener { launchMainActivity() }
-                    }
-                }
+                errorDataState.value =
+                    ErrorDialogData(
+                        title = getString(titleRes),
+                        details = e.stackTraceToString(),
+                        message = message,
+                    )
             }
         }
     }

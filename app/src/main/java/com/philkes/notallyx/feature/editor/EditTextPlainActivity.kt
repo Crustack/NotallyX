@@ -4,26 +4,19 @@ package com.philkes.notallyx.feature.editor
 // import com.philkes.notallyx.showAndFocus
 // import com.philkes.notallyx.showToast
 import android.annotation.SuppressLint
-import android.app.Dialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.view.Window
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.lifecycleScope
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.findAllOccurrences
 import com.philkes.notallyx.core.common.extensions.getFileName
-import com.philkes.notallyx.core.preference.NotallyXPreferences
-import com.philkes.notallyx.core.ui.dialog.ErrorDialog
 import com.philkes.notallyx.core.ui.extensions.collectIn
 import com.philkes.notallyx.core.ui.extensions.showToast
-import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.feature.editor.history.ChangeHistory
@@ -159,24 +152,11 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
                 originalFileUri.value = uri
                 showToast(R.string.saved_to_device)
             } catch (e: Exception) {
-                val composeView = ComposeView(this@EditTextPlainActivity)
-                val dialog =
-                    Dialog(this@EditTextPlainActivity).apply {
-                        requestWindowFeature(Window.FEATURE_NO_TITLE)
-                        window?.setBackgroundDrawableResource(android.R.color.transparent)
-                        setContentView(composeView)
-                    }
-                val preferences = NotallyXPreferences.getInstance(this@EditTextPlainActivity)
-                composeView.setContent {
-                    NotallyXTheme(theme = preferences.theme.value) {
-                        ErrorDialog(
-                            title = stringResource(R.string.something_went_wrong),
-                            message = e.message,
-                            onDismissRequest = { dialog.dismiss() },
-                        )
-                    }
-                }
-                dialog.show()
+                notallyModel.activeDialog.value =
+                    EditorDialogState.Error(
+                        titleResId = R.string.something_went_wrong,
+                        message = e.message,
+                    )
             }
         }
     }

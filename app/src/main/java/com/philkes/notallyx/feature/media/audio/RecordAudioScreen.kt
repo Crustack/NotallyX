@@ -34,6 +34,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import kotlinx.coroutines.delay
 
@@ -44,9 +45,13 @@ internal fun RecordAudioScreen(
     status: Status,
     baseTime: Long,
     modifier: Modifier = Modifier,
+    showSaveConfirmDialog: Boolean = false,
     onMainClick: () -> Unit = {},
     onStopClick: () -> Unit = {},
     onBackClick: () -> Unit = {},
+    onDismissSaveConfirm: () -> Unit = {},
+    onSaveConfirm: () -> Unit = {},
+    onDiscardConfirm: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -113,6 +118,17 @@ internal fun RecordAudioScreen(
                     }
                 }
             }
+        }
+
+        if (showSaveConfirmDialog) {
+            ConfirmDialog(
+                message = stringResource(R.string.save_recording),
+                positiveButtonText = stringResource(R.string.save),
+                neutralButtonText = stringResource(R.string.discard),
+                onNeutralButtonClick = onDiscardConfirm,
+                onDismissRequest = onDismissSaveConfirm,
+                onConfirm = onSaveConfirm,
+            )
         }
     }
 }
