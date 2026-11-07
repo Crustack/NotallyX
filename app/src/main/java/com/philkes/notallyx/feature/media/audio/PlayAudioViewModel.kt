@@ -51,6 +51,7 @@ class PlayAudioViewModel(
     private var service: AudioPlayService? = null
     private var isBound = false
     private var serviceIntent: Intent? = null
+    private var pendingPlay = false
 
     private val serviceConnection =
         object : ServiceConnection {
@@ -60,6 +61,10 @@ class PlayAudioViewModel(
                 s.initialise(currentAudio)
                 s.onStateChange = { updateUI(s) }
                 service = s
+                if (pendingPlay) {
+                    pendingPlay = false
+                    s.play()
+                }
                 updateUI(s)
             }
 
@@ -132,7 +137,14 @@ class PlayAudioViewModel(
     fun onAction(action: PlayAudioAction) {
         when (action) {
             is PlayAudioAction.Init -> initAudio(action.key)
-            is PlayAudioAction.PlayPauseClicked -> service?.play()
+            is PlayAudioAction.PlayPauseClicked -> {
+                val s = service
+                if (s != null) {
+                    s.play()
+                } else {
+                    pendingPlay = !pendingPlay
+                }
+            }
             is PlayAudioAction.Seek -> service?.seek(action.positionMs)
             is PlayAudioAction.ShareClicked -> share()
             is PlayAudioAction.SaveClicked -> saveToDevice()

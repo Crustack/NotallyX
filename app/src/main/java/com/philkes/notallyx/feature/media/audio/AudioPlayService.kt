@@ -138,6 +138,7 @@ class AudioPlayService : MediaSessionService() {
 
     fun play() {
         when (state) {
+            INITIALISED,
             PREPARED,
             PAUSED -> {
                 player.play()
