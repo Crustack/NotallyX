@@ -137,57 +137,30 @@ internal fun BaseNoteCard(
                 modifier = Modifier.fillMaxWidth().padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                // Title
+                // Title and Reminder
                 val titleText =
                     if (baseNote.title.isNotEmpty()) {
                         baseNote.title
                     } else if (baseNote.hasNoContents() && baseNote.images.isEmpty()) {
                         stringResource(baseNote.getEmptyMessage())
                     } else ""
-
-                if (titleText.isNotEmpty()) {
-                    Text(
-                        text = titleText,
-                        fontSize = config.textSize.displayTitleSize.sp,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = LocalContentColor.current,
-                        maxLines = config.maxTitleLines,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-
-                // Date text and Reminder chip (directly below note title)
-                val (dateTimestamp, datePrefixResId) =
-                    when (config.sortBy) {
-                        NotesSortBy.CREATION_DATE ->
-                            Pair(baseNote.timestamp, R.string.creation_date)
-
-                        NotesSortBy.MODIFIED_DATE ->
-                            Pair(baseNote.modifiedTimestamp, R.string.modified_date)
-
-                        else -> Pair(null, null)
-                    }
-
-                val hasDate =
-                    dateTimestamp != null &&
-                        (config.dateFormat != DateFormat.NONE ||
-                            config.timeFormat != TimeFormat.NONE)
                 val hasReminder = baseNote.reminders.isNotEmpty()
 
-                if (hasDate || hasReminder) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
+                if (titleText.isNotEmpty() || hasReminder) {
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        itemVerticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (hasDate && dateTimestamp != null) {
-                            val prefixText = datePrefixResId?.let { stringResource(it) } ?: ""
-                            val formattedDate =
-                                Date(dateTimestamp).format(config.dateFormat, config.timeFormat)
+                        if (titleText.isNotEmpty()) {
                             Text(
-                                text = "$prefixText $formattedDate".trim(),
-                                fontSize = config.textSize.displayBodySize.sp,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = LocalContentColor.current.copy(alpha = 0.7f),
+                                text = titleText,
+                                fontSize = config.textSize.displayTitleSize.sp,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = LocalContentColor.current,
+                                maxLines = config.maxTitleLines,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
 
@@ -204,13 +177,41 @@ internal fun BaseNoteCard(
                     }
                 }
 
+                // Date text
+                val (dateTimestamp, datePrefixResId) =
+                    when (config.sortBy) {
+                        NotesSortBy.CREATION_DATE ->
+                            Pair(baseNote.timestamp, R.string.creation_date)
+
+                        NotesSortBy.MODIFIED_DATE ->
+                            Pair(baseNote.modifiedTimestamp, R.string.modified_date)
+
+                        else -> Pair(null, null)
+                    }
+
+                val hasDate =
+                    dateTimestamp != null &&
+                        (config.dateFormat != DateFormat.NONE ||
+                            config.timeFormat != TimeFormat.NONE)
+
+                if (hasDate) {
+                    val prefixText = datePrefixResId?.let { stringResource(it) } ?: ""
+                    val formattedDate =
+                        Date(dateTimestamp).format(config.dateFormat, config.timeFormat)
+                    Text(
+                        text = "$prefixText $formattedDate".trim(),
+                        fontSize = config.textSize.displayBodySize.sp,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = LocalContentColor.current.copy(alpha = 0.7f),
+                    )
+                }
+
                 // Files (placed under Date & Reminder row, before Body text or Checklist)
                 if (baseNote.files.isNotEmpty()) {
-                    Row(
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement =
-                            androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         FileAttachmentPreviewChip(fileName = baseNote.files[0].originalName)
                         if (baseNote.files.size > 1) {
@@ -608,4 +609,24 @@ private fun DarkListNotePreview() {
 @Composable
 private fun LoremIpsumNoteSelectedPreview() {
     NotallyXTheme { BaseNoteCard(baseNote = SampleNotes.LOREM_IPSUM_NOTE, isSelected = true) }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun NoteWithEverythingMinimalDisplayPreview() {
+    NotallyXTheme {
+        BaseNoteCard(
+            baseNote = SampleNotes.RICH_TEXT_NOTE,
+            config =
+                NoteCardDisplayConfig(
+                    dateFormat = DateFormat.NONE,
+                    timeFormat = TimeFormat.NONE,
+                    maxItems = 1,
+                    maxLines = 1,
+                    hideLabels = true,
+                    hideImages = true,
+                ),
+            isSelected = true,
+        )
+    }
 }
