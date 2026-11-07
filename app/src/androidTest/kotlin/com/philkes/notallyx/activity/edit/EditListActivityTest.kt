@@ -26,6 +26,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
@@ -1223,6 +1224,198 @@ class EditListActivityTest : UiTestBase() {
 
         assertIsAbove("Item 2", "Parent 1")
         assertIsAbove("Parent 1", "Item 3")
+
+        scenario.close()
+    }
+
+    @Test
+    fun undoAndRedoListItemTextDeltasAndStructuralChanges() {
+        preferences.listItemSorting.save(ListItemSort.NO_AUTO_SORT)
+
+        val noteTitle = "Text Deltas and Structure Note"
+        val itemsList =
+            listOf(
+                createListItem(
+                    body = "Parent 1",
+                    checked = false,
+                    isChild = false,
+                    order = 0,
+                    id = 0,
+                ),
+                createListItem(
+                    body = "Item 2",
+                    checked = false,
+                    isChild = false,
+                    order = 1,
+                    id = 1,
+                ),
+                createListItem(
+                    body = "Item 3",
+                    checked = false,
+                    isChild = false,
+                    order = 2,
+                    id = 2,
+                ),
+            )
+        val note =
+            createBaseNote(
+                title = noteTitle,
+                type = Type.LIST,
+                items = itemsList,
+            )
+        runBlocking { database.getBaseNoteDao().insert(note) }
+
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        val undoLabel = context.getString(R.string.undo)
+        val redoLabel = context.getString(R.string.redo)
+        val backLabel = context.getString(R.string.back)
+
+        // 1. Open the list note
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(noteTitle).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(itemNode("Parent 1")).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // Verify initial state: undo and redo both disabled
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsNotEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
+
+        // 2. Edit Item 2 text (pushes ListItemBodyDeltaChange)
+        composeTestRule
+            .onAllNodes(itemNode("Item 2"))
+            .onFirst()
+            .scrollToIfNeeded()
+            .performTextReplacement("Item 2 Updated")
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(itemNode("Item 2 Updated"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
+
+        // 3. Edit Item 3 text (pushes separate ListItemBodyDeltaChange for different itemId)
+        composeTestRule
+            .onAllNodes(itemNode("Item 3"))
+            .onFirst()
+            .scrollToIfNeeded()
+            .performTextReplacement("Item 3 Modified")
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(itemNode("Item 3 Modified"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+
+        // 4. Undo Item 3 text change -> Item 3 returns to original text, Item 2 remains "Item 2
+        // Updated"
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(itemNode("Item 3")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onAllNodes(itemNode("Item 2 Updated")).onFirst().assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // 5. Undo Item 2 text change -> Item 2 returns to "Item 2"
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(itemNode("Item 2")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsNotEnabled()
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // 6. Redo Item 2 text change -> "Item 2 Updated" restored
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(itemNode("Item 2 Updated"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onAllNodes(itemNode("Item 3")).onFirst().assertIsDisplayed()
+
+        // 7. Redo Item 3 text change -> "Item 3 Modified" restored
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(itemNode("Item 3 Modified"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
+
+        // 8. Interleave structural change (ListItemsChange) and text delta
+        // (ListItemBodyDeltaChange):
+        // Indent Item 2 Updated under Parent 1 (pushes ListItemsChange)
+        composeTestRule.swipeItemRight("Item 2 Updated")
+        composeTestRule.waitForIdle()
+        assertIsChild("Item 2 Updated", "Parent 1")
+
+        // Further edit the child item's text (pushes ListItemBodyDeltaChange on child item)
+        composeTestRule
+            .onAllNodes(itemNode("Item 2 Updated"))
+            .onFirst()
+            .scrollToIfNeeded()
+            .performTextReplacement("Item 2 Child Text")
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(itemNode("Item 2 Child Text"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        assertIsChild("Item 2 Child Text", "Parent 1")
+
+        // 9. Undo text delta on child item -> reverts text to "Item 2 Updated" while keeping it as
+        // a child!
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(itemNode("Item 2 Updated"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        assertIsChild("Item 2 Updated", "Parent 1")
+
+        // 10. Undo structural change -> reverts indentation, Item 2 Updated becomes parent again!
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        composeTestRule.waitForIdle()
+        assertIsParent("Item 2 Updated", "Parent 1")
+
+        // 11. Redo structural change -> Item 2 Updated becomes child again
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        composeTestRule.waitForIdle()
+        assertIsChild("Item 2 Updated", "Parent 1")
+
+        // 12. Redo text delta -> Item 2 text restored to "Item 2 Child Text"
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(itemNode("Item 2 Child Text"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        assertIsChild("Item 2 Child Text", "Parent 1")
+
+        // 13. Exit note and re-enter to verify Room database persistence
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(noteTitle).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(itemNode("Parent 1")).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        composeTestRule.onAllNodes(itemNode("Item 2 Child Text")).onFirst().assertIsDisplayed()
+        assertIsChild("Item 2 Child Text", "Parent 1")
+        composeTestRule.onAllNodes(itemNode("Item 3 Modified")).onFirst().assertIsDisplayed()
 
         scenario.close()
     }

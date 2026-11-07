@@ -235,15 +235,15 @@ class ChangeHistoryTest {
     }
 
     @Test
-    fun `default maxSize is 100`() {
+    fun `default maxSize is 500`() {
         val history = ChangeHistory()
-        repeat(100) { history.push(TestChange()) }
-        // At 100, lookUp(99) is the oldest (first) item
+        repeat(500) { history.push(TestChange()) }
+        // At 500, lookUp(499) is the oldest (first) item
         assertEquals(true, history.canUndo.value)
-        // Pushing 101st item evicts the 1st
-        val c101 = TestChange()
-        history.push(c101)
-        assertEquals(c101, history.peek())
-        assertThrows(ChangeHistory.ChangeHistoryException::class.java) { history.lookUp(100) }
+        // Pushing 501st item evicts the 1st
+        val c501 = TestChange()
+        history.push(c501)
+        assertEquals(c501, history.peek())
+        assertThrows(ChangeHistory.ChangeHistoryException::class.java) { history.lookUp(500) }
     }
 }
