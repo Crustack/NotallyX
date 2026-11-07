@@ -11,6 +11,7 @@ import com.philkes.notallyx.data.model.Item
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -30,12 +31,16 @@ class NotesViewModel(app: Application, preferences: NotallyXPreferences) :
                 Triple(database, labelsHidden, notesSorting)
             }
             .flatMapLatest { (database, labelsHidden, notesSorting) ->
-                database?.getBaseNoteDao()?.getByFolder(Folder.NOTES)?.map { list ->
-                    val filtered = list.filter { baseNote ->
-                        baseNote.labels.none { labelsHidden.contains(it) }
+                database
+                    ?.getBaseNoteDao()
+                    ?.getByFolder(Folder.NOTES)
+                    ?.map { list ->
+                        val filtered = list.filter { baseNote ->
+                            baseNote.labels.none { labelsHidden.contains(it) }
+                        }
+                        app.createItemsFromNotes(filtered, notesSorting)
                     }
-                    app.createItemsFromNotes(filtered, notesSorting)
-                } ?: flowOf(emptyList())
+                    ?.catch { emit(emptyList()) } ?: flowOf(emptyList())
             }
             .stateIn(
                 scope = viewModelScope,

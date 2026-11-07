@@ -239,6 +239,7 @@ internal fun MainScreen(
     showFabs: Boolean = true,
     showSearchOption: Boolean = true,
     isInSearchMode: Boolean = false,
+    isSecondaryScreen: Boolean = false,
     drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
     onNavigationItemClick: (NotallyNavKey) -> Unit = {},
     onTakeNoteClick: () -> Unit = {},
@@ -252,6 +253,7 @@ internal fun MainScreen(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        gesturesEnabled = !isSecondaryScreen && !actionModeEnabled,
         drawerContent = {
             MainDrawerContent(
                 selectedNavKey = selectedNavKey,
@@ -265,80 +267,82 @@ internal fun MainScreen(
     ) {
         Scaffold(
             topBar = {
-                if (actionModeEnabled) {
-                    TopAppBar(
-                        title = { Text(text = selectedCount.toString()) },
-                        navigationIcon = {
-                            IconButton(onClick = { actionModeListener.onClose() }) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.close),
-                                    contentDescription = stringResource(R.string.cancel),
-                                )
-                            }
-                        },
-                        actions = {
-                            ActionModeActions(
-                                currentFolder = currentFolder,
-                                selectedCount = selectedCount,
-                                isAllPinned = isAllPinned,
-                                isAllPinnedToStatus = isAllPinnedToStatus,
-                                listener = actionModeListener,
-                            )
-                        },
-                    )
-                } else {
-                    TopAppBar(
-                        title = { Text(text = title) },
-                        navigationIcon = {
-                            IconButton(
-                                onClick = {
-                                    scope.launch {
-                                        if (drawerState.isClosed) drawerState.open()
-                                        else drawerState.close()
-                                    }
-                                }
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.menu),
-                                    contentDescription = stringResource(R.string.app_name),
-                                )
-                            }
-                        },
-                        actions = {
-                            if (onAddClick != null) {
-                                IconButton(onClick = onAddClick) {
+                if (!isSecondaryScreen) {
+                    if (actionModeEnabled) {
+                        TopAppBar(
+                            title = { Text(text = selectedCount.toString()) },
+                            navigationIcon = {
+                                IconButton(onClick = { actionModeListener.onClose() }) {
                                     Icon(
-                                        painter = painterResource(id = R.drawable.add),
-                                        contentDescription = stringResource(R.string.add_label),
+                                        painter = painterResource(id = R.drawable.close),
+                                        contentDescription = stringResource(R.string.cancel),
                                     )
                                 }
-                            }
-                            if (showSearchOption) {
+                            },
+                            actions = {
+                                ActionModeActions(
+                                    currentFolder = currentFolder,
+                                    selectedCount = selectedCount,
+                                    isAllPinned = isAllPinned,
+                                    isAllPinnedToStatus = isAllPinnedToStatus,
+                                    listener = actionModeListener,
+                                )
+                            },
+                        )
+                    } else {
+                        TopAppBar(
+                            title = { Text(text = title) },
+                            navigationIcon = {
                                 IconButton(
-                                    onClick = onSearchClick,
-                                    modifier = Modifier.testTag(TestTags.NAVIGATION),
+                                    onClick = {
+                                        scope.launch {
+                                            if (drawerState.isClosed) drawerState.open()
+                                            else drawerState.close()
+                                        }
+                                    }
                                 ) {
                                     Icon(
-                                        painter =
-                                            painterResource(
-                                                id =
-                                                    if (isInSearchMode) R.drawable.close
-                                                    else R.drawable.search
-                                            ),
-                                        contentDescription =
-                                            stringResource(
-                                                if (isInSearchMode) R.string.cancel
-                                                else R.string.search
-                                            ),
+                                        painter = painterResource(id = R.drawable.menu),
+                                        contentDescription = stringResource(R.string.app_name),
                                     )
                                 }
-                            }
-                        },
-                    )
+                            },
+                            actions = {
+                                if (onAddClick != null) {
+                                    IconButton(onClick = onAddClick) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.add),
+                                            contentDescription = stringResource(R.string.add_label),
+                                        )
+                                    }
+                                }
+                                if (showSearchOption) {
+                                    IconButton(
+                                        onClick = onSearchClick,
+                                        modifier = Modifier.testTag(TestTags.NAVIGATION),
+                                    ) {
+                                        Icon(
+                                            painter =
+                                                painterResource(
+                                                    id =
+                                                        if (isInSearchMode) R.drawable.close
+                                                        else R.drawable.search
+                                                ),
+                                            contentDescription =
+                                                stringResource(
+                                                    if (isInSearchMode) R.string.cancel
+                                                    else R.string.search
+                                                ),
+                                        )
+                                    }
+                                }
+                            },
+                        )
+                    }
                 }
             },
             floatingActionButton = {
-                if (showFabs && !actionModeEnabled) {
+                if (!isSecondaryScreen && showFabs && !actionModeEnabled) {
                     Column(horizontalAlignment = Alignment.End) {
                         FloatingActionButton(
                             onClick = onMakeListClick,
@@ -365,7 +369,17 @@ internal fun MainScreen(
                 }
             },
         ) { innerPadding ->
-            Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) { content() }
+            Box(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .padding(
+                            if (isSecondaryScreen)
+                                androidx.compose.foundation.layout.PaddingValues()
+                            else innerPadding
+                        )
+            ) {
+                content()
+            }
         }
     }
 }

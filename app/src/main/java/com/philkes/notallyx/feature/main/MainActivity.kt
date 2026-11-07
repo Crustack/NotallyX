@@ -35,11 +35,8 @@ import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.feature.editor.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
-import com.philkes.notallyx.feature.editor.EditListActivity
-import com.philkes.notallyx.feature.editor.EditNoteActionHandler
-import com.philkes.notallyx.feature.editor.EditNoteActivity
-import com.philkes.notallyx.feature.editor.handleRejection
+import com.philkes.notallyx.data.model.extensions.generateBaseNote
+import com.philkes.notallyx.feature.editor.NoteActionHandler
 import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel
 import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel.Companion.CURRENT_LABEL_EMPTY
 import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel.Companion.CURRENT_LABEL_NONE
@@ -47,7 +44,6 @@ import com.philkes.notallyx.feature.migration.ExportMimeType
 import com.philkes.notallyx.feature.migration.backup.DatabaseTransitionActivity
 import com.philkes.notallyx.feature.migration.backup.exportNotes
 import com.philkes.notallyx.feature.migration.progress.MigrationProgress
-import com.philkes.notallyx.feature.reminder.RemindersActivity
 import com.philkes.notallyx.navigation.NotallyNavKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -63,11 +59,12 @@ class MainActivity : LockedActivity<ComposeBinding>() {
 
     private val currentNavKeyFlow = MutableStateFlow<NotallyNavKey>(NotallyNavKey.Notes)
     private val currentTitleFlow = MutableStateFlow("")
+    private val pendingNavKeyFlow = MutableStateFlow<NotallyNavKey?>(null)
 
     private var isStartViewRoute = false
     private var lastSelectedNotePosition = -1
     private val actionModeCancelCallback =
-        object : OnBackPressedCallback(true) {
+        object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
                 notallyRouteModel.actionMode.close(true)
             }
@@ -96,13 +93,12 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                 onPrepareNewNoteIntent = { intent -> prepareNewNoteIntent(intent) },
                 onNoteClick = { note, pos -> handleNoteClick(note, pos) },
                 onNoteLongClick = { note, pos, items -> handleNoteLongClick(note, pos, items) },
-                onReminderClick = { note -> handleReminderClick(note) },
                 onExportNotes = { mimeType -> exportSelectedNotes(mimeType) },
                 onMoveSelectedNotes = { folderTo -> moveSelectedNotes(folderTo) },
                 onDeleteSelectedNotesForever = { deleteSelectedNotesForever() },
                 onRequestNotificationPermission = {
                     checkNotificationPermission(
-                        EditNoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
+                        NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
                         onShowRationale = { msgResId, onConfirm ->
                             mainActivityViewModel.activeDialog.value =
                                 MainActiveDialog.Confirm(
@@ -120,6 +116,8 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                 },
                 onShowToast = { resId -> showToast(resId) },
                 migrationProgressState = migrationProgressState,
+                skipStartViewOnBack = intent.getBooleanExtra(EXTRA_SKIP_START_VIEW_ON_BACK, false),
+                pendingNavKeyFlow = pendingNavKeyFlow,
                 mainActivityViewModel = mainActivityViewModel,
                 notallyRouteModel = notallyRouteModel,
             )
@@ -129,6 +127,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
             launch { preferences.alwaysShowSearchBar.flow.collect { invalidateOptionsMenu() } }
             launch {
                 notallyRouteModel.actionMode.enabled.collect { enabled ->
+                    actionModeCancelCallback.isEnabled = enabled
                     if (!enabled) {
                         lastSelectedNotePosition = -1
                     }
@@ -156,24 +155,6 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                 )
         }
 
-        onBackPressedDispatcher.addCallback(
-            this,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    if (notallyRouteModel.actionMode.enabled.value) {
-                        return
-                    }
-                    if (
-                        !isStartViewRoute &&
-                            !intent.getBooleanExtra(EXTRA_SKIP_START_VIEW_ON_BACK, false)
-                    ) {
-                        navigateToStartView()
-                    } else {
-                        finish()
-                    }
-                }
-            },
-        )
         onBackPressedDispatcher.addCallback(this, actionModeCancelCallback)
 
         checkForMigrations(savedInstanceState)
@@ -186,15 +167,6 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     private fun handleNoteClick(note: BaseNote, position: Int) {
         if (notallyRouteModel.actionMode.isEnabled()) {
             handleNoteSelection(note.id, position, note)
-        } else {
-            val intent =
-                Intent(
-                        this,
-                        if (note.type == Type.NOTE) EditNoteActivity::class.java
-                        else EditListActivity::class.java,
-                    )
-                    .apply { putExtra(EXTRA_SELECTED_BASE_NOTE, note.id) }
-            startActivity(intent)
         }
     }
 
@@ -252,22 +224,6 @@ class MainActivity : LockedActivity<ComposeBinding>() {
         }
     }
 
-    private fun handleReminderClick(note: BaseNote) {
-        if (notallyRouteModel.actionMode.isEnabled()) {
-            if (notallyRouteModel.actionMode.selectedNotes.contains(note.id)) {
-                notallyRouteModel.actionMode.remove(note.id)
-            } else {
-                notallyRouteModel.actionMode.add(note.id, note)
-            }
-            return
-        }
-        val intent =
-            Intent(this, RemindersActivity::class.java).apply {
-                putExtra(RemindersActivity.NOTE_ID, note.id)
-            }
-        startActivity(intent)
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -275,7 +231,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
-            EditNoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS -> {
+            NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS -> {
                 if (
                     grantResults.isNotEmpty() &&
                         grantResults[0] == PackageManager.PERMISSION_GRANTED
@@ -288,6 +244,18 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                 } else handleRejection(R.string.to_pin_note_status_bar)
             }
         }
+    }
+
+    private fun handleRejection(msgResId: Int) {
+        mainActivityViewModel.showConfirmDialog(
+            message = getString(msgResId),
+            positiveButtonText = getString(R.string.settings),
+            onConfirm = {
+                val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                intent.data = android.net.Uri.parse("package:$packageName")
+                startActivity(intent)
+            },
+        )
     }
 
     private fun checkForMigrations(savedInstanceState: Bundle?) {
@@ -333,8 +301,82 @@ class MainActivity : LockedActivity<ComposeBinding>() {
         )
     }
 
-    private fun getStartNavKey(): NotallyNavKey {
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val key = resolveNavKeyFromIntent(intent)
+        if (key != null) {
+            pendingNavKeyFlow.value = key
+        }
+    }
+
+    private fun resolveNavKeyFromIntent(intent: Intent): NotallyNavKey? {
         intent.getNavKey()?.let {
+            return it
+        }
+
+        val className = intent.component?.className ?: ""
+
+        if (className.endsWith("EditTextPlainActivity")) {
+            return NotallyNavKey.EditTextPlain(fileUri = intent.data?.toString())
+        }
+
+        if (intent.hasExtra(EXTRA_SELECTED_BASE_NOTE)) {
+            val id = intent.getLongExtra(EXTRA_SELECTED_BASE_NOTE, 0L)
+            val type = intent.getStringExtra("type")
+            return if (type == Type.LIST.name || className.endsWith("EditListActivity")) {
+                NotallyNavKey.EditList(noteId = id)
+            } else {
+                NotallyNavKey.EditNote(noteId = id)
+            }
+        }
+
+        if (className.endsWith("EditListActivity")) {
+            return NotallyNavKey.EditList()
+        }
+        if (className.endsWith("EditNoteActivity")) {
+            if (
+                intent.action == Intent.ACTION_SEND ||
+                    intent.action == Intent.ACTION_SEND_MULTIPLE ||
+                    (intent.action == Intent.ACTION_VIEW && intent.data != null)
+            ) {
+                val shared = intent.generateBaseNote(this)
+                return NotallyNavKey.EditNote(
+                    initialTitle = shared.title.ifEmpty { null },
+                    initialBody = shared.text.ifEmpty { null },
+                    initialImageUris = shared.images.map { it.originalName },
+                    initialFileUris = shared.files.map { it.originalName },
+                )
+            }
+            return NotallyNavKey.EditNote()
+        }
+
+        if (intent.action == Intent.ACTION_SEND || intent.action == Intent.ACTION_SEND_MULTIPLE) {
+            val shared = intent.generateBaseNote(this)
+            return NotallyNavKey.EditNote(
+                initialTitle = shared.title.ifEmpty { null },
+                initialBody = shared.text.ifEmpty { null },
+                initialImageUris = shared.images.map { it.originalName },
+                initialFileUris = shared.files.map { it.originalName },
+            )
+        }
+
+        if (intent.action == Intent.ACTION_VIEW && intent.data != null) {
+            val mimeType = intent.type ?: intent.data?.let { contentResolver.getType(it) }
+            if (
+                mimeType?.startsWith("text/") == true ||
+                    mimeType == "application/json" ||
+                    mimeType == "application/xml"
+            ) {
+                return NotallyNavKey.EditTextPlain(fileUri = intent.data?.toString())
+            }
+        }
+
+        return null
+    }
+
+    private fun getStartNavKey(): NotallyNavKey {
+        resolveNavKeyFromIntent(intent)?.let {
             return it
         }
         return when (val startView = preferences.startView.value) {
@@ -342,10 +384,6 @@ class MainActivity : LockedActivity<ComposeBinding>() {
             START_VIEW_UNLABELED -> NotallyNavKey.Unlabeled
             else -> NotallyNavKey.DisplayLabel(startView)
         }
-    }
-
-    private fun navigateToStartView() {
-        // Handled by onBackPressed or start key
     }
 
     private fun prepareNewNoteIntent(intent: Intent): Intent {
@@ -415,43 +453,37 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     }
 
     private fun deleteSelectedNotesForever() {
-        mainActivityViewModel.showConfirmDialog(
-            message = getString(R.string.delete_selected_notes),
-            positiveButtonText = getString(R.string.delete),
-            onConfirm = {
-                val removedNotes = notallyRouteModel.actionMode.selectedNotes.values.toList()
-                lifecycleScope.launch {
-                    val deletedNotes = notallyRouteModel.deleteSelectedBaseNotes()
-                    Snackbar.make(
-                            binding.root,
-                            getQuantityString(
-                                R.plurals.deleted_selected_notes,
-                                removedNotes.size,
-                            ),
-                            Snackbar.LENGTH_SHORT,
-                        )
-                        .apply {
-                            setAction(R.string.undo) { notallyRouteModel.saveNotes(removedNotes) }
-                            addCallback(
-                                object : Snackbar.Callback() {
-                                    override fun onDismissed(
-                                        transientBottomBar: Snackbar?,
-                                        event: Int,
-                                    ) {
-                                        if (event != DISMISS_EVENT_ACTION) {
-                                            deleteAttachments(
-                                                deletedNotes,
-                                                notallyRouteModel.progress,
-                                            )
-                                        }
-                                    }
+        val removedNotes = notallyRouteModel.actionMode.selectedNotes.values.toList()
+        lifecycleScope.launch {
+            val deletedNotes = notallyRouteModel.deleteSelectedBaseNotes()
+            Snackbar.make(
+                    binding.root,
+                    getQuantityString(
+                        R.plurals.deleted_selected_notes,
+                        removedNotes.size,
+                    ),
+                    Snackbar.LENGTH_SHORT,
+                )
+                .apply {
+                    setAction(R.string.undo) { notallyRouteModel.saveNotes(removedNotes) }
+                    addCallback(
+                        object : Snackbar.Callback() {
+                            override fun onDismissed(
+                                transientBottomBar: Snackbar?,
+                                event: Int,
+                            ) {
+                                if (event != DISMISS_EVENT_ACTION) {
+                                    deleteAttachments(
+                                        deletedNotes,
+                                        notallyRouteModel.progress,
+                                    )
                                 }
-                            )
+                            }
                         }
-                        .show()
+                    )
                 }
-            },
-        )
+                .show()
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -482,6 +514,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     }
 
     companion object {
+        const val EXTRA_SELECTED_BASE_NOTE = "notallyx.intent.extra.EXTRA_SELECTED_BASE_NOTE"
         const val EXTRA_ROUTE_TO_OPEN = "notallyx.intent.extra.EXTRA_TO_OPEN"
         const val EXTRA_SKIP_START_VIEW_ON_BACK = "notallyx.intent.extra.SKIP_START_VIEW_ON_BACK"
         const val EXTRA_DISPLAYED_LABEL = "notallyx.intent.extra.DISPLAYED_LABEL"

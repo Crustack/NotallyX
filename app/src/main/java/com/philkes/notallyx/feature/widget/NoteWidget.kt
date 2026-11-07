@@ -56,6 +56,7 @@ import androidx.glance.text.TextDecoration
 import androidx.glance.text.TextStyle
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.extensions.getOpenNoteIntent
 import com.philkes.notallyx.core.common.extensions.isSystemInDarkMode
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.NotallyXPreferences
@@ -68,9 +69,6 @@ import com.philkes.notallyx.core.ui.extensions.getContrastFontColor
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.feature.editor.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
-import com.philkes.notallyx.feature.editor.EditListActivity
-import com.philkes.notallyx.feature.editor.EditNoteActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
@@ -248,11 +246,7 @@ class NoteWidget : GlanceAppWidget() {
         }
 
         fun createOpenNoteIntent(context: Context, note: BaseNote): Intent {
-            val clazz =
-                if (note.type == Type.LIST) EditListActivity::class.java
-                else EditNoteActivity::class.java
-            return Intent(context, clazz).apply {
-                putExtra(EXTRA_SELECTED_BASE_NOTE, note.id)
+            return context.getOpenNoteIntent(note.id, note.type).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             }
         }

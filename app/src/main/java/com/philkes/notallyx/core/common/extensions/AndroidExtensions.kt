@@ -28,10 +28,8 @@ import com.philkes.notallyx.core.ui.extensions.getQuantityString
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.extensions.toText
-import com.philkes.notallyx.feature.editor.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
-import com.philkes.notallyx.feature.editor.EditListActivity
-import com.philkes.notallyx.feature.editor.EditNoteActivity
 import com.philkes.notallyx.feature.main.MainActivity
+import com.philkes.notallyx.feature.main.MainActivity.Companion.EXTRA_SELECTED_BASE_NOTE
 import com.philkes.notallyx.feature.migration.imports.ImportResult
 import com.philkes.notallyx.navigation.NotallyNavKey
 import java.io.BufferedReader
@@ -66,16 +64,21 @@ fun Context.getUriForFile(file: File): Uri =
 fun Context.getMimeType(uri: Uri) = contentResolver.getType(uri)
 
 fun Activity.openNote(noteId: Long, noteType: Type, clearBackStack: Boolean = false) {
-    val activity =
-        when (noteType) {
-            Type.NOTE -> EditNoteActivity::class.java
-            Type.LIST -> EditListActivity::class.java
+    val navKey =
+        if (noteType == Type.NOTE) {
+            NotallyNavKey.EditNote(noteId = noteId)
+        } else {
+            NotallyNavKey.EditList(noteId = noteId)
         }
-    val intent = Intent(this, activity)
-    if (clearBackStack) {
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-    }
-    intent.putExtra(EXTRA_SELECTED_BASE_NOTE, noteId)
+    val intent =
+        Intent(this, MainActivity::class.java).apply {
+            putNavKey(navKey)
+            putExtra(EXTRA_SELECTED_BASE_NOTE, noteId)
+            putExtra("type", noteType.name)
+            if (clearBackStack) {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
+        }
     startActivity(intent)
 }
 
@@ -158,11 +161,16 @@ fun Intent.getNavKey(): NotallyNavKey? {
 fun Context.getOpenNotePendingIntent(note: BaseNote) = getOpenNotePendingIntent(note.id, note.type)
 
 fun Context.getOpenNoteIntent(noteId: Long, noteType: Type): Intent {
-    return when (noteType) {
-        Type.NOTE -> Intent(this, EditNoteActivity::class.java)
-        Type.LIST -> Intent(this, EditListActivity::class.java)
-    }.apply {
+    val navKey =
+        if (noteType == Type.NOTE) {
+            NotallyNavKey.EditNote(noteId = noteId)
+        } else {
+            NotallyNavKey.EditList(noteId = noteId)
+        }
+    return Intent(this, MainActivity::class.java).apply {
+        putNavKey(navKey)
         putExtra(EXTRA_SELECTED_BASE_NOTE, noteId)
+        putExtra("type", noteType.name)
         addFlags(
             Intent.FLAG_ACTIVITY_NEW_TASK or
                 Intent.FLAG_ACTIVITY_SINGLE_TOP or

@@ -18,8 +18,6 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.core.preference.BiometricLock
 import com.philkes.notallyx.core.security.UnlockReceiver
 import com.philkes.notallyx.core.ui.extensions.setEnabledSecureFlag
-import com.philkes.notallyx.feature.editor.EditActivity
-import com.philkes.notallyx.feature.editor.EditNoteActivity
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.createBaseNote
@@ -119,10 +117,10 @@ class LockedActivityTest : UiTestBase() {
         application.locked.value = false
 
         val intent =
-            Intent(context, EditNoteActivity::class.java).apply {
-                putExtra(EditActivity.EXTRA_SELECTED_BASE_NOTE, noteId)
+            Intent(context, MainActivity::class.java).apply {
+                putExtra(MainActivity.EXTRA_SELECTED_BASE_NOTE, noteId)
             }
-        val scenario = ActivityScenario.launch<EditNoteActivity>(intent)
+        val scenario = ActivityScenario.launch<MainActivity>(intent)
 
         composeTestRule.waitUntil(10_000) {
             composeTestRule
@@ -185,10 +183,10 @@ class LockedActivityTest : UiTestBase() {
         application.locked.value = false
 
         val intent =
-            Intent(context, EditNoteActivity::class.java).apply {
-                putExtra(EditActivity.EXTRA_SELECTED_BASE_NOTE, noteId)
+            Intent(context, MainActivity::class.java).apply {
+                putExtra(MainActivity.EXTRA_SELECTED_BASE_NOTE, noteId)
             }
-        val scenario = ActivityScenario.launch<EditNoteActivity>(intent)
+        val scenario = ActivityScenario.launch<MainActivity>(intent)
 
         composeTestRule.waitUntil(10_000) {
             composeTestRule

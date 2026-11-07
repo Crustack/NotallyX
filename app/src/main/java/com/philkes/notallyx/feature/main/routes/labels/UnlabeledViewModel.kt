@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
@@ -25,7 +26,9 @@ class UnlabeledViewModel(app: Application, preferences: NotallyXPreferences) :
     val unlabeledNotes: StateFlow<List<Item>> =
         databaseStateFlow
             .flatMapLatest { database ->
-                database?.getBaseNoteDao()?.getWithoutLabel(Folder.NOTES) ?: flowOf(emptyList())
+                database?.getBaseNoteDao()?.getWithoutLabel(Folder.NOTES)?.catch {
+                    emit(emptyList())
+                } ?: flowOf(emptyList())
             }
             .map { list -> app.createItemsFromNotes(list) }
             .flowOn(Dispatchers.IO)

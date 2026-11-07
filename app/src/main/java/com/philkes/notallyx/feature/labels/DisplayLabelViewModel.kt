@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
@@ -27,7 +28,8 @@ class DisplayLabelViewModel(app: Application, preferences: NotallyXPreferences) 
         return labelCache.getOrPut(label) {
             databaseStateFlow
                 .flatMapLatest { database ->
-                    database?.getBaseNoteDao()?.getByLabel(label) ?: flowOf(emptyList())
+                    database?.getBaseNoteDao()?.getByLabel(label)?.catch { emit(emptyList()) }
+                        ?: flowOf(emptyList())
                 }
                 .map { list -> app.createItemsFromNotes(list) }
                 .flowOn(Dispatchers.IO)

@@ -242,6 +242,7 @@ dependencies {
     implementation(libs.androidx.documentfile)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     ksp(libs.androidx.room.compiler)
     implementation(libs.bundles.room)
     implementation(libs.androidx.security.crypto)
@@ -277,6 +278,7 @@ dependencies {
     implementation(libs.koin.core)
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
+    implementation(libs.koin.compose.navigation3)
     implementation(libs.koin.androidx.workmanager)
 
     androidTestImplementation(libs.androidx.test.espresso.intents)
