@@ -4,26 +4,31 @@ import android.app.Activity
 import android.app.Instrumentation
 import android.content.Intent
 import android.os.SystemClock
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onData
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
-import androidx.test.espresso.action.ViewActions.longClick
 import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.action.ViewActions.typeText
-import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.contrib.RecyclerViewActions.actionOnItemAtPosition
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
+import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
@@ -37,7 +42,6 @@ import com.philkes.notallyx.presentation.activity.note.refreshStatusBarPin
 import com.philkes.notallyx.presentation.viewmodel.preference.PeriodicBackup
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.assertLogAppeared
-import com.philkes.notallyx.test.byContentDescription
 import com.philkes.notallyx.test.byId
 import com.philkes.notallyx.test.byText
 import com.philkes.notallyx.test.checkAndUpdateNoteTitle
@@ -51,7 +55,6 @@ import com.philkes.notallyx.test.initFakeBiometric
 import com.philkes.notallyx.test.lockAndUnlockDevice
 import com.philkes.notallyx.test.navigateTo
 import com.philkes.notallyx.test.onDisplayView
-import com.philkes.notallyx.test.onPositionView
 import com.philkes.notallyx.test.waitUntil
 import com.philkes.notallyx.test.waitUntilSettingsValue
 import com.philkes.notallyx.test.waitUntilSucceeds
@@ -73,6 +76,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.FixMethodOrder
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -80,6 +84,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder
 class SettingsFragmentTest : UiTestBase() {
+
+    @get:Rule val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @Test
     fun settings() {
@@ -131,31 +137,30 @@ class SettingsFragmentTest : UiTestBase() {
                     )
                 }
         }
-        val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        scenario.onActivity { activity -> activity.refreshStatusBarPin(pinnedToStatusNote) }
+        composeTestRule.activity.refreshStatusBarPin(pinnedToStatusNote)
 
-        navigateTo(R.id.Settings)
+        composeTestRule.navigateTo(R.id.Settings)
 
-        onView(withId(R.id.View)).perform(scrollTo(), click())
+        composeTestRule.onNodeWithTag("View").performScrollTo().performClick()
         val viewSettingOption =
             onData(anything())
                 .inAdapterView(withId(androidx.appcompat.R.id.select_dialog_listview))
                 .atPosition(1)
         viewSettingOption.perform(click())
 
-        onView(withId(R.id.ShowSearchInTopBar)).perform(scrollTo(), click())
+        composeTestRule.onNodeWithTag("ShowSearchInTopBar").performScrollTo().performClick()
         val showSearchEnabledOption =
             onDisplayView(allOf(withId(R.id.EnabledButton), withText(R.string.enabled)))
         showSearchEnabledOption.perform(click())
 
-        onView(withId(R.id.NotesSortOrder)).perform(scrollTo(), click())
+        composeTestRule.onNodeWithTag("NotesSortOrder").performScrollTo().performClick()
         onDisplayView(withText(R.string.ascending)).perform(click())
         val saveSortOrderButton =
             onDisplayView(allOf(withId(android.R.id.button1), withText(R.string.save)))
         saveSortOrderButton.perform(scrollTo(), click())
 
-        onView(withId(R.id.BackupPassword)).perform(scrollTo(), click())
+        composeTestRule.onNodeWithTag("BackupPassword").performScrollTo().performClick()
         val backupPasswordInput =
             onDisplayView(allOf(withId(R.id.InputText), withContentDescription("Input")))
         backupPasswordInput.perform(replaceText("1234"), closeSoftKeyboard())
@@ -163,42 +168,47 @@ class SettingsFragmentTest : UiTestBase() {
             onDisplayView(allOf(withId(android.R.id.button1), withText(R.string.save)))
         saveBackupPasswordButton.perform(scrollTo(), click())
 
-        onView(withId(R.id.SecureFlag)).perform(scrollTo(), click())
+        composeTestRule.onNodeWithTag("SecureFlag").performScrollTo().performClick()
         R.id.EnabledButton.byId().perform(click())
 
-        onView(withId(R.id.SecureFlag)).perform(scrollTo(), click())
+        composeTestRule.onNodeWithTag("SecureFlag").performScrollTo().performClick()
         R.id.DisabledButton.byId().perform(click())
 
-        enableDataInPublic()
+        composeTestRule.enableDataInPublic(context)
 
-        enableBiometricLock()
+        composeTestRule.enableBiometricLock()
 
-        navigateTo(R.id.Notes)
-        checkAndUpdateNoteTitle(0, "Test", " Foo")
+        composeTestRule.navigateTo(R.id.Notes)
+        composeTestRule.checkAndUpdateNoteTitle("Test", " Foo")
 
-        navigateTo(R.id.Settings)
-        onView(withId(R.id.ExportSettings)).perform(scrollTo(), click())
-        R.string.export.byText(withId(android.R.id.button1)).perform(click())
+        composeTestRule.navigateTo(R.id.Settings)
+        composeTestRule.onNodeWithTag("ExportSettings").performScrollTo().performClick()
+        R.string.export.byText(withId(android.R.id.button1)).inRoot(isDialog()).perform(click())
         waitUntil(10_000) { settingsExportFile.exists() }
 
-        onView(withId(R.id.ResetSettings)).perform(scrollTo(), click())
-        R.string.reset_settings.byText(withId(android.R.id.button1)).perform(click())
-        waitUntilSettingsValue(R.id.ShowSearchInTopBar, R.string.disabled)
-        waitUntilSettingsValue(R.id.BiometricLock, R.string.disabled)
-        waitUntilSettingsValue(R.id.DataInPublicFolder, R.string.disabled)
+        composeTestRule.onNodeWithTag("ResetSettings").performScrollTo().performClick()
+        R.string.reset_settings
+            .byText(withId(android.R.id.button1))
+            .inRoot(isDialog())
+            .perform(click())
+        composeTestRule.waitUntilSettingsValue("ShowSearchInTopBar", R.string.disabled)
+        composeTestRule.waitUntilSettingsValue("BiometricLock", R.string.disabled)
+        composeTestRule.waitUntilSettingsValue("DataInPublicFolder", R.string.disabled)
 
-        onView(withId(R.id.ImportSettings)).perform(scrollTo(), click())
-        R.string.import_action.byText(withId(android.R.id.button1)).perform(click())
+        composeTestRule.onNodeWithTag("ImportSettings").performScrollTo().performClick()
+        R.string.import_action
+            .byText(withId(android.R.id.button1))
+            .inRoot(isDialog())
+            .perform(click())
 
-        waitUntilSettingsValue(R.id.ShowSearchInTopBar, R.string.enabled)
-        waitUntilSettingsValue(R.id.DataInPublicFolder, R.string.disabled)
-        waitUntilSettingsValue(R.id.BiometricLock, R.string.disabled)
+        composeTestRule.waitUntilSettingsValue("ShowSearchInTopBar", R.string.enabled)
+        composeTestRule.waitUntilSettingsValue("DataInPublicFolder", R.string.disabled)
+        composeTestRule.waitUntilSettingsValue("BiometricLock", R.string.disabled)
 
-        navigateTo(R.id.Notes)
-        checkAndUpdateNoteTitle(0, "Test Foo", " Bar")
+        composeTestRule.navigateTo(R.id.Notes)
+        composeTestRule.checkAndUpdateNoteTitle("Test Foo", " Bar")
 
         Intents.release()
-        scenario.close()
     }
 
     @Test
@@ -209,6 +219,7 @@ class SettingsFragmentTest : UiTestBase() {
             database
                 .getBaseNoteDao()
                 .insert(createBaseNote(title = "Test", body = "Body", labels = listOf("label")))
+            database.checkpoint()
             preferences.backupsFolder.save(backupPath.toString())
             preferences.periodicBackups.save(PeriodicBackup(1, 1))
             preferences.backupOnSave.save(false)
@@ -235,37 +246,53 @@ class SettingsFragmentTest : UiTestBase() {
                     },
                 )
             }
-        val scenario = ActivityScenario.launch(MainActivity::class.java)
-        waitUntil(10_000L) {
-            DocumentFile.fromFile(File(backupPath.path!!))
-                .listZipFiles(PERIODIC_BACKUP_FILE_PREFIX)
-                .isNotEmpty()
+
+        composeTestRule.waitUntil(15_000) {
+            val zipFile =
+                DocumentFile.fromFile(File(backupPath.path!!))
+                    .listZipFiles(PERIODIC_BACKUP_FILE_PREFIX)
+                    .firstOrNull()
+            zipFile != null && zipFile.length() > 100
         }
 
-        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, click()))
-        R.string.tap_for_more_options.byContentDescription().perform(click())
-        R.string.delete_forever.byText().perform(click())
-        R.string.delete.byText(withId(android.R.id.button1)).perform(click())
-        "Test".byText(checkDisplayed = false).check(doesNotExist())
+        // Delete note "Test" from Notes
+        composeTestRule.onNodeWithText("Test").performTouchInput { longClick() }
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.delete))
+            .performClick()
+        composeTestRule.onNodeWithText("Test").assertDoesNotExist()
 
-        navigateTo(R.id.Settings)
-        R.id.ImportBackup.byId(checkDisplayed = false).perform(scrollTo(), click())
-        R.string.import_backup.byText(withId(android.R.id.button1)).perform(click())
+        // Delete note "Test" forever from Deleted
+        composeTestRule.navigateTo(R.id.Deleted)
+        composeTestRule.onNodeWithText("Test").performTouchInput { longClick() }
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.delete_forever))
+            .performClick()
+        R.string.delete.byText(withId(android.R.id.button1)).inRoot(isDialog()).perform(click())
+        composeTestRule.onNodeWithText("Test").assertDoesNotExist()
+
+        // Go to Settings and import backup
+        composeTestRule.navigateTo(R.id.Settings)
+        composeTestRule.onNodeWithTag("ImportBackup").performScrollTo().performClick()
+        waitUntilSucceeds {
+            onView(allOf(withId(android.R.id.button1), withText(R.string.import_backup)))
+                .inRoot(isDialog())
+                .perform(click())
+        }
         waitUntil(15_000L) {
             runBlocking {
                 withContext(Dispatchers.IO) { database.getBaseNoteDao().getAll().isNotEmpty() }
             }
         }
 
-        navigateTo(R.id.Notes)
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test")))
+        // Navigate back to Notes and verify restored note
+        composeTestRule.navigateTo(R.id.Notes)
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("Test")).fetchSemanticsNodes().isNotEmpty()
         }
+        composeTestRule.onNodeWithText("Test").assertIsDisplayed()
 
         Intents.release()
-        scenario.close()
     }
 
     @Test
@@ -302,43 +329,47 @@ class SettingsFragmentTest : UiTestBase() {
                     },
                 )
             }
-        val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, click()))
+        composeTestRule.onNodeWithText("Test").performClick()
         R.id.EnterTitle.byId().perform(typeText(" Foo"))
         R.id.EnterBody.byId().perform(typeText(" Foo"), closeSoftKeyboard())
         Espresso.pressBack()
         assertLogAppeared("ExportExtensions", "Finished backup ")
 
-        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, longClick()))
-        R.string.delete.byContentDescription().perform(click())
-        onView(withText("Test Foo")).check(doesNotExist())
-        navigateTo(R.id.Deleted)
-        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, longClick()))
-        R.string.delete_forever.byContentDescription().perform(click())
-        R.string.delete.byText(withId(android.R.id.button1)).perform(click())
-        "Test".byText(checkDisplayed = false).check(doesNotExist())
+        composeTestRule.onNodeWithText("Test Foo").performTouchInput { longClick() }
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.delete))
+            .performClick()
+        composeTestRule.onNodeWithText("Test Foo").assertDoesNotExist()
 
-        navigateTo(R.id.Settings)
-        R.id.ImportBackup.byId(checkDisplayed = false).perform(scrollTo())
-        SystemClock.sleep(3000)
-        R.id.ImportBackup.byId(checkDisplayed = false).perform(click())
-        R.string.import_backup.byText(withId(android.R.id.button1)).perform(click())
+        composeTestRule.navigateTo(R.id.Deleted)
+        composeTestRule.onNodeWithText("Test Foo").performTouchInput { longClick() }
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.delete_forever))
+            .performClick()
+        R.string.delete.byText(withId(android.R.id.button1)).inRoot(isDialog()).perform(click())
+        composeTestRule.onNodeWithText("Test Foo").assertDoesNotExist()
+
+        composeTestRule.navigateTo(R.id.Settings)
+        composeTestRule.onNodeWithTag("ImportBackup").performScrollTo().performClick()
+        waitUntilSucceeds {
+            onView(allOf(withId(android.R.id.button1), withText(R.string.import_backup)))
+                .inRoot(isDialog())
+                .perform(click())
+        }
         waitUntil(15_000L) {
             runBlocking {
                 withContext(Dispatchers.IO) { database.getBaseNoteDao().getAll().isNotEmpty() }
             }
         }
 
-        navigateTo(R.id.Notes)
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo")))
+        composeTestRule.navigateTo(R.id.Notes)
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("Test Foo")).fetchSemanticsNodes().isNotEmpty()
         }
+        composeTestRule.onNodeWithText("Test Foo").assertIsDisplayed()
 
         Intents.release()
-        scenario.close()
     }
 
     @Test
@@ -353,14 +384,13 @@ class SettingsFragmentTest : UiTestBase() {
                 }
             }
         }
-        val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        navigateTo(R.id.Settings)
-        enableBiometricLock()
+        composeTestRule.navigateTo(R.id.Settings)
+        composeTestRule.enableBiometricLock()
 
-        navigateTo(R.id.Notes)
+        composeTestRule.navigateTo(R.id.Notes)
 
-        checkAndUpdateNoteTitle(0, "Test", " Foo")
+        composeTestRule.checkAndUpdateNoteTitle("Test", " Foo")
 
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
@@ -369,7 +399,7 @@ class SettingsFragmentTest : UiTestBase() {
         device.wakeUp()
         device.pressMenu()
 
-        checkAndUpdateNoteTitle(0, "Test Foo", " Bar")
+        composeTestRule.checkAndUpdateNoteTitle("Test Foo", " Bar")
 
         assertFalse(preferences.biometricLockEncryptsDb.value)
         val expectedEncrypt = 0
@@ -379,29 +409,29 @@ class SettingsFragmentTest : UiTestBase() {
         assertEquals(expectedEncrypt, fakeBiometricAuthenticator.getEncryptionCounter())
         assertEquals(expectedDecrypt1, fakeBiometricAuthenticator.getDecryptionCounter())
 
-        navigateTo(R.id.Settings)
-        disableBiometricLock()
+        composeTestRule.navigateTo(R.id.Settings)
+        composeTestRule.disableBiometricLock()
         assertEquals(expectedEncrypt, fakeBiometricAuthenticator.getEncryptionCounter())
         assertEquals(expectedDecrypt2, fakeBiometricAuthenticator.getDecryptionCounter())
 
-        navigateTo(R.id.Notes)
+        composeTestRule.navigateTo(R.id.Notes)
 
-        checkAndUpdateNoteTitle(0, "Test Foo Bar", " 123")
+        composeTestRule.checkAndUpdateNoteTitle("Test Foo Bar", " 123")
 
         device.sleep()
         SystemClock.sleep(2000)
         device.wakeUp()
         device.pressMenu()
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo Bar 123")))
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText("Test Foo Bar 123"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
+        composeTestRule.onNodeWithText("Test Foo Bar 123").assertIsDisplayed()
         assertEquals(expectedEncrypt, fakeBiometricAuthenticator.getEncryptionCounter())
         assertEquals(expectedDecrypt2, fakeBiometricAuthenticator.getDecryptionCounter())
-
-        scenario.close()
     }
 
     @Test
@@ -416,14 +446,13 @@ class SettingsFragmentTest : UiTestBase() {
                 }
             }
         }
-        val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        navigateTo(R.id.Settings)
-        enableBiometricLock(encryptDb = true)
+        composeTestRule.navigateTo(R.id.Settings)
+        composeTestRule.enableBiometricLock(encryptDb = true)
 
-        navigateTo(R.id.Notes)
+        composeTestRule.navigateTo(R.id.Notes)
 
-        checkAndUpdateNoteTitle(0, "Test", " Foo")
+        composeTestRule.checkAndUpdateNoteTitle("Test", " Foo")
 
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
@@ -432,7 +461,7 @@ class SettingsFragmentTest : UiTestBase() {
         device.wakeUp()
         device.pressMenu()
 
-        checkAndUpdateNoteTitle(0, "Test Foo", " Bar")
+        composeTestRule.checkAndUpdateNoteTitle("Test Foo", " Bar")
 
         assertTrue(preferences.biometricLockEncryptsDb.value)
         val expectedEncrypt = 1
@@ -442,29 +471,29 @@ class SettingsFragmentTest : UiTestBase() {
         assertEquals(expectedEncrypt, fakeBiometricAuthenticator.getEncryptionCounter())
         assertEquals(expectedDecrypt1, fakeBiometricAuthenticator.getDecryptionCounter())
 
-        navigateTo(R.id.Settings)
-        disableBiometricLock()
+        composeTestRule.navigateTo(R.id.Settings)
+        composeTestRule.disableBiometricLock()
         assertEquals(expectedEncrypt, fakeBiometricAuthenticator.getEncryptionCounter())
         assertEquals(expectedDecrypt2, fakeBiometricAuthenticator.getDecryptionCounter())
 
-        navigateTo(R.id.Notes)
+        composeTestRule.navigateTo(R.id.Notes)
 
-        checkAndUpdateNoteTitle(0, "Test Foo Bar", " 123")
+        composeTestRule.checkAndUpdateNoteTitle("Test Foo Bar", " 123")
 
         device.sleep()
         SystemClock.sleep(2000)
         device.wakeUp()
         device.pressMenu()
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo Bar 123")))
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText("Test Foo Bar 123"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
+        composeTestRule.onNodeWithText("Test Foo Bar 123").assertIsDisplayed()
         assertEquals(expectedEncrypt, fakeBiometricAuthenticator.getEncryptionCounter())
         assertEquals(expectedDecrypt2, fakeBiometricAuthenticator.getDecryptionCounter())
-
-        scenario.close()
     }
 
     @Test
@@ -477,13 +506,12 @@ class SettingsFragmentTest : UiTestBase() {
                     .insert(createBaseNote(title = "Test", body = "Body", labels = listOf("label")))
             }
         }
-        val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        navigateTo(R.id.Settings)
+        composeTestRule.navigateTo(R.id.Settings)
 
-        enableDataInPublic()
-        navigateTo(R.id.Notes)
-        checkAndUpdateNoteTitle(0, "Test", " Foo")
+        composeTestRule.enableDataInPublic(context)
+        composeTestRule.navigateTo(R.id.Notes)
+        composeTestRule.checkAndUpdateNoteTitle("Test", " Foo")
 
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
@@ -492,27 +520,27 @@ class SettingsFragmentTest : UiTestBase() {
         device.wakeUp()
         device.pressMenu()
 
-        checkAndUpdateNoteTitle(0, "Test Foo", " Bar")
+        composeTestRule.checkAndUpdateNoteTitle("Test Foo", " Bar")
 
-        navigateTo(R.id.Settings)
-        disableDataInPublic()
+        composeTestRule.navigateTo(R.id.Settings)
+        composeTestRule.disableDataInPublic(context)
 
-        navigateTo(R.id.Notes)
+        composeTestRule.navigateTo(R.id.Notes)
 
-        checkAndUpdateNoteTitle(0, "Test Foo Bar", " 123")
+        composeTestRule.checkAndUpdateNoteTitle("Test Foo Bar", " 123")
 
         device.sleep()
         SystemClock.sleep(2000)
         device.wakeUp()
         device.pressMenu()
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test Foo Bar 123")))
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText("Test Foo Bar 123"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
-
-        scenario.close()
+        composeTestRule.onNodeWithText("Test Foo Bar 123").assertIsDisplayed()
     }
 
     @Test
@@ -540,63 +568,60 @@ class SettingsFragmentTest : UiTestBase() {
                 }
             }
         }
-        val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        scenario.onActivity { activity -> activity.refreshStatusBarPin(pinnedToStatusNote) }
+        composeTestRule.activity.refreshStatusBarPin(pinnedToStatusNote)
 
-        checkAndUpdateNoteTitle(0, "Text", "")
-        checkAndUpdateNoteTitle(1, "List", "")
+        composeTestRule.checkAndUpdateNoteTitle("Text", "")
+        composeTestRule.checkAndUpdateNoteTitle("List", "")
 
-        navigateTo(R.id.Settings)
-        enableDataInPublic()
+        composeTestRule.navigateTo(R.id.Settings)
+        composeTestRule.enableDataInPublic(context)
 
-        navigateTo(R.id.Notes)
-        checkAndUpdateNoteTitle(0, "Text", " Foo")
-        checkAndUpdateNoteTitle(1, "List", " Foo")
-
-        lockAndUnlockDevice()
-
-        checkAndUpdateNoteTitle(0, "Text Foo", " Bar")
-        checkAndUpdateNoteTitle(1, "List Foo", " Bar")
-
-        navigateTo(R.id.Settings)
-        enableBiometricLock()
-
-        navigateTo(R.id.Notes)
-        checkAndUpdateNoteTitle(0, "Text Foo Bar", " Bio")
-        checkAndUpdateNoteTitle(1, "List Foo Bar", " Bio")
+        composeTestRule.navigateTo(R.id.Notes)
+        composeTestRule.checkAndUpdateNoteTitle("Text", " Foo")
+        composeTestRule.checkAndUpdateNoteTitle("List", " Foo")
 
         lockAndUnlockDevice()
 
-        checkAndUpdateNoteTitle(0, "Text Foo Bar Bio", " Lock")
-        checkAndUpdateNoteTitle(1, "List Foo Bar Bio", " Lock")
+        composeTestRule.checkAndUpdateNoteTitle("Text Foo", " Bar")
+        composeTestRule.checkAndUpdateNoteTitle("List Foo", " Bar")
 
-        navigateTo(R.id.Settings)
-        disableDataInPublic()
+        composeTestRule.navigateTo(R.id.Settings)
+        composeTestRule.enableBiometricLock()
 
-        navigateTo(R.id.Notes)
-
-        checkAndUpdateNoteTitle(0, "Text Foo Bar Bio Lock", " Public")
-        checkAndUpdateNoteTitle(1, "List Foo Bar Bio Lock", " Public")
-
-        lockAndUnlockDevice()
-
-        checkAndUpdateNoteTitle(0, "Text Foo Bar Bio Lock Public", " Lock")
-        checkAndUpdateNoteTitle(1, "List Foo Bar Bio Lock Public", " Lock")
-
-        navigateTo(R.id.Settings)
-        disableBiometricLock()
-
-        navigateTo(R.id.Notes)
-
-        checkAndUpdateNoteTitle(0, "Text Foo Bar Bio Lock Public Lock", " BioDis")
-        checkAndUpdateNoteTitle(1, "List Foo Bar Bio Lock Public Lock", " BioDis")
+        composeTestRule.navigateTo(R.id.Notes)
+        composeTestRule.checkAndUpdateNoteTitle("Text Foo Bar", " Bio")
+        composeTestRule.checkAndUpdateNoteTitle("List Foo Bar", " Bio")
 
         lockAndUnlockDevice()
 
-        checkAndUpdateNoteTitle(0, "Text Foo Bar Bio Lock Public Lock BioDis", " Lock")
-        checkAndUpdateNoteTitle(1, "List Foo Bar Bio Lock Public Lock BioDis", " Lock")
+        composeTestRule.checkAndUpdateNoteTitle("Text Foo Bar Bio", " Lock")
+        composeTestRule.checkAndUpdateNoteTitle("List Foo Bar Bio", " Lock")
 
-        scenario.close()
+        composeTestRule.navigateTo(R.id.Settings)
+        composeTestRule.disableDataInPublic(context)
+
+        composeTestRule.navigateTo(R.id.Notes)
+
+        composeTestRule.checkAndUpdateNoteTitle("Text Foo Bar Bio Lock", " Public")
+        composeTestRule.checkAndUpdateNoteTitle("List Foo Bar Bio Lock", " Public")
+
+        lockAndUnlockDevice()
+
+        composeTestRule.checkAndUpdateNoteTitle("Text Foo Bar Bio Lock Public", " Lock")
+        composeTestRule.checkAndUpdateNoteTitle("List Foo Bar Bio Lock Public", " Lock")
+
+        composeTestRule.navigateTo(R.id.Settings)
+        composeTestRule.disableBiometricLock()
+
+        composeTestRule.navigateTo(R.id.Notes)
+
+        composeTestRule.checkAndUpdateNoteTitle("Text Foo Bar Bio Lock Public Lock", " BioDis")
+        composeTestRule.checkAndUpdateNoteTitle("List Foo Bar Bio Lock Public Lock", " BioDis")
+
+        lockAndUnlockDevice()
+
+        composeTestRule.checkAndUpdateNoteTitle("Text Foo Bar Bio Lock Public Lock BioDis", " Lock")
+        composeTestRule.checkAndUpdateNoteTitle("List Foo Bar Bio Lock Public Lock BioDis", " Lock")
     }
 }

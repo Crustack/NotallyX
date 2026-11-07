@@ -1,24 +1,22 @@
 package com.philkes.notallyx.presentation.activity.main.fragments
 
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.test.UiTestBase
-import com.philkes.notallyx.test.byId
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.navigateTo
 import java.util.Date
 import kotlinx.coroutines.runBlocking
 import org.junit.FixMethodOrder
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -26,6 +24,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder
 class RemindersFragmentTest : UiTestBase() {
+
+    @get:Rule val composeTestRule = createEmptyComposeRule()
 
     @Test
     fun remindersFilter() {
@@ -65,22 +65,22 @@ class RemindersFragmentTest : UiTestBase() {
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        navigateTo(R.id.Reminders)
+        composeTestRule.navigateTo(R.id.Reminders)
 
-        R.id.elapsed.byId().perform(click())
+        composeTestRule.onNodeWithText(context.getString(R.string.elapsed)).performClick()
         // Only the elapsed reminder note is shown
-        onView(withText("ElapsedNote")).check(matches(isDisplayed()))
-        onView(withText("FutureNote")).check(doesNotExist())
+        composeTestRule.onNodeWithText("ElapsedNote").assertIsDisplayed()
+        composeTestRule.onNodeWithText("FutureNote").assertDoesNotExist()
 
-        R.id.upcoming.byId().perform(click())
-        // Only the elapsed reminder note is shown
-        onView(withText("ElapsedNote")).check(doesNotExist())
-        onView(withText("FutureNote")).check(matches(isDisplayed()))
+        composeTestRule.onNodeWithText(context.getString(R.string.upcoming)).performClick()
+        // Only the future reminder note is shown
+        composeTestRule.onNodeWithText("ElapsedNote").assertDoesNotExist()
+        composeTestRule.onNodeWithText("FutureNote").assertIsDisplayed()
 
-        R.id.all.byId().perform(click())
+        composeTestRule.onNodeWithText(context.getString(R.string.all)).performClick()
         // All reminder notes are shown
-        onView(withText("ElapsedNote")).check(matches(isDisplayed()))
-        onView(withText("FutureNote")).check(matches(isDisplayed()))
+        composeTestRule.onNodeWithText("ElapsedNote").assertIsDisplayed()
+        composeTestRule.onNodeWithText("FutureNote").assertIsDisplayed()
 
         scenario.close()
     }

@@ -1,31 +1,24 @@
 package com.philkes.notallyx.presentation.activity.main.fragments
 
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ActivityScenario
-import androidx.test.espresso.Espresso.openActionBarOverflowOrOptionsMenu
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.action.ViewActions.longClick
-import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.contrib.RecyclerViewActions.actionOnItemAtPosition
-import androidx.test.espresso.matcher.RootMatchers.isPlatformPopup
-import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.R
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.test.UiTestBase
-import com.philkes.notallyx.test.byContentDescription
-import com.philkes.notallyx.test.byId
-import com.philkes.notallyx.test.byText
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.navigateTo
-import com.philkes.notallyx.test.onDisplayView
-import com.philkes.notallyx.test.onPositionView
-import com.philkes.notallyx.test.waitUntilSucceeds
 import kotlinx.coroutines.runBlocking
 import org.junit.FixMethodOrder
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -34,6 +27,8 @@ import org.junit.runner.RunWith
 @FixMethodOrder
 class ArchivedFragmentTest : UiTestBase() {
 
+    @get:Rule val composeTestRule = createEmptyComposeRule()
+
     @Test
     fun archiveNotes() {
         // 1. Insert data
@@ -41,31 +36,47 @@ class ArchivedFragmentTest : UiTestBase() {
             database.getBaseNoteDao().insert(listOf(createBaseNote(title = "Test", body = "Body")))
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
-        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, longClick()))
 
-        openActionBarOverflowOrOptionsMenu(context)
-        onDisplayView(withText(R.string.archive)).inRoot(isPlatformPopup()).perform(click())
-        "Test".byText(checkDisplayed = false).check(doesNotExist())
+        // 2. Long click the note card "Test"
+        composeTestRule.onNodeWithText("Test").performTouchInput { longClick() }
 
-        navigateTo(R.id.Archived)
+        // 3. Open overflow menu and click "Archive"
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.tap_for_more_options))
+            .performClick()
+        composeTestRule.onNodeWithText(context.getString(R.string.archive)).performClick()
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(1, withId(R.id.Title))
-                .check(matches(withText("Test")))
+        // 4. Verify "Test" is no longer displayed in Notes list
+        composeTestRule.onNodeWithText("Test").assertDoesNotExist()
+
+        // 5. Navigate to Archived folder
+        composeTestRule.navigateTo(R.id.Archived)
+
+        // 6. Verify "Test" note is displayed in Archived list
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(hasText("Test")).fetchSemanticsNodes().isNotEmpty()
         }
+        composeTestRule.onNodeWithText("Test").assertIsDisplayed()
 
-        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(1, longClick()))
-        R.string.unarchive.byContentDescription().perform(click())
-        "Test".byText(checkDisplayed = false).check(doesNotExist())
+        // 7. Long click the "Test" note in Archived folder
+        composeTestRule.onNodeWithText("Test").performTouchInput { longClick() }
 
-        navigateTo(R.id.Notes)
+        // 8. Click "Unarchive" action icon
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.unarchive))
+            .performClick()
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Title))
-                .check(matches(withText("Test")))
+        // 9. Verify "Test" is no longer in Archived list
+        composeTestRule.onNodeWithText("Test").assertDoesNotExist()
+
+        // 10. Navigate back to Notes folder
+        composeTestRule.navigateTo(R.id.Notes)
+
+        // 11. Verify "Test" note is displayed in Notes list
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(hasText("Test")).fetchSemanticsNodes().isNotEmpty()
         }
+        composeTestRule.onNodeWithText("Test").assertIsDisplayed()
 
         scenario.close()
     }

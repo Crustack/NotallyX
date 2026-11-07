@@ -1,18 +1,20 @@
 package com.philkes.notallyx.presentation.activity.main.fragments
 
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
-import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.action.ViewActions.scrollTo
-import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.contrib.DrawerActions
-import androidx.test.espresso.matcher.ViewMatchers.isDescendantOfA
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withParent
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -20,19 +22,14 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.test.UiTestBase
-import com.philkes.notallyx.test.byContentDescription
 import com.philkes.notallyx.test.byId
 import com.philkes.notallyx.test.byText
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.createListItem
 import com.philkes.notallyx.test.navigateTo
-import com.philkes.notallyx.test.onDisplayView
-import com.philkes.notallyx.test.onLabelItem
-import com.philkes.notallyx.test.onPositionView
-import com.philkes.notallyx.test.waitUntilSucceeds
 import kotlinx.coroutines.runBlocking
-import org.hamcrest.Matchers.allOf
 import org.junit.FixMethodOrder
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -40,6 +37,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder
 class LabelsFragmentTest : UiTestBase() {
+
+    @get:Rule val composeTestRule = createEmptyComposeRule()
 
     @Test
     fun manageLabels() {
@@ -67,36 +66,57 @@ class LabelsFragmentTest : UiTestBase() {
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        navigateTo(R.id.Labels)
+        composeTestRule.navigateTo(R.id.Labels)
 
-        val labelListItem =
-            onDisplayView(
-                allOf(
-                    withId(R.id.LabelText),
-                    withText("label"),
-                    withParent(withParent(withId(R.id.MainListView))),
-                )
-            )
-        labelListItem.check(matches(withText("label")))
-
-        R.id.EditButton.byId().perform(click())
-        R.id.EditText.byId(withText("label")).perform(replaceText("label1"))
-        R.string.save.byText(withId(android.R.id.button1)).perform(scrollTo(), click())
-        onLabelItem("label1").check(matches(withText("label1")))
-
-        R.string.add_label.byContentDescription().perform(click())
-        R.id.EditText.byId().perform(replaceText("label2"), closeSoftKeyboard())
-        R.string.save.byText(withId(android.R.id.button1)).perform(scrollTo(), click())
-
-        // TODO: drag and drop is flaky
-        //                dragAndDrop(By.text("label2"), By.text("label1"))
-        //        waitUntilSucceeds {    R.id.MainListView.byId().checkPositionHasText(1, "label2")
-        // }
-        waitUntilSucceeds {
-            R.id.MainListView.byId().onPositionView(0, withId(R.id.DeleteButton)).perform(click())
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(hasText("label")).fetchSemanticsNodes().size >= 2
         }
+        composeTestRule.onAllNodes(hasText("label")).onLast().assertIsDisplayed()
 
-        R.string.delete.byText(withId(android.R.id.button1)).perform(scrollTo(), click())
+        // Edit label
+        composeTestRule
+            .onAllNodes(hasContentDescription(context.getString(R.string.edit)))
+            .onLast()
+            .performClick()
+
+        R.id.EditText.byId(withText("label")).inRoot(isDialog()).perform(replaceText("label1"))
+        R.string.save
+            .byText(withId(android.R.id.button1))
+            .inRoot(isDialog())
+            .perform(scrollTo(), click())
+
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(hasText("label1")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onAllNodes(hasText("label1")).onLast().assertIsDisplayed()
+
+        // Add label by clicking toolbar Add button
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.add_label))
+            .performClick()
+
+        R.id.EditText.byId().inRoot(isDialog()).perform(replaceText("label2"), closeSoftKeyboard())
+        R.string.save
+            .byText(withId(android.R.id.button1))
+            .inRoot(isDialog())
+            .perform(scrollTo(), click())
+
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(hasText("label2")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onAllNodes(hasText("label2")).onLast().assertIsDisplayed()
+
+        // Delete label "label1"
+        composeTestRule
+            .onAllNodes(hasContentDescription(context.getString(R.string.delete)))
+            .onLast()
+            .performClick()
+        R.string.delete
+            .byText(withId(android.R.id.button1))
+            .inRoot(isDialog())
+            .perform(scrollTo(), click())
+
+        composeTestRule.onNodeWithText("label1").assertDoesNotExist()
 
         scenario.close()
     }
@@ -125,10 +145,13 @@ class LabelsFragmentTest : UiTestBase() {
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        navigateTo(R.id.Unlabeled)
+        composeTestRule.navigateTo(R.id.Unlabeled)
 
-        waitUntilSucceeds { onView(withText("Unlabeled Note")).check(matches(isDisplayed())) }
-        onView(withText("Labeled Note")).check(doesNotExist())
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(hasText("Unlabeled Note")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("Unlabeled Note").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Labeled Note").assertDoesNotExist()
 
         scenario.close()
     }
@@ -163,31 +186,39 @@ class LabelsFragmentTest : UiTestBase() {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
         // Open drawer and check if each label is displayed in navigation view
-        onView(withId(R.id.DrawerLayout)).perform(DrawerActions.open())
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.app_name))
+            .performClick()
 
-        onDisplayView(allOf(withText("Work"), isDescendantOfA(withId(R.id.NavigationView))))
-            .check(matches(isDisplayed()))
-
-        onDisplayView(allOf(withText("Personal"), isDescendantOfA(withId(R.id.NavigationView))))
-            .check(matches(isDisplayed()))
+        composeTestRule.onAllNodes(hasText("Work"))[0].assertIsDisplayed()
+        composeTestRule.onAllNodes(hasText("Personal"))[0].assertIsDisplayed()
 
         // Click on "Work" label in navigation view
-        onDisplayView(allOf(withText("Work"), isDescendantOfA(withId(R.id.NavigationView))))
-            .perform(click())
+        composeTestRule.onAllNodes(hasText("Work"))[0].performClick()
 
-        waitUntilSucceeds { onView(withText("Work Note 1")).check(matches(isDisplayed())) }
-        onView(withText("Work Note 2")).check(matches(isDisplayed()))
-        onView(withText("Personal Note 1")).check(doesNotExist())
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule.onAllNodes(hasText("Work Note 1")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("Work Note 1").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Work Note 2").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Personal Note 1").assertDoesNotExist()
 
         // Open drawer again and click on "Personal" label
-        onView(withId(R.id.DrawerLayout)).perform(DrawerActions.open())
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.app_name))
+            .performClick()
 
-        onDisplayView(allOf(withText("Personal"), isDescendantOfA(withId(R.id.NavigationView))))
-            .perform(click())
+        composeTestRule.onAllNodes(hasText("Personal"))[0].performClick()
 
-        waitUntilSucceeds { onView(withText("Personal Note 1")).check(matches(isDisplayed())) }
-        onView(withText("Work Note 1")).check(doesNotExist())
-        onView(withText("Work Note 2")).check(doesNotExist())
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule
+                .onAllNodes(hasText("Personal Note 1"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("Personal Note 1").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Work Note 1").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Work Note 2").assertDoesNotExist()
 
         scenario.close()
     }
