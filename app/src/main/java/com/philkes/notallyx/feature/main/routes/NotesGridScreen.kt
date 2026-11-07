@@ -27,11 +27,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.extensions.getCurrentImagesDirectory
 import com.philkes.notallyx.core.ui.components.BaseNoteCard
 import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.core.ui.components.SampleNotes
@@ -51,7 +53,7 @@ internal fun NotesGridScreen(
     items: List<Item>,
     modifier: Modifier = Modifier,
     isGrid: Boolean = false,
-    imageRoot: File? = null,
+    imageRoot: File? = LocalContext.current.getCurrentImagesDirectory(),
     searchKeyword: String = "",
     onSearchKeywordChange: ((String) -> Unit)? = null,
     showSearchBar: Boolean = false,

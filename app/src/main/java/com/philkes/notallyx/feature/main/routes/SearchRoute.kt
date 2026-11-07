@@ -50,6 +50,7 @@ fun SearchRoute(
         selectedNoteIds = selectedIds,
         displayConfig = displayConfig,
         backgroundResId = R.drawable.search,
+        imageRoot = notallyFragmentModel.imageRoot,
         showSearchBar = true,
         searchKeyword = searchKeyword,
         onSearchKeywordChange = { notallyFragmentModel.keyword = it },

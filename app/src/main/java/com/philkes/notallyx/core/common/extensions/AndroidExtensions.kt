@@ -23,7 +23,9 @@ import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.annotation.ColorInt
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -109,7 +111,7 @@ fun Context.getUriForFile(file: File): Uri =
 
 fun Context.getMimeType(uri: Uri) = contentResolver.getType(uri)
 
-fun ContextWrapper.log(
+fun Context.log(
     tag: String,
     msg: String? = null,
     throwable: Throwable? = null,
@@ -668,3 +670,5 @@ fun ContentResolver.readFileContents(uri: Uri) =
     openInputStream(uri)?.use { inputStream ->
         BufferedReader(InputStreamReader(inputStream)).use { reader -> reader.readText() }
     } ?: ""
+
+@Composable fun isPreview(): Boolean = LocalInspectionMode.current

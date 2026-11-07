@@ -43,6 +43,7 @@ fun NotesRoute(
         selectedNoteIds = selectedIds,
         displayConfig = displayConfig,
         backgroundResId = R.drawable.notebook,
+        imageRoot = notallyFragmentModel.imageRoot,
         onNoteClick = onNoteClick,
         onNoteLongClick = onNoteLongClick,
         onReminderClick = { note, _ -> onReminderClick(note) },

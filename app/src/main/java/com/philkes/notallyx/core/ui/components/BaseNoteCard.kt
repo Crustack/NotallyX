@@ -11,17 +11,16 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -30,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -38,6 +38,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.extensions.getCurrentImagesDirectory
+import com.philkes.notallyx.core.common.extensions.isPreview
 import com.philkes.notallyx.core.common.extensions.plus
 import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.NotesSortBy
@@ -86,7 +88,7 @@ internal fun BaseNoteCard(
     baseNote: BaseNote,
     modifier: Modifier = Modifier,
     config: NoteCardDisplayConfig = NoteCardDisplayConfig(),
-    imageRoot: File? = null,
+    imageRoot: File? = LocalContext.current.getCurrentImagesDirectory(),
     isSelected: Boolean = false,
     onClick: () -> Unit = {},
     onLongClick: (() -> Unit)? = null,
@@ -111,228 +113,244 @@ internal fun BaseNoteCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = stroke,
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+        Column(modifier = Modifier.fillMaxWidth()) {
             // Image Preview
             if (baseNote.images.isNotEmpty() && !config.hideImages) {
                 val imageFile =
                     if (imageRoot != null) File(imageRoot, baseNote.images[0].localName) else null
-                val bitmap =
-                    remember(imageFile) {
-                        if (imageFile?.exists() == true) {
-                            try {
-                                BitmapFactory.decodeFile(imageFile.absolutePath)?.asImageBitmap()
-                            } catch (_: Exception) {
-                                null
-                            }
-                        } else null
-                    }
-                if (bitmap != null) {
-                    Box(modifier = Modifier.fillMaxWidth().height(120.dp).padding(bottom = 8.dp)) {
-                        Image(
-                            bitmap = bitmap,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxWidth().height(120.dp),
-                        )
-                        if (baseNote.images.size > 1) {
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                                modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
-                            ) {
-                                Text(
-                                    text = baseNote.images.size.toString(),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.cant_load_image),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+                ImagePreview(imageFile, baseNote)
             }
 
-            // Title
-            val titleText =
-                if (baseNote.title.isNotEmpty()) {
-                    baseNote.title
-                } else if (baseNote.hasNoContents() && baseNote.images.isEmpty()) {
-                    stringResource(baseNote.getEmptyMessage())
-                } else ""
+            Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+                // Title
+                val titleText =
+                    if (baseNote.title.isNotEmpty()) {
+                        baseNote.title
+                    } else if (baseNote.hasNoContents() && baseNote.images.isEmpty()) {
+                        stringResource(baseNote.getEmptyMessage())
+                    } else ""
 
-            if (titleText.isNotEmpty()) {
-                Text(
-                    text = titleText,
-                    fontSize = config.textSize.displayTitleSize.sp,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = config.maxTitleLines,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-
-            // Date text and Reminder chip (directly below note title)
-            val (dateTimestamp, datePrefixResId) =
-                when (config.sortBy) {
-                    NotesSortBy.CREATION_DATE -> Pair(baseNote.timestamp, R.string.creation_date)
-                    NotesSortBy.MODIFIED_DATE ->
-                        Pair(baseNote.modifiedTimestamp, R.string.modified_date)
-                    else -> Pair(null, null)
-                }
-
-            val hasDate =
-                dateTimestamp != null &&
-                    (config.dateFormat != DateFormat.NONE || config.timeFormat != TimeFormat.NONE)
-            val hasReminder = baseNote.reminders.isNotEmpty()
-
-            if (hasDate || hasReminder) {
                 if (titleText.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    if (hasDate && dateTimestamp != null) {
-                        val prefixText = datePrefixResId?.let { stringResource(it) } ?: ""
-                        val formattedDate =
-                            Date(dateTimestamp).format(config.dateFormat, config.timeFormat)
-                        Text(
-                            text = "$prefixText $formattedDate".trim(),
-                            fontSize = config.textSize.displayBodySize.sp,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        )
-                    }
-
-                    if (hasReminder) {
-                        Spacer(modifier = Modifier.weight(1f))
-                        ReminderChip(
-                            baseNote = baseNote,
-                            dateFormat = config.dateFormat,
-                            timeFormat = config.timeFormat,
-                            textSize = config.textSize,
-                            onClick = onReminderClick,
-                        )
-                    }
-                }
-            }
-
-            // Files (placed under Date & Reminder row, before Body text or Checklist)
-            if (baseNote.files.isNotEmpty()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    FileAttachmentPreviewChip(fileName = baseNote.files[0].originalName)
-                    if (baseNote.files.size > 1) {
-                        val moreCount = baseNote.files.size - 1
-                        val moreFilesText =
-                            pluralStringResource(
-                                R.plurals.more_files,
-                                moreCount,
-                                moreCount,
-                            )
-                        FileAttachmentPreviewChip(
-                            fileName = moreFilesText,
-                            showIcon = false,
-                        )
-                    }
-                }
-            }
-
-            // Body text for Note
-            if (baseNote.type == Type.NOTE && baseNote.body.isNotEmpty()) {
-                val showBody = config.maxLines >= 1 || baseNote.title.isEmpty()
-                if (showBody) {
-                    if (titleText.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                    }
                     Text(
-                        text = baseNote.body,
-                        fontSize = config.textSize.displayBodySize.sp,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = if (config.maxLines >= 1) config.maxLines else 1,
+                        text = titleText,
+                        fontSize = config.textSize.displayTitleSize.sp,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = config.maxTitleLines,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-            }
 
-            // Checklist for List
-            if (baseNote.type == Type.LIST && baseNote.items.isNotEmpty()) {
-                val initializedItems = remember(baseNote.items) { baseNote.items.init() }
-                val forceShowFirstItem = config.maxItems < 1 && baseNote.title.isEmpty()
-                val displayedItems =
-                    initializedItems.take(if (forceShowFirstItem) 1 else config.maxItems)
-
-                if (displayedItems.isNotEmpty()) {
-                    if (titleText.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(4.dp))
+                // Date text and Reminder chip (directly below note title)
+                val (dateTimestamp, datePrefixResId) =
+                    when (config.sortBy) {
+                        NotesSortBy.CREATION_DATE ->
+                            Pair(baseNote.timestamp, R.string.creation_date)
+                        NotesSortBy.MODIFIED_DATE ->
+                            Pair(baseNote.modifiedTimestamp, R.string.modified_date)
+                        else -> Pair(null, null)
                     }
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        displayedItems.forEach { item ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(vertical = 2.dp),
-                            ) {
-                                Icon(
-                                    painter =
-                                        painterResource(
-                                            id =
-                                                if (item.checked) R.drawable.checkbox_16
-                                                else R.drawable.checkbox_outline_16
-                                        ),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(16.dp),
+
+                val hasDate =
+                    dateTimestamp != null &&
+                        (config.dateFormat != DateFormat.NONE ||
+                            config.timeFormat != TimeFormat.NONE)
+                val hasReminder = baseNote.reminders.isNotEmpty()
+
+                if (hasDate || hasReminder) {
+                    if (titleText.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        if (hasDate && dateTimestamp != null) {
+                            val prefixText = datePrefixResId?.let { stringResource(it) } ?: ""
+                            val formattedDate =
+                                Date(dateTimestamp).format(config.dateFormat, config.timeFormat)
+                            Text(
+                                text = "$prefixText $formattedDate".trim(),
+                                fontSize = config.textSize.displayBodySize.sp,
+                                style = MaterialTheme.typography.labelSmall,
+                                color =
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            )
+                        }
+
+                        if (hasReminder) {
+                            Spacer(modifier = Modifier.weight(1f))
+                            ReminderChip(
+                                baseNote = baseNote,
+                                dateFormat = config.dateFormat,
+                                timeFormat = config.timeFormat,
+                                textSize = config.textSize,
+                                onClick = onReminderClick,
+                            )
+                        }
+                    }
+                }
+
+                // Files (placed under Date & Reminder row, before Body text or Checklist)
+                if (baseNote.files.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        FileAttachmentPreviewChip(fileName = baseNote.files[0].originalName)
+                        if (baseNote.files.size > 1) {
+                            val moreCount = baseNote.files.size - 1
+                            val moreFilesText =
+                                pluralStringResource(
+                                    R.plurals.more_files,
+                                    moreCount,
+                                    moreCount,
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
+                            FileAttachmentPreviewChip(
+                                fileName = moreFilesText,
+                                showIcon = false,
+                            )
+                        }
+                    }
+                }
+
+                // Body text for Note
+                if (baseNote.type == Type.NOTE && baseNote.body.isNotEmpty()) {
+                    val showBody = config.maxLines >= 1 || baseNote.title.isEmpty()
+                    if (showBody) {
+                        if (titleText.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                        Text(
+                            text = baseNote.body,
+                            fontSize = config.textSize.displayBodySize.sp,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = if (config.maxLines >= 1) config.maxLines else 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+
+                // Checklist for List
+                if (baseNote.type == Type.LIST && baseNote.items.isNotEmpty()) {
+                    val initializedItems = remember(baseNote.items) { baseNote.items.init() }
+                    val forceShowFirstItem = config.maxItems < 1 && baseNote.title.isEmpty()
+                    val displayedItems =
+                        initializedItems.take(if (forceShowFirstItem) 1 else config.maxItems)
+
+                    if (displayedItems.isNotEmpty()) {
+                        if (titleText.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            displayedItems.forEach { item ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(vertical = 2.dp),
+                                ) {
+                                    Icon(
+                                        painter =
+                                            painterResource(
+                                                id =
+                                                    if (item.checked) R.drawable.checkbox_16
+                                                    else R.drawable.checkbox_outline_16
+                                            ),
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = item.body,
+                                        fontSize = config.textSize.displayBodySize.sp,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                            }
+                            if (initializedItems.size > displayedItems.size) {
                                 Text(
-                                    text = item.body,
-                                    fontSize = config.textSize.displayBodySize.sp,
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    text = "+${initializedItems.size - displayedItems.size}",
+                                    fontSize = config.textSize.displaySmallerSize.sp,
+                                    style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(top = 2.dp),
                                 )
                             }
                         }
-                        if (initializedItems.size > displayedItems.size) {
-                            Text(
-                                text = "+${initializedItems.size - displayedItems.size}",
-                                fontSize = config.textSize.displaySmallerSize.sp,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 2.dp),
+                    }
+                }
+
+                // Labels
+                if (!config.hideLabels && baseNote.labels.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    FlowRow(modifier = Modifier.fillMaxWidth()) {
+                        baseNote.labels.forEach { label ->
+                            LabelChip(
+                                text = label,
+                                textColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
                 }
             }
+        }
+    }
+}
 
-            // Labels
-            if (!config.hideLabels && baseNote.labels.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(6.dp))
-                FlowRow(modifier = Modifier.fillMaxWidth()) {
-                    baseNote.labels.forEach { label ->
-                        LabelChip(
-                            text = label,
-                            textColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+@Composable
+private fun ImagePreview(
+    imageFile: File?,
+    baseNote: BaseNote,
+) {
+    val isPreview = isPreview()
+    val bitmap =
+        remember(imageFile) {
+            if (!isPreview && imageFile?.exists() == true) {
+                try {
+                    BitmapFactory.decodeFile(imageFile.absolutePath)?.asImageBitmap()
+                } catch (_: Exception) {
+                    null
                 }
+            } else null
+        }
+    if (isPreview || bitmap != null) {
+        Box(modifier = Modifier.fillMaxWidth().aspectRatio(8f / 5f)) {
+            if (isPreview) {
+                Image(
+                    painter = painterResource(id = R.drawable.cat),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize(),
+                )
+            } else if (bitmap != null) {
+                Image(
+                    bitmap = bitmap,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize(),
+                )
             }
+            if (baseNote.images.size > 1) {
+                ImageCountChip(
+                    count = baseNote.images.size,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+                )
+            }
+        }
+    } else {
+        Box(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = stringResource(R.string.cant_load_image),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

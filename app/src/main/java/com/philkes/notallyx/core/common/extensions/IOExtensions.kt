@@ -1,7 +1,6 @@
 package com.philkes.notallyx.core.common.extensions
 
 import android.content.Context
-import android.content.ContextWrapper
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
@@ -43,81 +42,80 @@ const val SUBFOLDER_AUDIOS = "Audios"
 const val SUBFOLDER_CRASHES = "Crashes"
 const val SUBFOLDER_BACKUPS = "Backups"
 
-private fun ContextWrapper.getExternalImagesDirectory() =
-    getExternalMediaDirectory(SUBFOLDER_IMAGES)
+private fun Context.getExternalImagesDirectory() = getExternalMediaDirectory(SUBFOLDER_IMAGES)
 
-private fun ContextWrapper.getExternalAudioDirectory() = getExternalMediaDirectory(SUBFOLDER_AUDIOS)
+private fun Context.getExternalAudioDirectory() = getExternalMediaDirectory(SUBFOLDER_AUDIOS)
 
-private fun ContextWrapper.getExternalFilesDirectory() = getExternalMediaDirectory(SUBFOLDER_FILES)
+private fun Context.getExternalFilesDirectory() = getExternalMediaDirectory(SUBFOLDER_FILES)
 
-fun ContextWrapper.getExternalCrashesDirectory() = getExternalMediaDirectory(SUBFOLDER_CRASHES)
+fun Context.getExternalCrashesDirectory() = getExternalMediaDirectory(SUBFOLDER_CRASHES)
 
-fun ContextWrapper.getExternalBackupsDirectory() = getExternalMediaDirectory(SUBFOLDER_BACKUPS)
+fun Context.getExternalBackupsDirectory() = getExternalMediaDirectory(SUBFOLDER_BACKUPS)
 
 // Private (internal) storage roots for attachments when biometric lock is enabled and
 // dataInPublicFolder is disabled.
-fun ContextWrapper.getPrivateAttachmentsRoot(): File {
+fun Context.getPrivateAttachmentsRoot(): File {
     val root = File(filesDir, "attachments")
     if (!root.exists()) root.mkdir()
     return root
 }
 
-fun ContextWrapper.getPrivateImagesDirectory(): File {
+fun Context.getPrivateImagesDirectory(): File {
     val dir = File(getPrivateAttachmentsRoot(), SUBFOLDER_IMAGES)
     if (!dir.exists()) dir.mkdir()
     return dir
 }
 
-fun ContextWrapper.getPrivateFilesDirectory(): File {
+fun Context.getPrivateFilesDirectory(): File {
     val dir = File(getPrivateAttachmentsRoot(), SUBFOLDER_FILES)
     if (!dir.exists()) dir.mkdir()
     return dir
 }
 
-fun ContextWrapper.getPrivateAudioDirectory(): File {
+fun Context.getPrivateAudioDirectory(): File {
     val dir = File(getPrivateAttachmentsRoot(), SUBFOLDER_AUDIOS)
     if (!dir.exists()) dir.mkdir()
     return dir
 }
 
-private fun ContextWrapper.isDataInPublicEnabled(): Boolean {
+private fun Context.isDataInPublicEnabled(): Boolean {
     return NotallyXPreferences.getInstance(this).dataInPublicFolder.value
 }
 
-fun ContextWrapper.getCurrentImagesDirectory(): File {
+fun Context.getCurrentImagesDirectory(): File {
     return if (isDataInPublicEnabled()) getExternalImagesDirectory()
     else getPrivateImagesDirectory()
 }
 
-fun ContextWrapper.getCurrentFilesDirectory(): File {
+fun Context.getCurrentFilesDirectory(): File {
     return if (isDataInPublicEnabled()) getExternalFilesDirectory() else getPrivateFilesDirectory()
 }
 
-fun ContextWrapper.getCurrentAudioDirectory(): File {
+fun Context.getCurrentAudioDirectory(): File {
     return if (isDataInPublicEnabled()) getExternalAudioDirectory() else getPrivateAudioDirectory()
 }
 
-fun ContextWrapper.getCurrentMediaRoot(): File {
+fun Context.getCurrentMediaRoot(): File {
     return if (isDataInPublicEnabled()) getExternalMediaDirectory() else getPrivateAttachmentsRoot()
 }
 
-fun ContextWrapper.getAlternateImagesDirectory(): File {
+fun Context.getAlternateImagesDirectory(): File {
     return if (isDataInPublicEnabled()) getExternalImagesDirectory()
     else getPrivateImagesDirectory()
 }
 
-fun ContextWrapper.getAlternateFilesDirectory(): File {
+fun Context.getAlternateFilesDirectory(): File {
     return if (isDataInPublicEnabled()) getExternalFilesDirectory() else getPrivateFilesDirectory()
 }
 
-fun ContextWrapper.getAlternateAudioDirectory(): File {
+fun Context.getAlternateAudioDirectory(): File {
     return if (isDataInPublicEnabled()) getExternalAudioDirectory() else getPrivateAudioDirectory()
 }
 
 /**
  * Resolve an attachment file location by checking the current-mode directory first, then fallback.
  */
-fun ContextWrapper.resolveAttachmentFile(subfolder: String, localName: String): File? {
+fun Context.resolveAttachmentFile(subfolder: String, localName: String): File? {
     val current =
         when (subfolder) {
             SUBFOLDER_IMAGES -> getCurrentImagesDirectory()
@@ -145,7 +143,7 @@ fun ContextWrapper.resolveAttachmentFile(subfolder: String, localName: String): 
  *
  * @return Pair of moved and failed file counts
  */
-fun ContextWrapper.migrateAllAttachments(toPrivate: Boolean): Pair<Int, Int> {
+fun Context.migrateAllAttachments(toPrivate: Boolean): Pair<Int, Int> {
     var moved = 0
     var failed = 0
     val sources = listOf(SUBFOLDER_IMAGES, SUBFOLDER_FILES, SUBFOLDER_AUDIOS)
@@ -342,7 +340,7 @@ fun InputStream.copyToLarge(target: OutputStream, bufferSize: Int = BUFFER_SIZE)
     return copyTo(out = target, bufferSize = bufferSize)
 }
 
-fun ContextWrapper.deleteAttachments(
+fun Context.deleteAttachments(
     notes: Collection<BaseNote>,
     progress: StateFlow<Progress?>? = null,
 ) {
@@ -355,7 +353,7 @@ fun ContextWrapper.deleteAttachments(
     deleteAttachments(attachments, notes.map { it.id }.toLongArray(), progress)
 }
 
-fun ContextWrapper.deleteAttachments(
+fun Context.deleteAttachments(
     attachments: Collection<Attachment>,
     ids: LongArray? = null,
     progress: StateFlow<Progress?>? = null,
@@ -393,7 +391,7 @@ fun Context.getBackupDir() = getEmptyFolder("backup")
 
 fun Context.getExportedPath() = getEmptyFolder("exported")
 
-fun ContextWrapper.getLogsDir() =
+fun Context.getLogsDir() =
     try {
         getExternalMediaDirectory("logs")
     } catch (_: Exception) {
@@ -402,11 +400,11 @@ fun ContextWrapper.getLogsDir() =
 
 const val APP_LOG_FILE_NAME = "notallyx-logs"
 
-fun ContextWrapper.getLogFile(): File {
+fun Context.getLogFile(): File {
     return File(getLogsDir(), "$APP_LOG_FILE_NAME.txt")
 }
 
-fun ContextWrapper.getExternalMediaDirectory(name: String = ""): File {
+fun Context.getExternalMediaDirectory(name: String = ""): File {
     return getDirectory(
         requireNotNull(externalMediaDirs.firstOrNull()) {
             "External media directory does not exist"
@@ -415,7 +413,7 @@ fun ContextWrapper.getExternalMediaDirectory(name: String = ""): File {
     )
 }
 
-fun ContextWrapper.keepOnlyNewest(parentDir: File, keepCount: Int) {
+fun Context.keepOnlyNewest(parentDir: File, keepCount: Int) {
     if (!parentDir.exists() || !parentDir.isDirectory) return
     val folders = parentDir.listFiles()?.sortedByDescending { it.name } ?: return
     folders

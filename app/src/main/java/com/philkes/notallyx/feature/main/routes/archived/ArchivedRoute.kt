@@ -44,6 +44,7 @@ fun ArchivedRoute(
         selectedNoteIds = selectedIds,
         displayConfig = displayConfig,
         backgroundResId = R.drawable.archive,
+        imageRoot = notallyFragmentModel.imageRoot,
         onNoteClick = onNoteClick,
         onNoteLongClick = onNoteLongClick,
         onReminderClick = { note, _ -> onReminderClick(note) },

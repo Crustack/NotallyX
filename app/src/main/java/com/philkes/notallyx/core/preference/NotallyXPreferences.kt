@@ -1,7 +1,6 @@
 package com.philkes.notallyx.core.preference
 
 import android.content.Context
-import android.content.ContextWrapper
 import android.net.Uri
 import androidx.core.content.edit
 import androidx.core.net.toUri
@@ -31,7 +30,7 @@ const val MAX_LABELS_IN_NAVIGATION_MAX = 200
 
 const val MAX_ITEMS_MAX = 10
 
-class NotallyXPreferences private constructor(private val context: ContextWrapper) {
+class NotallyXPreferences private constructor(private val context: Context) {
 
     private val preferences = PreferenceManager.getDefaultSharedPreferences(context)
 
@@ -418,7 +417,7 @@ class NotallyXPreferences private constructor(private val context: ContextWrappe
 
         @Volatile private var instance: NotallyXPreferences? = null
 
-        fun getInstance(context: ContextWrapper): NotallyXPreferences {
+        fun getInstance(context: Context): NotallyXPreferences {
             return instance
                 ?: synchronized(this) {
                     val instance = NotallyXPreferences(context)

@@ -44,6 +44,7 @@ fun UnlabeledRoute(
         selectedNoteIds = selectedIds,
         displayConfig = displayConfig,
         backgroundResId = R.drawable.label_off,
+        imageRoot = notallyFragmentModel.imageRoot,
         onNoteClick = onNoteClick,
         onNoteLongClick = onNoteLongClick,
         onReminderClick = { note, _ -> onReminderClick(note) },

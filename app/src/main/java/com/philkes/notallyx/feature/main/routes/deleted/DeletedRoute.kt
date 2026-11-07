@@ -51,6 +51,7 @@ fun DeletedRoute(
             selectedNoteIds = selectedIds,
             displayConfig = displayConfig,
             backgroundResId = R.drawable.delete,
+            imageRoot = notallyFragmentModel.imageRoot,
             onNoteClick = onNoteClick,
             onNoteLongClick = onNoteLongClick,
             onReminderClick = { note, _ -> onReminderClick(note) },
