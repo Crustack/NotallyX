@@ -27,6 +27,8 @@ fun SearchRoute(
     notallyFragmentModel: NotesFragmentViewModel = koinViewModel(),
     preferences: NotallyXPreferences = notallyFragmentModel.preferences,
 ) {
+    val searchKeyword by notallyFragmentModel.keywordFlow.collectAsStateWithLifecycle()
+    val selectedFolder by notallyFragmentModel.folder.collectAsStateWithLifecycle()
     val searchResults = notallyFragmentModel.searchResults
     val items by
         (searchResults?.results ?: flowOf(emptyList())).collectAsStateWithLifecycle(emptyList())
@@ -49,8 +51,10 @@ fun SearchRoute(
         displayConfig = displayConfig,
         backgroundResId = R.drawable.search,
         showSearchBar = true,
-        searchKeyword = notallyFragmentModel.keyword,
+        searchKeyword = searchKeyword,
         onSearchKeywordChange = { notallyFragmentModel.keyword = it },
+        selectedFolder = selectedFolder,
+        onFolderSelected = { notallyFragmentModel.setFolder(it) },
         onNoteClick = onNoteClick,
         onNoteLongClick = onNoteLongClick,
         onReminderClick = { note, _ -> onReminderClick(note) },

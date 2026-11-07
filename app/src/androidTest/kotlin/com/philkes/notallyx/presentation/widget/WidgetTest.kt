@@ -1,42 +1,31 @@
-package com.philkes.notallyx.widget
+package com.philkes.notallyx.presentation.widget
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
-import androidx.test.espresso.action.ViewActions.click
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiSelector
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.error.*
-import com.philkes.notallyx.core.common.extensions.*
-import com.philkes.notallyx.core.common.result.*
-import com.philkes.notallyx.core.database.*
-import com.philkes.notallyx.core.preference.*
-import com.philkes.notallyx.core.security.*
-import com.philkes.notallyx.core.ui.components.*
-import com.philkes.notallyx.core.ui.dialog.*
-import com.philkes.notallyx.core.ui.extensions.*
-import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.data.model.extensions.*
-import com.philkes.notallyx.feature.editor.EditNoteActivity
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.widget.ConfigureWidgetActivity
 import com.philkes.notallyx.feature.widget.WidgetProvider
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.appendText
-import com.philkes.notallyx.test.byText
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.createListItem
 import com.philkes.notallyx.test.waitUntil
-import com.philkes.notallyx.test.waitUntilSucceeds
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -50,7 +39,7 @@ import org.junit.runner.RunWith
 @FixMethodOrder
 class WidgetTest : UiTestBase() {
 
-    @get:Rule val composeTestRule = createAndroidComposeRule<EditNoteActivity>()
+    @get:Rule val composeTestRule = createEmptyComposeRule()
 
     @Test
     fun addWidgetToHomeScreenAndSelectNote() {
@@ -120,7 +109,10 @@ class WidgetTest : UiTestBase() {
             val scenario1 = ActivityScenario.launch<ConfigureWidgetActivity>(intent1)
 
             // Select the first note
-            waitUntilSucceeds(10000) { noteTitle1.byText().perform(click()) }
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle1)).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(noteTitle1).performClick()
 
             // Verify widget preference was saved for Note 1
             waitUntil { preferences.getWidgetData(id) == note1Id }
@@ -140,7 +132,10 @@ class WidgetTest : UiTestBase() {
             val scenario2 = ActivityScenario.launch<ConfigureWidgetActivity>(intent2)
 
             // Select the second note
-            waitUntilSucceeds(10000) { noteTitle2.byText().perform(click()) }
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle2)).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(noteTitle2).performClick()
 
             // Verify widget preference was updated to Note 2
             waitUntil { preferences.getWidgetData(id) == note2Id }
@@ -154,20 +149,34 @@ class WidgetTest : UiTestBase() {
             // note and updates widget)
             val mainScenario = ActivityScenario.launch(MainActivity::class.java)
 
-            waitUntilSucceeds { noteTitle2.byText().perform(click()) }
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle2)).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(noteTitle2).performClick()
 
             val appendedText = " Updated"
             val expectedUpdatedTitle = "$noteTitle2$appendedText"
 
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(
+                        hasContentDescription(context.getString(R.string.title)) and
+                            hasText(noteTitle2)
+                    )
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
             composeTestRule
                 .onNodeWithContentDescription(context.getString(R.string.title))
                 .appendText(appendedText)
 
             // Exit EditNoteActivity to trigger save & widget update
-            toolbarBackButton.perform(click())
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.back))
+                .performClick()
 
             // Verify database contains the updated note title
-            waitUntil {
+            waitUntil(10_000) {
                 runBlocking {
                     database.getBaseNoteDao().get(note2Id)?.title == expectedUpdatedTitle
                 }
@@ -187,7 +196,10 @@ class WidgetTest : UiTestBase() {
                 }
             val scenario1 = ActivityScenario.launch<ConfigureWidgetActivity>(intent1)
 
-            waitUntilSucceeds { noteTitle1.byText().perform(click()) }
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle1)).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(noteTitle1).performClick()
 
             waitUntil { preferences.getWidgetData(testWidgetId) == note1Id }
             assertEquals(note1Id, preferences.getWidgetData(testWidgetId))
@@ -202,7 +214,10 @@ class WidgetTest : UiTestBase() {
                 }
             val scenario2 = ActivityScenario.launch<ConfigureWidgetActivity>(intent2)
 
-            waitUntilSucceeds { noteTitle2.byText().perform(click()) }
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle2)).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(noteTitle2).performClick()
 
             waitUntil { preferences.getWidgetData(testWidgetId) == note2Id }
             assertEquals(note2Id, preferences.getWidgetData(testWidgetId))
@@ -213,18 +228,32 @@ class WidgetTest : UiTestBase() {
             // Open MainActivity, click Note 2, edit its title in EditNoteActivity, and exit
             val mainScenario = ActivityScenario.launch(MainActivity::class.java)
 
-            waitUntilSucceeds { noteTitle2.byText().perform(click()) }
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle2)).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(noteTitle2).performClick()
 
             val appendedText = " Updated"
             val expectedUpdatedTitle = "$noteTitle2$appendedText"
 
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(
+                        hasContentDescription(context.getString(R.string.title)) and
+                            hasText(noteTitle2)
+                    )
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
             composeTestRule
                 .onNodeWithContentDescription(context.getString(R.string.title))
                 .appendText(appendedText)
 
-            toolbarBackButton.perform(click())
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.back))
+                .performClick()
 
-            waitUntil {
+            waitUntil(10_000) {
                 runBlocking {
                     database.getBaseNoteDao().get(note2Id)?.title == expectedUpdatedTitle
                 }
@@ -254,7 +283,10 @@ class WidgetTest : UiTestBase() {
 
         val scenario = ActivityScenario.launch<ConfigureWidgetActivity>(intent)
 
-        waitUntilSucceeds { noteTitle.byText().perform(click()) }
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(noteTitle).performClick()
 
         waitUntil { preferences.getWidgetData(widgetId) == noteId }
         assertEquals(noteId, preferences.getWidgetData(widgetId))
@@ -286,7 +318,10 @@ class WidgetTest : UiTestBase() {
 
         val scenario = ActivityScenario.launch<ConfigureWidgetActivity>(intent)
 
-        waitUntilSucceeds { listNoteTitle.byText().perform(click()) }
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(listNoteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(listNoteTitle).performClick()
 
         waitUntil { preferences.getWidgetData(widgetId) == listNoteId }
         assertEquals(listNoteId, preferences.getWidgetData(widgetId))

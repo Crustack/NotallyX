@@ -3,7 +3,6 @@ package com.philkes.notallyx.activity.main.fragments
 import android.app.Activity
 import android.app.Instrumentation
 import android.content.Intent
-import android.os.SystemClock
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
@@ -25,8 +24,6 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.UiDevice
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getExternalBackupsDirectory
 import com.philkes.notallyx.core.common.extensions.getExternalMediaDirectory
@@ -167,7 +164,9 @@ class SettingsFragmentTest : UiTestBase() {
             .onNodeWithText(context.getString(R.string.backup_password))
             .performScrollTo()
             .performClick()
-        composeTestRule.onNode(hasSetTextAction()).performTextInput("1234")
+        composeTestRule
+            .onNode(hasSetTextAction() and hasAnyAncestor(isComposeDialog()))
+            .performTextInput("1234")
         composeTestRule.onNodeWithText(saveLabel).performClick()
 
         composeTestRule
@@ -204,14 +203,23 @@ class SettingsFragmentTest : UiTestBase() {
             .onNodeWithText(context.getString(R.string.export_settings))
             .performScrollTo()
             .performClick()
-        composeTestRule.onNodeWithText(saveLabel).performClick()
+        composeTestRule
+            .onNode(
+                hasText(context.getString(R.string.export)) and hasAnyAncestor(isComposeDialog())
+            )
+            .performClick()
         waitUntil(10_000) { settingsExportFile.exists() }
 
         composeTestRule
             .onNodeWithText(context.getString(R.string.reset_settings))
             .performScrollTo()
             .performClick()
-        composeTestRule.onNodeWithText(saveLabel).performClick()
+        composeTestRule
+            .onNode(
+                hasText(context.getString(R.string.reset_settings)) and
+                    hasAnyAncestor(isComposeDialog())
+            )
+            .performClick()
         composeTestRule.waitUntilSettingsValue(R.string.always_show_search_bar, R.string.disabled)
         composeTestRule.waitUntilSettingsValue(R.string.biometric_lock, R.string.disabled)
         composeTestRule.waitUntilSettingsValue(R.string.data_in_public, R.string.disabled)
@@ -220,7 +228,12 @@ class SettingsFragmentTest : UiTestBase() {
             .onNodeWithText(context.getString(R.string.import_settings))
             .performScrollTo()
             .performClick()
-        composeTestRule.onNodeWithText(saveLabel).performClick()
+        composeTestRule
+            .onNode(
+                hasText(context.getString(R.string.import_action)) and
+                    hasAnyAncestor(isComposeDialog())
+            )
+            .performClick()
 
         composeTestRule.waitUntilSettingsValue(R.string.always_show_search_bar, R.string.enabled)
         composeTestRule.waitUntilSettingsValue(R.string.data_in_public, R.string.disabled)
@@ -299,7 +312,12 @@ class SettingsFragmentTest : UiTestBase() {
             .onNodeWithText(context.getString(R.string.import_backup))
             .performScrollTo()
             .performClick()
-        composeTestRule.onNodeWithText(context.getString(R.string.import_backup)).performClick()
+        composeTestRule
+            .onNode(
+                hasText(context.getString(R.string.import_backup)) and
+                    hasAnyAncestor(isComposeDialog())
+            )
+            .performClick()
         waitUntil(15_000L) {
             runBlocking {
                 withContext(Dispatchers.IO) { database.getBaseNoteDao().getAll().isNotEmpty() }
@@ -382,7 +400,12 @@ class SettingsFragmentTest : UiTestBase() {
             .onNodeWithText(context.getString(R.string.import_backup))
             .performScrollTo()
             .performClick()
-        composeTestRule.onNodeWithText(context.getString(R.string.import_backup)).performClick()
+        composeTestRule
+            .onNode(
+                hasText(context.getString(R.string.import_backup)) and
+                    hasAnyAncestor(isComposeDialog())
+            )
+            .performClick()
         waitUntil(15_000L) {
             runBlocking {
                 withContext(Dispatchers.IO) { database.getBaseNoteDao().getAll().isNotEmpty() }
@@ -418,12 +441,7 @@ class SettingsFragmentTest : UiTestBase() {
 
         composeTestRule.checkAndUpdateNoteTitle("Test", " Foo")
 
-        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-
-        device.sleep()
-        SystemClock.sleep(2000)
-        device.wakeUp()
-        device.pressMenu()
+        lockAndUnlockDevice()
 
         composeTestRule.checkAndUpdateNoteTitle("Test Foo", " Bar")
 
@@ -444,10 +462,7 @@ class SettingsFragmentTest : UiTestBase() {
 
         composeTestRule.checkAndUpdateNoteTitle("Test Foo Bar", " 123")
 
-        device.sleep()
-        SystemClock.sleep(2000)
-        device.wakeUp()
-        device.pressMenu()
+        lockAndUnlockDevice()
 
         composeTestRule.waitUntil(10_000) {
             composeTestRule
@@ -480,12 +495,7 @@ class SettingsFragmentTest : UiTestBase() {
 
         composeTestRule.checkAndUpdateNoteTitle("Test", " Foo")
 
-        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-
-        device.sleep()
-        SystemClock.sleep(2000)
-        device.wakeUp()
-        device.pressMenu()
+        lockAndUnlockDevice()
 
         composeTestRule.checkAndUpdateNoteTitle("Test Foo", " Bar")
 
@@ -506,10 +516,7 @@ class SettingsFragmentTest : UiTestBase() {
 
         composeTestRule.checkAndUpdateNoteTitle("Test Foo Bar", " 123")
 
-        device.sleep()
-        SystemClock.sleep(2000)
-        device.wakeUp()
-        device.pressMenu()
+        lockAndUnlockDevice()
 
         composeTestRule.waitUntil(10_000) {
             composeTestRule
@@ -539,12 +546,7 @@ class SettingsFragmentTest : UiTestBase() {
         composeTestRule.navigateTo(NotallyNavKey.Notes)
         composeTestRule.checkAndUpdateNoteTitle("Test", " Foo")
 
-        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-
-        device.sleep()
-        SystemClock.sleep(2000)
-        device.wakeUp()
-        device.pressMenu()
+        lockAndUnlockDevice()
 
         composeTestRule.checkAndUpdateNoteTitle("Test Foo", " Bar")
 
@@ -555,10 +557,7 @@ class SettingsFragmentTest : UiTestBase() {
 
         composeTestRule.checkAndUpdateNoteTitle("Test Foo Bar", " 123")
 
-        device.sleep()
-        SystemClock.sleep(2000)
-        device.wakeUp()
-        device.pressMenu()
+        lockAndUnlockDevice()
 
         composeTestRule.waitUntil(10_000) {
             composeTestRule

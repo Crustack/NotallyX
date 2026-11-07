@@ -32,12 +32,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
+import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.navigation.NotallyNavKey
@@ -312,7 +314,10 @@ internal fun MainScreen(
                                 }
                             }
                             if (showSearchOption) {
-                                IconButton(onClick = onSearchClick) {
+                                IconButton(
+                                    onClick = onSearchClick,
+                                    modifier = Modifier.testTag(TestTags.NAVIGATION),
+                                ) {
                                     Icon(
                                         painter =
                                             painterResource(
