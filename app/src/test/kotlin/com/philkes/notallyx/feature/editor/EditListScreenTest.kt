@@ -1,4 +1,4 @@
-package com.philkes.notallyx.presentation.view.screens
+package com.philkes.notallyx.feature.editor
 
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.feature.editor.screens.EditNoteState
