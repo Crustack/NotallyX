@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
@@ -110,13 +111,9 @@ internal interface EditChangeHandlers {
 
     fun onItemDelete(item: ListItem) {}
 
-    fun onItemMove(fromIndex: Int, toIndex: Int) {}
-
     fun onItemSwipeRight(item: ListItem) {}
 
     fun onItemSwipeLeft(item: ListItem) {}
-
-    fun onItemMoveFinish(item: ListItem) {}
 }
 
 internal typealias EditNoteChangeHandlers = EditChangeHandlers
@@ -673,7 +670,6 @@ internal fun EditListScreen(
     changeHandlers: EditChangeHandlers = object : EditChangeHandlers {},
     clickHandlers: EditClickHandlers = object : EditClickHandlers {},
 ) {
-    val lazyListState = rememberLazyListState()
 
     EditScreen(
         noteState = noteState.copy(type = Type.LIST),
@@ -682,16 +678,15 @@ internal fun EditListScreen(
         backgroundColor = backgroundColor,
         canUndo = canUndo,
         canRedo = canRedo,
-        lazyListState = lazyListState,
         changeHandlers = changeHandlers,
         clickHandlers = clickHandlers,
         bottomLeftActions = {},
         content = {
             // Checklist Unchecked Items
-            items(
+            itemsIndexed(
                 items = noteState.items,
-                key = { it.id },
-            ) { item ->
+                key = { _, item -> item.id },
+            ) { index, item ->
                 ChecklistItemRow(
                     value = item.body,
                     onValueChange = { newText -> changeHandlers.onItemTextChange(item, newText) },
@@ -750,7 +745,11 @@ internal fun EditListScreen(
                         onCheckedChange = { checked ->
                             changeHandlers.onItemCheckedChange(item, checked)
                         },
+                        onEnterKey = { clickHandlers.onAddItemClick() },
+                        onBackspaceOnEmpty = { changeHandlers.onItemDelete(item) },
                         onDelete = { changeHandlers.onItemDelete(item) },
+                        onSwipeRight = { changeHandlers.onItemSwipeRight(item) },
+                        onSwipeLeft = { changeHandlers.onItemSwipeLeft(item) },
                     )
                 }
             }

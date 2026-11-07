@@ -6,6 +6,7 @@ import android.graphics.Point
 import android.graphics.Typeface
 import android.os.SystemClock
 import android.text.Spanned
+import android.view.MotionEvent
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.TypefaceSpan
@@ -202,38 +203,36 @@ fun dragAndDropByDragHandle(
     sourceSelector: BySelector,
     targetSelector: BySelector,
     dragSpeedMs: Int = 500,
-    dragHandleResId: String = "DragHandle",
-    longClickBefore: Boolean = false,
+    dragHandleDesc: String = "Drag Handle",
 ) {
-    val packageName = InstrumentationRegistry.getInstrumentation().targetContext.packageName
     val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
-    val sourceItemContainer =
-        device.wait(
-            Until.findObject(By.res(packageName, "Content").hasDescendant(sourceSelector)),
-            5000,
-        ) ?: throw IllegalStateException("Source item container matching $sourceSelector not found")
+    val sourceTextObject =
+        device.wait(Until.findObject(sourceSelector), 5000)
+            ?: throw IllegalStateException("Source element not found: $sourceSelector")
 
-    val targetItemContainer =
-        device.wait(
-            Until.findObject(By.res(packageName, "Content").hasDescendant(targetSelector)),
-            5000,
-        ) ?: throw IllegalStateException("Target item container matching $targetSelector not found")
+    val targetTextObject =
+        device.wait(Until.findObject(targetSelector), 5000)
+            ?: throw IllegalStateException("Target element not found: $targetSelector")
 
-    val sourceHandleObject =
-        sourceItemContainer.findObject(By.res(packageName, dragHandleResId))
-            ?: throw IllegalStateException("DragHandle ($dragHandleResId) not found in source item")
-
-    val targetHandleObject =
-        targetItemContainer.findObject(By.res(packageName, dragHandleResId))
-            ?: throw IllegalStateException("DragHandle ($dragHandleResId) not found in target item")
+    val sourceHandleObject = findDragHandleForNode(sourceTextObject, dragHandleDesc)
+    val targetHandleObject = findDragHandleForNode(targetTextObject, dragHandleDesc)
 
     dragAndDrop(
         sourceObject = sourceHandleObject,
         targetObject = targetHandleObject,
         dragSpeedMs = dragSpeedMs,
-        longClickBefore = longClickBefore,
     )
+}
+
+private fun findDragHandleForNode(node: UiObject2, dragHandleDesc: String): UiObject2 {
+    val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+    val nodeBounds = node.visibleBounds
+    val handles = device.findObjects(By.desc(dragHandleDesc))
+    return handles.find { handle ->
+        val handleBounds = handle.visibleBounds
+        kotlin.math.abs(handleBounds.centerY() - nodeBounds.centerY()) < nodeBounds.height()
+    } ?: throw IllegalStateException("Drag handle not found for item node with bounds $nodeBounds")
 }
 
 /**
@@ -279,12 +278,69 @@ fun dragAndDrop(
         } else {
             targetBounds.top - (targetBounds.height() * 0.25).toInt()
         }
-    if (longClickBefore) {
-        sourceObject.longClick()
-    }
 
     val dropPoint = Point(endX, endY)
     sourceObject.drag(dropPoint, dragSpeedMs)
+    SystemClock.sleep(300)
+}
+
+fun performLongPressDrag(
+    startX: Int,
+    startY: Int,
+    endX: Int,
+    endY: Int,
+    holdTimeMs: Long = 650L,
+    dragSteps: Int = 50,
+) {
+    val downTime = SystemClock.uptimeMillis()
+
+    var eventTime = SystemClock.uptimeMillis()
+    val downEvent =
+        MotionEvent.obtain(
+            downTime,
+            eventTime,
+            MotionEvent.ACTION_DOWN,
+            startX.toFloat(),
+            startY.toFloat(),
+            0,
+        )
+    InstrumentationRegistry.getInstrumentation().uiAutomation.injectInputEvent(downEvent, true)
+    downEvent.recycle()
+
+    SystemClock.sleep(holdTimeMs)
+
+    for (i in 1..dragSteps) {
+        eventTime = SystemClock.uptimeMillis()
+        val x = startX + (endX - startX) * i / dragSteps
+        val y = startY + (endY - startY) * i / dragSteps
+        val moveEvent =
+            MotionEvent.obtain(
+                downTime,
+                eventTime,
+                MotionEvent.ACTION_MOVE,
+                x.toFloat(),
+                y.toFloat(),
+                0,
+            )
+        InstrumentationRegistry.getInstrumentation()
+            .uiAutomation
+            .injectInputEvent(moveEvent, true)
+        moveEvent.recycle()
+        SystemClock.sleep(10)
+    }
+
+    eventTime = SystemClock.uptimeMillis()
+    val upEvent =
+        MotionEvent.obtain(
+            downTime,
+            eventTime,
+            MotionEvent.ACTION_UP,
+            endX.toFloat(),
+            endY.toFloat(),
+            0,
+        )
+    InstrumentationRegistry.getInstrumentation().uiAutomation.injectInputEvent(upEvent, true)
+    upEvent.recycle()
 
     SystemClock.sleep(300)
 }

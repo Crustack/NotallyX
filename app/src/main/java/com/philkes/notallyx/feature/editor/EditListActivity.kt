@@ -2,27 +2,27 @@ package com.philkes.notallyx.feature.editor
 
 import android.os.Bundle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.philkes.notallyx.core.common.extensions.findAllOccurrences
 import com.philkes.notallyx.core.preference.EditAction
+import com.philkes.notallyx.core.preference.ListItemSort
 import com.philkes.notallyx.core.preference.NotallyXPreferences
-import com.philkes.notallyx.core.preference.autoSortByCheckedEnabled
-import com.philkes.notallyx.core.preference.callback
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.feature.editor.bottomsheet.MoreListBottomSheet
-import com.philkes.notallyx.feature.editor.listitem.ListManager
-import com.philkes.notallyx.feature.editor.listitem.init
-import com.philkes.notallyx.feature.editor.listitem.setItems
-import com.philkes.notallyx.feature.editor.listitem.sorting.SortedItemsList
+import com.philkes.notallyx.feature.editor.history.changes.ListItemsChange
+import com.philkes.notallyx.feature.editor.listitem.checkItem
+import com.philkes.notallyx.feature.editor.listitem.cloneList
+import com.philkes.notallyx.feature.editor.listitem.initChildren
+import com.philkes.notallyx.feature.editor.listitem.removeWithChildren
 import com.philkes.notallyx.feature.editor.listitem.splitByChecked
-import com.philkes.notallyx.feature.editor.listitem.toMutableList
 import com.philkes.notallyx.feature.editor.screens.EditChangeHandlers
 import com.philkes.notallyx.feature.editor.screens.EditClickHandlers
 import com.philkes.notallyx.feature.editor.screens.EditListScreen
@@ -33,31 +33,12 @@ import kotlinx.coroutines.withContext
 
 class EditListActivity : EditActivity(Type.LIST) {
 
-    private val items: MutableList<ListItem>
-        get() = if (::listManager.isInitialized) listManager.items else notallyModel.items
-
-    private var itemsChecked: SortedItemsList? = null
-    private lateinit var listManager: ListManager
-    private val listActionHandler: NoteListActionHandler by lazy {
-        NoteListActionHandler(listManager)
-    }
-
     override fun finish() {
-        if (::listManager.isInitialized) {
-            notallyModel.setItems(
-                items.toMutableList() + (itemsChecked?.toMutableList() ?: listOf())
-            )
-        }
         super.finish()
     }
 
     override fun updateModel() {
         super.updateModel()
-        if (::listManager.isInitialized) {
-            notallyModel.setItems(
-                items.toMutableList() + (itemsChecked?.toMutableList() ?: listOf())
-            )
-        }
     }
 
     override fun toggleCanEdit(mode: NoteViewMode) {
@@ -73,7 +54,6 @@ class EditListActivity : EditActivity(Type.LIST) {
                 notallyModel,
                 colorInt,
                 actionHandler,
-                listActionHandler,
                 topActions,
                 bottomAction,
             )
@@ -82,15 +62,7 @@ class EditListActivity : EditActivity(Type.LIST) {
 
     override fun selectSearchResult(resultPos: Int) {}
 
-    override fun configureUI() {
-        if (
-            ::listManager.isInitialized &&
-                listManager.items.isEmpty() &&
-                (itemsChecked?.size() ?: 0) == 0
-        ) {
-            listManager.add(pushChange = false)
-        }
-    }
+    override fun configureUI() {}
 
     @Composable
     override fun RenderScreen() {
@@ -99,6 +71,7 @@ class EditListActivity : EditActivity(Type.LIST) {
         val audiosState = notallyModel.audios.collectAsStateWithLifecycle(emptyList())
         val remindersState = notallyModel.reminders.collectAsStateWithLifecycle(emptyList())
 
+        val itemsVersionState = remember { mutableIntStateOf(0) }
         val topActionsState = remember {
             mutableStateOf(preferences.getSafeEditNoteActivityTopActions())
         }
@@ -110,17 +83,31 @@ class EditListActivity : EditActivity(Type.LIST) {
         val stackPointerState = changeHistory.stackPointer.collectAsStateWithLifecycle(-1)
         val viewModeState = notallyModel.viewMode.collectAsStateWithLifecycle(NoteViewMode.EDIT)
 
-        // Read stackPointerState to observe changeHistory state updates
+        // Read stackPointerState and itemsVersionState to observe state updates
         stackPointerState.value
+        itemsVersionState.intValue
+
+        val listItemSort = preferences.listItemSorting.value
+        val (activeItemsList, checkedItemsList) =
+            when (listItemSort) {
+                ListItemSort.NO_AUTO_SORT -> {
+                    Pair(notallyModel.items.toList(), emptyList())
+                }
+                ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP -> {
+                    val (checked, active) = notallyModel.items.splitByChecked()
+                    Pair(active, checked.sortedByDescending { it.checkedTimestamp ?: 0L })
+                }
+                else -> {
+                    val (checked, active) = notallyModel.items.splitByChecked()
+                    Pair(active, checked)
+                }
+            }
 
         val noteState =
             EditNoteState(
                 title = titleState.value,
-                items =
-                    if (::listManager.isInitialized) listManager.items
-                    else notallyModel.items.filter { !it.checked },
-                checkedItems =
-                    itemsChecked?.toMutableList() ?: notallyModel.items.filter { it.checked },
+                items = activeItemsList,
+                checkedItems = checkedItemsList,
                 createdTimestamp = notallyModel.timestamp,
                 modifiedTimestamp = notallyModel.modifiedTimestamp,
                 images = imagesState.value,
@@ -145,6 +132,22 @@ class EditListActivity : EditActivity(Type.LIST) {
                 bottomAction = bottomActionState.value,
             )
 
+        fun applyListChange(action: () -> Unit) {
+            val oldList = notallyModel.items.cloneList()
+            action()
+            initChildren(notallyModel.items)
+            val newList = notallyModel.items.cloneList()
+            changeHistory.push(
+                ListItemsChange(
+                    notallyModel = notallyModel,
+                    oldItems = oldList,
+                    newItems = newList,
+                    onItemsUpdated = { itemsVersionState.intValue++ },
+                )
+            )
+            itemsVersionState.intValue++
+        }
+
         EditListScreen(
             noteState = noteState,
             preferences = preferencesState,
@@ -159,74 +162,30 @@ class EditListActivity : EditActivity(Type.LIST) {
                     }
 
                     override fun onItemTextChange(item: ListItem, text: String) {
-                        val pos = listManager.items.indexOf(item)
-                        if (pos != -1) {
-                            listManager.changeText(pos, text, inCheckedList = false)
-                        } else {
-                            val checkedPos = itemsChecked?.toMutableList()?.indexOf(item) ?: -1
-                            if (checkedPos != -1) {
-                                listManager.changeText(checkedPos, text, inCheckedList = true)
-                            }
+                        if (item.body != text) {
+                            applyListChange { item.body = text }
                         }
                     }
 
                     override fun onItemCheckedChange(item: ListItem, checked: Boolean) {
-                        val pos = listManager.items.indexOf(item)
-                        if (pos != -1) {
-                            listManager.changeChecked(pos, checked, item.checked)
-                        } else {
-                            val checkedPos = itemsChecked?.toMutableList()?.indexOf(item) ?: -1
-                            if (checkedPos != -1) {
-                                listManager.changeChecked(checkedPos, checked, inCheckedList = true)
-                            }
-                        }
+                        applyListChange { notallyModel.items.checkItem(item, checked) }
                     }
 
                     override fun onItemDelete(item: ListItem) {
-                        val pos = listManager.items.indexOf(item)
-                        if (pos != -1) {
-                            listManager.delete(pos)
-                        } else {
-                            val checkedPos = itemsChecked?.toMutableList()?.indexOf(item) ?: -1
-                            if (checkedPos != -1) {
-                                listManager.delete(checkedPos, inCheckedList = true)
-                            }
-                        }
-                    }
-
-                    override fun onItemMove(fromIndex: Int, toIndex: Int) {
-                        if (
-                            fromIndex in listManager.items.indices &&
-                                toIndex in listManager.items.indices
-                        ) {
-                            listManager.move(fromIndex, toIndex)
-                        }
+                        applyListChange { notallyModel.items.removeWithChildren(item) }
                     }
 
                     override fun onItemSwipeRight(item: ListItem) {
-                        val pos = listManager.items.indexOf(item)
-                        if (pos > 0 && !item.isChild) {
-                            listManager.changeIsChild(pos, isChild = true)
+                        val sectionList = if (item.checked) checkedItemsList else activeItemsList
+                        val idx = sectionList.indexOf(item)
+                        if (idx > 0) {
+                            applyListChange { item.isChild = true }
                         }
                     }
 
                     override fun onItemSwipeLeft(item: ListItem) {
-                        val pos = listManager.items.indexOf(item)
-                        if (pos != -1 && item.isChild) {
-                            listManager.changeIsChild(pos, isChild = false)
-                        }
-                    }
-
-                    override fun onItemMoveFinish(item: ListItem) {
-                        val pos = listManager.items.indexOf(item)
-                        if (pos != -1) {
-                            listManager.finishMove(
-                                positionTo = pos,
-                                count = 1 + item.children.size,
-                                parentBefore = null,
-                                stateBefore = listManager.getState(),
-                                pushChange = true,
-                            )
+                        if (item.isChild) {
+                            applyListChange { item.isChild = false }
                         }
                     }
                 },
@@ -237,7 +196,19 @@ class EditListActivity : EditActivity(Type.LIST) {
                     }
 
                     override fun onAddItemClick() {
-                        listManager.add()
+                        applyListChange {
+                            val maxId = notallyModel.items.maxOfOrNull { it.id } ?: -1
+                            val newItem =
+                                ListItem(
+                                    body = "",
+                                    checked = false,
+                                    isChild = false,
+                                    order = notallyModel.items.size,
+                                    children = mutableListOf(),
+                                    id = maxId + 1,
+                                )
+                            notallyModel.items.add(newItem)
+                        }
                     }
 
                     override fun onMoreOptionsClick() {
@@ -285,33 +256,17 @@ class EditListActivity : EditActivity(Type.LIST) {
 
     override fun setStateFromModel(savedInstanceState: Bundle?) {
         super.setStateFromModel(savedInstanceState)
-        val initializedItems = notallyModel.items.init(true)
-        if (preferences.autoSortByCheckedEnabled) {
-            val (checkedItems, uncheckedItems) = initializedItems.splitByChecked()
-            itemsChecked =
-                SortedItemsList(preferences.listItemSorting.value.callback()).apply {
-                    setItems(checkedItems.toMutableList())
-                }
-            listManager =
-                ListManager(
-                    items = uncheckedItems.toMutableList(),
-                    itemsChecked = itemsChecked,
-                    changeHistory = changeHistory,
-                    preferences = preferences,
-                    endSearch = { if (isInSearchMode()) endSearch() },
-                    onItemSizeChanged = { count -> updateJumpButtonsVisibility(count) },
+        if (notallyModel.isNewNote && notallyModel.items.isEmpty()) {
+            notallyModel.items.add(
+                ListItem(
+                    body = "",
+                    checked = false,
+                    isChild = false,
+                    order = 0,
+                    children = mutableListOf(),
+                    id = 0,
                 )
-        } else {
-            itemsChecked = null
-            listManager =
-                ListManager(
-                    items = initializedItems.toMutableList(),
-                    itemsChecked = null,
-                    changeHistory = changeHistory,
-                    preferences = preferences,
-                    endSearch = { if (isInSearchMode()) endSearch() },
-                    onItemSizeChanged = { count -> updateJumpButtonsVisibility(count) },
-                )
+            )
         }
     }
 

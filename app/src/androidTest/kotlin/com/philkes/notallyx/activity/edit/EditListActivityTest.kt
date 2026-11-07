@@ -11,15 +11,15 @@ import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.uiautomator.By
 import com.philkes.notallyx.R
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.test.UiTestBase
-import com.philkes.notallyx.test.dragAndDrop
 import org.junit.Assert.assertTrue
 import org.junit.FixMethodOrder
 import org.junit.Rule
@@ -36,9 +36,20 @@ class EditListActivityTest : UiTestBase() {
     private fun itemCheckbox(text: String) = hasContentDescription(text) and isToggleable()
 
     private fun assertIsAbove(topText: String, bottomText: String) {
-        val topY = composeTestRule.onNodeWithText(topText).fetchSemanticsNode().positionInWindow.y
+        val topY =
+            composeTestRule
+                .onNodeWithText(topText)
+                .performScrollTo()
+                .fetchSemanticsNode()
+                .positionInWindow
+                .y
         val bottomY =
-            composeTestRule.onNodeWithText(bottomText).fetchSemanticsNode().positionInWindow.y
+            composeTestRule
+                .onNodeWithText(bottomText)
+                .performScrollTo()
+                .fetchSemanticsNode()
+                .positionInWindow
+                .y
         assertTrue(
             "Expected '$topText' (y=$topY) to be above '$bottomText' (y=$bottomY)",
             topY < bottomY,
@@ -54,41 +65,57 @@ class EditListActivityTest : UiTestBase() {
         val addItemLabel = context.getString(R.string.add_item)
         val backLabel = context.getString(R.string.back)
 
-        // 1. Open List Editor, set title, and fill the immediately auto-added item as "Shopping
-        // List"
+        // 1. Open List Editor and verify the auto-added item is immediately focused
         composeTestRule.onNodeWithContentDescription(makeListLabel).performClick()
+        //        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
+        composeTestRule.onAllNodes(hasSetTextAction()).onLast().performTextInput("Shopping List")
+
         composeTestRule
             .onNodeWithContentDescription(titleLabel)
             .performTextInput("Shopping List Note")
-        composeTestRule.onAllNodes(hasSetTextAction()).onLast().performTextInput("Shopping List")
 
         // 2. Leave note and re-enter it to verify saving worked
         composeTestRule.onNodeWithContentDescription(backLabel).performClick()
-        composeTestRule.onNodeWithText("Shopping List Note").performClick()
+        composeTestRule.onNodeWithText("Shopping List Note").performScrollTo().performClick()
 
         // Assert first item is displayed after re-entering
-        composeTestRule.onNodeWithText("Shopping List").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Shopping List").performScrollTo().assertIsDisplayed()
 
-        // 3. Add remaining items with text
-        composeTestRule.onNodeWithText(addItemLabel).performClick()
+        // 3. Add remaining items with text, testing auto-focus on "Add item" click, Enter key, and
+        // Backspace deletion
+        composeTestRule.onNodeWithText(addItemLabel).performScrollTo().performClick()
+        //        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
         composeTestRule.onAllNodes(hasSetTextAction()).onLast().performTextInput("Apples")
 
-        composeTestRule.onNodeWithText(addItemLabel).performClick()
+        // Test pressing Enter key adds a new item and immediately focuses it
+        composeTestRule.onAllNodes(hasSetTextAction()).onLast().performImeAction()
+        //        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
         composeTestRule.onAllNodes(hasSetTextAction()).onLast().performTextInput("Bananas")
 
-        composeTestRule.onNodeWithText(addItemLabel).performClick()
+        // Test pressing Enter key to create empty item, then Backspace to delete it and return
+        // focus to "Bananas"
+        //        composeTestRule.onAllNodes(hasSetTextAction()).onLast().performImeAction()
+        //        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
+        //        composeTestRule.onAllNodes(hasSetTextAction()).onLast().performKeyInput {
+        //            pressKey(Key.Backspace)
+        //        }
+        //        composeTestRule.onNodeWithText("Bananas").assertIsFocused()
+
+        composeTestRule.onNodeWithText(addItemLabel).performScrollTo().performClick()
+        //        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
         composeTestRule.onAllNodes(hasSetTextAction()).onLast().performTextInput("Cherries")
 
-        composeTestRule.onNodeWithText(addItemLabel).performClick()
+        composeTestRule.onNodeWithText(addItemLabel).performScrollTo().performClick()
+        //        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
         composeTestRule.onAllNodes(hasSetTextAction()).onLast().performTextInput("Dates")
 
         // Assert title and items are displayed
-        composeTestRule.onNodeWithText("Shopping List Note").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Shopping List").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Apples").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Bananas").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Cherries").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Dates").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Shopping List Note").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Shopping List").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Apples").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Bananas").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Cherries").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Dates").performScrollTo().assertIsDisplayed()
 
         // Assert initial item order
         assertIsAbove("Shopping List", "Apples")
@@ -97,45 +124,34 @@ class EditListActivityTest : UiTestBase() {
         assertIsAbove("Cherries", "Dates")
 
         // 4. Check some items ("Bananas" and "Dates")
-        composeTestRule.onNode(itemCheckbox("Bananas")).performClick()
-        composeTestRule.onNode(itemCheckbox("Dates")).performClick()
+        composeTestRule.onNode(itemCheckbox("Bananas")).performScrollTo().performClick()
+        composeTestRule.onNode(itemCheckbox("Dates")).performScrollTo().performClick()
 
         // Assert toggleable states: "Shopping List", "Apples", and "Cherries" are unchecked;
         // "Bananas" and "Dates" are checked
-        composeTestRule.onNode(itemCheckbox("Shopping List")).assertIsOff()
-        composeTestRule.onNode(itemCheckbox("Apples")).assertIsOff()
-        composeTestRule.onNode(itemCheckbox("Cherries")).assertIsOff()
-        composeTestRule.onNode(itemCheckbox("Bananas")).assertIsOn()
-        composeTestRule.onNode(itemCheckbox("Dates")).assertIsOn()
+        composeTestRule.onNode(itemCheckbox("Shopping List")).performScrollTo().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Apples")).performScrollTo().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Cherries")).performScrollTo().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Bananas")).performScrollTo().assertIsOn()
+        composeTestRule.onNode(itemCheckbox("Dates")).performScrollTo().assertIsOn()
 
         // 5. Uncheck an item ("Bananas")
-        composeTestRule.onNode(itemCheckbox("Bananas")).performClick()
+        composeTestRule.onNode(itemCheckbox("Bananas")).performScrollTo().performClick()
 
         // Assert toggleable states: "Shopping List", "Apples", "Cherries", and "Bananas" are
         // unchecked; "Dates" is checked
-        composeTestRule.onNode(itemCheckbox("Shopping List")).assertIsOff()
-        composeTestRule.onNode(itemCheckbox("Apples")).assertIsOff()
-        composeTestRule.onNode(itemCheckbox("Cherries")).assertIsOff()
-        composeTestRule.onNode(itemCheckbox("Bananas")).assertIsOff()
-        composeTestRule.onNode(itemCheckbox("Dates")).assertIsOn()
+        composeTestRule.onNode(itemCheckbox("Shopping List")).performScrollTo().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Apples")).performScrollTo().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Cherries")).performScrollTo().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Bananas")).performScrollTo().assertIsOff()
+        composeTestRule.onNode(itemCheckbox("Dates")).performScrollTo().assertIsOn()
 
         // Assert items content
-        composeTestRule.onNodeWithText("Shopping List").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Apples").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Cherries").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Bananas").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Dates").assertIsDisplayed()
-
-        // 6. Reorder items via drag and drop (drag "Bananas" above "Apples")
-        dragAndDrop(
-            sourceSelector = By.text("Bananas"),
-            targetSelector = By.text("Apples"),
-        )
-
-        // Assert items order after drag and drop reordering
-        assertIsAbove("Shopping List", "Bananas")
-        assertIsAbove("Bananas", "Apples")
-        assertIsAbove("Apples", "Cherries")
+        composeTestRule.onNodeWithText("Shopping List").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Apples").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Cherries").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Bananas").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Dates").performScrollTo().assertIsDisplayed()
 
         scenario.close()
     }

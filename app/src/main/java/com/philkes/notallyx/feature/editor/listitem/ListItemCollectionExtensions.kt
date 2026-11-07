@@ -6,7 +6,9 @@ import com.philkes.notallyx.core.common.extensions.forEach
 import com.philkes.notallyx.core.common.extensions.indices
 import com.philkes.notallyx.core.common.extensions.map
 import com.philkes.notallyx.core.common.extensions.mapIndexed
+import com.philkes.notallyx.core.common.extensions.uniqueCurrentMillis
 import com.philkes.notallyx.data.model.ListItem
+import com.philkes.notallyx.data.model.extensions.check
 import com.philkes.notallyx.data.model.extensions.deepCopy
 import com.philkes.notallyx.data.model.extensions.findChild
 import com.philkes.notallyx.data.model.extensions.plus
@@ -173,7 +175,7 @@ private fun initList(list: List<ListItem>, resetIds: Boolean) {
     initChildren(list)
 }
 
-private fun initChildren(list: List<ListItem>) {
+fun initChildren(list: List<ListItem>) {
     list.forEach { it.children.clear() }
     var parent: ListItem? = null
     list.forEach { item ->
@@ -182,6 +184,33 @@ private fun initChildren(list: List<ListItem>) {
         } else {
             item.isChild = false
             parent = item
+        }
+    }
+}
+
+fun List<ListItem>.checkItem(
+    item: ListItem,
+    checked: Boolean,
+    now: Long = uniqueCurrentMillis(),
+) {
+    if (!item.isChild) {
+        item.check(checked, checkChildren = true)
+    } else {
+        item.checked = checked
+        item.checkedTimestamp = if (checked) now else null
+        val parent = findParent(item)?.second
+        if (parent != null) {
+            if (checked) {
+                if (parent.children.areAllChecked()) {
+                    parent.checked = true
+                    parent.checkedTimestamp = now
+                }
+            } else {
+                if (parent.checked) {
+                    parent.checked = false
+                    parent.checkedTimestamp = null
+                }
+            }
         }
     }
 }
