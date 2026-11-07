@@ -21,6 +21,7 @@ import com.philkes.notallyx.core.ui.platform.PermissionChecker
 import com.philkes.notallyx.core.ui.platform.ShareHandler
 import com.philkes.notallyx.feature.editor.EditActivityViewModel
 import com.philkes.notallyx.feature.main.MainActivityViewModel
+import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel
 import com.philkes.notallyx.feature.main.routes.settings.AutoRemoveDeletedNotesWorker
 import com.philkes.notallyx.feature.media.audio.AndroidServiceAudioPlayer
 import com.philkes.notallyx.feature.media.audio.AndroidServiceAudioRecorder
@@ -56,6 +57,7 @@ val androidHostModule = module {
     viewModelOf(::MainActivityViewModel)
     viewModelOf(::EditActivityViewModel)
     viewModelOf(::ErrorActivityViewModel)
+    viewModelOf(::NotesRouteViewModel)
 }
 
 val appModules =
