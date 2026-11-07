@@ -91,6 +91,7 @@ internal fun ReminderChip(
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = formattedDate,
+                    maxLines = 1,
                     fontSize = textSize.displaySmallerSize.sp,
                     style = MaterialTheme.typography.labelSmall,
                     textDecoration =
