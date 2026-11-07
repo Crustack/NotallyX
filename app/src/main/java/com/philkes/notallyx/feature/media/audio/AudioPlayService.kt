@@ -1,47 +1,112 @@
 package com.philkes.notallyx.feature.media.audio
 
-import android.app.Service
 import android.content.Intent
-import android.media.MediaPlayer
+import android.net.Uri
 import android.os.IBinder
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaSessionService
 import com.philkes.notallyx.core.common.extensions.getCurrentAudioDirectory
 import com.philkes.notallyx.core.common.extensions.log
 import com.philkes.notallyx.data.model.Audio
 import java.io.File
 
-class AudioPlayService : Service() {
+class AudioPlayService : MediaSessionService() {
 
     private var state = IDLE
     private var stateBeforeSeeking = -1
     private var errorType = 0
     private var errorCode = 0
-    private lateinit var player: MediaPlayer
+    private lateinit var player: ExoPlayer
+    private var mediaSession: MediaSession? = null
 
     var onStateChange: (() -> Unit)? = null
 
     override fun onCreate() {
         super.onCreate()
+        val audioAttributes =
+            AudioAttributes.Builder()
+                .setContentType(C.AUDIO_CONTENT_TYPE_SPEECH)
+                .setUsage(C.USAGE_MEDIA)
+                .build()
+
         player =
-            MediaPlayer().apply {
-                setOnPreparedListener { setState(PREPARED) }
-                setOnCompletionListener { setState(COMPLETED) }
-                setOnSeekCompleteListener { setState(stateBeforeSeeking) }
-                setOnErrorListener { _, what, extra ->
-                    errorType = what
-                    errorCode = extra
-                    setState(ERROR)
-                    return@setOnErrorListener true
+            ExoPlayer.Builder(this)
+                .setAudioAttributes(audioAttributes, true)
+                .setHandleAudioBecomingNoisy(true)
+                .build()
+                .apply {
+                    addListener(
+                        object : Player.Listener {
+                            override fun onPlaybackStateChanged(playbackState: Int) {
+                                when (playbackState) {
+                                    Player.STATE_READY -> {
+                                        if (state == INITIALISED) {
+                                            setState(if (playWhenReady) STARTED else PREPARED)
+                                        } else if (state == SEEKING) {
+                                            setState(
+                                                if (playWhenReady) STARTED
+                                                else if (stateBeforeSeeking != -1)
+                                                    stateBeforeSeeking
+                                                else PREPARED
+                                            )
+                                        }
+                                    }
+                                    Player.STATE_ENDED -> {
+                                        setState(COMPLETED)
+                                    }
+                                    Player.STATE_IDLE -> {
+                                        // Idle
+                                    }
+                                    Player.STATE_BUFFERING -> {
+                                        // Buffering
+                                    }
+                                }
+                            }
+
+                            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                                if (isPlaying) {
+                                    setState(STARTED)
+                                } else if (state == STARTED) {
+                                    setState(PAUSED)
+                                }
+                            }
+
+                            override fun onPlayerError(error: PlaybackException) {
+                                errorType = error.errorCode
+                                errorCode = error.errorCodeName.hashCode()
+                                setState(ERROR)
+                            }
+                        }
+                    )
                 }
-            }
+
+        mediaSession = MediaSession.Builder(this, player).build()
+    }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? =
+        mediaSession
+
+    override fun onBind(intent: Intent?): IBinder? {
+        if (intent?.action == SERVICE_INTERFACE) {
+            return super.onBind(intent)
+        }
+        return LocalBinder(this)
     }
 
     override fun onDestroy() {
+        mediaSession?.run {
+            player.release()
+            release()
+            mediaSession = null
+        }
         super.onDestroy()
-        player.release()
-    }
-
-    override fun onBind(intent: Intent?): IBinder {
-        return LocalBinder(this)
     }
 
     fun initialise(audio: Audio) {
@@ -50,9 +115,19 @@ class AudioPlayService : Service() {
             if (audioRoot != null) {
                 try {
                     val file = File(audioRoot, audio.name)
-                    player.setDataSource(file.absolutePath)
+                    val metadata =
+                        MediaMetadata.Builder()
+                            .setTitle(audio.name)
+                            .setDisplayTitle(audio.name)
+                            .build()
+                    val mediaItem =
+                        MediaItem.Builder()
+                            .setUri(Uri.fromFile(file))
+                            .setMediaMetadata(metadata)
+                            .build()
+                    player.setMediaItem(mediaItem)
                     setState(INITIALISED)
-                    player.prepareAsync()
+                    player.prepare()
                 } catch (exception: Exception) {
                     setIOError()
                     application.log(TAG, throwable = exception)
@@ -64,9 +139,13 @@ class AudioPlayService : Service() {
     fun play() {
         when (state) {
             PREPARED,
-            PAUSED,
+            PAUSED -> {
+                player.play()
+                setState(STARTED)
+            }
             COMPLETED -> {
-                player.start()
+                player.seekTo(0)
+                player.play()
                 setState(STARTED)
             }
             STARTED -> {
@@ -79,26 +158,19 @@ class AudioPlayService : Service() {
     fun seek(milliseconds: Long) {
         if (state == PREPARED || state == STARTED || state == PAUSED || state == COMPLETED) {
             stateBeforeSeeking = state
-            player.seekTo(milliseconds.toInt())
+            player.seekTo(milliseconds)
             setState(SEEKING)
         }
     }
 
-    fun getState(): Int {
-        return state
-    }
+    fun getState(): Int = state
 
-    fun getErrorType(): Int {
-        return errorType
-    }
+    fun getErrorType(): Int = errorType
 
-    fun getErrorCode(): Int {
-        return errorCode
-    }
+    fun getErrorCode(): Int = errorCode
 
-    fun getCurrentPosition(): Int {
-        return if (state != IDLE && state != ERROR) player.currentPosition else 0
-    }
+    fun getCurrentPosition(): Int =
+        if (state != IDLE && state != ERROR) player.currentPosition.toInt() else 0
 
     private fun setState(state: Int) {
         this.state = state

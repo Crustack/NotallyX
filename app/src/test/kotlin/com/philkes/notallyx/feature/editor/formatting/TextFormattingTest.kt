@@ -345,4 +345,21 @@ class TextFormattingTest {
         assertFalse(preserved.annotatedString.getFormattingState(0, 6).isItalic)
         assertTrue(preserved.annotatedString.getFormattingState(6, 11).isItalic)
     }
+
+    @Test
+    fun `test preserveStylesFrom preserves existing styles when input has stale styles on selection change`() {
+        val text = "Lorem ipsum dolor"
+        val withBold = TextFieldValue(text = text, selection = TextRange(0, 5)).toggleBold()
+        val withBoldAndItalic = withBold.copy(selection = TextRange(6, 11)).toggleItalic()
+
+        // Simulate BasicTextField emitting a value that only had withBold's styles with a new
+        // selection
+        val staleValue = withBold.copy(selection = TextRange(12, 17))
+        val preserved = staleValue.preserveStylesFrom(withBoldAndItalic)
+
+        assertEquals(text, preserved.text)
+        assertEquals(TextRange(12, 17), preserved.selection)
+        assertTrue(preserved.annotatedString.getFormattingState(0, 5).isBold)
+        assertTrue(preserved.annotatedString.getFormattingState(6, 11).isItalic)
+    }
 }

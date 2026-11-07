@@ -10,13 +10,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavMetadataKey
@@ -25,6 +24,7 @@ import androidx.navigation3.runtime.metadata
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
+import androidx.window.core.layout.WindowSizeClass
 
 val LocalBackButtonVisibility = compositionLocalOf { true }
 
@@ -81,11 +81,12 @@ data class ListDetailScene<T : Any>(
 
 @Composable
 fun <T : Any> rememberListDetailSceneStrategy(): ListDetailSceneStrategy<T> {
-    val windowInfo = LocalWindowInfo.current
-    val density = LocalDensity.current
+    val windowAdaptiveInfo = currentWindowAdaptiveInfoV2()
     val isExpanded =
-        remember(windowInfo.containerSize, density) {
-            with(density) { windowInfo.containerSize.width.toDp() >= 600.dp }
+        remember(windowAdaptiveInfo) {
+            windowAdaptiveInfo.windowSizeClass.isWidthAtLeastBreakpoint(
+                WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND
+            )
         }
 
     return remember(isExpanded) { ListDetailSceneStrategy(isExpanded) }

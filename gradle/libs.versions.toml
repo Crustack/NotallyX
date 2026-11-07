@@ -25,6 +25,8 @@ composeBom = "2026.09.00"
 activityCompose = "1.13.0"
 lifecycleRuntimeCompose = "2.11.0"
 glance = "1.1.1"
+adaptive = "1.3.0"
+media3 = "1.11.1"
 
 # Libraries
 coil = "3.1.0"
@@ -92,10 +94,13 @@ androidx-work = { group = "androidx.work", name = "work-runtime", version.ref = 
 androidx-work-testing = { group = "androidx.work", name = "work-testing", version.ref = "work" }
 androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
 androidx-documentfile = { group = "androidx.documentfile", name = "documentfile", version.ref = "documentfile" }
+androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3" }
+androidx-media3-session = { group = "androidx.media3", name = "media3-session", version.ref = "media3" }
 
 # Compose
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-material3-adaptive = { group = "androidx.compose.material3.adaptive", name = "adaptive", version.ref = "adaptive" }
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }

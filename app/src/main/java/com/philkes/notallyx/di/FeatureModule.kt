@@ -16,7 +16,12 @@ import com.philkes.notallyx.feature.main.routes.labels.DisplayLabelViewModel
 import com.philkes.notallyx.feature.main.routes.labels.UnlabeledViewModel
 import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel
 import com.philkes.notallyx.feature.main.routes.notes.NotesViewModel
+import com.philkes.notallyx.feature.main.routes.picknote.PickNoteViewModel
+import com.philkes.notallyx.feature.main.routes.search.SearchViewModel
 import com.philkes.notallyx.feature.main.routes.settings.AutoRemoveDeletedNotesWorker
+import com.philkes.notallyx.feature.media.audio.PlayAudioViewModel
+import com.philkes.notallyx.feature.media.audio.RecordAudioViewModel
+import com.philkes.notallyx.feature.media.image.ViewImageViewModel
 import com.philkes.notallyx.feature.reminder.NoteRemindersViewModel
 import com.philkes.notallyx.feature.reminder.RemindersViewModel
 import com.philkes.notallyx.feature.settings.SettingsViewModel
@@ -39,6 +44,11 @@ val featureModule = module {
     viewModelOf(::NoteRemindersViewModel)
     viewModelOf(::SettingsViewModel)
     viewModelOf(::UnlabeledViewModel)
+    viewModelOf(::SearchViewModel)
+    viewModelOf(::PickNoteViewModel)
+    viewModelOf(::ViewImageViewModel)
+    viewModelOf(::PlayAudioViewModel)
+    viewModelOf(::RecordAudioViewModel)
     viewModelOf(::NoteModel)
     viewModelOf(::EditActivityViewModel)
     viewModelOf(::EditNoteViewModel)

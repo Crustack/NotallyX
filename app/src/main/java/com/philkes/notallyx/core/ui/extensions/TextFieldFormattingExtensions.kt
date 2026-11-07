@@ -213,10 +213,7 @@ fun TextFieldValue.preserveStylesFrom(previousValue: TextFieldValue): TextFieldV
     val oldText = oldAnnotated.text
     val newText = this.text
 
-    if (
-        annotatedString.spanStyles.isNotEmpty() ||
-            annotatedString.getStringAnnotations("URL", 0, newText.length).isNotEmpty()
-    ) {
+    if (this.annotatedString == oldAnnotated) {
         return this
     }
 

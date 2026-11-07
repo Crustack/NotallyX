@@ -38,6 +38,26 @@ import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import kotlinx.coroutines.delay
 
+@Composable
+internal fun RecordAudioScreen(
+    state: RecordAudioUiState,
+    onAction: (RecordAudioAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    RecordAudioScreen(
+        status = state.status,
+        baseTime = state.baseTime,
+        showSaveConfirmDialog = state.activeDialog is RecordAudioDialogState.ConfirmSave,
+        onMainClick = { onAction(RecordAudioAction.MainClicked) },
+        onStopClick = { onAction(RecordAudioAction.StopClicked) },
+        onBackClick = { onAction(RecordAudioAction.BackClicked) },
+        onDismissSaveConfirm = { onAction(RecordAudioAction.DismissDialog) },
+        onSaveConfirm = { onAction(RecordAudioAction.SaveConfirmed) },
+        onDiscardConfirm = { onAction(RecordAudioAction.DiscardConfirmed) },
+        modifier = modifier,
+    )
+}
+
 /** Composable replacing activity_record_audio.xml layout. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

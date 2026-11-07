@@ -14,18 +14,64 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.net.toUri
 import coil3.compose.SubcomposeAsyncImage
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.extensions.SUBFOLDER_IMAGES
+import com.philkes.notallyx.core.common.extensions.resolveAttachmentFile
 import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.feature.editor.screens.ImagePreviewCard
+
+@Composable
+internal fun ViewImageScreen(
+    state: ViewImageUiState,
+    onAction: (ViewImageAction) -> Unit,
+    modifier: Modifier = Modifier,
+    resolveImageModel: ((FileAttachment) -> Any?)? = null,
+) {
+    val context = LocalContext.current
+    val deletePosition = (state.activeDialog as? ViewImageDialogState.ConfirmDelete)?.position
+    ViewImageScreen(
+        images = state.images,
+        initialPage = state.initialPage,
+        imageToDeletePosition = deletePosition,
+        resolveImageModel =
+            resolveImageModel
+                ?: { image ->
+                    if (
+                        image.localName.startsWith("content://") ||
+                            image.localName.startsWith("file://")
+                    ) {
+                        image.localName.toUri()
+                    } else {
+                        context.applicationContext.resolveAttachmentFile(
+                            SUBFOLDER_IMAGES,
+                            image.localName,
+                        )
+                    }
+                },
+        onBackClick = { onAction(ViewImageAction.BackClicked) },
+        onShareClick = { onAction(ViewImageAction.ShareClicked(it)) },
+        onSaveClick = { onAction(ViewImageAction.SaveClicked(it)) },
+        onDeleteClick = { onAction(ViewImageAction.DeleteClicked(it)) },
+        onDismissDeleteConfirm = { onAction(ViewImageAction.DismissDialog) },
+        onConfirmDelete = { onAction(ViewImageAction.ConfirmDelete(it)) },
+        modifier = modifier,
+    )
+}
 
 /** Composable replacing activity_view_image.xml layout. */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -45,8 +91,13 @@ internal fun ViewImageScreen(
 ) {
     val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { images.size })
 
-    LaunchedEffect(images.size) {
-        if (images.isNotEmpty() && pagerState.currentPage >= images.size) {
+    var hasScrolledToInitialPage by rememberSaveable(initialPage) { mutableStateOf(false) }
+
+    LaunchedEffect(images.size, initialPage) {
+        if (images.isNotEmpty() && !hasScrolledToInitialPage && initialPage in images.indices) {
+            pagerState.scrollToPage(initialPage)
+            hasScrolledToInitialPage = true
+        } else if (images.isNotEmpty() && pagerState.currentPage >= images.size) {
             pagerState.scrollToPage(images.size - 1)
         }
     }

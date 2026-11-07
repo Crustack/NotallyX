@@ -168,30 +168,35 @@ class EditRouteTest : UiTestBase() {
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.bold))
             .performClick()
+        composeTestRule.waitForIdle()
 
         // Select and format "ipsum" as italic
         bodyNode.performTextInputSelection(TextRange(6, 11))
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.italic))
             .performClick()
+        composeTestRule.waitForIdle()
 
         // Select and format "dolor" as strikethrough
         bodyNode.performTextInputSelection(TextRange(12, 17))
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.strikethrough))
             .performClick()
+        composeTestRule.waitForIdle()
 
         // Select and format "sit" as monospace
         bodyNode.performTextInputSelection(TextRange(18, 21))
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.monospace))
             .performClick()
+        composeTestRule.waitForIdle()
 
         // Select and format "amet" as link
         bodyNode.performTextInputSelection(TextRange(22, 26))
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.link))
             .performClick()
+        composeTestRule.waitForIdle()
         val linkUrl = "https://example.com"
         composeTestRule
             .onAllNodes(hasSetTextAction() and hasAnyAncestor(isComposeDialog()))[1]
@@ -199,15 +204,18 @@ class EditRouteTest : UiTestBase() {
         composeTestRule
             .onNode(hasText(context.getString(R.string.save)) and hasAnyAncestor(isComposeDialog()))
             .performClick()
+        composeTestRule.waitForIdle()
 
         // Select "consectetur", format as bold and then clear formatting
         bodyNode.performTextInputSelection(TextRange(28, 39))
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.bold))
             .performClick()
+        composeTestRule.waitForIdle()
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.clear_formatting))
             .performClick()
+        composeTestRule.waitForIdle()
 
         // Validate formatting worked
         bodyNode

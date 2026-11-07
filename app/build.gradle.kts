@@ -268,6 +268,9 @@ dependencies {
     // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
+    implementation(libs.androidx.compose.material3.adaptive)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.session)
     implementation(libs.coil.compose)
     implementation(libs.compose.colorpicker)
     implementation(libs.androidx.glance.appwidget)

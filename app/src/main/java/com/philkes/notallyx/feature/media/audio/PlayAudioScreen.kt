@@ -47,6 +47,33 @@ internal data class PlayAudioActions(
     val onConfirmDelete: () -> Unit = {},
 )
 
+@Composable
+internal fun PlayAudioScreen(
+    state: PlayAudioUiState,
+    onAction: (PlayAudioAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    PlayAudioScreen(
+        currentPosition = state.currentPosition,
+        duration = state.duration,
+        isPlaying = state.isPlaying,
+        errorMessage = state.errorMessage,
+        showDeleteConfirmDialog = state.activeDialog is PlayAudioDialogState.ConfirmDelete,
+        actions =
+            PlayAudioActions(
+                onPlayPauseClick = { onAction(PlayAudioAction.PlayPauseClicked) },
+                onSeek = { onAction(PlayAudioAction.Seek(it)) },
+                onBackClick = { onAction(PlayAudioAction.BackClicked) },
+                onShareClick = { onAction(PlayAudioAction.ShareClicked) },
+                onSaveClick = { onAction(PlayAudioAction.SaveClicked) },
+                onDeleteClick = { onAction(PlayAudioAction.DeleteClicked) },
+                onDismissDeleteConfirm = { onAction(PlayAudioAction.DismissDialog) },
+                onConfirmDelete = { onAction(PlayAudioAction.ConfirmDelete) },
+            ),
+        modifier = modifier,
+    )
+}
+
 /** Composable replacing activity_play_audio.xml layout. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
