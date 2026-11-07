@@ -14,8 +14,7 @@ abstract class GenerateLocalesPreviewTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val resDir: DirectoryProperty
 
-    @get:OutputDirectory
-    abstract val outputDir: DirectoryProperty
+    @get:OutputDirectory abstract val outputDir: DirectoryProperty
 
     @TaskAction
     fun generate() {

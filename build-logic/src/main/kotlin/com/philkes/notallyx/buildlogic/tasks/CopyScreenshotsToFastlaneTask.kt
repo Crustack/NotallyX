@@ -14,8 +14,7 @@ abstract class CopyScreenshotsToFastlaneTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val sourceDirectory: DirectoryProperty
 
-    @get:OutputDirectory
-    abstract val fastlaneDirectory: DirectoryProperty
+    @get:OutputDirectory abstract val fastlaneDirectory: DirectoryProperty
 
     @TaskAction
     fun copyScreenshots() {

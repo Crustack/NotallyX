@@ -20,9 +20,7 @@ class DeveloperToolsPlugin : Plugin<Project> {
                 group = "publishing"
                 description = "Generates release changelogs using generate-changelogs.sh"
                 githubToken.set(providers.gradleProperty("CHANGELOG_GITHUB_TOKEN"))
-                lastVersionName.set(
-                    providers.gradleProperty("app.lastVersionName").orElse("")
-                )
+                lastVersionName.set(providers.gradleProperty("app.lastVersionName").orElse(""))
                 changelogScript.set(
                     rootProject.layout.projectDirectory.file("generate-changelogs.sh")
                 )
@@ -32,9 +30,7 @@ class DeveloperToolsPlugin : Plugin<Project> {
                 )
             }
 
-            tasks.matching { it.name == "preBuild" }.configureEach {
-                dependsOn(installGitHooks)
-            }
+            tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(installGitHooks) }
         }
     }
 }

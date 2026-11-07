@@ -23,7 +23,6 @@ import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.toColorString
 import io.mockk.every
 import io.mockk.mockkStatic
-import org.koin.core.context.GlobalContext
 import java.io.File
 import java.io.FileOutputStream
 import java.time.LocalDateTime
@@ -31,6 +30,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Date
 import kotlin.random.Random
+import org.koin.core.context.GlobalContext
 
 val context
     get() = ApplicationProvider.getApplicationContext<ContextWrapper>()
@@ -152,9 +152,7 @@ fun createDummyImageFile(
         }
     canvas.drawText("Dummy Image", 50f, (height / 2).toFloat(), paint)
 
-    FileOutputStream(imageFile).use { out ->
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
-    }
+    FileOutputStream(imageFile).use { out -> bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out) }
 
     bitmap.recycle()
     return imageFile

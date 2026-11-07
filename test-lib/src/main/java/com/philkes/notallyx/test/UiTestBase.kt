@@ -1,19 +1,19 @@
 package com.philkes.notallyx.test
 
- import android.Manifest
- import android.content.ContextWrapper
- import android.os.Build
- import androidx.test.espresso.ViewInteraction
- import androidx.test.platform.app.InstrumentationRegistry
- import androidx.test.uiautomator.UiDevice
- import com.philkes.notallyx.R
- import com.philkes.notallyx.core.database.NotallyDatabase
- import com.philkes.notallyx.core.preference.NotallyXPreferences
- import com.philkes.notallyx.core.preference.NotallyXPreferences.Companion.EMPTY_PATH
- import com.philkes.notallyx.core.preference.PeriodicBackup
- import org.junit.Before
- import org.koin.core.component.KoinComponent
- import org.koin.core.component.get
+import android.Manifest
+import android.content.ContextWrapper
+import android.os.Build
+import androidx.test.espresso.ViewInteraction
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiDevice
+import com.philkes.notallyx.R
+import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.preference.NotallyXPreferences
+import com.philkes.notallyx.core.preference.NotallyXPreferences.Companion.EMPTY_PATH
+import com.philkes.notallyx.core.preference.PeriodicBackup
+import org.junit.Before
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
 
 abstract class UiTestBase : KoinComponent {
 

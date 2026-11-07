@@ -29,19 +29,13 @@ glance = "1.1.1"
 # Libraries
 nav3Core = "1.2.0"
 room = "2.8.5"
-preference = "1.2.1"
 securityCrypto = "1.1.0"
 sqlite = "2.7.1"
 work = "2.12.0"
 biometric = "1.1.0"
 customactivityoncrash = "2.4.0"
-subsamplingScaleImageView = "3.10.0"
-glide = "5.0.7"
-swipeDrawer = "1.6"
 colorpicker = "1.3.0"
 material = "1.14.0"
-jsr305 = "3.0.2"
-fastscroll = "1.3.0"
 zip4j = "2.11.6"
 sqlcipher = "4.19.1"
 kotlinxSerialization = "1.11.0"
@@ -80,7 +74,6 @@ androidx-glance-appwidgetPreview = { group = "androidx.glance", name = "glance-a
 androidx-glance-preview = { group = "androidx.glance", name = "glance-preview", version.ref = "glance" }
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }
-androidx-preference = { group = "androidx.preference", name = "preference-ktx", version.ref = "preference" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
@@ -107,13 +100,8 @@ androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lif
 
 # Third-party
 customactivityoncrash = { group = "cat.ereza", name = "customactivityoncrash", version.ref = "customactivityoncrash" }
-subsampling-scale-image-view = { group = "com.davemorrissey.labs", name = "subsampling-scale-image-view-androidx", version.ref = "subsamplingScaleImageView" }
-glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
-swipe-drawer = { group = "cn.Leaqi", name = "SwipeDrawer", version.ref = "swipeDrawer" }
 compose-colorpicker = { module = "com.github.skydoves:colorpicker-compose", version.ref = "colorpicker" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
-jsr305 = { group = "com.google.code.findbugs", name = "jsr305", version.ref = "jsr305" }
-fastscroll = { group = "me.zhanghai.android.fastscroll", name = "library", version.ref = "fastscroll" }
 zip4j = { group = "net.lingala.zip4j", name = "zip4j", version.ref = "zip4j" }
 sqlcipher = { group = "net.zetetic", name = "sqlcipher-android", version.ref = "sqlcipher" }
 kotlinx-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }

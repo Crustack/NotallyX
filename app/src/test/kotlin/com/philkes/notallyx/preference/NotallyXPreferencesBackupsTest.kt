@@ -6,6 +6,7 @@ import androidx.core.net.toUri
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.philkes.notallyx.core.common.extensions.SUBFOLDER_BACKUPS
+import com.philkes.notallyx.core.common.extensions.getDefaultSharedPreferences
 import com.philkes.notallyx.core.common.extensions.getDocumentFolder
 import com.philkes.notallyx.core.common.extensions.getExternalBackupsDirectory
 import com.philkes.notallyx.core.database.NotallyDatabase
@@ -46,10 +47,7 @@ class NotallyXPreferencesBackupsTest {
     fun setUp() {
         FakeAndroidKeyStore.setup
         application = ApplicationProvider.getApplicationContext()
-        androidx.preference.PreferenceManager.getDefaultSharedPreferences(application)
-            .edit()
-            .clear()
-            .commit()
+        application.getDefaultSharedPreferences().edit().clear().commit()
         NotallyXPreferences.clearInstance()
         preferences = NotallyXPreferences.getInstance(application)
         NotallyDatabase.clearInstance()

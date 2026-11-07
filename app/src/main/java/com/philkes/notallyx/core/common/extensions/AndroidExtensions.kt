@@ -315,4 +315,7 @@ fun ContentResolver.readFileContents(uri: Uri) =
         BufferedReader(InputStreamReader(inputStream)).use { reader -> reader.readText() }
     } ?: ""
 
+fun Context.getDefaultSharedPreferences(): android.content.SharedPreferences =
+    getSharedPreferences("${packageName}_preferences", Context.MODE_PRIVATE)
+
 @Composable fun isPreview(): Boolean = LocalInspectionMode.current

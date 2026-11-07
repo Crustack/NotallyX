@@ -1,6 +1,5 @@
 package com.philkes.notallyx.buildlogic.tasks
 
-import java.io.File
 import org.apache.commons.configuration2.PropertiesConfiguration
 import org.apache.commons.configuration2.io.FileHandler
 import org.gradle.api.DefaultTask
@@ -15,12 +14,9 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 
 abstract class GenerateChangelogsTask : DefaultTask() {
-    @get:Input
-    @get:Optional
-    abstract val githubToken: Property<String>
+    @get:Input @get:Optional abstract val githubToken: Property<String>
 
-    @get:Input
-    abstract val lastVersionName: Property<String>
+    @get:Input abstract val lastVersionName: Property<String>
 
     @get:InputFile
     @get:PathSensitive(PathSensitivity.RELATIVE)

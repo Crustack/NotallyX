@@ -14,8 +14,7 @@ abstract class CopyScreenshotsToDocumentationTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val sourceDirectory: DirectoryProperty
 
-    @get:OutputDirectory
-    abstract val documentationDirectory: DirectoryProperty
+    @get:OutputDirectory abstract val documentationDirectory: DirectoryProperty
 
     @TaskAction
     fun copyScreenshots() {

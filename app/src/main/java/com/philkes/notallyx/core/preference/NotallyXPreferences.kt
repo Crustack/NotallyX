@@ -4,10 +4,10 @@ import android.content.Context
 import android.net.Uri
 import androidx.core.content.edit
 import androidx.core.net.toUri
-import androidx.preference.PreferenceManager
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.extensions.getDefaultSharedPreferences
 import com.philkes.notallyx.core.common.extensions.getExternalBackupsDirectory
 import com.philkes.notallyx.core.common.extensions.toCamelCase
 import com.philkes.notallyx.core.preference.Constants.PASSWORD_EMPTY
@@ -32,7 +32,7 @@ const val MAX_ITEMS_MAX = 10
 
 class NotallyXPreferences private constructor(private val context: Context) {
 
-    private val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+    private val preferences = context.getDefaultSharedPreferences()
 
     private val encryptedPreferences by lazy {
         try {

@@ -2,7 +2,6 @@ package com.philkes.notallyx.viewmodel.main.fragment
 
 import android.app.Application
 import android.os.Environment
-import androidx.preference.PreferenceManager
 import androidx.test.core.app.ApplicationProvider
 import com.philkes.notallyx.core.common.error.*
 import com.philkes.notallyx.core.common.extensions.*
@@ -40,7 +39,7 @@ class SettingsViewModelTest {
     @Before
     fun setUp() {
         application = ApplicationProvider.getApplicationContext()
-        PreferenceManager.getDefaultSharedPreferences(application).edit().clear().commit()
+        application.getDefaultSharedPreferences().edit().clear().commit()
         NotallyXPreferences.clearInstance()
         preferences =
             GlobalContext.getOrNull()?.get<NotallyXPreferences>()

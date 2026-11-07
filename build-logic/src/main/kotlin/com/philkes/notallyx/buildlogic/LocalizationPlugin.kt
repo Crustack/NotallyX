@@ -18,9 +18,9 @@ class LocalizationPlugin : Plugin<Project> {
                     )
                 }
 
-            tasks.matching { it.name == "preBuild" }.configureEach {
-                dependsOn(generateLocalesPreview)
-            }
+            tasks
+                .matching { it.name == "preBuild" }
+                .configureEach { dependsOn(generateLocalesPreview) }
         }
     }
 }
