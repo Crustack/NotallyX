@@ -19,7 +19,7 @@ import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.extensions.isImage
 import com.philkes.notallyx.feature.migration.progress.DeleteAttachmentProgress
-import com.philkes.notallyx.feature.widget.WidgetProvider
+import com.philkes.notallyx.feature.widget.NoteWidget
 import java.io.File
 import java.io.FileFilter
 import java.io.FileOutputStream
@@ -384,7 +384,7 @@ fun ContextWrapper.deleteAttachments(
         }
     }
     if (ids?.isNotEmpty() == true) {
-        WidgetProvider.sendBroadcast(this, ids)
+        NoteWidget.sendBroadcast(this, ids)
     }
     (progress as? MutableStateFlow<Progress?>)?.value = DeleteAttachmentProgress(inProgress = false)
 }

@@ -48,7 +48,7 @@ import com.philkes.notallyx.feature.editor.bottomsheet.ActionSelectionBottomShee
 import com.philkes.notallyx.feature.editor.bottomsheet.MoreNoteBottomSheet
 import com.philkes.notallyx.feature.editor.history.ChangeHistory
 import com.philkes.notallyx.feature.main.MainActivity.Companion.EXTRA_DISPLAYED_LABEL
-import com.philkes.notallyx.feature.widget.WidgetProvider
+import com.philkes.notallyx.feature.widget.NoteWidget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -131,7 +131,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
     open suspend fun saveNote(checkAutoSave: Boolean = true): Long {
         updateModel()
         return notallyModel.saveNote(checkAutoSave).also {
-            WidgetProvider.sendBroadcast(application, longArrayOf(it))
+            NoteWidget.sendBroadcast(application, longArrayOf(it))
         }
     }
 

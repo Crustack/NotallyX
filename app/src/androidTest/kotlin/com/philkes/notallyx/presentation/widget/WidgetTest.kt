@@ -20,7 +20,8 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.widget.ConfigureWidgetActivity
-import com.philkes.notallyx.feature.widget.WidgetProvider
+import com.philkes.notallyx.feature.widget.NoteWidget
+import com.philkes.notallyx.feature.widget.NoteWidgetReceiver
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.appendText
 import com.philkes.notallyx.test.createBaseNote
@@ -29,6 +30,7 @@ import com.philkes.notallyx.test.waitUntil
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.FixMethodOrder
 import org.junit.Rule
 import org.junit.Test
@@ -64,7 +66,7 @@ class WidgetTest : UiTestBase() {
             }
 
         val appWidgetManager = AppWidgetManager.getInstance(context)
-        val myProvider = ComponentName(context, WidgetProvider::class.java)
+        val myProvider = ComponentName(context, NoteWidgetReceiver::class.java)
 
         if (
             (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) &&
@@ -122,6 +124,20 @@ class WidgetTest : UiTestBase() {
 
             scenario1.close()
 
+            // Trigger Glance widget update and verify UI content on home screen
+            runBlocking { NoteWidget.updateWidgetSuspend(context, id) }
+            device.pressHome()
+
+            waitUntil(10_000) { findWidgetOnHomeScreen(device, noteTitle1) }
+            assertTrue(
+                "Widget UI on home screen should display note title '$noteTitle1'",
+                findWidgetOnHomeScreen(device, noteTitle1),
+            )
+            assertTrue(
+                "Widget UI on home screen should display note body 'Body 1'",
+                findWidgetOnHomeScreen(device, "Body 1"),
+            )
+
             // Re-open ConfigureWidgetActivity for the same widget to select Note 2
             val intent2 =
                 Intent(context, ConfigureWidgetActivity::class.java).apply {
@@ -145,8 +161,21 @@ class WidgetTest : UiTestBase() {
 
             scenario2.close()
 
-            // Open MainActivity, click Note 2, edit its title in EditNoteActivity, and exit (saves
-            // note and updates widget)
+            // Verify updated widget UI on home screen for Note 2
+            runBlocking { NoteWidget.updateWidgetSuspend(context, id) }
+            device.pressHome()
+
+            waitUntil(10_000) { findWidgetOnHomeScreen(device, noteTitle2) }
+            assertTrue(
+                "Widget UI on home screen should display note title '$noteTitle2'",
+                findWidgetOnHomeScreen(device, noteTitle2),
+            )
+            assertTrue(
+                "Widget UI on home screen should display note body 'Body 2'",
+                findWidgetOnHomeScreen(device, "Body 2"),
+            )
+
+            // Open MainActivity, click Note 2, edit its title in EditNoteActivity, and exit
             val mainScenario = ActivityScenario.launch(MainActivity::class.java)
 
             composeTestRule.waitUntil(10_000) {
@@ -186,7 +215,16 @@ class WidgetTest : UiTestBase() {
             assertEquals(Type.NOTE, preferences.getWidgetNoteType(id))
 
             mainScenario.close()
+
+            // Verify updated title appears on home screen widget UI
+            runBlocking { NoteWidget.updateWidgetSuspend(context, id) }
             device.pressHome()
+
+            waitUntil(10_000) { findWidgetOnHomeScreen(device, expectedUpdatedTitle) }
+            assertTrue(
+                "Widget UI on home screen should display updated note title '$expectedUpdatedTitle'",
+                findWidgetOnHomeScreen(device, expectedUpdatedTitle),
+            )
         } else {
             // Fallback for environments without pin widget support
             val testWidgetId = 5555
@@ -267,12 +305,13 @@ class WidgetTest : UiTestBase() {
     }
 
     @Test
-    fun configureWidgetActivity_selectsExistingTextNote_updatesPreferences() {
+    fun configureWidgetActivity_selectsExistingTextNote_updatesPreferencesAndWidget() {
         val noteTitle = "Text Note For Widget"
+        val noteBody = "Text content"
         val noteId = runBlocking {
             database
                 .getBaseNoteDao()
-                .insert(createBaseNote(title = noteTitle, body = "Text content", type = Type.NOTE))
+                .insert(createBaseNote(title = noteTitle, body = noteBody, type = Type.NOTE))
         }
 
         val widgetId = 1234
@@ -293,10 +332,17 @@ class WidgetTest : UiTestBase() {
         assertEquals(Type.NOTE, preferences.getWidgetNoteType(widgetId))
 
         scenario.close()
+
+        // Trigger widget update and verify database contents
+        NoteWidget.updateWidget(context, widgetId)
+        val fetchedNote = runBlocking { database.getBaseNoteDao().get(noteId) }
+        assertNotNull(fetchedNote)
+        assertEquals(noteTitle, fetchedNote?.title)
+        assertEquals(noteBody, fetchedNote?.body)
     }
 
     @Test
-    fun configureWidgetActivity_selectsExistingListNote_updatesPreferences() {
+    fun configureWidgetActivity_selectsExistingListNote_updatesPreferencesAndWidget() {
         val listNoteTitle = "List Note For Widget"
         val listNoteId = runBlocking {
             database
@@ -328,5 +374,37 @@ class WidgetTest : UiTestBase() {
         assertEquals(Type.LIST, preferences.getWidgetNoteType(widgetId))
 
         scenario.close()
+
+        // Trigger widget update and verify list note contents
+        NoteWidget.updateWidget(context, widgetId)
+        val fetchedListNote = runBlocking { database.getBaseNoteDao().get(listNoteId) }
+        assertNotNull(fetchedListNote)
+        assertEquals(listNoteTitle, fetchedListNote?.title)
+        assertEquals(2, fetchedListNote?.items?.size)
+        assertEquals("Item 1", fetchedListNote?.items?.get(0)?.body)
+        assertEquals("Item 2", fetchedListNote?.items?.get(1)?.body)
+    }
+
+    private fun findWidgetOnHomeScreen(
+        device: UiDevice,
+        text: String,
+        timeout: Long = 5_000,
+    ): Boolean {
+        val selector = UiSelector().text(text)
+        if (device.findObject(selector).waitForExists(timeout)) return true
+
+        // Try swiping left on the launcher home screen to check page 2/3
+        val width = device.displayWidth
+        val height = device.displayHeight
+        device.swipe(width * 4 / 5, height / 2, width / 5, height / 2, 10)
+        if (device.findObject(selector).waitForExists(2_000)) return true
+
+        device.swipe(width * 4 / 5, height / 2, width / 5, height / 2, 10)
+        if (device.findObject(selector).waitForExists(2_000)) return true
+
+        // Swipe back right to restore launcher page 1
+        device.swipe(width / 5, height / 2, width * 4 / 5, height / 2, 10)
+        device.swipe(width / 5, height / 2, width * 4 / 5, height / 2, 10)
+        return false
     }
 }

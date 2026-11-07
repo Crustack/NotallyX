@@ -23,6 +23,7 @@ koinCompilerPlugin = "1.2.1"
 composeBom = "2026.09.00"
 activityCompose = "1.13.0"
 lifecycleRuntimeCompose = "2.11.0"
+glance = "1.1.1"
 
 # Libraries
 nav3Core = "1.2.0"
@@ -73,6 +74,7 @@ appcompat = "1.6.1"
 
 [libraries]
 # AndroidX
+androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }
 androidx-preference = { group = "androidx.preference", name = "preference-ktx", version.ref = "preference" }

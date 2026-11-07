@@ -40,7 +40,7 @@ import com.philkes.notallyx.feature.migration.backup.modifiedNoteBackupExists
 import com.philkes.notallyx.feature.migration.backup.scheduleAutoBackup
 import com.philkes.notallyx.feature.migration.backup.updateAutoBackup
 import com.philkes.notallyx.feature.reminder.PinnedNotificationManager
-import com.philkes.notallyx.feature.widget.WidgetProvider
+import com.philkes.notallyx.feature.widget.NoteWidget
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -104,10 +104,7 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
                         )
                 }
                 if (oldTheme != null) {
-                    WidgetProvider.updateWidgets(
-                        this@NotallyXApplication,
-                        locked = preferences.isLockEnabled && locked.value,
-                    )
+                    NoteWidget.updateWidgets(this@NotallyXApplication)
                 }
             }
         }
@@ -161,12 +158,7 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
         }
 
         applicationScope.launch {
-            locked.collect { isLocked ->
-                WidgetProvider.updateWidgets(
-                    this@NotallyXApplication,
-                    locked = preferences.isLockEnabled && isLocked,
-                )
-            }
+            locked.collect { NoteWidget.updateWidgets(this@NotallyXApplication) }
         }
 
         applicationScope.launch {
