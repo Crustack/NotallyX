@@ -4,14 +4,15 @@ import android.app.Application
 import android.content.Intent
 import android.graphics.Typeface
 import android.net.Uri
-import android.text.Editable
-import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.CharacterStyle
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.TypefaceSpan
 import android.text.style.URLSpan
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.text.getSpans
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -31,6 +32,8 @@ import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.preference.TextSizeSp
 import com.philkes.notallyx.core.ui.extensions.applySpans
 import com.philkes.notallyx.core.ui.extensions.showToast
+import com.philkes.notallyx.core.ui.extensions.toAnnotatedString
+import com.philkes.notallyx.core.ui.extensions.toSpanned
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
@@ -133,7 +136,7 @@ open class NoteModel(
 
     val labels = ArrayList<String>()
 
-    var body: Editable = SpannableStringBuilder()
+    var body: TextFieldValue = TextFieldValue()
 
     val items = ArrayList<ListItem>()
 
@@ -323,7 +326,12 @@ open class NoteModel(
 
                 setLabels(baseNote.labels)
 
-                body = baseNote.body.applySpans(baseNote.spans)
+                val annotated = baseNote.body.applySpans(baseNote.spans).toAnnotatedString()
+                body =
+                    TextFieldValue(
+                        annotatedString = annotated,
+                        selection = TextRange(annotated.text.length),
+                    )
 
                 items.clear()
                 items.addAll(baseNote.items.init())
@@ -404,7 +412,7 @@ open class NoteModel(
 
     fun isEmpty(): Boolean {
         return title.isEmpty() &&
-            body.isEmpty() &&
+            body.text.isEmpty() &&
             items.none { item -> item.body.isNotEmpty() } &&
             files.value.isEmpty() &&
             images.value.isEmpty() &&
@@ -434,8 +442,8 @@ open class NoteModel(
     }
 
     fun getBaseNote(): BaseNote {
-        val spans = getFilteredSpans(body)
-        val body = this.body.toString()
+        val spans = getFilteredSpans(body.annotatedString.toSpanned())
+        val body = this.body.text
         val nonEmptyItems = this.items.filter { item -> item.body.isNotEmpty() }
         return BaseNote(
             id,
@@ -559,12 +567,17 @@ open class NoteModel(
     suspend fun convertTo(noteType: Type) {
         when (noteType) {
             Type.NOTE -> {
-                body = SpannableStringBuilder(items.joinToString(separator = "\n") { it.body })
+                val text = items.joinToString(separator = "\n") { it.body }
+                body =
+                    TextFieldValue(
+                        annotatedString = AnnotatedString(text),
+                        selection = TextRange(text.length),
+                    )
                 type = Type.NOTE
                 setItems(ArrayList())
             }
             Type.LIST -> {
-                val text = body.toString()
+                val text = body.text
                 val listSyntaxRegex =
                     text.findListSyntaxRegex(checkContains = true, plainNewLineAllowed = true)
                 if (listSyntaxRegex != null) {
@@ -577,7 +590,7 @@ open class NoteModel(
                     )
                 }
                 type = Type.LIST
-                body = SpannableStringBuilder()
+                body = TextFieldValue()
             }
         }
         Cache.list = ArrayList()

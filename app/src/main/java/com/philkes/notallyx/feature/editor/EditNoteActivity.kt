@@ -1,20 +1,14 @@
 package com.philkes.notallyx.feature.editor
 
-// import com.philkes.notallyx.createBoldSpan
-// import com.philkes.notallyx.showToast
 import android.content.Intent
-import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
-import android.text.Spanned
-import android.text.style.StrikethroughSpan
-import android.text.style.StyleSpan
-import android.text.style.TypefaceSpan
 import android.text.style.URLSpan
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.copyToClipBoard
@@ -22,8 +16,12 @@ import com.philkes.notallyx.core.common.extensions.findAllOccurrences
 import com.philkes.notallyx.core.common.extensions.openNote
 import com.philkes.notallyx.core.common.extensions.wrapWithChooser
 import com.philkes.notallyx.core.preference.EditAction
-import com.philkes.notallyx.core.ui.extensions.createBoldSpan
+import com.philkes.notallyx.core.ui.extensions.clearFormatting
 import com.philkes.notallyx.core.ui.extensions.showToast
+import com.philkes.notallyx.core.ui.extensions.toggleBold
+import com.philkes.notallyx.core.ui.extensions.toggleItalic
+import com.philkes.notallyx.core.ui.extensions.toggleMonospace
+import com.philkes.notallyx.core.ui.extensions.toggleStrikethrough
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.NoteViewMode
@@ -32,6 +30,7 @@ import com.philkes.notallyx.data.model.extensions.getNoteIdFromUrl
 import com.philkes.notallyx.data.model.extensions.getNoteTypeFromUrl
 import com.philkes.notallyx.data.model.extensions.isNoteUrl
 import com.philkes.notallyx.feature.editor.bottomsheet.AddNoteBottomSheet
+import com.philkes.notallyx.feature.editor.formatting.getFormattingState
 import com.philkes.notallyx.feature.editor.screens.EditChangeHandlers
 import com.philkes.notallyx.feature.editor.screens.EditClickHandlers
 import com.philkes.notallyx.feature.editor.screens.EditNotePreferences
@@ -43,6 +42,7 @@ import kotlinx.coroutines.withContext
 class EditNoteActivity : EditActivity(Type.NOTE) {
 
     private var searchResultIndices: List<Pair<Int, Int>>? = null
+    private val bodyValueState = mutableStateOf(TextFieldValue())
 
     override fun configureUI() {}
 
@@ -50,13 +50,43 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
         if (search.isEmpty()) {
             return 0
         }
-        val text = notallyModel.body.toString()
+        val text = notallyModel.body.text
         val occurrences = withContext(Dispatchers.Default) { text.findAllOccurrences(search) }
         searchResultIndices = occurrences
         return searchResultIndices!!.size
     }
 
     override fun selectSearchResult(resultPos: Int) {}
+
+    private fun applyOrToggleBold() {
+        val updated = bodyValueState.value.toggleBold()
+        bodyValueState.value = updated
+        notallyModel.body = updated
+    }
+
+    private fun applyOrToggleItalic() {
+        val updated = bodyValueState.value.toggleItalic()
+        bodyValueState.value = updated
+        notallyModel.body = updated
+    }
+
+    private fun applyOrToggleStrikethrough() {
+        val updated = bodyValueState.value.toggleStrikethrough()
+        bodyValueState.value = updated
+        notallyModel.body = updated
+    }
+
+    private fun applyOrToggleMonospace() {
+        val updated = bodyValueState.value.toggleMonospace()
+        bodyValueState.value = updated
+        notallyModel.body = updated
+    }
+
+    private fun clearFormatting() {
+        val updated = bodyValueState.value.clearFormatting()
+        bodyValueState.value = updated
+        notallyModel.body = updated
+    }
 
     @Composable
     override fun RenderScreen() {
@@ -78,7 +108,7 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
         val noteState =
             EditNoteState(
                 title = titleState.value,
-                bodyText = bodyTextState.value,
+                bodyValue = bodyValueState.value,
                 createdTimestamp = notallyModel.timestamp,
                 modifiedTimestamp = notallyModel.modifiedTimestamp,
                 images = imagesState.value,
@@ -105,6 +135,15 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
 
         val searchState = this.searchState
 
+        val formattingState =
+            remember(bodyValueState.value) {
+                val selection = bodyValueState.value.selection
+                bodyValueState.value.annotatedString.getFormattingState(
+                    selection.min,
+                    selection.max,
+                )
+            }
+
         EditNoteScreen(
             noteState = noteState,
             preferences = preferencesState,
@@ -113,6 +152,7 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
             canUndo = canUndoState.value,
             canRedo = canRedoState.value,
             isFormattingMenuVisible = isFormattingMenuVisible.value,
+            formattingState = formattingState,
             changeHandlers =
                 object : EditChangeHandlers {
                     override fun onTitleChange(title: String) {
@@ -120,12 +160,19 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                         notallyModel.title = title
                     }
 
-                    override fun onBodyTextChange(bodyText: String) {
-                        bodyTextState.value = bodyText
-                        notallyModel.body.replace(0, notallyModel.body.length, bodyText)
-                        if (isSearchActiveState.value) {
-                            updateSearchResults(searchQueryState.value)
+                    override fun onBodyValueChange(bodyValue: TextFieldValue) {
+                        val newText = bodyValue.text
+                        val oldText = notallyModel.body.text
+                        if (newText != oldText) {
+                            if (isSearchActiveState.value) {
+                                updateSearchResults(searchQueryState.value)
+                            }
                         }
+                        if (bodyValue.selection.min != bodyValue.selection.max) {
+                            isFormattingMenuVisible.value = true
+                        }
+                        bodyValueState.value = bodyValue
+                        notallyModel.body = bodyValue
                     }
 
                     override fun onSearchQueryChange(query: String) {
@@ -180,48 +227,23 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                     }
 
                     override fun onBoldClick() {
-                        notallyModel.body.setSpan(
-                            createBoldSpan(),
-                            0,
-                            notallyModel.body.length,
-                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
-                        )
-                        bodyTextState.value = notallyModel.body.toString()
+                        applyOrToggleBold()
                     }
 
                     override fun onItalicClick() {
-                        notallyModel.body.setSpan(
-                            StyleSpan(Typeface.ITALIC),
-                            0,
-                            notallyModel.body.length,
-                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
-                        )
-                        bodyTextState.value = notallyModel.body.toString()
+                        applyOrToggleItalic()
                     }
 
                     override fun onStrikethroughClick() {
-                        notallyModel.body.setSpan(
-                            StrikethroughSpan(),
-                            0,
-                            notallyModel.body.length,
-                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
-                        )
-                        bodyTextState.value = notallyModel.body.toString()
+                        applyOrToggleStrikethrough()
                     }
 
                     override fun onMonospaceClick() {
-                        notallyModel.body.setSpan(
-                            TypefaceSpan("monospace"),
-                            0,
-                            notallyModel.body.length,
-                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
-                        )
-                        bodyTextState.value = notallyModel.body.toString()
+                        applyOrToggleMonospace()
                     }
 
                     override fun onClearFormattingClick() {
-                        notallyModel.body.clearSpans()
-                        bodyTextState.value = notallyModel.body.toString()
+                        clearFormatting()
                     }
 
                     override fun onImageClick(image: FileAttachment) {
@@ -253,7 +275,7 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
 
     override fun setStateFromModel(savedInstanceState: Bundle?) {
         super.setStateFromModel(savedInstanceState)
-        bodyTextState.value = notallyModel.body.toString()
+        bodyValueState.value = notallyModel.body
     }
 
     private fun openLink(span: URLSpan) {

@@ -64,6 +64,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
@@ -104,7 +105,7 @@ import kotlinx.coroutines.android.awaitFrame
 
 data class EditNoteState(
     val title: String = "",
-    val bodyText: String = "",
+    val bodyValue: TextFieldValue = TextFieldValue(),
     val items: List<ListItem> = emptyList(),
     val checkedItems: List<ListItem> = emptyList(),
     val createdTimestamp: Long? = null,
@@ -262,7 +263,7 @@ private fun SearchTopAppBar(
 internal interface EditChangeHandlers {
     fun onTitleChange(title: String) {}
 
-    fun onBodyTextChange(bodyText: String) {}
+    fun onBodyValueChange(bodyValue: TextFieldValue) {}
 
     fun onItemTextChange(item: ListItem, text: String) {}
 
@@ -550,6 +551,7 @@ internal fun EditScreen(
                 TextFormattingBar(
                     formattingState = formattingState,
                     backgroundColor = backgroundColor,
+                    modifier = Modifier.padding(top = 8.dp),
                     actions =
                         TextFormattingBarActions(
                             onBoldClick = { clickHandlers.onBoldClick() },
@@ -815,7 +817,7 @@ internal fun EditNoteScreen(
         if (
             searchState.isActive && searchState.query.isNotEmpty() && searchState.resultsCount > 0
         ) {
-            val occurrences = noteState.bodyText.findAllOccurrences(searchState.query)
+            val occurrences = noteState.bodyValue.text.findAllOccurrences(searchState.query)
             val selectedRange = occurrences.getOrNull(searchState.resultPos)
             if (selectedRange != null && textLayoutResult != null) {
                 val line = textLayoutResult!!.getLineForOffset(selectedRange.first)
@@ -853,9 +855,10 @@ internal fun EditNoteScreen(
                     }
                 }
 
+            val bodyValue = noteState.bodyValue
             BasicTextField(
-                value = noteState.bodyText,
-                onValueChange = { changeHandlers.onBodyTextChange(it) },
+                value = bodyValue,
+                onValueChange = { changeHandlers.onBodyValueChange(it) },
                 onTextLayout = { textLayoutResult = it },
                 visualTransformation = visualTransformation,
                 modifier =
@@ -869,7 +872,7 @@ internal fun EditNoteScreen(
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 decorationBox = { innerTextField ->
                     Box {
-                        if (noteState.bodyText.isEmpty()) {
+                        if (bodyValue.text.isEmpty()) {
                             Text(
                                 text = stringResource(id = R.string.note),
                                 style = MaterialTheme.typography.bodyLarge,
@@ -1144,8 +1147,10 @@ private fun EditNoteScreenPreview() {
             noteState =
                 EditNoteState(
                     title = "Project Planning Note",
-                    bodyText =
-                        "Here are the core tasks for the upcoming release:\n- Review design mockups\n- Finalize Jetpack Compose migration\n- Conduct QA testing",
+                    bodyValue =
+                        TextFieldValue(
+                            "Here are the core tasks for the upcoming release:\n- Review design mockups\n- Finalize Jetpack Compose migration\n- Conduct QA testing"
+                        ),
                     createdTimestamp = System.currentTimeMillis() - 86400000L,
                     modifiedTimestamp = System.currentTimeMillis(),
                     images =

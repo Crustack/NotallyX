@@ -19,6 +19,7 @@ import android.provider.Settings
 import android.text.Editable
 import android.text.InputType
 import android.text.Spannable
+import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.TextWatcher
 import android.text.style.CharacterStyle
@@ -54,7 +55,14 @@ import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatTextView
+import androidx.compose.ui.graphics.Color as ComposeColor
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.core.graphics.ColorUtils
@@ -185,8 +193,9 @@ fun Editable.removeSelectionFromSpans(
                 removeSpan(span)
                 // Reapply two new spans: one for the part before the selection, and one for the
                 // part after
+                val newSpan = span.cloneSpan()
                 setSpan(span, spanStart, selectionStart, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                setSpan(span, selectionEnd, spanEnd, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                setSpan(newSpan, selectionEnd, spanEnd, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
             }
             // Case 3: Selection overlaps the start of the span (trim the span)
             selectionStart <= spanStart && selectionEnd < spanEnd -> {
@@ -200,6 +209,212 @@ fun Editable.removeSelectionFromSpans(
             }
         }
     }
+}
+
+fun CharacterStyle.cloneSpan(): CharacterStyle =
+    when (this) {
+        is StyleSpan -> StyleSpan(this.style)
+        is StrikethroughSpan -> StrikethroughSpan()
+        is TypefaceSpan -> TypefaceSpan(this.family)
+        is URLSpan -> URLSpan(this.url)
+        else -> this
+    }
+
+fun Editable.replaceSmart(newText: CharSequence) {
+    val oldText = this.toString()
+    if (oldText == newText.toString()) return
+    var start = 0
+    while (start < oldText.length && start < newText.length && oldText[start] == newText[start]) {
+        start++
+    }
+    var oldEnd = oldText.length
+    var newEnd = newText.length
+    while (oldEnd > start && newEnd > start && oldText[oldEnd - 1] == newText[newEnd - 1]) {
+        oldEnd--
+        newEnd--
+    }
+    replace(start, oldEnd, newText.subSequence(start, newEnd))
+}
+
+fun Spanned.toAnnotatedString(): AnnotatedString {
+    val builder = AnnotatedString.Builder(this.toString())
+    val spans = getSpans(0, length, CharacterStyle::class.java)
+    for (span in spans) {
+        val start = getSpanStart(span).coerceIn(0, length)
+        val end = getSpanEnd(span).coerceIn(0, length)
+        if (start >= end) continue
+
+        when (span) {
+            is StyleSpan -> {
+                val isBold = span.style == Typeface.BOLD || span.style == Typeface.BOLD_ITALIC
+                val isItalic = span.style == Typeface.ITALIC || span.style == Typeface.BOLD_ITALIC
+
+                if (isBold) {
+                    builder.addStyle(SpanStyle(fontWeight = FontWeight.Bold), start, end)
+                }
+                if (isItalic) {
+                    builder.addStyle(SpanStyle(fontStyle = FontStyle.Italic), start, end)
+                }
+            }
+            is StrikethroughSpan -> {
+                builder.addStyle(SpanStyle(textDecoration = TextDecoration.LineThrough), start, end)
+            }
+            is TypefaceSpan -> {
+                if (span.family.equals("monospace", ignoreCase = true)) {
+                    builder.addStyle(SpanStyle(fontFamily = FontFamily.Monospace), start, end)
+                }
+            }
+            is URLSpan -> {
+                span.url?.let { url ->
+                    builder.addStringAnnotation("URL", url, start, end)
+                    builder.addStyle(
+                        SpanStyle(
+                            color = ComposeColor.Blue,
+                            textDecoration = TextDecoration.Underline,
+                        ),
+                        start,
+                        end,
+                    )
+                }
+            }
+        }
+    }
+    return builder.toAnnotatedString()
+}
+
+fun AnnotatedString.toSpannableStringBuilder(): SpannableStringBuilder {
+    val builder = SpannableStringBuilder(text)
+    spanStyles.forEach { range ->
+        val start = range.start.coerceIn(0, text.length)
+        val end = range.end.coerceIn(0, text.length)
+        if (start < end) {
+            val style = range.item
+            if (
+                style.fontWeight == FontWeight.Bold ||
+                    (style.fontWeight != null && style.fontWeight!!.weight >= 700)
+            ) {
+                builder.setSpan(createBoldSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+            if (style.fontStyle == FontStyle.Italic) {
+                builder.setSpan(
+                    StyleSpan(Typeface.ITALIC),
+                    start,
+                    end,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                )
+            }
+            if (style.fontFamily == FontFamily.Monospace) {
+                builder.setSpan(
+                    TypefaceSpan("monospace"),
+                    start,
+                    end,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                )
+            }
+            if (style.textDecoration?.contains(TextDecoration.LineThrough) == true) {
+                builder.setSpan(StrikethroughSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+        }
+    }
+    getStringAnnotations("URL", 0, text.length).forEach { range ->
+        val start = range.start.coerceIn(0, text.length)
+        val end = range.end.coerceIn(0, text.length)
+        if (start < end) {
+            builder.setSpan(URLSpan(range.item), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+    }
+    return builder
+}
+
+fun AnnotatedString.toSpanned(): Spanned = toSpannableStringBuilder()
+
+fun TextFieldValue.toggleBold(): TextFieldValue {
+    val start = selection.min
+    val end = selection.max
+    if (start >= end) return this
+    val builder = annotatedString.toSpannableStringBuilder()
+    val existingBold =
+        builder.getSpans(start, end, StyleSpan::class.java).filter {
+            it.style == Typeface.BOLD || it.style == Typeface.BOLD_ITALIC
+        }
+    val coversAll = existingBold.any {
+        builder.getSpanStart(it) <= start && builder.getSpanEnd(it) >= end
+    }
+    if (coversAll) {
+        builder.removeSelectionFromSpans(start, end, existingBold)
+    } else {
+        builder.setSpan(createBoldSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    }
+    return copy(annotatedString = builder.toAnnotatedString())
+}
+
+fun TextFieldValue.toggleItalic(): TextFieldValue {
+    val start = selection.min
+    val end = selection.max
+    if (start >= end) return this
+    val builder = annotatedString.toSpannableStringBuilder()
+    val existingItalic =
+        builder.getSpans(start, end, StyleSpan::class.java).filter {
+            it.style == Typeface.ITALIC || it.style == Typeface.BOLD_ITALIC
+        }
+    val coversAll = existingItalic.any {
+        builder.getSpanStart(it) <= start && builder.getSpanEnd(it) >= end
+    }
+    if (coversAll) {
+        builder.removeSelectionFromSpans(start, end, existingItalic)
+    } else {
+        builder.setSpan(StyleSpan(Typeface.ITALIC), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    }
+    return copy(annotatedString = builder.toAnnotatedString())
+}
+
+fun TextFieldValue.toggleStrikethrough(): TextFieldValue {
+    val start = selection.min
+    val end = selection.max
+    if (start >= end) return this
+    val builder = annotatedString.toSpannableStringBuilder()
+    val existing = builder.getSpans(start, end, StrikethroughSpan::class.java).toList()
+    val coversAll = existing.any {
+        builder.getSpanStart(it) <= start && builder.getSpanEnd(it) >= end
+    }
+    if (coversAll) {
+        builder.removeSelectionFromSpans(start, end, existing)
+    } else {
+        builder.setSpan(StrikethroughSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    }
+    return copy(annotatedString = builder.toAnnotatedString())
+}
+
+fun TextFieldValue.toggleMonospace(): TextFieldValue {
+    val start = selection.min
+    val end = selection.max
+    if (start >= end) return this
+    val builder = annotatedString.toSpannableStringBuilder()
+    val existing =
+        builder.getSpans(start, end, TypefaceSpan::class.java).filter {
+            it.family.equals("monospace", ignoreCase = true)
+        }
+    val coversAll = existing.any {
+        builder.getSpanStart(it) <= start && builder.getSpanEnd(it) >= end
+    }
+    if (coversAll) {
+        builder.removeSelectionFromSpans(start, end, existing)
+    } else {
+        builder.setSpan(TypefaceSpan("monospace"), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    }
+    return copy(annotatedString = builder.toAnnotatedString())
+}
+
+fun TextFieldValue.clearFormatting(): TextFieldValue {
+    val start = selection.min
+    val end = selection.max
+    val builder = annotatedString.toSpannableStringBuilder()
+    if (start < end) {
+        builder.removeSelectionFromSpans(start, end)
+    } else {
+        builder.clearSpans()
+    }
+    return copy(annotatedString = builder.toAnnotatedString())
 }
 
 private fun Spannable.setSpan(span: Any, start: Int, end: Int) {

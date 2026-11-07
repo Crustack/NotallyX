@@ -5,7 +5,6 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.text.Editable
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
@@ -19,6 +18,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -78,7 +80,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
     protected var inputMethodManager: InputMethodManager? = null
 
     protected val titleState = mutableStateOf("")
-    protected val bodyTextState = mutableStateOf("")
     protected val isFormattingMenuVisible = mutableStateOf(false)
     protected val labelsState = mutableStateOf<List<String>>(emptyList())
     protected val colorIntState = mutableIntStateOf(0)
@@ -509,9 +510,12 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
     private fun handleSharedNote() {
         val sharedNote = intent.generateBaseNote(this)
         notallyModel.title = sharedNote.title
-        notallyModel.body = Editable.Factory.getInstance().newEditable(sharedNote.text)
+        notallyModel.body =
+            TextFieldValue(
+                annotatedString = AnnotatedString(sharedNote.text),
+                selection = TextRange(sharedNote.text.length),
+            )
         titleState.value = sharedNote.title
-        bodyTextState.value = sharedNote.text
     }
 
     private fun displayFileErrors(errors: List<FileError>) {

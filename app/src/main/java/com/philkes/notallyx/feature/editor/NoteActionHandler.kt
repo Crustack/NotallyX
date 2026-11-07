@@ -7,11 +7,18 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
+import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.URLSpan
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.graphics.Color as ComposeColor
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.core.content.IntentCompat
 import androidx.lifecycle.lifecycleScope
 import com.philkes.notallyx.R
@@ -26,6 +33,8 @@ import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.ui.extensions.checkNotificationPermission
 import com.philkes.notallyx.core.ui.extensions.showToast
+import com.philkes.notallyx.core.ui.extensions.toAnnotatedString
+import com.philkes.notallyx.core.ui.extensions.toSpannableStringBuilder
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.ColorString
@@ -184,14 +193,27 @@ class NoteActionHandler(
                                     { "result.data is null for pickNoteNewActivityResultLauncher" },
                                 )
                                 .getPickedNoteData()
-                        val start = notallyModel.body.length
-                        notallyModel.body.append(title)
-                        notallyModel.body.setSpan(
-                            URLSpan(url),
+                        val textToAppend = title
+                        val start = notallyModel.body.text.length
+                        val end = start + textToAppend.length
+                        val builder = AnnotatedString.Builder(notallyModel.body.annotatedString)
+                        builder.append(textToAppend)
+                        builder.addStringAnnotation("URL", url, start, end)
+                        builder.addStyle(
+                            SpanStyle(
+                                color = ComposeColor.Blue,
+                                textDecoration = TextDecoration.Underline,
+                            ),
                             start,
-                            notallyModel.body.length,
-                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                            end,
                         )
+                        val newAnnotatedString = builder.toAnnotatedString()
+                        notallyModel.body =
+                            TextFieldValue(
+                                annotatedString = newAnnotatedString,
+                                selection = TextRange(newAnnotatedString.text.length),
+                            )
+                        activity.setStateFromModel(null)
                     } catch (_: IllegalArgumentException) {}
                 }
             }
@@ -208,17 +230,27 @@ class NoteActionHandler(
                                     },
                                 )
                                 .getPickedNoteData()
-                        val newSpan = URLSpan(url)
-                        val spanStart = notallyModel.body.getSpanStart(selectedSpan)
-                        val spanEnd = notallyModel.body.getSpanEnd(selectedSpan)
+                        val builder =
+                            SpannableStringBuilder(
+                                notallyModel.body.annotatedString.toSpannableStringBuilder()
+                            )
+                        val spanStart = builder.getSpanStart(selectedSpan)
+                        val spanEnd = builder.getSpanEnd(selectedSpan)
                         if (spanStart != -1 && spanEnd != -1) {
-                            notallyModel.body.removeSpan(selectedSpan)
-                            notallyModel.body.setSpan(
-                                newSpan,
+                            builder.removeSpan(selectedSpan)
+                            builder.setSpan(
+                                URLSpan(url),
                                 spanStart,
                                 spanEnd,
                                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
                             )
+                            val newAnnotatedString = builder.toAnnotatedString()
+                            notallyModel.body =
+                                TextFieldValue(
+                                    annotatedString = newAnnotatedString,
+                                    selection = notallyModel.body.selection,
+                                )
+                            activity.setStateFromModel(null)
                         }
                     } catch (_: IllegalArgumentException) {}
                 }
