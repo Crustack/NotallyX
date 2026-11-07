@@ -18,10 +18,8 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
-import androidx.test.espresso.Espresso.onData
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.Intents.intending
@@ -29,10 +27,7 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasType
-import androidx.test.espresso.matcher.RootMatchers.isDialog
-import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -43,15 +38,11 @@ import com.philkes.notallyx.data.model.toColorString
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.presentation.activity.note.RecordAudioActivity
 import com.philkes.notallyx.test.UiTestBase
-import com.philkes.notallyx.test.byId
-import com.philkes.notallyx.test.byText
-import com.philkes.notallyx.test.onDisplayView
 import com.philkes.notallyx.test.waitUntil
 import com.philkes.notallyx.utils.getTempAudioFile
 import com.philkes.notallyx.utils.getUriForFile
 import java.io.File
 import org.hamcrest.Matchers.allOf
-import org.hamcrest.Matchers.anything
 import org.junit.Assert.assertTrue
 import org.junit.FixMethodOrder
 import org.junit.Rule
@@ -79,18 +70,18 @@ class EditActivityTest : UiTestBase() {
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.tap_for_more_options))
             .performClick()
-        R.string.change_color.byText().perform(click())
-        R.id.CardView.byId(withContentDescription(BaseNote.COLOR_NEW)).perform(click())
-        R.id.CardView.byId(withContentDescription(Color.CORAL.toColorString())).perform(click())
-        R.string.save.byText(withId(android.R.id.button1)).perform(click())
+        composeTestRule.onNodeWithText(context.getString(R.string.change_color)).performClick()
+        composeTestRule.onNodeWithContentDescription(BaseNote.COLOR_NEW).performClick()
+        composeTestRule.onNodeWithContentDescription(Color.CORAL.toColorString()).performClick()
+        composeTestRule.onNodeWithTag("button1").performClick()
 
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.tap_for_more_options))
             .performClick()
-        onDisplayView(withText(R.string.labels)).perform(click())
+        composeTestRule.onNodeWithText(context.getString(R.string.labels)).performClick()
         composeTestRule.onNodeWithTag("AddLabel").performClick()
-        onView(withId(R.id.EditText)).inRoot(isDialog()).perform(replaceText("label"))
-        onView(withId(android.R.id.button1)).inRoot(isDialog()).perform(click())
+        composeTestRule.onNodeWithTag("EditText").performTextInput("label")
+        composeTestRule.onNodeWithTag("button1").performClick()
 
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("label")).fetchSemanticsNodes().isNotEmpty()
@@ -181,7 +172,7 @@ class EditActivityTest : UiTestBase() {
 
         // 1. Reminder 1: None repetition
         confirmDateAndTime()
-        android.R.id.button1.byId().perform(click())
+        composeTestRule.onNodeWithTag("button1").performClick()
 
         composeTestRule
             .onNodeWithText(context.getString(R.string.reminder_no_repetition))
@@ -192,8 +183,8 @@ class EditActivityTest : UiTestBase() {
             .onNodeWithContentDescription(context.getString(R.string.add_reminder))
             .performClick()
         confirmDateAndTime()
-        R.id.Daily.byId().perform(click())
-        android.R.id.button1.byId().perform(click())
+        composeTestRule.onNodeWithTag("DAILY").performClick()
+        composeTestRule.onNodeWithTag("button1").performClick()
 
         composeTestRule.onNodeWithText(context.getString(R.string.daily)).assertIsDisplayed()
 
@@ -202,8 +193,8 @@ class EditActivityTest : UiTestBase() {
             .onNodeWithContentDescription(context.getString(R.string.add_reminder))
             .performClick()
         confirmDateAndTime()
-        R.id.Weekly.byId().perform(click())
-        android.R.id.button1.byId().perform(click())
+        composeTestRule.onNodeWithTag("WEEKLY").performClick()
+        composeTestRule.onNodeWithTag("button1").performClick()
 
         composeTestRule.onNodeWithText(context.getString(R.string.weekly)).assertIsDisplayed()
 
@@ -212,11 +203,14 @@ class EditActivityTest : UiTestBase() {
             .onNodeWithContentDescription(context.getString(R.string.add_reminder))
             .performClick()
         confirmDateAndTime()
-        R.id.Monthly.byId().perform(click())
-        onData(anything()).atPosition(0).perform(click())
+        composeTestRule.onNodeWithTag("MONTHLY").performClick()
+        composeTestRule.onNodeWithTag("button1").performClick()
 
         composeTestRule
-            .onNodeWithText(context.getString(R.string.of_the_month, ""), substring = true)
+            .onNodeWithText(
+                context.getString(R.string.of_the_month, "").replace("%1\$s", "").trim(),
+                substring = true,
+            )
             .assertIsDisplayed()
 
         // 5. Reminder 5: Yearly repetition
@@ -224,8 +218,8 @@ class EditActivityTest : UiTestBase() {
             .onNodeWithContentDescription(context.getString(R.string.add_reminder))
             .performClick()
         confirmDateAndTime()
-        R.id.Yearly.byId().perform(click())
-        android.R.id.button1.byId().perform(click())
+        composeTestRule.onNodeWithTag("YEARLY").performClick()
+        composeTestRule.onNodeWithTag("button1").performClick()
 
         composeTestRule.onNodeWithText(context.getString(R.string.yearly)).assertIsDisplayed()
 
@@ -234,10 +228,11 @@ class EditActivityTest : UiTestBase() {
             .onNodeWithContentDescription(context.getString(R.string.add_reminder))
             .performClick()
         confirmDateAndTime()
-        R.id.Custom.byId().perform(click())
-        onView(withId(R.id.Value)).inRoot(isDialog()).perform(click(), replaceText("3"))
-        R.id.Weeks.byId().perform(click())
-        android.R.id.button1.byId().perform(click())
+        composeTestRule.onNodeWithTag("CUSTOM").performClick()
+        composeTestRule.onNodeWithTag("button1").performClick()
+        composeTestRule.onNodeWithTag("Value").performTextInput("3")
+        composeTestRule.onNodeWithTag("Weeks").performClick()
+        composeTestRule.onNodeWithTag("button1").performClick()
 
         composeTestRule.waitUntil(10_000) {
             composeTestRule
@@ -393,7 +388,7 @@ class EditActivityTest : UiTestBase() {
             composeTestRule
                 .onNodeWithContentDescription(context.getString(R.string.add_item))
                 .performClick()
-            R.string.add_images.byText().perform(click())
+            composeTestRule.onNodeWithText(context.getString(R.string.add_images)).performClick()
 
             composeTestRule.waitUntil(10_000) {
                 composeTestRule.onAllNodes(hasText("2")).fetchSemanticsNodes().isNotEmpty()
@@ -431,7 +426,7 @@ class EditActivityTest : UiTestBase() {
             composeTestRule
                 .onNodeWithContentDescription(context.getString(R.string.add_item))
                 .performClick()
-            R.string.attach_file.byText().perform(click())
+            composeTestRule.onNodeWithText(context.getString(R.string.attach_file)).performClick()
 
             composeTestRule.waitUntil(10_000) {
                 composeTestRule
@@ -456,7 +451,7 @@ class EditActivityTest : UiTestBase() {
             composeTestRule
                 .onNodeWithContentDescription(context.getString(R.string.add_item))
                 .performClick()
-            R.string.record_audio.byText().perform(click())
+            composeTestRule.onNodeWithText(context.getString(R.string.record_audio)).performClick()
 
             // Verify audio section is rendered in EditScreen
             composeTestRule.waitUntil(10_000) {

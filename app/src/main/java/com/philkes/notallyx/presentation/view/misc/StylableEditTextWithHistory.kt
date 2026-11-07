@@ -1,5 +1,6 @@
 package com.philkes.notallyx.presentation.view.misc
 
+import android.app.Activity
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Typeface
@@ -12,19 +13,19 @@ import android.text.style.TypefaceSpan
 import android.text.style.URLSpan
 import android.util.AttributeSet
 import android.view.ActionMode
-import android.view.LayoutInflater
 import androidx.appcompat.widget.AppCompatEditText
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.isNoteUrl
-import com.philkes.notallyx.databinding.DialogTextInput2Binding
 import com.philkes.notallyx.presentation.clone
 import com.philkes.notallyx.presentation.createTextWatcherWithHistory
 import com.philkes.notallyx.presentation.removeSelectionFromSpans
-import com.philkes.notallyx.presentation.setCancelButton
-import com.philkes.notallyx.presentation.showAndFocus
+import com.philkes.notallyx.presentation.theme.NotallyXTheme
 import com.philkes.notallyx.presentation.view.misc.highlightableview.HighlightableEditText
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.utils.changehistory.ChangeHistory
 import com.philkes.notallyx.utils.changehistory.EditTextState
 import com.philkes.notallyx.utils.changehistory.EditTextWithHistoryChange
@@ -338,44 +339,48 @@ class StylableEditTextWithHistory(context: Context, attrs: AttributeSet) :
         onSuccess: (urlAfter: String?, displayTextAfter: String) -> Unit,
     ) {
         val isNoteUrl = urlBefore.isNoteUrl()
-        val layout =
-            DialogTextInput2Binding.inflate(LayoutInflater.from(context)).apply {
-                InputText1.setText(displayTextBefore)
-                InputTextLayout1.setHint(R.string.display_text)
-                InputText2.setText(urlBefore)
-                if (isNoteUrl) {
-                    InputTextLayout2.visibility = GONE
-                } else {
-                    InputTextLayout2.setHint(R.string.link)
-                }
-            }
+        val activity = context as? Activity ?: return
+        val preferences = NotallyXPreferences.getInstance(activity)
+        val composeView = ComposeView(context)
+        val dialog = MaterialAlertDialogBuilder(context).setView(composeView).create()
 
-        MaterialAlertDialogBuilder(context)
-            .setView(layout.root)
-            .setTitle(R.string.edit_link)
-            .setPositiveButton(R.string.save) { _, _ ->
-                val displayTextAfter = layout.InputText1.text.toString()
-                val urlAfter = layout.InputText2.text.toString()
-                onSuccess.invoke(urlAfter, displayTextAfter)
-                onClose?.invoke()
-            }
-            .setCancelButton { dialog, _ ->
-                dialog.cancel()
-                onClose?.invoke()
-            }
-            .apply {
-                if (!isNoteUrl) {
-                    setNeutralButton(R.string.clear) { dialog, _ ->
-                        dialog.cancel()
-                        onSuccess.invoke(null, displayTextBefore)
-                        onClose?.invoke()
-                    }
+        composeView.setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                if (isNoteUrl) {
+                    com.philkes.notallyx.presentation.view.dialog.TextInputDialog(
+                        title = stringResource(R.string.edit_link),
+                        initialValue = displayTextBefore,
+                        hint = stringResource(R.string.display_text),
+                        onDismissRequest = {
+                            dialog.dismiss()
+                            onClose?.invoke()
+                        },
+                        onConfirm = { displayTextAfter ->
+                            onSuccess.invoke(urlBefore, displayTextAfter)
+                            onClose?.invoke()
+                            dialog.dismiss()
+                        },
+                    )
+                } else {
+                    com.philkes.notallyx.presentation.view.dialog.DualTextInputDialog(
+                        title = stringResource(R.string.edit_link),
+                        initialValue1 = displayTextBefore,
+                        initialValue2 = urlBefore,
+                        hint1 = stringResource(R.string.display_text),
+                        hint2 = stringResource(R.string.link),
+                        onDismissRequest = {
+                            dialog.dismiss()
+                            onClose?.invoke()
+                        },
+                        onConfirm = { displayTextAfter, urlAfter ->
+                            onSuccess.invoke(urlAfter, displayTextAfter)
+                            onClose?.invoke()
+                            dialog.dismiss()
+                        },
+                    )
                 }
             }
-            .showAndFocus(
-                viewToFocus = if (isNoteUrl) layout.InputText1 else layout.InputText2,
-                selectAll = isNewUnnamedLink,
-                allowFullSize = true,
-            )
+        }
+        dialog.show()
     }
 }

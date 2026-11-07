@@ -4,15 +4,12 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.text.Editable
-import android.view.View
 import android.widget.Button
 import android.widget.RadioButton
 import android.widget.TimePicker
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.compose.ui.platform.ComposeView
-import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -22,8 +19,6 @@ import com.philkes.notallyx.data.model.Repetition
 import com.philkes.notallyx.data.model.RepetitionTimeUnit
 import com.philkes.notallyx.data.model.toCalendar
 import com.philkes.notallyx.data.model.toText
-import com.philkes.notallyx.databinding.DialogReminderCustomRepetitionBinding
-import com.philkes.notallyx.databinding.DialogReminderRepetitionBinding
 import com.philkes.notallyx.presentation.activity.ComposeBinding
 import com.philkes.notallyx.presentation.activity.LockedActivity
 import com.philkes.notallyx.presentation.checkAlarmPermission
@@ -31,8 +26,11 @@ import com.philkes.notallyx.presentation.checkNotificationPermission
 import com.philkes.notallyx.presentation.format
 import com.philkes.notallyx.presentation.getQuantityStringPlain
 import com.philkes.notallyx.presentation.setCancelButton
-import com.philkes.notallyx.presentation.showAndFocus
 import com.philkes.notallyx.presentation.theme.NotallyXTheme
+import com.philkes.notallyx.presentation.view.dialog.CustomRepetitionDialog
+import com.philkes.notallyx.presentation.view.dialog.ReminderRepetitionDialog
+import com.philkes.notallyx.presentation.view.dialog.RepetitionOption
+import com.philkes.notallyx.presentation.view.dialog.TimeUnit
 import com.philkes.notallyx.presentation.view.main.reminder.ReminderListener
 import com.philkes.notallyx.presentation.view.screens.RemindersScreen
 import com.philkes.notallyx.presentation.viewmodel.edit.NoteModel
@@ -165,90 +163,49 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
         fromCustomRepetitionDialog: Boolean = false,
         onRepetitionSelected: (Repetition?) -> Unit,
     ) {
-        val dialogView =
-            DialogReminderRepetitionBinding.inflate(layoutInflater).apply {
-                if (reminder == null && fromCustomRepetitionDialog) {
-                    None.isChecked = true
-                } else {
-                    reminder?.repetition.apply {
-                        when {
-                            this == null -> None.isChecked = true
-                            value == 1 && unit == RepetitionTimeUnit.DAYS -> Daily.isChecked = true
+        val composeView = ComposeView(this)
+        val dialog = MaterialAlertDialogBuilder(this).setView(composeView).create()
 
-                            value == 1 && unit == RepetitionTimeUnit.WEEKS ->
-                                Weekly.isChecked = true
+        val repetition = reminder?.repetition
+        val initialOption =
+            when {
+                repetition == null -> RepetitionOption.NONE
+                repetition.value == 1 && repetition.unit == RepetitionTimeUnit.DAYS ->
+                    RepetitionOption.DAILY
+                repetition.value == 1 && repetition.unit == RepetitionTimeUnit.WEEKS ->
+                    RepetitionOption.WEEKLY
+                repetition.value == 1 && repetition.unit == RepetitionTimeUnit.MONTHS ->
+                    RepetitionOption.MONTHLY
+                repetition.value == 1 && repetition.unit == RepetitionTimeUnit.YEARS ->
+                    RepetitionOption.YEARLY
+                else -> RepetitionOption.CUSTOM
+            }
 
-                            value == 1 && unit == RepetitionTimeUnit.MONTHS && occurrence == null ->
-                                Monthly.isChecked = true
-
-                            value == 1 &&
-                                unit == RepetitionTimeUnit.MONTHS &&
-                                occurrence != null -> {
-                                MonthlyAdvanced.apply {
-                                    visibility = View.VISIBLE
-                                    text = toText(this@RemindersActivity)
-                                    isChecked = true
-                                }
-                            }
-
-                            value == 1 && unit == RepetitionTimeUnit.YEARS ->
-                                Yearly.isChecked = true
-
-                            fromCustomRepetitionDialog -> Custom.isChecked = true
-                            else -> {
-                                showCustomRepetitionDialog(
-                                    reminder,
-                                    calendar,
-                                    onRepetitionSelected,
-                                )
-                                return
-                            }
+        composeView.setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                ReminderRepetitionDialog(
+                    initialOption = initialOption,
+                    onDismissRequest = { dialog.dismiss() },
+                    onOptionSelected = { selected ->
+                        dialog.dismiss()
+                        when (selected) {
+                            RepetitionOption.NONE -> onRepetitionSelected(null)
+                            RepetitionOption.DAILY ->
+                                onRepetitionSelected(Repetition(1, RepetitionTimeUnit.DAYS))
+                            RepetitionOption.WEEKLY ->
+                                onRepetitionSelected(Repetition(1, RepetitionTimeUnit.WEEKS))
+                            RepetitionOption.MONTHLY ->
+                                onRepetitionSelected(Repetition(1, RepetitionTimeUnit.MONTHS))
+                            RepetitionOption.YEARLY ->
+                                onRepetitionSelected(Repetition(1, RepetitionTimeUnit.YEARS))
+                            RepetitionOption.CUSTOM ->
+                                showCustomRepetitionDialog(reminder, calendar, onRepetitionSelected)
                         }
-                    }
-                }
+                    },
+                )
             }
-
-        val dialog =
-            MaterialAlertDialogBuilder(this)
-                .setTitle(R.string.repetition)
-                .setView(dialogView.root)
-                .setPositiveButton(R.string.save) { _, _ ->
-                    val repetition =
-                        when (dialogView.RepetitionOptions.checkedRadioButtonId) {
-                            R.id.None -> null
-                            R.id.Daily -> Repetition(1, RepetitionTimeUnit.DAYS)
-                            R.id.Weekly -> Repetition(1, RepetitionTimeUnit.WEEKS)
-                            R.id.Monthly -> Repetition(1, RepetitionTimeUnit.MONTHS)
-                            R.id.Yearly -> Repetition(1, RepetitionTimeUnit.YEARS)
-                            R.id.MonthlyAdvanced -> reminder?.repetition?.copy()
-                            R.id.Custom -> reminder?.repetition?.copy()
-                            else -> null
-                        }
-                    onRepetitionSelected(repetition)
-                }
-                .setNegativeButton(R.string.back) { _, _ ->
-                    showTimePickerDialog(reminder, calendar)
-                }
-                .show()
-        val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-        dialogView.apply {
-            Custom.setOnClickListener {
-                dialog.dismiss()
-                showCustomRepetitionDialog(reminder, calendar, onRepetitionSelected)
-            }
-            None.setOnCheckedEnableButton(positiveButton)
-            Daily.setOnCheckedEnableButton(positiveButton)
-            Weekly.setOnCheckedEnableButton(positiveButton)
-            Monthly.setOnClickListener {
-                dialog.dismiss()
-                showMonthlyAdvancedRepetitionDialog(reminder, calendar, onRepetitionSelected)
-            }
-            MonthlyAdvanced.setOnClickListener {
-                dialog.dismiss()
-                showMonthlyAdvancedRepetitionDialog(reminder, calendar, onRepetitionSelected)
-            }
-            Yearly.setOnCheckedEnableButton(positiveButton)
         }
+        dialog.show()
     }
 
     private fun showMonthlyAdvancedRepetitionDialog(
@@ -326,68 +283,44 @@ class RemindersActivity : LockedActivity<ComposeBinding>(), ReminderListener {
         calendar: Calendar,
         onRepetitionSelected: (Repetition?) -> Unit,
     ) {
-        val dialogView =
-            DialogReminderCustomRepetitionBinding.inflate(layoutInflater).apply {
-                reminder?.repetition?.let {
-                    when (it.unit) {
-                        RepetitionTimeUnit.MINUTES -> Minutes
-                        RepetitionTimeUnit.HOURS -> Hours
-                        RepetitionTimeUnit.DAYS -> Days
-                        RepetitionTimeUnit.WEEKS -> Weeks
-                        RepetitionTimeUnit.MONTHS -> Months
-                        RepetitionTimeUnit.YEARS -> Years
-                    }.isChecked = true
-                    Value.setText(it.value.toString())
-                }
+        val composeView = ComposeView(this)
+        val dialog = MaterialAlertDialogBuilder(this).setView(composeView).create()
+
+        val initialValue = reminder?.repetition?.value?.toString() ?: "1"
+        val initialUnit =
+            when (reminder?.repetition?.unit) {
+                RepetitionTimeUnit.MINUTES -> TimeUnit.MINUTES
+                RepetitionTimeUnit.HOURS -> TimeUnit.HOURS
+                RepetitionTimeUnit.DAYS -> TimeUnit.DAYS
+                RepetitionTimeUnit.WEEKS -> TimeUnit.WEEKS
+                RepetitionTimeUnit.MONTHS -> TimeUnit.MONTHS
+                RepetitionTimeUnit.YEARS -> TimeUnit.YEARS
+                else -> TimeUnit.WEEKS
             }
 
-        val dialog =
-            MaterialAlertDialogBuilder(this)
-                .setTitle(R.string.repetition_custom)
-                .setView(dialogView.root)
-                .setPositiveButton(R.string.save) { _, _ ->
-                    val value = dialogView.Value.text.toString().toIntOrNull() ?: 1
-                    val selectedTimeUnit =
-                        when (dialogView.TimeUnitGroup.checkedRadioButtonId) {
-                            R.id.Minutes -> RepetitionTimeUnit.MINUTES
-                            R.id.Hours -> RepetitionTimeUnit.HOURS
-                            R.id.Days -> RepetitionTimeUnit.DAYS
-                            R.id.Weeks -> RepetitionTimeUnit.WEEKS
-                            R.id.Months -> RepetitionTimeUnit.MONTHS
-                            R.id.Years -> RepetitionTimeUnit.YEARS
-                            else -> null
-                        }
-                    onRepetitionSelected(
-                        selectedTimeUnit?.let {
-                            if (it == RepetitionTimeUnit.MONTHS && value == 1) {
-                                showMonthlyAdvancedRepetitionDialog(
-                                    reminder,
-                                    calendar,
-                                    onRepetitionSelected,
-                                )
-                                return@setPositiveButton
+        composeView.setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                CustomRepetitionDialog(
+                    initialValue = initialValue,
+                    initialTimeUnit = initialUnit,
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = { valInt, unitEnum ->
+                        dialog.dismiss()
+                        val targetUnit =
+                            when (unitEnum) {
+                                TimeUnit.MINUTES -> RepetitionTimeUnit.MINUTES
+                                TimeUnit.HOURS -> RepetitionTimeUnit.HOURS
+                                TimeUnit.DAYS -> RepetitionTimeUnit.DAYS
+                                TimeUnit.WEEKS -> RepetitionTimeUnit.WEEKS
+                                TimeUnit.MONTHS -> RepetitionTimeUnit.MONTHS
+                                TimeUnit.YEARS -> RepetitionTimeUnit.YEARS
                             }
-                            Repetition(value, it)
-                        }
-                    )
-                }
-                .setBackgroundInsetBottom(0)
-                .setBackgroundInsetTop(0)
-                .setNegativeButton(R.string.back) { dialog, _ ->
-                    dialog.dismiss()
-                    showRepetitionDialog(
-                        reminder,
-                        calendar,
-                        fromCustomRepetitionDialog = true,
-                        onRepetitionSelected,
-                    )
-                }
-                .showAndFocus(dialogView.Value, allowFullSize = true)
-        val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-        dialogView.Value.doAfterTextChanged { text ->
-            positiveButton.isEnabled = text.hasValueBiggerZero()
+                        onRepetitionSelected(Repetition(valInt, targetUnit))
+                    },
+                )
+            }
         }
-        positiveButton.isEnabled = reminder?.repetition != null
+        dialog.show()
     }
 
     private fun RadioButton.setOnCheckedEnableButton(button: Button) {

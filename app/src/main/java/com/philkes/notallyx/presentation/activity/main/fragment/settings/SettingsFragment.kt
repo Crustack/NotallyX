@@ -13,7 +13,6 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.Settings
-import android.text.method.PasswordTransformationMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -23,16 +22,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity.RESULT_OK
 import androidx.compose.foundation.ScrollState
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.work.WorkManager
 import com.google.android.material.checkbox.MaterialCheckBox
-import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
 import com.google.android.material.textview.MaterialTextView
 import com.philkes.notallyx.R
 import com.philkes.notallyx.cancelAutoRemoveOldDeletedNotes
@@ -40,20 +37,10 @@ import com.philkes.notallyx.data.imports.Display
 import com.philkes.notallyx.data.imports.FOLDER_OR_FILE_MIMETYPE
 import com.philkes.notallyx.data.imports.ImportSource
 import com.philkes.notallyx.data.imports.txt.APPLICATION_TEXT_MIME_TYPES
-import com.philkes.notallyx.databinding.ChoiceItemBinding
-import com.philkes.notallyx.databinding.DialogDatetimeFormatBinding
-import com.philkes.notallyx.databinding.DialogImportBinding
-import com.philkes.notallyx.databinding.DialogNotesSortBinding
-import com.philkes.notallyx.databinding.DialogPreferenceBooleanBinding
-import com.philkes.notallyx.databinding.DialogPreferenceEnumWithToggleBinding
-import com.philkes.notallyx.databinding.DialogSelectionBoxBinding
-import com.philkes.notallyx.databinding.DialogTextInputBinding
 import com.philkes.notallyx.presentation.activity.DatabaseAction
 import com.philkes.notallyx.presentation.activity.DatabaseTransitionActivity
 import com.philkes.notallyx.presentation.activity.main.MainActivity
-import com.philkes.notallyx.presentation.checkedTag
 import com.philkes.notallyx.presentation.dp
-import com.philkes.notallyx.presentation.select
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.setEnabledSecureFlag
 import com.philkes.notallyx.presentation.setupImportProgressDialog
@@ -74,11 +61,8 @@ import com.philkes.notallyx.presentation.viewmodel.preference.EnumPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.EMPTY_PATH
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.START_VIEW_DEFAULT
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.START_VIEW_UNLABELED
-import com.philkes.notallyx.presentation.viewmodel.preference.NotesSort
-import com.philkes.notallyx.presentation.viewmodel.preference.NotesSortBy
 import com.philkes.notallyx.presentation.viewmodel.preference.PeriodicBackup.Companion.BACKUP_MAX_MIN
 import com.philkes.notallyx.presentation.viewmodel.preference.PeriodicBackup.Companion.BACKUP_PERIOD_DAYS_MIN
-import com.philkes.notallyx.presentation.viewmodel.preference.SortDirection
 import com.philkes.notallyx.presentation.viewmodel.preference.TextProvider
 import com.philkes.notallyx.presentation.viewmodel.preference.Theme
 import com.philkes.notallyx.presentation.viewmodel.preference.TimeFormat
@@ -572,30 +556,28 @@ class SettingsFragment : Fragment() {
             }
 
             MIME_TYPE_ZIP -> {
-                val layout = DialogImportBinding.inflate(layoutInflater, null, false)
-                val password = model.preferences.backupPassword.value
-                layout.InputText.apply {
-                    if (password != PASSWORD_EMPTY) {
-                        setText(password)
+                val composeView = ComposeView(requireContext())
+                val dialog =
+                    MaterialAlertDialogBuilder(requireContext()).setView(composeView).create()
+                val defaultPassword =
+                    model.preferences.backupPassword.value.takeIf { it != PASSWORD_EMPTY } ?: ""
+
+                composeView.setContent {
+                    NotallyXTheme(theme = model.preferences.theme.value) {
+                        com.philkes.notallyx.presentation.view.dialog.ImportNotesDialog(
+                            title = stringResource(R.string.backup_password),
+                            initialText = defaultPassword,
+                            message = stringResource(R.string.import_backup_password_hint),
+                            initialCheckDuplicates = true,
+                            onDismissRequest = { dialog.dismiss() },
+                            onConfirm = { usedPassword, checkDuplicates ->
+                                model.importZipBackup(uri, usedPassword, checkDuplicates)
+                                dialog.dismiss()
+                            },
+                        )
                     }
-                    transformationMethod = PasswordTransformationMethod.getInstance()
                 }
-                layout.InputTextLayout.endIconMode = END_ICON_PASSWORD_TOGGLE
-                layout.Message.apply {
-                    setText(R.string.import_backup_password_hint)
-                    visibility = View.VISIBLE
-                }
-                MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(R.string.backup_password)
-                    .setView(layout.root)
-                    .setPositiveButton(R.string.import_backup) { dialog, _ ->
-                        dialog.cancel()
-                        val usedPassword = layout.InputText.text.toString()
-                        val checkDuplicates = layout.CheckDuplicates.isChecked
-                        model.importZipBackup(uri, usedPassword, checkDuplicates)
-                    }
-                    .setCancelButton()
-                    .show()
+                dialog.show()
             }
         }
     }
@@ -621,50 +603,44 @@ class SettingsFragment : Fragment() {
 
     private fun showThemeDialog() {
         val context = requireContext()
-        val layout = DialogPreferenceEnumWithToggleBinding.inflate(layoutInflater, null, false)
-        val themeValue = model.preferences.theme.value
-        val useDynamicColorsValue = model.preferences.useDynamicColors.value
+        val composeView = ComposeView(context)
+        val dialog = MaterialAlertDialogBuilder(context).setView(composeView).create()
 
-        Theme.entries.forEachIndexed { idx, theme ->
-            ChoiceItemBinding.inflate(layoutInflater).root.apply {
-                id = idx
-                text = theme.getText(context)
-                tag = theme
-                layout.EnumRadioGroup.addView(this)
-                if (theme == themeValue) {
-                    layout.EnumRadioGroup.check(this.id)
-                }
+        composeView.setContent {
+            NotallyXTheme(theme = model.preferences.theme.value) {
+                com.philkes.notallyx.presentation.view.dialog.PreferenceEnumWithToggleDialog(
+                    title = stringResource(model.preferences.theme.titleResId!!),
+                    hint = null,
+                    items =
+                        Theme.entries.map {
+                            com.philkes.notallyx.presentation.view.dialog.SelectionItem(
+                                it,
+                                it.getText(context),
+                            )
+                        },
+                    selectedItem = model.preferences.theme.value,
+                    toggleLabel = stringResource(R.string.theme_use_dynamic_colors),
+                    initialToggleValue = model.preferences.useDynamicColors.value,
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = { newTheme, useDynamicColors ->
+                        model.savePreference(model.preferences.theme, newTheme)
+                        model.savePreference(model.preferences.useDynamicColors, useDynamicColors)
+                        dialog.dismiss()
+                        val packageManager = context.packageManager
+                        val intent = packageManager.getLaunchIntentForPackage(context.packageName)
+                        val componentName = intent!!.component
+                        val mainIntent =
+                            Intent.makeRestartActivityTask(componentName).apply {
+                                putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, R.id.Settings)
+                            }
+                        mainIntent.setPackage(context.packageName)
+                        context.startActivity(mainIntent)
+                        Runtime.getRuntime().exit(0)
+                    },
+                )
             }
         }
-
-        layout.Toggle.apply {
-            isVisible = DynamicColors.isDynamicColorAvailable()
-            setText(R.string.theme_use_dynamic_colors)
-            isChecked = useDynamicColorsValue
-        }
-
-        MaterialAlertDialogBuilder(context)
-            .setTitle(model.preferences.theme.titleResId!!)
-            .setView(layout.root)
-            .setPositiveButton(R.string.save) { dialog, _ ->
-                dialog.cancel()
-                val theme = layout.EnumRadioGroup.checkedTag() as Theme
-                val useDynamicColors = layout.Toggle.isChecked
-                model.savePreference(model.preferences.theme, theme)
-                model.savePreference(model.preferences.useDynamicColors, useDynamicColors)
-                val packageManager = context.packageManager
-                val intent = packageManager.getLaunchIntentForPackage(context.packageName)
-                val componentName = intent!!.component
-                val mainIntent =
-                    Intent.makeRestartActivityTask(componentName).apply {
-                        putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, R.id.Settings)
-                    }
-                mainIntent.setPackage(context.packageName)
-                context.startActivity(mainIntent)
-                Runtime.getRuntime().exit(0)
-            }
-            .setCancelButton()
-            .show()
+        dialog.show()
     }
 
     private fun showDateTimeFormatDialog(
@@ -673,86 +649,42 @@ class SettingsFragment : Fragment() {
         timePreference: EnumPreference<TimeFormat>,
         onSave: (dateFormat: DateFormat, timeFormat: TimeFormat) -> Unit,
     ) {
-        val context = requireContext()
-        val layout = DialogDatetimeFormatBinding.inflate(layoutInflater, null, false)
-        var selectedDate = datePreference.value
-        var selectedTime = timePreference.value
+        val composeView = ComposeView(requireContext())
+        val dialog = MaterialAlertDialogBuilder(requireContext()).setView(composeView).create()
 
-        val dateEntries = DateFormat.entries.map { it.getText(context) }.toTypedArray()
-        layout.DateSelectionBox.apply {
-            setSimpleItems(dateEntries)
-            select(selectedDate.getText(context))
-            setOnItemClickListener { _, _, position, _ ->
-                selectedDate = DateFormat.entries[position]
+        composeView.setContent {
+            NotallyXTheme(theme = model.preferences.theme.value) {
+                com.philkes.notallyx.presentation.view.dialog.DateTimeFormatDialog(
+                    initialDateFormat = datePreference.value,
+                    initialTimeFormat = timePreference.value,
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = { newDate, newTime ->
+                        onSave(newDate, newTime)
+                        dialog.dismiss()
+                    },
+                )
             }
         }
-
-        val timeEntries = TimeFormat.entries.map { it.getText(context) }.toTypedArray()
-        layout.TimeSelectionBox.apply {
-            setSimpleItems(timeEntries)
-            select(selectedTime.getText(context))
-            setOnItemClickListener { _, _, position, _ ->
-                selectedTime = TimeFormat.entries[position]
-            }
-        }
-
-        MaterialAlertDialogBuilder(context)
-            .setTitle(titleResId)
-            .setView(layout.root)
-            .setPositiveButton(R.string.save) { dialog, _ ->
-                dialog.cancel()
-                onSave(selectedDate, selectedTime)
-            }
-            .setCancelButton()
-            .showAndFocus(allowFullSize = true)
+        dialog.show()
     }
 
     private fun showNotesSortDialog() {
-        val context = requireContext()
-        val value = model.preferences.notesSorting.value
-        val layout = DialogNotesSortBinding.inflate(layoutInflater, null, false)
+        val composeView = ComposeView(requireContext())
+        val dialog = MaterialAlertDialogBuilder(requireContext()).setView(composeView).create()
 
-        NotesSortBy.entries.forEachIndexed { idx, notesSortBy ->
-            ChoiceItemBinding.inflate(layoutInflater).root.apply {
-                id = idx
-                text = context.getString(notesSortBy.textResId)
-                tag = notesSortBy
-                layout.NotesSortByRadioGroup.addView(this)
-                setCompoundDrawablesRelativeWithIntrinsicBounds(notesSortBy.iconResId, 0, 0, 0)
-                if (notesSortBy == value.sortedBy) {
-                    layout.NotesSortByRadioGroup.check(this.id)
-                }
-            }
-        }
-
-        SortDirection.entries.forEachIndexed { idx, sortDir ->
-            ChoiceItemBinding.inflate(layoutInflater).root.apply {
-                id = idx
-                text = context.getString(sortDir.textResId)
-                tag = sortDir
-                setCompoundDrawablesRelativeWithIntrinsicBounds(sortDir.iconResId, 0, 0, 0)
-                layout.NotesSortDirectionRadioGroup.addView(this)
-                if (sortDir == value.sortDirection) {
-                    layout.NotesSortDirectionRadioGroup.check(this.id)
-                }
-            }
-        }
-
-        MaterialAlertDialogBuilder(context)
-            .setTitle(model.preferences.notesSorting.titleResId!!)
-            .setView(layout.root)
-            .setPositiveButton(R.string.save) { dialog, _ ->
-                dialog.cancel()
-                val newSortBy = layout.NotesSortByRadioGroup.checkedTag() as NotesSortBy
-                val newSortDirection =
-                    layout.NotesSortDirectionRadioGroup.checkedTag() as SortDirection
-                model.savePreference(
-                    model.preferences.notesSorting,
-                    NotesSort(newSortBy, newSortDirection),
+        composeView.setContent {
+            NotallyXTheme(theme = model.preferences.theme.value) {
+                com.philkes.notallyx.presentation.view.dialog.NotesSortDialog(
+                    currentSort = model.preferences.notesSorting.value,
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = { newSort ->
+                        model.savePreference(model.preferences.notesSorting, newSort)
+                        dialog.dismiss()
+                    },
                 )
             }
-            .setCancelButton()
-            .show()
+        }
+        dialog.show()
     }
 
     fun showDateTimeFormatNoteViewDialog() {
@@ -773,35 +705,25 @@ class SettingsFragment : Fragment() {
         disabledTextResId: Int? = null,
         onSave: (newValue: Boolean) -> Unit,
     ) {
-        val context = requireContext()
         if (!enabled) return
-        val value = preference.value
-        val layout =
-            DialogPreferenceBooleanBinding.inflate(layoutInflater, null, false).apply {
-                Title.setText(preference.titleResId!!)
-                messageResId?.let { Message.setText(it) }
-                if (value) {
-                    EnabledButton.isChecked = true
-                } else {
-                    DisabledButton.isChecked = true
-                }
-            }
-        val dialog =
-            MaterialAlertDialogBuilder(context).setView(layout.root).setCancelButton().show()
-        layout.apply {
-            EnabledButton.setOnClickListener {
-                dialog.cancel()
-                if (!value) {
-                    onSave.invoke(true)
-                }
-            }
-            DisabledButton.setOnClickListener {
-                dialog.cancel()
-                if (value) {
-                    onSave.invoke(false)
-                }
+        val composeView = ComposeView(requireContext())
+        val dialog = MaterialAlertDialogBuilder(requireContext()).setView(composeView).create()
+
+        composeView.setContent {
+            NotallyXTheme(theme = model.preferences.theme.value) {
+                com.philkes.notallyx.presentation.view.dialog.PreferenceBooleanDialog(
+                    title = stringResource(preference.titleResId!!),
+                    message = messageResId?.let { stringResource(it) },
+                    initialValue = preference.value,
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = { newValue ->
+                        onSave(newValue)
+                        dialog.dismiss()
+                    },
+                )
             }
         }
+        dialog.show()
     }
 
     private fun showStartViewDialog(labels: List<String>?) {
@@ -811,118 +733,99 @@ class SettingsFragment : Fragment() {
         val notesText =
             "${context.getText(R.string.notes)} (${context.getText(R.string.text_default)})"
         val unlabeledText = context.getText(R.string.unlabeled).toString()
-        val textValue =
-            when (value) {
-                START_VIEW_DEFAULT -> notesText
-                START_VIEW_UNLABELED -> unlabeledText
-                else -> value
-            }
 
-        val layout = DialogSelectionBoxBinding.inflate(layoutInflater, null, false)
-        layout.Message.setText(R.string.start_view_hint)
         val values =
             mutableListOf(notesText to START_VIEW_DEFAULT, unlabeledText to START_VIEW_UNLABELED)
                 .apply { labels?.forEach { add(it to it) } }
-        var selected = values.indexOfFirst { it.first == textValue }
-        layout.SelectionBox.apply {
-            setSimpleItems(values.map { it.first }.toTypedArray())
-            select(textValue)
-            setOnItemClickListener { _, _, position, _ -> selected = position }
+
+        val items = values.map {
+            com.philkes.notallyx.presentation.view.dialog.SelectionItem(it.second, it.first)
         }
-        MaterialAlertDialogBuilder(context)
-            .setTitle(preference.titleResId!!)
-            .setView(layout.root)
-            .setPositiveButton(R.string.save) { dialog, _ ->
-                dialog.cancel()
-                if (selected >= 0 && selected < values.size) {
-                    val newValue = values[selected].second
-                    model.savePreference(preference, newValue)
-                }
+        val composeView = ComposeView(context)
+        val dialog = MaterialAlertDialogBuilder(context).setView(composeView).create()
+
+        composeView.setContent {
+            NotallyXTheme(theme = model.preferences.theme.value) {
+                com.philkes.notallyx.presentation.view.dialog.SingleSelectionDialog(
+                    title = stringResource(preference.titleResId!!),
+                    items = items,
+                    selectedItem = value,
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = { newValue ->
+                        model.savePreference(preference, newValue)
+                        dialog.dismiss()
+                    },
+                )
             }
-            .setCancelButton()
-            .showAndFocus(allowFullSize = true)
+        }
+        dialog.show()
     }
 
     private fun showPeriodicBackupDialog() {
-        val context = requireContext()
         val backupFolder = model.preferences.backupsFolder.value
         if (backupFolder == EMPTY_PATH) return
-        val value = model.preferences.periodicBackups.value.periodInDays > 0
-        val layout =
-            DialogPreferenceBooleanBinding.inflate(layoutInflater, null, false).apply {
-                Title.setText(R.string.backup_periodic)
-                Message.setText(R.string.backup_periodic_hint)
-                if (value) {
-                    EnabledButton.isChecked = true
-                } else {
-                    DisabledButton.isChecked = true
-                }
-            }
-        val dialog =
-            MaterialAlertDialogBuilder(context).setView(layout.root).setCancelButton().show()
-        layout.apply {
-            EnabledButton.setOnClickListener {
-                dialog.cancel()
-                if (!value) {
-                    val periodInDays =
-                        model.preferences.periodicBackups.value.periodInDays.let {
-                            if (it >= BACKUP_PERIOD_DAYS_MIN) it else BACKUP_PERIOD_DAYS_MIN
+        val composeView = ComposeView(requireContext())
+        val dialog = MaterialAlertDialogBuilder(requireContext()).setView(composeView).create()
+
+        composeView.setContent {
+            NotallyXTheme(theme = model.preferences.theme.value) {
+                com.philkes.notallyx.presentation.view.dialog.PreferenceBooleanDialog(
+                    title = stringResource(R.string.backup_periodic),
+                    message = stringResource(R.string.backup_periodic_hint),
+                    initialValue = model.preferences.periodicBackups.value.periodInDays > 0,
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = { enabled ->
+                        if (enabled) {
+                            val periodInDays =
+                                model.preferences.periodicBackups.value.periodInDays.let {
+                                    if (it >= BACKUP_PERIOD_DAYS_MIN) it else BACKUP_PERIOD_DAYS_MIN
+                                }
+                            val maxBackups =
+                                model.preferences.periodicBackups.value.maxBackups.let {
+                                    if (it >= BACKUP_MAX_MIN) it else BACKUP_MAX_MIN
+                                }
+                            model.savePreference(
+                                model.preferences.periodicBackups,
+                                model.preferences.periodicBackups.value.copy(
+                                    periodInDays = periodInDays,
+                                    maxBackups = maxBackups,
+                                ),
+                            )
+                        } else {
+                            model.savePreference(
+                                model.preferences.periodicBackups,
+                                model.preferences.periodicBackups.value.copy(periodInDays = 0),
+                            )
                         }
-                    val maxBackups =
-                        model.preferences.periodicBackups.value.maxBackups.let {
-                            if (it >= BACKUP_MAX_MIN) it else BACKUP_MAX_MIN
-                        }
-                    model.savePreference(
-                        model.preferences.periodicBackups,
-                        model.preferences.periodicBackups.value.copy(
-                            periodInDays = periodInDays,
-                            maxBackups = maxBackups,
-                        ),
-                    )
-                }
-            }
-            DisabledButton.setOnClickListener {
-                dialog.cancel()
-                if (value) {
-                    model.savePreference(
-                        model.preferences.periodicBackups,
-                        model.preferences.periodicBackups.value.copy(periodInDays = 0),
-                    )
-                }
+                        dialog.dismiss()
+                    },
+                )
             }
         }
+        dialog.show()
     }
 
     private fun showBackupPasswordDialog() {
-        val context = requireContext()
-        val preference = model.preferences.backupPassword
-        val password = preference.value
-        val layout = DialogTextInputBinding.inflate(layoutInflater, null, false)
-        layout.InputText.apply {
-            if (password != PASSWORD_EMPTY) {
-                setText(password)
+        val composeView = ComposeView(requireContext())
+        val dialog = MaterialAlertDialogBuilder(requireContext()).setView(composeView).create()
+        val password = model.preferences.backupPassword.value.takeIf { it != PASSWORD_EMPTY } ?: ""
+
+        composeView.setContent {
+            NotallyXTheme(theme = model.preferences.theme.value) {
+                com.philkes.notallyx.presentation.view.dialog.TextInputDialog(
+                    title = stringResource(model.preferences.backupPassword.titleResId!!),
+                    initialValue = password,
+                    message = stringResource(R.string.backup_password_hint),
+                    isPassword = true,
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = { updatedPassword ->
+                        model.savePreference(model.preferences.backupPassword, updatedPassword)
+                        dialog.dismiss()
+                    },
+                )
             }
-            transformationMethod = PasswordTransformationMethod.getInstance()
         }
-        layout.InputTextLayout.endIconMode = END_ICON_PASSWORD_TOGGLE
-        layout.Message.apply {
-            setText(R.string.backup_password_hint)
-            visibility = View.VISIBLE
-        }
-        MaterialAlertDialogBuilder(context)
-            .setTitle(preference.titleResId!!)
-            .setView(layout.root)
-            .setPositiveButton(R.string.save) { dialog, _ ->
-                dialog.cancel()
-                val updatedPassword = layout.InputText.text.toString()
-                model.savePreference(preference, updatedPassword)
-            }
-            .setCancelButton()
-            .setNeutralButton(R.string.clear) { dialog, _ ->
-                dialog.cancel()
-                model.savePreference(preference, PASSWORD_EMPTY)
-            }
-            .showAndFocus(allowFullSize = true)
+        dialog.show()
     }
 
     private fun showBiometricLockDialog() {

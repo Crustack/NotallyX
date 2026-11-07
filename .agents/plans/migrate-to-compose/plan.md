@@ -249,15 +249,15 @@ Convert legacy Android RemoteViews widgets to **AndroidX Glance**:
 - [x] Migrate `EditActivity`, `EditNoteActivity`, `EditListActivity` to Compose (`activity_edit.xml`).
 
 ### Phase 8: Bottom Sheets & Dialogs
-- [ ] Migrate `ActionBottomSheet` & actions to `ActionModalBottomSheet.kt` (`bottom_sheet_action.xml`).
-- [ ] Migrate input & text dialogs (`dialog_input.xml`, `dialog_text_input.xml`, `dialog_text_input_2.xml`).
-- [ ] Migrate `dialog_add_more.xml`, `dialog_notes_sort.xml`, `dialog_datetime_format.xml`, `dialog_import.xml`.
-- [ ] Migrate color picker dialogs (`dialog_color.xml`, `dialog_color_picker.xml`).
-- [ ] Migrate reminder repetition dialogs (`dialog_reminder_repetition.xml`, `dialog_reminder_custom_repetition.xml`).
-- [ ] Migrate selection dialogs (`dialog_selection_box.xml`, `dialog_preference_boolean.xml`, `dialog_preference_enum_with_toggle.xml`).
-- [ ] Migrate progress and error dialogs (`dialog_progress.xml`, `dialog_error.xml`).
-- [ ] Replace all `MaterialAlertDialogBuilder` calls with Compose `AlertDialog` components.
-- [ ] Remove unused XML layout files from `app/src/main/res/layout/`.
+- [x] Migrate `ActionBottomSheet` & actions to `ActionModalBottomSheet.kt` (`bottom_sheet_action.xml`).
+- [x] Migrate input & text dialogs (`dialog_input.xml`, `dialog_text_input.xml`, `dialog_text_input_2.xml`).
+- [x] Migrate `dialog_add_more.xml`, `dialog_notes_sort.xml`, `dialog_datetime_format.xml`, `dialog_import.xml`.
+- [x] Migrate color picker dialogs (`dialog_color.xml`, `dialog_color_picker.xml`).
+- [x] Migrate reminder repetition dialogs (`dialog_reminder_repetition.xml`, `dialog_reminder_custom_repetition.xml`).
+- [x] Migrate selection dialogs (`dialog_selection_box.xml`, `dialog_preference_boolean.xml`, `dialog_preference_enum_with_toggle.xml`).
+- [x] Migrate progress and error dialogs (`dialog_progress.xml`, `dialog_error.xml`).
+- [x] Replace all `MaterialAlertDialogBuilder` calls with Compose `AlertDialog` components.
+- [x] Remove unused XML layout files from `app/src/main/res/layout/`.
 
 ### Phase 9: AndroidX Glance App Widgets
 - [ ] Migrate app widgets (`widget.xml`, `widget_note.xml`, `widget_locked.xml`, `widget_preview.xml`, `widget_list_item.xml`, `widget_list_child_item.xml`, `widget_list_header.xml`) to AndroidX Glance.

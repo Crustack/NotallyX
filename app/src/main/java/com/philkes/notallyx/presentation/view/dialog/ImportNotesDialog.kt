@@ -1,0 +1,97 @@
+package com.philkes.notallyx.presentation.view.dialog
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import com.philkes.notallyx.R
+
+@Composable
+fun ImportNotesDialog(
+    title: String,
+    initialText: String = "",
+    hint: String? = null,
+    message: String? = null,
+    initialCheckDuplicates: Boolean = true,
+    onDismissRequest: () -> Unit,
+    onConfirm: (text: String, checkDuplicates: Boolean) -> Unit,
+) {
+    var text by remember { mutableStateOf(initialText) }
+    var checkDuplicates by remember { mutableStateOf(initialCheckDuplicates) }
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(text = title) },
+        text = {
+            Column {
+                if (!message.isNullOrEmpty()) {
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = hint?.let { { Text(it) } },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().testTag("InputText"),
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(
+                        checked = checkDuplicates,
+                        onCheckedChange = { checkDuplicates = it },
+                        modifier = Modifier.testTag("CheckDuplicates"),
+                    )
+                    Text(
+                        text = stringResource(R.string.check_duplicates),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm(text.trim(), checkDuplicates)
+                    onDismissRequest()
+                },
+                enabled = text.trim().isNotEmpty(),
+                modifier = Modifier.testTag("button1"),
+            ) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
+        },
+    )
+}

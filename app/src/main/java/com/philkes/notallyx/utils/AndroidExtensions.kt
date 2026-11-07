@@ -22,6 +22,8 @@ import android.webkit.MimeTypeMap
 import androidx.annotation.ColorInt
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
@@ -36,14 +38,15 @@ import com.philkes.notallyx.data.imports.ImportResult
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.toText
-import com.philkes.notallyx.databinding.DialogErrorBinding
 import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
 import com.philkes.notallyx.presentation.activity.note.EditListActivity
 import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
 import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showToast
+import com.philkes.notallyx.presentation.theme.NotallyXTheme
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.utils.backup.FILE_TIMESTAMP_FORMAT
 import com.philkes.notallyx.utils.backup.LOG_DATE_FORMATTER
 import java.io.BufferedReader
@@ -186,22 +189,21 @@ fun Fragment.showErrorDialog(
     message: String,
     originalStacktrace: String? = null,
 ) {
-    val stacktrace = throwable.stackTraceToString()
-    val layout =
-        DialogErrorBinding.inflate(layoutInflater, null, false).apply {
-            ExceptionTitle.text = message
-            ExceptionDetails.text = stacktrace
-            CopyButton.setOnClickListener { requireContext().copyToClipBoard(stacktrace) }
+    val composeView = ComposeView(requireContext())
+    val dialog = MaterialAlertDialogBuilder(requireContext()).setView(composeView).create()
+    val preferences = NotallyXPreferences.getInstance(requireActivity())
+
+    composeView.setContent {
+        NotallyXTheme(theme = preferences.theme.value) {
+            com.philkes.notallyx.presentation.view.dialog.ErrorDialog(
+                title = stringResource(titleResId),
+                message = message,
+                details = throwable.stackTraceToString(),
+                onDismissRequest = { dialog.dismiss() },
+            )
         }
-    MaterialAlertDialogBuilder(requireContext())
-        .setTitle(titleResId)
-        .setView(layout.root)
-        .setPositiveButton(R.string.report_bug) { dialog, _ ->
-            dialog.cancel()
-            reportBug(originalStacktrace ?: throwable.stackTraceToString())
-        }
-        .setCancelButton()
-        .show()
+    }
+    dialog.show()
 }
 
 fun Activity.openNote(noteId: Long, noteType: Type, clearBackStack: Boolean = false) {
@@ -226,25 +228,22 @@ fun Activity.showErrorDialog(
     neutralButtonTextResId: Int? = null,
     neutralButtonClickListener: DialogInterface.OnClickListener? = null,
 ): AlertDialog? {
-    val stacktrace = throwable.stackTraceToString()
-    val layout =
-        DialogErrorBinding.inflate(layoutInflater, null, false).apply {
-            ExceptionTitle.text = message
-            ExceptionDetails.text = stacktrace
-            CopyButton.setOnClickListener { copyToClipBoard(stacktrace) }
+    val composeView = ComposeView(this)
+    val dialog = MaterialAlertDialogBuilder(this).setView(composeView).create()
+    val preferences = NotallyXPreferences.getInstance(this)
+
+    composeView.setContent {
+        NotallyXTheme(theme = preferences.theme.value) {
+            com.philkes.notallyx.presentation.view.dialog.ErrorDialog(
+                title = stringResource(titleResId),
+                message = message,
+                details = throwable.stackTraceToString(),
+                onDismissRequest = { dialog.dismiss() },
+            )
         }
-    return MaterialAlertDialogBuilder(this)
-        .apply {
-            setTitle(titleResId)
-            setView(layout.root)
-            setPositiveButton(R.string.report_bug) { dialog, _ ->
-                dialog.cancel()
-                reportBug(originalStacktrace ?: throwable.stackTraceToString())
-            }
-            neutralButtonTextResId?.let { setNeutralButton(it, neutralButtonClickListener) }
-            setCancelButton()
-        }
-        .show()
+    }
+    dialog.show()
+    return dialog
 }
 
 val Activity.isInLandscapeMode
