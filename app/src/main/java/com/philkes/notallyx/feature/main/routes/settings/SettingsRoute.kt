@@ -891,6 +891,7 @@ fun SettingsRoute(
                                 settingsViewModel.preferences.notesSorting,
                                 newSort,
                             )
+                            activeDialogState = null
                         },
                     )
             },

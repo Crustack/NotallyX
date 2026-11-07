@@ -17,6 +17,7 @@ import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ActivityScenario
@@ -25,17 +26,25 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.preference.NotesSort
+import com.philkes.notallyx.core.preference.NotesSortBy
+import com.philkes.notallyx.core.preference.NotesView
+import com.philkes.notallyx.core.preference.SortDirection
 import com.philkes.notallyx.core.ui.views.TestTags
+import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.feature.editor.refreshStatusBarPin
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.reminder.PinnedNotificationManager
+import com.philkes.notallyx.navigation.NotallyNavKey
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.appendText
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.createListItem
+import com.philkes.notallyx.test.navigateTo
 import com.philkes.notallyx.test.waitUntil
+import com.philkes.notallyx.test.waitUntilSettingsValue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -43,6 +52,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.FixMethodOrder
 import org.junit.Rule
@@ -346,6 +356,206 @@ class MainActivityTest : UiTestBase() {
             composeTestRule.onAllNodes(hasText("Work Meeting")).fetchSemanticsNodes().isNotEmpty()
         }
         composeTestRule.onNodeWithText("Work Meeting").assertIsDisplayed()
+
+        scenario.close()
+    }
+
+    @Test
+    fun sortNotesOrderDialog() {
+        // 1. Pre-fill database with test notes
+        val note1 =
+            createBaseNote(
+                title = "Alpha Note",
+                body = "Body 1",
+                timestamp = 1000L,
+                modifiedTimestamp = 3000L,
+                color = BaseNote.COLOR_DEFAULT,
+            )
+        val note2 =
+            createBaseNote(
+                title = "Beta Note",
+                body = "Body 2",
+                timestamp = 2000L,
+                modifiedTimestamp = 1000L,
+                color = "#FFFF00",
+            )
+        val note3 =
+            createBaseNote(
+                title = "Gamma Note",
+                body = "Body 3",
+                timestamp = 3000L,
+                modifiedTimestamp = 2000L,
+                color = "#FF0000",
+            )
+        runBlocking { database.getBaseNoteDao().insert(listOf(note1, note2, note3)) }
+
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        val notesSortedByLabel = context.getString(R.string.notes_sorted_by)
+        val titleLabel = context.getString(R.string.title)
+        val ascendingLabel = context.getString(R.string.ascending)
+        val descendingLabel = context.getString(R.string.descending)
+        val saveLabel = context.getString(R.string.save)
+
+        // 2. Navigate to Settings screen
+        composeTestRule.navigateTo(NotallyNavKey.Settings)
+
+        // 3. Open NotesSortDialog
+        composeTestRule.onNodeWithText(notesSortedByLabel).performScrollTo().performClick()
+
+        // 4. Select Title and Ascending in dialog
+        composeTestRule
+            .onNode(hasText(titleLabel) and hasAnyAncestor(isComposeDialog()))
+            .performClick()
+        composeTestRule
+            .onNode(hasText(ascendingLabel) and hasAnyAncestor(isComposeDialog()))
+            .performClick()
+        composeTestRule
+            .onNode(hasText(saveLabel) and hasAnyAncestor(isComposeDialog()))
+            .performClick()
+
+        // 5. Verify preferences and settings UI state
+        composeTestRule.waitUntilSettingsValue(
+            R.string.notes_sorted_by,
+            "$titleLabel ($ascendingLabel)",
+        )
+        assertEquals(
+            NotesSort(sortedBy = NotesSortBy.TITLE, sortDirection = SortDirection.ASC),
+            preferences.notesSorting.value,
+        )
+
+        // 6. Return to Notes main screen and verify items are ordered Title Ascending (Alpha < Beta
+        // < Gamma)
+        composeTestRule.navigateTo(NotallyNavKey.Notes)
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("Alpha Note")).fetchSemanticsNodes().isNotEmpty()
+        }
+        val alphaY =
+            composeTestRule.onNodeWithText("Alpha Note").fetchSemanticsNode().positionInRoot.y
+        val betaY =
+            composeTestRule.onNodeWithText("Beta Note").fetchSemanticsNode().positionInRoot.y
+        val gammaY =
+            composeTestRule.onNodeWithText("Gamma Note").fetchSemanticsNode().positionInRoot.y
+        assertTrue("Alpha ($alphaY) should be above Beta ($betaY)", alphaY < betaY)
+        assertTrue("Beta ($betaY) should be above Gamma ($gammaY)", betaY < gammaY)
+
+        // 7. Return to Settings, re-open dialog and change to Title and Descending
+        composeTestRule.navigateTo(NotallyNavKey.Settings)
+        composeTestRule.onNodeWithText(notesSortedByLabel).performScrollTo().performClick()
+
+        composeTestRule
+            .onNode(hasText(titleLabel) and hasAnyAncestor(isComposeDialog()))
+            .performClick()
+        composeTestRule
+            .onNode(hasText(descendingLabel) and hasAnyAncestor(isComposeDialog()))
+            .performClick()
+        composeTestRule
+            .onNode(hasText(saveLabel) and hasAnyAncestor(isComposeDialog()))
+            .performClick()
+
+        // 8. Verify updated preferences
+        composeTestRule.waitUntilSettingsValue(
+            R.string.notes_sorted_by,
+            "$titleLabel ($descendingLabel)",
+        )
+        assertEquals(
+            NotesSort(sortedBy = NotesSortBy.TITLE, sortDirection = SortDirection.DESC),
+            preferences.notesSorting.value,
+        )
+
+        // 9. Return to Notes main screen and verify items are ordered Title Descending (Gamma <
+        // Beta < Alpha)
+        composeTestRule.navigateTo(NotallyNavKey.Notes)
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("Gamma Note")).fetchSemanticsNodes().isNotEmpty()
+        }
+        val alphaY2 =
+            composeTestRule.onNodeWithText("Alpha Note").fetchSemanticsNode().positionInRoot.y
+        val betaY2 =
+            composeTestRule.onNodeWithText("Beta Note").fetchSemanticsNode().positionInRoot.y
+        val gammaY2 =
+            composeTestRule.onNodeWithText("Gamma Note").fetchSemanticsNode().positionInRoot.y
+        assertTrue("Gamma ($gammaY2) should be above Beta ($betaY2)", gammaY2 < betaY2)
+        assertTrue("Beta ($betaY2) should be above Alpha ($alphaY2)", betaY2 < alphaY2)
+
+        scenario.close()
+    }
+
+    @Test
+    fun toggleNotesViewMode() {
+        // 1. Seed database with test notes
+        runBlocking {
+            database
+                .getBaseNoteDao()
+                .insert(
+                    listOf(
+                        createBaseNote(title = "First Grid Note", body = "Grid Content 1"),
+                        createBaseNote(title = "Second Grid Note", body = "Grid Content 2"),
+                    )
+                )
+        }
+
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        val viewLabel = context.getString(R.string.view)
+        val gridLabel = context.getString(R.string.grid)
+        val listLabel = context.getString(R.string.list)
+        val saveLabel = context.getString(R.string.save)
+
+        // 2. Navigate to Settings
+        composeTestRule.navigateTo(NotallyNavKey.Settings)
+
+        // 3. Open View Mode selection dialog
+        composeTestRule.onNodeWithText(viewLabel).performScrollTo().performClick()
+
+        // 4. Select "Grid" mode and save
+        composeTestRule
+            .onNode(hasText(gridLabel) and hasAnyAncestor(isComposeDialog()))
+            .performClick()
+        composeTestRule
+            .onNode(hasText(saveLabel) and hasAnyAncestor(isComposeDialog()))
+            .performClick()
+
+        // 5. Verify preference updated to GRID
+        composeTestRule.waitUntilSettingsValue(R.string.view, R.string.grid)
+        assertEquals(NotesView.GRID, preferences.notesView.value)
+
+        // 6. Navigate back to Notes and verify cards are visible
+        composeTestRule.navigateTo(NotallyNavKey.Notes)
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText("First Grid Note"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("First Grid Note").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Second Grid Note").assertIsDisplayed()
+
+        // 7. Navigate back to Settings and switch back to "List" mode
+        composeTestRule.navigateTo(NotallyNavKey.Settings)
+        composeTestRule.onNodeWithText(viewLabel).performScrollTo().performClick()
+
+        composeTestRule
+            .onNode(hasText(listLabel) and hasAnyAncestor(isComposeDialog()))
+            .performClick()
+        composeTestRule
+            .onNode(hasText(saveLabel) and hasAnyAncestor(isComposeDialog()))
+            .performClick()
+
+        // 8. Verify preference updated to LIST
+        composeTestRule.waitUntilSettingsValue(R.string.view, R.string.list)
+        assertEquals(NotesView.LIST, preferences.notesView.value)
+
+        // 9. Navigate back to Notes screen and verify cards are displayed
+        composeTestRule.navigateTo(NotallyNavKey.Notes)
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText("First Grid Note"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("First Grid Note").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Second Grid Note").assertIsDisplayed()
 
         scenario.close()
     }

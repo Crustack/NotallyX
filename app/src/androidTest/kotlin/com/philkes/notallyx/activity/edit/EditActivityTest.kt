@@ -578,6 +578,7 @@ class EditActivityTest : UiTestBase() {
     fun moreOptions() {
         var note = createBaseNote(title = "Options Test Note", body = "Options Test Body")
         runBlocking {
+            database.clearAllTables()
             val id = database.getBaseNoteDao().insert(note)
             note = note.copy(id = id)
         }
@@ -616,15 +617,34 @@ class EditActivityTest : UiTestBase() {
 
             val scenario = ActivityScenario.launch(MainActivity::class.java)
 
+            val appNameLabel = context.getString(R.string.app_name)
             val moreOptionsLabel = context.getString(R.string.tap_for_more_options)
             val saveLabel = context.getString(R.string.save)
 
             // Open existing note
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Options Test Note"))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
+            }
             composeTestRule.onNodeWithText("Options Test Note").performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(moreOptionsLabel))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
+            }
 
             // 1. Change Color
             composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
             composeTestRule.onNodeWithText(context.getString(R.string.change_color)).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(BaseNote.COLOR_NEW))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
+            }
             composeTestRule.onNodeWithContentDescription(BaseNote.COLOR_NEW).performClick()
             composeTestRule.onNodeWithContentDescription(Color.CORAL.toColorString()).performClick()
             composeTestRule.onNodeWithText(saveLabel).performClick()
@@ -672,11 +692,11 @@ class EditActivityTest : UiTestBase() {
             composeTestRule.waitUntil(10_000) {
                 composeTestRule
                     .onAllNodes(hasContentDescription(context.getString(R.string.add_item)))
-                    .fetchSemanticsNodes()
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
                     .isNotEmpty() &&
                     composeTestRule
                         .onAllNodes(hasText("Options Test Body"))
-                        .fetchSemanticsNodes()
+                        .fetchSemanticsNodes(atLeastOneRootRequired = false)
                         .isNotEmpty()
             }
             composeTestRule.onNodeWithText("Options Test Body").assertIsDisplayed()
@@ -688,7 +708,7 @@ class EditActivityTest : UiTestBase() {
             composeTestRule.waitUntil(10_000) {
                 composeTestRule
                     .onAllNodes(hasContentDescription(context.getString(R.string.note)))
-                    .fetchSemanticsNodes()
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
                     .isNotEmpty()
             }
             composeTestRule
@@ -701,7 +721,7 @@ class EditActivityTest : UiTestBase() {
             composeTestRule.waitUntil(10_000) {
                 composeTestRule
                     .onAllNodes(hasText(ExportMimeType.TXT.name))
-                    .fetchSemanticsNodes()
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
                     .isNotEmpty()
             }
             composeTestRule.onNodeWithText(ExportMimeType.TXT.name).performClick()
@@ -736,58 +756,106 @@ class EditActivityTest : UiTestBase() {
             // 6. Duplicate
             composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
             composeTestRule.onNodeWithText(context.getString(R.string.duplicate)).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Options Test Note (Copy)"))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
+            }
             composeTestRule
                 .onNodeWithContentDescription(context.getString(R.string.back))
                 .performClick()
             composeTestRule.waitUntil(10_000) {
                 composeTestRule
                     .onAllNodes(hasText("Options Test Note"))
-                    .fetchSemanticsNodes()
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
                     .size == 1 &&
                     composeTestRule
                         .onAllNodes(hasText("Options Test Note (Copy)"))
-                        .fetchSemanticsNodes()
+                        .fetchSemanticsNodes(atLeastOneRootRequired = false)
                         .size == 1
             }
             composeTestRule.onNodeWithText("Options Test Note").performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(moreOptionsLabel))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
+            }
 
             // 7. Archive
             composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
             composeTestRule.onNodeWithText(context.getString(R.string.archive)).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(appNameLabel))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
+            }
 
             composeTestRule.navigateTo(NotallyNavKey.Archived)
             composeTestRule.waitUntil(10_000) {
                 composeTestRule
                     .onAllNodes(hasText("Options Test Note"))
-                    .fetchSemanticsNodes()
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
                     .isNotEmpty()
             }
             composeTestRule.onNodeWithText("Options Test Note").performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(moreOptionsLabel))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
+            }
 
             composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
             composeTestRule.onNodeWithText(context.getString(R.string.unarchive)).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(appNameLabel))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
+            }
 
             composeTestRule.navigateTo(NotallyNavKey.Notes)
             composeTestRule.waitUntil(10_000) {
                 composeTestRule
                     .onAllNodes(hasText("Options Test Note"))
-                    .fetchSemanticsNodes()
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
                     .isNotEmpty()
             }
             composeTestRule.onNodeWithText("Options Test Note").performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(moreOptionsLabel))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
+            }
 
             // 8. Delete
             composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
             composeTestRule.onNodeWithText(context.getString(R.string.delete)).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(appNameLabel))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
+            }
 
             composeTestRule.navigateTo(NotallyNavKey.Deleted)
             composeTestRule.waitUntil(10_000) {
                 composeTestRule
                     .onAllNodes(hasText("Options Test Note"))
-                    .fetchSemanticsNodes()
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
                     .isNotEmpty()
             }
             composeTestRule.onNodeWithText("Options Test Note").performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(moreOptionsLabel))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
+            }
 
             // 9. Delete Forever
             composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
@@ -798,9 +866,13 @@ class EditActivityTest : UiTestBase() {
 
             composeTestRule.waitUntil(10_000) {
                 composeTestRule
-                    .onAllNodes(hasText("Options Test Note"))
-                    .fetchSemanticsNodes()
-                    .isEmpty()
+                    .onAllNodes(hasContentDescription(appNameLabel))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty() &&
+                    composeTestRule
+                        .onAllNodes(hasText("Options Test Note"))
+                        .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                        .isEmpty()
             }
 
             scenario.close()

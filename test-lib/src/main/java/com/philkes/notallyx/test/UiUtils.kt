@@ -846,8 +846,16 @@ fun ComposeTestRule.waitUntilSettingsValue(
     timeoutMs: Long = 15_000L,
 ) {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
+    waitUntilSettingsValue(titleResId, context.getString(valueResId), timeoutMs)
+}
+
+fun ComposeTestRule.waitUntilSettingsValue(
+    titleResId: Int,
+    expectedText: String,
+    timeoutMs: Long = 15_000L,
+) {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
     val titleText = context.getString(titleResId)
-    val expectedText = context.getString(valueResId)
     val matcher = hasAnyChild(hasText(titleText)) and hasAnyChild(hasText(expectedText))
     val endTime = System.currentTimeMillis() + timeoutMs
     while (System.currentTimeMillis() < endTime) {

@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.SystemClock
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
@@ -17,6 +18,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.security.crypto.EncryptedSharedPreferences
@@ -36,6 +38,7 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getCurrentImagesDirectory
 import com.philkes.notallyx.core.common.extensions.putNavKey
+import com.philkes.notallyx.core.preference.NotesView
 import com.philkes.notallyx.core.ui.components.SampleNotes
 import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.ShadowContextImplMedia
@@ -118,9 +121,13 @@ class ScreenshotTests {
         // Clean up static mocks after each test
         clearStaticMockk(EncryptedSharedPreferences::class)
         runBlocking {
-            database.getBaseNoteDao().deleteFrom(Folder.ARCHIVED)
-            database.getBaseNoteDao().deleteFrom(Folder.NOTES)
-            database.getBaseNoteDao().deleteFrom(Folder.DELETED)
+            withContext(Dispatchers.IO) {
+                database.getBaseNoteDao().deleteFrom(Folder.ARCHIVED)
+                database.getBaseNoteDao().deleteFrom(Folder.NOTES)
+                database.getBaseNoteDao().deleteFrom(Folder.DELETED)
+                database.getLabelDao().deleteAll()
+                preferences.reset()
+            }
         }
     }
 
@@ -297,6 +304,13 @@ class ScreenshotTests {
                     .onNodeWithContentDescription(context.getString(R.string.back))
                     .performClick()
 
+                waitUntil(timeoutMs = 10_000) {
+                    ShadowLooper.idleMainLooper()
+                    runBlocking(Dispatchers.IO) {
+                        val savedNote = database.getBaseNoteDao().get(noteId)
+                        savedNote?.images?.size == 2 && savedNote.title.contains("Test Title")
+                    }
+                }
                 ShadowLooper.idleMainLooper()
             } finally {
                 Intents.release()
@@ -639,7 +653,7 @@ class ScreenshotTests {
             ShadowLooper.idleMainLooper()
 
             composeTestRule.waitUntil(10_000) {
-                notes.all { note ->
+                notes.any { note ->
                     composeTestRule
                         .onAllNodes(hasText(note.title))
                         .fetchSemanticsNodes()
@@ -658,9 +672,74 @@ class ScreenshotTests {
             notes.forEachIndexed { index, note ->
                 val noteIndex = "%02d".format(index + 1)
                 composeTestRule
+                    .onNode(hasScrollToNodeAction())
+                    .performScrollToNode(hasText(note.title))
+                composeTestRule.waitForIdle()
+                ShadowLooper.idleMainLooper()
+                composeTestRule
                     .onNode(hasText(note.title))
                     .captureRoboImage(
                         "${ScreenshotTests::class.java.simpleName}/notesOverview/${noteIndex}_card_$noteIndex.png"
+                    )
+            }
+        }
+    }
+
+    @Test
+    fun notesOverviewGrid() = runTest {
+        // Copy cat.jpg attachment to context.getCurrentImagesDirectory() for image preview
+        val mediaDir = context.getCurrentImagesDirectory().apply { if (!exists()) mkdirs() }
+        val catFile = File(mediaDir, "cat.jpg")
+        val catInput =
+            ScreenshotTests::class.java.classLoader?.getResourceAsStream("attachments/cat.jpg")
+                ?: File("src/androidTest/resources/attachments/cat.jpg")
+                    .takeIf { it.exists() }
+                    ?.inputStream()
+                ?: File("app/src/androidTest/resources/attachments/cat.jpg")
+                    .takeIf { it.exists() }
+                    ?.inputStream()
+
+        catInput?.use { input -> catFile.outputStream().use { output -> input.copyTo(output) } }
+
+        val notes =
+            listOf(
+                SampleNotes.LOREM_IPSUM_NOTE,
+                SampleNotes.LIST_NOTE,
+                SampleNotes.RICH_TEXT_NOTE,
+                SampleNotes.GENERATED_LIST_NOTE,
+            )
+
+        withContext(Dispatchers.IO) {
+            preferences.notesView.save(NotesView.GRID)
+            database.getBaseNoteDao().insert(notes)
+        }
+
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            ShadowLooper.idleMainLooper()
+
+            composeTestRule.waitUntil(10_000) {
+                notes.all { note ->
+                    composeTestRule
+                        .onAllNodes(hasText(note.title))
+                        .fetchSemanticsNodes()
+                        .isNotEmpty()
+                }
+            }
+
+            // 1. Capture the entire grid view
+            composeTestRule
+                .onRoot()
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/notesOverviewGrid/00_notes_overview_grid.png"
+                )
+
+            // 2. Capture each individual note card
+            notes.forEachIndexed { index, note ->
+                val noteIndex = "%02d".format(index + 1)
+                composeTestRule
+                    .onNode(hasText(note.title))
+                    .captureRoboImage(
+                        "${ScreenshotTests::class.java.simpleName}/notesOverviewGrid/${noteIndex}_card_$noteIndex.png"
                     )
             }
         }
