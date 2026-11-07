@@ -4,38 +4,37 @@ import android.app.Activity
 import android.app.Instrumentation
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog as isComposeDialog
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.core.net.toUri
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
-import androidx.test.espresso.action.ViewActions.longClick
-import androidx.test.espresso.action.ViewActions.typeText
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.contrib.RecyclerViewActions.actionOnItemAtPosition
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasType
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.R
-import com.philkes.notallyx.data.NotallyDatabase.Companion.DATABASE_NAME
-import com.philkes.notallyx.presentation.activity.main.MainActivity
-import com.philkes.notallyx.presentation.viewmodel.preference.PeriodicBackup
+import com.philkes.notallyx.core.common.extensions.SUBFOLDER_FILES
+import com.philkes.notallyx.core.common.extensions.getExternalBackupsDirectory
+import com.philkes.notallyx.core.database.NotallyDatabase.Companion.DATABASE_NAME
+import com.philkes.notallyx.core.preference.PeriodicBackup
+import com.philkes.notallyx.feature.main.MainActivity
+import com.philkes.notallyx.feature.migration.backup.ON_SAVE_BACKUP_FILE
+import com.philkes.notallyx.feature.migration.backup.copyDatabase
+import com.philkes.notallyx.feature.migration.backup.exportAsZip
 import com.philkes.notallyx.test.UiTestBase
-import com.philkes.notallyx.test.byContentDescription
-import com.philkes.notallyx.test.byId
-import com.philkes.notallyx.test.byText
-import com.philkes.notallyx.test.onPositionView
 import com.philkes.notallyx.test.waitUntil
-import com.philkes.notallyx.test.waitUntilSucceeds
-import com.philkes.notallyx.utils.SUBFOLDER_FILES
-import com.philkes.notallyx.utils.getExternalBackupsDirectory
 import java.io.File
 import kotlin.random.Random
 import kotlinx.coroutines.runBlocking
@@ -45,6 +44,7 @@ import net.lingala.zip4j.model.enums.CompressionLevel
 import org.hamcrest.Matchers.allOf
 import org.junit.Assert.assertTrue
 import org.junit.FixMethodOrder
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -53,10 +53,15 @@ import org.junit.runner.RunWith
 @FixMethodOrder
 class AutoBackupTest : UiTestBase() {
 
+    @get:Rule val composeTestRule = createEmptyComposeRule()
+
     @Test
     fun autoBackupOnNoteSave() {
         val backupDir = context.getExternalBackupsDirectory()
         backupDir.mkdirs()
+        val backupZipFile = File(backupDir, "$ON_SAVE_BACKUP_FILE.zip")
+        if (backupZipFile.exists()) backupZipFile.delete()
+
         preferences.backupsFolder.save(backupDir.toUri().toString())
         preferences.periodicBackups.save(PeriodicBackup(periodInDays = -1, maxBackups = 0))
         preferences.backupOnSave.save(true)
@@ -89,14 +94,21 @@ class AutoBackupTest : UiTestBase() {
             val scenario = ActivityScenario.launch(MainActivity::class.java)
 
             // 1. Create basic test note -> exit it to trigger and make sure auto backup was done
-            R.id.TakeNote.byId().perform(click())
-            R.id.EnterTitle.byId().perform(typeText("Basic Test Note"), closeSoftKeyboard())
-            R.id.EnterBody.byId()
-                .perform(typeText("This is a basic test note."), closeSoftKeyboard())
+            val takeNoteDesc = context.getString(R.string.take_note)
+            val titleDesc = context.getString(R.string.title)
+            val noteDesc = context.getString(R.string.note)
+            val backDesc = context.getString(R.string.back)
+            val addItemDesc = context.getString(R.string.add_item)
 
-            val backupZipFile = File(backupDir, "$ON_SAVE_BACKUP_FILE.zip")
+            composeTestRule.onNodeWithContentDescription(takeNoteDesc).performClick()
+            composeTestRule
+                .onNodeWithContentDescription(titleDesc)
+                .performTextInput("Basic Test Note")
+            composeTestRule
+                .onNodeWithContentDescription(noteDesc)
+                .performTextInput("This is a basic test note.")
 
-            toolbarBackButton.perform(click())
+            composeTestRule.onNodeWithContentDescription(backDesc).performClick()
 
             waitUntil(15_000L) { backupZipFile.exists() && backupZipFile.length() > 0 }
             val initialSize = backupZipFile.length()
@@ -104,25 +116,29 @@ class AutoBackupTest : UiTestBase() {
             assertTrue("Initial backup file should be a valid ZIP", initialZip.isValidZipFile)
 
             // 2. Go back into the note and add a huge attachment file
-            waitUntilSucceeds {
-                R.id.MainListView.byId()
-                    .onPositionView(0, withId(R.id.Title))
-                    .check(matches(withText("Basic Test Note")))
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Basic Test Note"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
             }
-            R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, click()))
+            composeTestRule.onNodeWithText("Basic Test Note").performClick()
 
-            R.string.add_item.byContentDescription().perform(click())
-            R.string.attach_file.byText().perform(click())
+            composeTestRule.onNodeWithContentDescription(addItemDesc).performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.attach_file)).performClick()
 
-            waitUntilSucceeds {
-                R.id.FilesPreview.byId().check(matches(isDisplayed()))
-                attachmentFileName.byText().check(matches(isDisplayed()))
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(attachmentFileName, substring = true))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
             }
+            composeTestRule.onNodeWithText(attachmentFileName, substring = true).assertIsDisplayed()
 
             val lastModifiedBeforeFirstSave = backupZipFile.lastModified()
 
             // 3. Exit the note and make sure auto backup was created (zip file should be larger)
-            toolbarBackButton.perform(click())
+            composeTestRule.onNodeWithContentDescription(backDesc).performClick()
 
             waitUntil(15_000L) {
                 backupZipFile.exists() &&
@@ -141,23 +157,55 @@ class AutoBackupTest : UiTestBase() {
             )
 
             // 4. Go back into the note and delete the attachment
-            waitUntilSucceeds {
-                R.id.MainListView.byId()
-                    .onPositionView(0, withId(R.id.Title))
-                    .check(matches(withText("Basic Test Note")))
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Basic Test Note"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
             }
-            R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, click()))
+            composeTestRule.onNodeWithText("Basic Test Note").performClick()
 
-            waitUntilSucceeds { R.id.FilesPreview.byId().check(matches(isDisplayed())) }
-            R.id.FilesPreview.byId().perform(actionOnItemAtPosition<ViewHolder>(0, longClick()))
-            R.string.delete.byText(withId(android.R.id.button1)).perform(click())
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(attachmentFileName, substring = true))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(attachmentFileName, substring = true).performTouchInput {
+                longClick()
+            }
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(
+                        hasText(context.getString(R.string.delete_file, attachmentFileName))
+                    )
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule
+                .onNode(
+                    hasText(context.getString(R.string.delete)) and
+                        hasAnyAncestor(isComposeDialog())
+                )
+                .performClick()
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(attachmentFileName, substring = true))
+                    .fetchSemanticsNodes()
+                    .isEmpty()
+            }
 
             val lastModifiedBeforeSecondSave = backupZipFile.lastModified()
 
             // 5. Exit the note and make sure auto backup was created (zip file becomes smaller)
-            toolbarBackButton.perform(click())
+            composeTestRule.onNodeWithContentDescription(backDesc).performClick()
 
-            waitUntil(15_000L) { backupZipFile.lastModified() > lastModifiedBeforeSecondSave }
+            waitUntil(15_000L) {
+                backupZipFile.lastModified() > lastModifiedBeforeSecondSave &&
+                    backupZipFile.length() < sizeWithAttachment
+            }
             val newSize = backupZipFile.length()
             assertTrue(
                 "Auto backup zip should become smaller after removing attachment (was $sizeWithAttachment, now $newSize)",
@@ -169,6 +217,7 @@ class AutoBackupTest : UiTestBase() {
             scenario.close()
         } finally {
             Intents.release()
+            attachmentFile.delete()
         }
     }
 
@@ -221,6 +270,8 @@ class AutoBackupTest : UiTestBase() {
         } finally {
             extractDir.deleteRecursively()
             testZip.delete()
+            largeFile.delete()
+            dbFile.delete()
         }
     }
 }
