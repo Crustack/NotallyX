@@ -14,7 +14,8 @@ The migration is structured into **phased, ordered modules**, starting with the 
    - ViewModels remain unchanged (using existing `StateFlow` and `CoroutineScope` flows), providing state directly to Composables using `collectAsStateWithLifecycle()`.
 
 2. **Single Source of Truth for Material 3 Styling**:
-   - Create a central Composable theme `NotallyXTheme` that bridges app colors, dynamic dark/light mode (`NotallyXPreferences`), and Material 3 design tokens (`colorScheme`, `typography`, `shapes`).
+   - Create a central Composable theme `NotallyXTheme` based directly on the app's existing themes defined in [`values/themes.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/values/themes.xml), [`values-night/themes.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/values-night/themes.xml) (including the **SuperDark** `#000000` pitch-black theme mode `AppTheme.SuperDark`), and [`colors.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/values/colors.xml).
+   - Dynamically map user theme selections from `NotallyXPreferences` (Light, Dark, and SuperDark/AMOLED) to Compose `lightColorScheme()` and `darkColorScheme()` definitions.
 
 3. **Visual & Behavioral Parity via Roborazzi**:
    - Support light/dark mode, edge-to-edge window insets, dynamic accent colors, and custom font scaling across all converted views.
@@ -51,9 +52,9 @@ graph TD
 
 #### 2. NotallyX Theme & Color Tokens
 - Create Composable theme in `com.philkes.notallyx.presentation.theme`:
-  - `NotallyXTheme.kt`: Maps `NotallyXPreferences` dark/light/black themes to Compose `ColorScheme`.
+  - `NotallyXTheme.kt`: Maps light, dark, and superdark theme modes based on [`values/themes.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/values/themes.xml), [`values-night/themes.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/values-night/themes.xml), and [`colors.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/values/colors.xml) (`AppTheme`, `AppTheme.SuperDark`, `md_theme_*`, `ContainerSuperDark`).
   - `Typography.kt`: Maps typography and font size preferences (`textSizeOverview`).
-  - `Color.kt`: M3 color palettes matching existing `colors.xml` and attr styles.
+  - `Color.kt`: M3 color palette constants mirroring [`colors.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/values/colors.xml) definitions.
 
 ---
 
@@ -197,9 +198,9 @@ Convert legacy Android RemoteViews widgets to **AndroidX Glance**:
 ## Ordered Execution Checklist
 
 ### Phase 0: Setup & Infrastructure
-- [ ] Add Compose dependencies and enable `compose = true` in [`app/build.gradle.kts`](file:///home/user/AndroidStudioProjects/NotallyX/app/build.gradle.kts).
-- [ ] Create `NotallyXTheme.kt`, `Typography.kt`, and `Color.kt` theme infrastructure.
-- [ ] Verify Gradle sync and build.
+- [x] Add Compose dependencies and enable `compose = true` in [`app/build.gradle.kts`](file:///home/user/AndroidStudioProjects/NotallyX/app/build.gradle.kts).
+- [x] Create `NotallyXTheme.kt`, `Typography.kt`, and `Color.kt` theme infrastructure mapping Light, Dark, and SuperDark themes from [`values/themes.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/values/themes.xml), [`values-night/themes.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/values-night/themes.xml), and [`colors.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/values/colors.xml).
+- [x] Verify Gradle sync and build.
 
 ### Phase 1: Small Reusable UI Views & List Item ViewHolders
 - [ ] Implement `DrawerHeaderView.kt` (`drawer_header.xml`).
