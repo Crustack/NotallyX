@@ -85,6 +85,7 @@ import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.core.ui.theme.contentColorFor
 import com.philkes.notallyx.data.model.Audio
+import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.ListItem
@@ -94,6 +95,12 @@ import com.philkes.notallyx.data.model.Repetition
 import com.philkes.notallyx.data.model.RepetitionTimeUnit
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.toColorString
+import com.philkes.notallyx.feature.editor.EditListAction
+import com.philkes.notallyx.feature.editor.EditListUiState
+import com.philkes.notallyx.feature.editor.EditNoteAction
+import com.philkes.notallyx.feature.editor.EditNoteUiState
+import com.philkes.notallyx.feature.editor.NoteActionHandler
+import com.philkes.notallyx.feature.editor.NoteModel
 import com.philkes.notallyx.feature.editor.formatting.TextFormattingBar
 import com.philkes.notallyx.feature.editor.formatting.TextFormattingBarActions
 import com.philkes.notallyx.feature.editor.formatting.TextFormattingState
@@ -792,6 +799,184 @@ internal fun EditNoteScreen(
 }
 
 @Composable
+fun EditNoteScreen(
+    state: EditNoteUiState,
+    onAction: (EditNoteAction) -> Unit,
+    modifier: Modifier = Modifier,
+    noteModel: NoteModel? = null,
+    actionHandler: NoteActionHandler? = null,
+) {
+    val context = LocalContext.current
+    val noteState =
+        remember(state) {
+            EditNoteState(
+                title = state.title,
+                bodyValue = state.bodyValue,
+                createdTimestamp = state.createdTimestamp,
+                modifiedTimestamp = state.modifiedTimestamp,
+                images = state.images,
+                mediaRoot = state.mediaRoot,
+                files = state.files,
+                audios = state.audios,
+                labels = state.labels,
+                reminders = state.reminders,
+                pinned = state.pinned,
+                viewMode = state.viewMode,
+                folder = state.folder,
+                type = state.type,
+                isPinnedToStatus = state.isPinnedToStatus,
+            )
+        }
+
+    val changeHandlers =
+        remember(onAction) {
+            object : EditChangeHandlers {
+                override fun onTitleChange(title: String) {
+                    onAction(EditNoteAction.TitleChanged(title))
+                }
+
+                override fun onBodyValueChange(bodyValue: TextFieldValue) {
+                    onAction(EditNoteAction.BodyChanged(bodyValue))
+                }
+
+                override fun onSearchQueryChange(query: String) {
+                    onAction(EditNoteAction.SearchQueryChanged(query))
+                }
+            }
+        }
+
+    val clickHandlers =
+        remember(onAction) {
+            object : EditClickHandlers {
+                override fun onBackClick() {
+                    onAction(EditNoteAction.BackClicked)
+                }
+
+                override fun onAddItemClick() {
+                    onAction(EditNoteAction.AddItemClicked)
+                }
+
+                override fun onMoreOptionsClick() {
+                    onAction(EditNoteAction.MoreOptionsClicked)
+                }
+
+                override fun onFormatClick() {
+                    onAction(EditNoteAction.ToggleFormattingMenu)
+                }
+
+                override fun onCloseFormattingClick() {
+                    onAction(EditNoteAction.CloseFormattingMenu)
+                }
+
+                override fun onActionClick(action: EditAction) {
+                    onAction(EditNoteAction.ActionClicked(action))
+                }
+
+                override fun onActionLongClick(action: EditAction) {
+                    onAction(EditNoteAction.ActionLongClicked(action))
+                }
+
+                override fun onUndoClick() {
+                    onAction(EditNoteAction.Undo)
+                }
+
+                override fun onRedoClick() {
+                    onAction(EditNoteAction.Redo)
+                }
+
+                override fun onBoldClick() {
+                    onAction(EditNoteAction.ToggleBold)
+                }
+
+                override fun onItalicClick() {
+                    onAction(EditNoteAction.ToggleItalic)
+                }
+
+                override fun onStrikethroughClick() {
+                    onAction(EditNoteAction.ToggleStrikethrough)
+                }
+
+                override fun onMonospaceClick() {
+                    onAction(EditNoteAction.ToggleMonospace)
+                }
+
+                override fun onLinkClick() {
+                    onAction(EditNoteAction.RequestLinkDialog)
+                }
+
+                override fun onLinkClicked(url: String, displayText: String, range: TextRange) {
+                    onAction(EditNoteAction.LinkClicked(url, displayText, range))
+                }
+
+                override fun onClearFormattingClick() {
+                    onAction(EditNoteAction.ClearFormatting)
+                }
+
+                override fun onImageClick(image: FileAttachment) {
+                    onAction(EditNoteAction.ImageClicked(image))
+                }
+
+                override fun onFileClick(file: FileAttachment) {
+                    onAction(EditNoteAction.FileClicked(file))
+                }
+
+                override fun onFileDelete(file: FileAttachment) {
+                    onAction(EditNoteAction.FileDelete(file))
+                }
+
+                override fun onAudioClick(audio: Audio) {
+                    onAction(EditNoteAction.AudioClicked(audio))
+                }
+
+                override fun onReminderClick(reminder: Reminder) {
+                    onAction(EditNoteAction.ReminderClicked(reminder))
+                }
+
+                override fun onNextSearchResult() {
+                    onAction(EditNoteAction.NextSearchResult)
+                }
+
+                override fun onPrevSearchResult() {
+                    onAction(EditNoteAction.PrevSearchResult)
+                }
+
+                override fun onCloseSearch() {
+                    onAction(EditNoteAction.CloseSearch)
+                }
+            }
+        }
+
+    val backgroundColor = Color(context.extractColor(state.color))
+
+    Box(modifier = modifier) {
+        EditNoteScreen(
+            noteState = noteState,
+            preferences = state.preferences,
+            searchState = state.searchState,
+            backgroundColor = backgroundColor,
+            canUndo = state.canUndo,
+            canRedo = state.canRedo,
+            isFormattingMenuVisible = state.isFormattingMenuVisible,
+            formattingState = state.formattingState,
+            changeHandlers = changeHandlers,
+            clickHandlers = clickHandlers,
+        )
+
+        if (noteModel != null) {
+            EditorDialogs(noteModel)
+            if (actionHandler != null) {
+                EditorBottomSheets(
+                    model = noteModel,
+                    actionHandler = actionHandler,
+                    backgroundColor =
+                        if (state.color != BaseNote.COLOR_DEFAULT) backgroundColor else null,
+                )
+            }
+        }
+    }
+}
+
+@Composable
 internal fun EditListScreen(
     noteState: EditNoteState,
     modifier: Modifier = Modifier,
@@ -1013,6 +1198,168 @@ internal fun EditListScreen(
             }
         },
     )
+}
+
+@Composable
+fun EditListScreen(
+    state: EditListUiState,
+    onAction: (EditListAction) -> Unit,
+    modifier: Modifier = Modifier,
+    noteModel: NoteModel? = null,
+    actionHandler: NoteActionHandler? = null,
+) {
+    val context = LocalContext.current
+    val noteState =
+        remember(state) {
+            EditNoteState(
+                title = state.title,
+                items = state.items,
+                checkedItems = state.checkedItems,
+                createdTimestamp = state.createdTimestamp,
+                modifiedTimestamp = state.modifiedTimestamp,
+                images = state.images,
+                mediaRoot = state.mediaRoot,
+                files = state.files,
+                audios = state.audios,
+                labels = state.labels,
+                reminders = state.reminders,
+                pinned = state.pinned,
+                viewMode = state.viewMode,
+                folder = state.folder,
+                type = state.type,
+                isPinnedToStatus = state.isPinnedToStatus,
+            )
+        }
+
+    val changeHandlers =
+        remember(onAction) {
+            object : EditChangeHandlers {
+                override fun onTitleChange(title: String) {
+                    onAction(EditListAction.TitleChanged(title))
+                }
+
+                override fun onItemTextChange(item: ListItem, text: String) {
+                    onAction(EditListAction.ItemTextChanged(item, text))
+                }
+
+                override fun onItemCheckedChange(item: ListItem, checked: Boolean) {
+                    onAction(EditListAction.ItemChecked(item, checked))
+                }
+
+                override fun onItemDelete(item: ListItem) {
+                    onAction(EditListAction.ItemDeleted(item))
+                }
+
+                override fun onItemSwipeRight(item: ListItem) {
+                    onAction(EditListAction.ItemSwipeRight(item))
+                }
+
+                override fun onItemSwipeLeft(item: ListItem) {
+                    onAction(EditListAction.ItemSwipeLeft(item))
+                }
+
+                override fun onItemMove(fromIndex: Int, toIndex: Int, originalItem: ListItem?) {
+                    onAction(EditListAction.ItemMove(fromIndex, toIndex, originalItem))
+                }
+
+                override fun onSearchQueryChange(query: String) {
+                    onAction(EditListAction.SearchQueryChanged(query))
+                }
+            }
+        }
+
+    val clickHandlers =
+        remember(onAction) {
+            object : EditClickHandlers {
+                override fun onBackClick() {
+                    onAction(EditListAction.BackClicked)
+                }
+
+                override fun onAddItemClick() {
+                    onAction(EditListAction.AddItemClicked)
+                }
+
+                override fun onMoreOptionsClick() {
+                    onAction(EditListAction.MoreOptionsClicked)
+                }
+
+                override fun onActionClick(action: EditAction) {
+                    onAction(EditListAction.ActionClicked(action))
+                }
+
+                override fun onActionLongClick(action: EditAction) {
+                    onAction(EditListAction.ActionLongClicked(action))
+                }
+
+                override fun onUndoClick() {
+                    onAction(EditListAction.Undo)
+                }
+
+                override fun onRedoClick() {
+                    onAction(EditListAction.Redo)
+                }
+
+                override fun onImageClick(image: FileAttachment) {
+                    onAction(EditListAction.ImageClicked(image))
+                }
+
+                override fun onFileClick(file: FileAttachment) {
+                    onAction(EditListAction.FileClicked(file))
+                }
+
+                override fun onFileDelete(file: FileAttachment) {
+                    onAction(EditListAction.FileDelete(file))
+                }
+
+                override fun onAudioClick(audio: Audio) {
+                    onAction(EditListAction.AudioClicked(audio))
+                }
+
+                override fun onReminderClick(reminder: Reminder) {
+                    onAction(EditListAction.ReminderClicked(reminder))
+                }
+
+                override fun onNextSearchResult() {
+                    onAction(EditListAction.NextSearchResult)
+                }
+
+                override fun onPrevSearchResult() {
+                    onAction(EditListAction.PrevSearchResult)
+                }
+
+                override fun onCloseSearch() {
+                    onAction(EditListAction.CloseSearch)
+                }
+            }
+        }
+
+    val backgroundColor = Color(context.extractColor(state.color))
+
+    Box(modifier = modifier) {
+        EditListScreen(
+            noteState = noteState,
+            preferences = state.preferences,
+            searchState = state.searchState,
+            backgroundColor = backgroundColor,
+            canUndo = state.canUndo,
+            canRedo = state.canRedo,
+            changeHandlers = changeHandlers,
+            clickHandlers = clickHandlers,
+            focusFirstItem = state.focusFirstItem,
+        )
+
+        if (noteModel != null) {
+            EditorDialogs(noteModel)
+            if (actionHandler != null) {
+                EditorBottomSheets(
+                    model = noteModel,
+                    actionHandler = actionHandler,
+                    backgroundColor =
+                        if (state.color != BaseNote.COLOR_DEFAULT) backgroundColor else null,
+                )
+            }
+        }
+    }
 }
 
 @Preview(showBackground = true)

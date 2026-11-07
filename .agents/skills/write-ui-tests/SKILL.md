@@ -36,7 +36,7 @@ In NotallyX, instrumented UI tests rely directly on Jetpack Compose UI Testing (
 
 * **Inherit from `UiTestBase`**: All UI test classes extend `UiTestBase`, which automatically handles context wrapping, database access, preference initialization, back button access, and runtime permission granting (`POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM`).
 * **Compose Test Rules**:
-  * Use `createEmptyComposeRule()` when launching activities manually via `ActivityScenario.launch(...)` (e.g., `EditActivityTest`, `LabelsRouteTest`).
+  * Use `createEmptyComposeRule()` when launching activities manually via `ActivityScenario.launch(...)` (e.g., `EditRouteTest`, `LabelsRouteTest`).
   * Use `createAndroidComposeRule<MainActivity>()` when testing screens or fragments hosted directly by `MainActivity` (e.g., `SettingsRouteTest`).
 * **Asynchronous Wait Helpers**: Use `composeTestRule.waitUntil(timeoutMs) { condition }` or global `waitUntil(timeoutMs) { condition }` to poll until asynchronous Room, StateFlow, or UI state changes complete.
 
@@ -85,7 +85,7 @@ class FeatureFragmentTest : UiTestBase() {
 
 ### 1. Matching Nodes with Localized String Resources
 
-Always look up strings dynamically through `context.getString(R.string.*)` rather than hardcoding raw UI string values. This ensures tests stay resilient against localization updates and matches existing tests like `EditActivityTest` and `SettingsRouteTest`.
+Always look up strings dynamically through `context.getString(R.string.*)` rather than hardcoding raw UI string values. This ensures tests stay resilient against localization updates and matches existing tests like `EditRouteTest` and `SettingsRouteTest`.
 
 ```kotlin
 val takeNoteLabel = context.getString(R.string.take_note)
@@ -307,7 +307,7 @@ composeTestRule.waitUntilSettingsValue(R.string.biometric_lock, R.string.disable
 
 ### Template 1: Activity UI Test (`ActivityScenario.launch` + `createEmptyComposeRule`)
 
-*Baseline from `EditActivityTest.kt`*
+*Baseline from `EditRouteTest.kt`*
 
 ```kotlin
 package com.philkes.notallyx.activity.edit
