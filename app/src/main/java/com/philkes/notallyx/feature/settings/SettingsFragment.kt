@@ -61,13 +61,13 @@ import com.philkes.notallyx.core.preference.Theme
 import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.core.security.AuthenticatorProvider
 import com.philkes.notallyx.core.ui.dialog.MenuDialog
-import com.philkes.notallyx.core.ui.extensions.dp
 import com.philkes.notallyx.core.ui.extensions.setCancelButton
 import com.philkes.notallyx.core.ui.extensions.setEnabledSecureFlag
 import com.philkes.notallyx.core.ui.extensions.setupImportProgressDialog
 import com.philkes.notallyx.core.ui.extensions.showAndFocus
 import com.philkes.notallyx.core.ui.extensions.showDialog
 import com.philkes.notallyx.core.ui.extensions.showToast
+import com.philkes.notallyx.core.ui.extensions.toDp
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.core.ui.views.TextWithIconAdapter
 import com.philkes.notallyx.feature.main.MainActivity
@@ -1113,7 +1113,7 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showEncryptDatabaseDialog() {
-        val padding = 20.dp
+        val padding = 20.toDp
         val layout =
             LinearLayout(requireContext()).apply {
                 orientation = LinearLayout.VERTICAL

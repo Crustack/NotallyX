@@ -6,7 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.TextView
-import com.philkes.notallyx.core.ui.extensions.dp
+import com.philkes.notallyx.core.ui.extensions.toDp
 
 class TextWithIconAdapter<T>(
     context: Context,
@@ -24,9 +24,9 @@ class TextWithIconAdapter<T>(
             }
             val item = getItem(position)!!
             setCompoundDrawablesRelativeWithIntrinsicBounds(getIconResId(item), 0, 0, 0)
-            setPaddingRelative(30.dp, paddingTop, paddingEnd, paddingBottom)
+            setPaddingRelative(30.toDp, paddingTop, paddingEnd, paddingBottom)
             text = getText(item)
-            compoundDrawablePadding = 10.dp
+            compoundDrawablePadding = 10.toDp
         }
     }
 }
