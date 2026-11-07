@@ -418,7 +418,7 @@ class EditListActivityTest : UiTestBase() {
         assertIsChild("Bananas")
 
         Log.d("ListItem", "Move Bananas List to Cherries")
-        // 6. Drag child item "Bananas" up below parent item "Cherries" (onto Dates)
+        // 6. Drag child item "Bananas" directly underneath parent item "Cherries" (onto Dates)
         composeTestRule.dragAndDropItem("Bananas", "Dates")
         composeTestRule.waitForIdle()
 
@@ -428,30 +428,131 @@ class EditListActivityTest : UiTestBase() {
         assertIsAbove("Dates", "Shopping List")
         assertIsAbove("Shopping List", "Apples")
 
-        // Assert parent/child status: "Bananas" becomes a child of "Cherries"
-        assertIsParent("Cherries")
-        assertIsChild("Bananas")
-        assertIsParent("Dates")
-        assertIsParent("Shopping List")
-        assertIsChild("Apples")
+        // Assert parent/child status: "Bananas" stays child, but now of "Cherries"
+        assertIsParent("Cherries", "Cherries")
+        assertIsChild("Bananas", "Cherries")
+        assertIsParent("Dates", "Cherries")
+        assertIsParent("Shopping List", "Cherries")
+        assertIsChild("Apples", "Cherries")
 
-        // 7. Swipe child item "Bananas" to the left to make it a parent item again
-        composeTestRule.swipeItemLeft("Bananas")
+        // 7. Drag child item "Apples" underneath child item "Bananas" of parent "Cherries" (onto
+        // Dates)
+        composeTestRule.dragAndDropItem("Apples", "Dates")
+        composeTestRule.waitForIdle()
 
-        // Assert updated item order: Cherries -> Bananas -> Dates -> Shopping List -> Apples
+        // Assert updated item order: Cherries -> Bananas -> Apples -> Dates -> Shopping List
         assertIsAbove("Cherries", "Bananas")
+        assertIsAbove("Bananas", "Apples")
+        assertIsAbove("Apples", "Dates")
+        assertIsAbove("Dates", "Shopping List")
+
+        // Assert parent/child status: "Apples" stays child, but now of "Cherries"
+        assertIsParent("Cherries", "Cherries")
+        assertIsChild("Bananas", "Cherries")
+        assertIsChild("Apples", "Cherries")
+        assertIsParent("Dates", "Cherries")
+        assertIsParent("Shopping List", "Cherries")
+
+        // 8. Drag child item "Bananas" to the very top (above Cherries) -> gets made into a parent
+        composeTestRule.dragAndDropItem("Bananas", "Cherries")
+        composeTestRule.waitForIdle()
+
+        // Assert updated item order: Bananas -> Cherries -> Apples -> Dates -> Shopping List
+        assertIsAbove("Bananas", "Cherries")
+        assertIsAbove("Cherries", "Apples")
+        assertIsAbove("Apples", "Dates")
+        assertIsAbove("Dates", "Shopping List")
+
+        // Assert parent/child status: "Bananas" is made into a parent
+        assertIsParent("Bananas", "Bananas")
+        assertIsParent("Cherries", "Bananas")
+        assertIsChild("Apples", "Bananas")
+        assertIsParent("Dates", "Bananas")
+        assertIsParent("Shopping List", "Bananas")
+
+        // 9. Drag parent with children directly under another parent:
+        // First make "Shopping List" a child under "Dates"
+        composeTestRule.swipeItemRight("Shopping List")
+        composeTestRule.waitForIdle()
+
+        assertIsParent("Dates", "Bananas")
+        assertIsChild("Shopping List", "Dates")
+
+        // Now drag parent "Cherries" (with child "Apples") directly under parent "Dates" (above
+        // Shopping List)
+        composeTestRule.dragAndDropItem("Cherries", "Dates")
+        composeTestRule.waitForIdle()
+
+        // Assert updated item order: Bananas -> Dates -> Cherries -> Apples -> Shopping List
+        assertIsAbove("Bananas", "Dates")
+        assertIsAbove("Dates", "Cherries")
+        assertIsAbove("Cherries", "Apples")
+        assertIsAbove("Apples", "Shopping List")
+
+        // Assert parent/child status: "Cherries" and its children ("Apples") become children of
+        // "Dates"
+        assertIsParent("Bananas", "Bananas")
+        assertIsParent("Dates", "Bananas")
+        assertIsChild("Cherries", "Dates")
+        assertIsChild("Apples", "Dates")
+        assertIsChild("Shopping List", "Dates")
+
+        // 10. Drag parent with children under the last child of another parent:
+        // Make Cherries a parent again with child Apples
+        composeTestRule.swipeItemLeft("Cherries")
+        composeTestRule.waitForIdle()
+        // Unindent Shopping List so it is an independent parent
+        composeTestRule.swipeItemLeft("Shopping List")
+        composeTestRule.waitForIdle()
+        // Make Dates a child of Bananas (so Dates is the last child of Bananas)
+        composeTestRule.swipeItemRight("Dates")
+        composeTestRule.waitForIdle()
+
+        // Drag Cherries (with child Apples) above Bananas
+        composeTestRule.dragAndDropItem("Cherries", "Bananas")
+        composeTestRule.waitForIdle()
+
+        assertIsAbove("Cherries", "Apples")
+        assertIsAbove("Apples", "Bananas")
         assertIsAbove("Bananas", "Dates")
         assertIsAbove("Dates", "Shopping List")
-        assertIsAbove("Shopping List", "Apples")
 
-        // Assert parent/child status: "Bananas" is now a parent item
-        assertIsParent("Cherries")
-        assertIsParent("Bananas")
-        assertIsParent("Dates")
-        assertIsParent("Shopping List")
-        assertIsChild("Apples")
+        // Drag parent "Cherries" (with child "Apples") under the last child of "Bananas" ("Dates")
+        composeTestRule.dragAndDropItem("Cherries", "Dates")
+        composeTestRule.waitForIdle()
 
-        // 8. Leave note and re-enter to verify changes were saved to ViewModel / Database
+        // Assert updated item order: Bananas -> Dates -> Cherries -> Apples -> Shopping List
+        assertIsAbove("Bananas", "Dates")
+        assertIsAbove("Dates", "Cherries")
+        assertIsAbove("Cherries", "Apples")
+        assertIsAbove("Apples", "Shopping List")
+
+        // Assert parent/child status: "Cherries" stays a parent with same child ("Apples")
+        assertIsParent("Bananas", "Bananas")
+        assertIsChild("Dates", "Bananas")
+        assertIsParent("Cherries", "Bananas")
+        assertIsChild("Apples", "Cherries")
+        assertIsParent("Shopping List", "Bananas")
+
+        // 11. Drag parent with children to last position:
+        // Drag parent "Cherries" (with child "Apples") down below "Shopping List" (the last item)
+        composeTestRule.dragAndDropItem("Cherries", "Shopping List")
+        composeTestRule.waitForIdle()
+
+        // Assert updated item order: Bananas -> Dates -> Shopping List -> Cherries -> Apples
+        assertIsAbove("Bananas", "Dates")
+        assertIsAbove("Dates", "Shopping List")
+        assertIsAbove("Shopping List", "Cherries")
+        assertIsAbove("Cherries", "Apples")
+
+        // Assert parent/child status: "Cherries" stays a parent with same child ("Apples")
+        assertIsParent("Bananas", "Bananas")
+        assertIsChild("Dates", "Bananas")
+        assertIsParent("Shopping List", "Bananas")
+        assertIsParent("Cherries", "Bananas")
+        assertIsChild("Apples", "Cherries")
+
+        // 12. Leave note and re-enter to verify changes were saved to ViewModel / Database
         composeTestRule.onNodeWithContentDescription(backLabel).performClick()
         composeTestRule.waitUntil(10_000) {
             composeTestRule
@@ -464,18 +565,19 @@ class EditListActivityTest : UiTestBase() {
             composeTestRule.onAllNodes(itemNode("Shopping List")).fetchSemanticsNodes().isNotEmpty()
         }
 
-        // Assert final item order after re-entering
-        assertIsAbove("Cherries", "Bananas")
+        // Assert final item order after re-entering: Bananas -> Dates -> Shopping List -> Cherries
+        // -> Apples
         assertIsAbove("Bananas", "Dates")
         assertIsAbove("Dates", "Shopping List")
-        assertIsAbove("Shopping List", "Apples")
+        assertIsAbove("Shopping List", "Cherries")
+        assertIsAbove("Cherries", "Apples")
 
         // Assert final parent/child status after re-entering
-        assertIsParent("Cherries")
-        assertIsParent("Bananas")
-        assertIsParent("Dates")
-        assertIsParent("Shopping List")
-        assertIsChild("Apples")
+        assertIsParent("Bananas", "Bananas")
+        assertIsChild("Dates", "Bananas")
+        assertIsParent("Shopping List", "Bananas")
+        assertIsParent("Cherries", "Bananas")
+        assertIsChild("Apples", "Cherries")
 
         scenario.close()
     }
@@ -1283,5 +1385,297 @@ class EditListActivityTest : UiTestBase() {
         composeTestRule.onNode(itemCheckbox("Parent 2")).scrollToIfNeeded().assertIsOn()
 
         scenario.close()
+    }
+
+    @Test
+    fun listItemSort() {
+        val noteTitle = "Sorting Test Note"
+        val itemsList =
+            listOf(
+                createListItem(
+                    body = "Fruits",
+                    checked = false,
+                    isChild = false,
+                    order = 0,
+                    id = 0,
+                ),
+                createListItem(
+                    body = "Apples",
+                    checked = false,
+                    isChild = true,
+                    order = 1,
+                    id = 1,
+                ),
+                createListItem(
+                    body = "Bananas",
+                    checked = false,
+                    isChild = true,
+                    order = 2,
+                    id = 2,
+                ),
+                createListItem(
+                    body = "Bread",
+                    checked = false,
+                    isChild = false,
+                    order = 3,
+                    id = 3,
+                ),
+            )
+        val note =
+            createBaseNote(
+                title = noteTitle,
+                type = Type.LIST,
+                items = itemsList,
+            )
+        runBlocking { database.getBaseNoteDao().insert(note) }
+
+        try {
+            // ---------------------------------------------------------------
+            // 1. Test ListItemSort.NO_AUTO_SORT: items remain in their original positions
+            // ---------------------------------------------------------------
+            preferences.listItemSorting.save(ListItemSort.NO_AUTO_SORT)
+            val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+            val backLabel = context.getString(R.string.back)
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(noteTitle).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(itemNode("Fruits")).fetchSemanticsNodes().isNotEmpty()
+            }
+
+            // Verify initial order and hierarchy: Fruits -> Apples (child) -> Bananas (child) ->
+            // Bread (parent)
+            assertIsParent("Fruits", "Fruits")
+            assertIsChild("Apples", "Fruits")
+            assertIsChild("Bananas", "Fruits")
+            assertIsParent("Bread", "Fruits")
+
+            assertIsAbove("Fruits", "Apples")
+            assertIsAbove("Apples", "Bananas")
+            assertIsAbove("Bananas", "Bread")
+
+            // Check child "Apples"
+            composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().performClick()
+            composeTestRule.onNode(itemCheckbox("Fruits")).scrollToIfNeeded().assertIsOff()
+            composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().assertIsOn()
+            composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().assertIsOff()
+
+            // In NO_AUTO_SORT, checked child remains in place under parent
+            assertIsAbove("Fruits", "Apples")
+            assertIsAbove("Apples", "Bananas")
+            assertIsAbove("Bananas", "Bread")
+            assertIsChild("Apples", "Fruits")
+
+            // Check parent "Fruits" directly (which checks parent and all children)
+            composeTestRule.onNode(itemCheckbox("Fruits")).scrollToIfNeeded().performClick()
+            composeTestRule.onNode(itemCheckbox("Fruits")).scrollToIfNeeded().assertIsOn()
+            composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().assertIsOn()
+            composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().assertIsOn()
+            composeTestRule.onNode(itemCheckbox("Bread")).scrollToIfNeeded().assertIsOff()
+
+            // With NO_AUTO_SORT, checked parent and children stay in place; Bread remains at the
+            // bottom
+            assertIsAbove("Fruits", "Apples")
+            assertIsAbove("Apples", "Bananas")
+            assertIsAbove("Bananas", "Bread")
+
+            // Uncheck parent "Fruits" (which unchecks parent and all children) to reset
+            composeTestRule.onNode(itemCheckbox("Fruits")).scrollToIfNeeded().performClick()
+            composeTestRule.onNode(itemCheckbox("Fruits")).scrollToIfNeeded().assertIsOff()
+            composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().assertIsOff()
+            composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().assertIsOff()
+
+            assertIsAbove("Fruits", "Apples")
+            assertIsAbove("Apples", "Bananas")
+            assertIsAbove("Bananas", "Bread")
+
+            // Exit back to MainActivity
+            composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+            }
+
+            // ---------------------------------------------------------------
+            // 2. Test ListItemSort.AUTO_SORT_BY_CHECKED: checked items move to bottom sorted by
+            // list order
+            // ---------------------------------------------------------------
+            preferences.listItemSorting.save(ListItemSort.AUTO_SORT_BY_CHECKED)
+
+            composeTestRule.onNodeWithText(noteTitle).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(itemNode("Fruits")).fetchSemanticsNodes().isNotEmpty()
+            }
+
+            // 2a. Partially check parent: checking only child "Apples"
+            composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().performClick()
+            composeTestRule.onNode(itemCheckbox("Fruits")).scrollToIfNeeded().assertIsOff()
+            composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().assertIsOn()
+            composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().assertIsOff()
+
+            // When only a child is checked, the parent is partially checked and must NOT move to
+            // the bottom.
+            // "Apples" stays under "Fruits" in the active section above "Bread"!
+            assertIsAbove("Fruits", "Apples")
+            assertIsAbove("Apples", "Bananas")
+            assertIsAbove("Bananas", "Bread")
+            assertIsChild("Apples", "Fruits")
+
+            // 2b. Check remaining child "Bananas": now all children are checked, so parent
+            // automatically checks
+            composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().performClick()
+            composeTestRule.onNode(itemCheckbox("Fruits")).scrollToIfNeeded().assertIsOn()
+            composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().assertIsOn()
+            composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().assertIsOn()
+            composeTestRule.onNode(itemCheckbox("Bread")).scrollToIfNeeded().assertIsOff()
+
+            // Active item "Bread" is now ABOVE the fully checked parent "Fruits" and its children!
+            assertIsAbove("Bread", "Fruits")
+            assertIsAbove("Fruits", "Apples")
+            assertIsAbove("Apples", "Bananas")
+            assertIsChild("Apples", "Fruits")
+            assertIsChild("Bananas", "Fruits")
+
+            // 2c. Unchecking child "Apples" unchecks parent and returns the entire group to active
+            // items
+            composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().performClick()
+            composeTestRule.onNode(itemCheckbox("Fruits")).scrollToIfNeeded().assertIsOff()
+            composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().assertIsOff()
+            composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().assertIsOn()
+
+            // Entire group is back in active items above "Bread"
+            assertIsAbove("Fruits", "Apples")
+            assertIsAbove("Apples", "Bananas")
+            assertIsAbove("Bananas", "Bread")
+            assertIsChild("Apples", "Fruits")
+            assertIsChild("Bananas", "Fruits")
+
+            // 2d. Check standalone item "Bread" FIRST, then check parent "Fruits" SECOND
+            composeTestRule.onNode(itemCheckbox("Bread")).scrollToIfNeeded().performClick()
+            composeTestRule.onNode(itemCheckbox("Bread")).scrollToIfNeeded().assertIsOn()
+            assertIsAbove("Bananas", "Bread")
+
+            composeTestRule.onNode(itemCheckbox("Fruits")).scrollToIfNeeded().performClick()
+            composeTestRule.onNode(itemCheckbox("Fruits")).scrollToIfNeeded().assertIsOn()
+            composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().assertIsOn()
+            composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().assertIsOn()
+
+            // Under AUTO_SORT_BY_CHECKED, checked items are ordered by original list index:
+            // "Fruits" (0) -> "Apples" (1) -> "Bananas" (2) -> "Bread" (3), even though Bread was
+            // checked first!
+            assertIsAbove("Fruits", "Apples")
+            assertIsAbove("Apples", "Bananas")
+            assertIsAbove("Bananas", "Bread")
+            assertIsChild("Apples", "Fruits")
+            assertIsChild("Bananas", "Fruits")
+
+            // Uncheck "Fruits" and "Bread" to reset
+            composeTestRule.onNode(itemCheckbox("Fruits")).scrollToIfNeeded().performClick()
+            composeTestRule.onNode(itemCheckbox("Bread")).scrollToIfNeeded().performClick()
+
+            assertIsAbove("Fruits", "Apples")
+            assertIsAbove("Apples", "Bananas")
+            assertIsAbove("Bananas", "Bread")
+
+            // Exit back to MainActivity
+            composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+            }
+
+            // ---------------------------------------------------------------
+            // 3. Test ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP: checked items move to bottom
+            // sorted by checked timestamp descending
+            // ---------------------------------------------------------------
+            preferences.listItemSorting.save(ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
+
+            composeTestRule.onNodeWithText(noteTitle).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(itemNode("Fruits")).fetchSemanticsNodes().isNotEmpty()
+            }
+
+            // 3a. Check standalone item "Bread" FIRST (t1)
+            composeTestRule.onNode(itemCheckbox("Bread")).scrollToIfNeeded().performClick()
+            composeTestRule.onNode(itemCheckbox("Bread")).scrollToIfNeeded().assertIsOn()
+            assertIsAbove("Bananas", "Bread")
+
+            // 3b. Check parent "Fruits" SECOND (t2 > t1) -> Fruits group has higher timestamp than
+            // Bread
+            composeTestRule.onNode(itemCheckbox("Fruits")).scrollToIfNeeded().performClick()
+            composeTestRule.onNode(itemCheckbox("Fruits")).scrollToIfNeeded().assertIsOn()
+            composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().assertIsOn()
+            composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().assertIsOn()
+
+            // Since Fruits was checked after Bread, Fruits + children are ABOVE Bread in checked
+            // items
+            assertIsAbove("Fruits", "Apples")
+            assertIsAbove("Apples", "Bananas")
+            assertIsAbove("Bananas", "Bread")
+            assertIsChild("Apples", "Fruits")
+            assertIsChild("Bananas", "Fruits")
+
+            // 3c. Uncheck and re-check "Bread" THIRD (t3 > t2) -> Bread is now the newest checked
+            // item!
+            composeTestRule.onNode(itemCheckbox("Bread")).scrollToIfNeeded().performClick()
+            composeTestRule.onNode(itemCheckbox("Bread")).scrollToIfNeeded().assertIsOff()
+            // When Bread is unchecked, it moves back to active items above Fruits
+            assertIsAbove("Bread", "Fruits")
+
+            composeTestRule.onNode(itemCheckbox("Bread")).scrollToIfNeeded().performClick()
+            composeTestRule.onNode(itemCheckbox("Bread")).scrollToIfNeeded().assertIsOn()
+
+            // Now Bread's timestamp is newer than Fruits, so Bread is ABOVE Fruits in the checked
+            // section!
+            assertIsAbove("Bread", "Fruits")
+            assertIsAbove("Fruits", "Apples")
+            assertIsAbove("Apples", "Bananas")
+            assertIsChild("Apples", "Fruits")
+            assertIsChild("Bananas", "Fruits")
+
+            // 3d. Uncheck child "Bananas": Fruits automatically unchecks and moves group back to
+            // active section
+            composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().performClick()
+            composeTestRule.onNode(itemCheckbox("Fruits")).scrollToIfNeeded().assertIsOff()
+            composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().assertIsOff()
+
+            // Group is back in active items above checked "Bread"
+            assertIsAbove("Fruits", "Apples")
+            assertIsAbove("Apples", "Bananas")
+            assertIsAbove("Bananas", "Bread")
+            assertIsChild("Apples", "Fruits")
+            assertIsChild("Bananas", "Fruits")
+
+            // Exit back to MainActivity and re-open to verify persistent state & hierarchy
+            composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+            }
+
+            composeTestRule.onNodeWithText(noteTitle).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(itemNode("Fruits")).fetchSemanticsNodes().isNotEmpty()
+            }
+
+            assertIsAbove("Fruits", "Apples")
+            assertIsAbove("Apples", "Bananas")
+            assertIsAbove("Bananas", "Bread")
+            assertIsChild("Apples", "Fruits")
+            assertIsChild("Bananas", "Fruits")
+            composeTestRule.onNode(itemCheckbox("Fruits")).scrollToIfNeeded().assertIsOff()
+            composeTestRule.onNode(itemCheckbox("Apples")).scrollToIfNeeded().assertIsOn()
+            composeTestRule.onNode(itemCheckbox("Bananas")).scrollToIfNeeded().assertIsOff()
+            composeTestRule.onNode(itemCheckbox("Bread")).scrollToIfNeeded().assertIsOn()
+
+            composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+            }
+
+            scenario.close()
+        } finally {
+            preferences.listItemSorting.save(ListItemSort.AUTO_SORT_BY_CHECKED)
+        }
     }
 }
