@@ -1,51 +1,37 @@
 package com.philkes.notallyx.core.preference
 
 import android.content.Context
-import android.content.SharedPreferences
-import android.content.SharedPreferences.Editor
 import com.philkes.notallyx.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.Serializable
 
-class NotesSortPreference(sharedPreferences: SharedPreferences) :
-    BasePreference<NotesSort>(sharedPreferences, NotesSort(), R.string.notes_sorted_by) {
-
-    override fun getValue(sharedPreferences: SharedPreferences): NotesSort {
-        val sortedByName = sharedPreferences.getString(SORTED_BY_KEY, null)
-        val sortedBy =
-            sortedByName?.let {
-                try {
-                    NotesSortBy.fromValue(sortedByName)
-                } catch (_: Exception) {
-                    defaultValue.sortedBy
-                }
-            } ?: defaultValue.sortedBy
-        val sortDirectionName = sharedPreferences.getString(SORT_DIRECTION_KEY, null)
-        val sortDirection =
-            sortDirectionName?.let {
-                try {
-                    SortDirection.valueOf(sortDirectionName)
-                } catch (_: Exception) {
-                    defaultValue.sortDirection
-                }
-            } ?: defaultValue.sortDirection
-        return NotesSort(sortedBy, sortDirection)
-    }
-
-    override fun Editor.put(value: NotesSort) {
-        putString(SORTED_BY_KEY, value.sortedBy.value)
-        putString(SORT_DIRECTION_KEY, value.sortDirection.name)
-    }
-
+class NotesSortPreference(
+    flow: StateFlow<NotesSort>,
+    onUpdate: suspend (NotesSort) -> Unit,
+    scope: CoroutineScope,
+) :
+    PreferenceHolder<NotesSort>(
+        key = SORTED_BY_KEY,
+        defaultValue = NotesSort(),
+        titleResId = R.string.notes_sorted_by,
+        flow = flow,
+        onUpdate = onUpdate,
+        scope = scope,
+    ) {
     companion object {
         const val SORTED_BY_KEY = "notesSorting"
         const val SORT_DIRECTION_KEY = "notesSortingDirection"
     }
 }
 
+@Serializable
 enum class SortDirection(val textResId: Int, val iconResId: Int) {
     ASC(R.string.ascending, R.drawable.arrow_upward),
     DESC(R.string.descending, R.drawable.arrow_downward),
 }
 
+@Serializable
 enum class NotesSortBy(val textResId: Int, val iconResId: Int, val value: String) {
     TITLE(R.string.title, R.drawable.sort_by_alpha, "autoSortByTitle"),
     CREATION_DATE(R.string.creation_date, R.drawable.calendar_add_on, "autoSortByCreationDate"),
@@ -59,6 +45,7 @@ enum class NotesSortBy(val textResId: Int, val iconResId: Int, val value: String
     }
 }
 
+@Serializable
 data class NotesSort(
     val sortedBy: NotesSortBy = NotesSortBy.CREATION_DATE,
     val sortDirection: SortDirection = SortDirection.DESC,

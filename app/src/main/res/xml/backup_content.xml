@@ -14,4 +14,10 @@
     <exclude
         domain="database"
         path="." />
+    <exclude
+        domain="file"
+        path="datastore/notallyx_secure_preferences.bin" />
+    <exclude
+        domain="sharedpref"
+        path="notallyx_keyset_prefs.xml" />
 </full-backup-content>
