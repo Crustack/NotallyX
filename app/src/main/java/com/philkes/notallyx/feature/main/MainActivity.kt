@@ -103,7 +103,6 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                 onRequestNotificationPermission = {
                     checkNotificationPermission(
                         NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
-                        alsoCheckAlarmPermission = false,
                         onShowRationale = { msgResId, onConfirm ->
                             mainActivityViewModel.activeDialog.value =
                                 MainActiveDialog.Confirm(
@@ -295,11 +294,9 @@ class MainActivity : LockedActivity<ComposeBinding>() {
         val proceed: () -> Unit = { mainActivityViewModel.startObserving() }
         if (preferences.dataSchemaId.value < LATEST_DATA_SCHEMA) {
             lifecycleScope.launch {
-                setMigrationProgress(
-                    MigrationProgress(R.string.migrating_data, indeterminate = true)
-                )
+                setMigrationProgress(MigrationProgress(R.string.migrating_data))
                 val migrationResult = application.runMigrations { titleId ->
-                    setMigrationProgress(MigrationProgress(titleId, indeterminate = true))
+                    setMigrationProgress(MigrationProgress(titleId))
                 }
                 setMigrationProgress(MigrationProgress(R.string.migrating_data, inProgress = false))
                 if (migrationResult.showBiometricWarning) {

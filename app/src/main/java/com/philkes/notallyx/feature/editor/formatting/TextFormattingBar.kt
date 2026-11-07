@@ -208,7 +208,5 @@ fun TextFormattingBar(
 @Preview(showBackground = true)
 @Composable
 private fun TextFormattingBarPreview() {
-    NotallyXTheme {
-        TextFormattingBar(formattingState = TextFormattingState(isBold = true, isItalic = false))
-    }
+    NotallyXTheme { TextFormattingBar(formattingState = TextFormattingState(isBold = true)) }
 }

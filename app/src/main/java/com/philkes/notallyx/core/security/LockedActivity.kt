@@ -92,10 +92,7 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
                         if (!isExceptionAlreadyBeingHandled(time)) {
                             EXCEPTION_HANDLER_MUTEX_LAST_TIMESTAMP = time
                             setMigrationProgress(
-                                MigrationProgress(
-                                    R.string.migration_splitting_notes,
-                                    indeterminate = true,
-                                )
+                                MigrationProgress(R.string.migration_splitting_notes)
                             )
                             log(
                                 TAG,
@@ -162,11 +159,8 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
 
     private fun hasToAuthenticateWithBiometric(): Boolean {
         return ContextCompat.getSystemService(this, KeyguardManager::class.java)?.let {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1 &&
                 (it.isDeviceLocked || notallyXApplication.locked.value)
-            } else {
-                false
-            }
         } ?: false
     }
 

@@ -272,7 +272,6 @@ private fun NotesListScreenPreview() {
             onSearchKeywordChange = {},
             selectedFolder = Folder.NOTES,
             onFolderSelected = {},
-            isGrid = false,
         )
     }
 }

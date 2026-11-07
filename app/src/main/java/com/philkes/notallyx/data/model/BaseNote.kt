@@ -62,8 +62,8 @@ data class BaseNote(
     }
 
     fun equalContents(other: BaseNote?): Boolean {
-        if (other == null) return false
-        return type == other.type &&
+        return other != null &&
+            type == other.type &&
             title == other.title &&
             body == other.body &&
             spans == other.spans &&

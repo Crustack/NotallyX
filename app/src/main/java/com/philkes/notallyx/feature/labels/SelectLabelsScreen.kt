@@ -91,7 +91,6 @@ internal fun SelectLabelsScreen(
     if (dialogState is LabelDialogState.Add) {
         TextInputDialog(
             title = stringResource(R.string.add_label),
-            initialValue = "",
             onDismissRequest = onDismissDialog,
             onConfirm = { value ->
                 if (value.isNotEmpty()) {

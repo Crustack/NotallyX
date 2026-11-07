@@ -109,7 +109,7 @@ import java.security.SecureRandom
 fun onLabelItem(labelText: String): ViewInteraction =
     onView(
         allOf(
-            withId(com.philkes.notallyx.R.id.LabelText),
+            withId(R.id.LabelText),
             withText(labelText),
             withParent(withParent(withId(R.id.MainListView))),
             isDisplayed(),
@@ -1228,9 +1228,7 @@ private fun AnnotatedString.hasLinkAtIndex(charIndex: Int, expectedUrl: String? 
         val linkUrl = (annotation.item as? LinkAnnotation.Url)?.url
         linkUrl != null && (expectedUrl == null || linkUrl == expectedUrl)
     }
-    if (hasLinkAnnotation) return true
-
-    return false
+    return hasLinkAnnotation
 }
 
 // 6. Link Assertion

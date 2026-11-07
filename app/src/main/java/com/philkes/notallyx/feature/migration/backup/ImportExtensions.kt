@@ -139,7 +139,7 @@ fun ContextWrapper.readBaseNotes(
 
         val total = baseNoteCursor.count
         var counter = 1
-        progress?.value = ImportProgress(0, total)
+        progress?.value = ImportProgress(total = total)
         val originalIds = ArrayList<Long>(baseNoteCursor.count)
         val (baseNotes, corrupted) =
             baseNoteCursor.toList { cursor ->
@@ -182,12 +182,12 @@ suspend fun ContextWrapper.importZip(
                     zipFile.setPassword(zipPassword.toCharArray())
                 }
                 zipFile.extractFile(
-                    NotallyDatabase.DATABASE_NAME,
+                    DATABASE_NAME,
                     databaseFolder.path,
-                    NotallyDatabase.DATABASE_NAME,
+                    DATABASE_NAME,
                 )
 
-                var dbFile = File(databaseFolder, NotallyDatabase.DATABASE_NAME)
+                var dbFile = File(databaseFolder, DATABASE_NAME)
                 val state = SQLCipherUtils.getDatabaseState(this@importZip, dbFile)
                 if (state == SQLCipherUtils.State.ENCRYPTED) {
                     val fallbackEncryptionKey =
@@ -195,8 +195,7 @@ suspend fun ContextWrapper.importZip(
                             .fallbackDatabaseEncryptionKey
                             .value
                     if (fallbackEncryptionKey != null) {
-                        val dbFileDecrypted =
-                            File(databaseFolder, "${NotallyDatabase.DATABASE_NAME}-decrypted")
+                        val dbFileDecrypted = File(databaseFolder, "${DATABASE_NAME}-decrypted")
                         decryptDatabase(
                             this@importZip,
                             fallbackEncryptionKey,
@@ -218,7 +217,7 @@ suspend fun ContextWrapper.importZip(
                     baseNotes.fold(0) { acc, baseNote ->
                         acc + baseNote.images.size + baseNote.files.size + baseNote.audios.size
                     }
-                progress?.value = ImportProgress(0, total, stage = ImportStage.IMPORT_FILES)
+                progress?.value = ImportProgress(total = total, stage = ImportStage.IMPORT_FILES)
 
                 val current = AtomicInteger(1)
                 val imageRoot = getCurrentImagesDirectory()
@@ -358,8 +357,7 @@ private fun Cursor.toBaseNote(sourceDb: SQLiteDatabase): BaseNote {
                 sourceDb.rawQuery(
                     "SELECT substr(body, 1, ?) AS body FROM BaseNote WHERE id = ?",
                     arrayOf(
-                        com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
-                            .toString(),
+                        MAX_BODY_CHAR_LENGTH.toString(),
                         id.toString(),
                     ),
                 )
@@ -379,13 +377,12 @@ private fun Cursor.toBaseNote(sourceDb: SQLiteDatabase): BaseNote {
 
     val isPinnedToStatusColumn = getColumnIndex("isPinnedToStatus")
     val pinnedToStatusBar =
-        if (isPinnedToStatusColumn != -1) {
+        isPinnedToStatusColumn != -1 &&
             when (getInt(isPinnedToStatusColumn)) {
                 0 -> false
                 1 -> true
                 else -> false
             }
-        } else false
 
     val type = Type.valueOfOrDefault(typeTmp)
     val folder = Folder.valueOfOrDefault(folderTmp)

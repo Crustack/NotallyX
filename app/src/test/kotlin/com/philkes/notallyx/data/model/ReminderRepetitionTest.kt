@@ -194,8 +194,8 @@ class ReminderRepetitionTest {
         val reminder = Reminder(1, start, repetition)
 
         // From March 30
-        val from = createDate(2023, Calendar.MARCH, 15, 9, 0)
-        val expected = createDate(2023, Calendar.MAY, 13, 10, 0)
+        val from = createDate(2023, Calendar.MARCH, 15, 9)
+        val expected = createDate(2023, Calendar.MAY, 13, 10)
         assertEquals(expected, reminder.nextNotification(from))
     }
 }

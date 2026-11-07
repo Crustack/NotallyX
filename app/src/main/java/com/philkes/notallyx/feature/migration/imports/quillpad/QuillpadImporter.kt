@@ -76,7 +76,7 @@ class QuillpadImporter : ExternalImporter {
 
         val notebookMap = quillpadBackup.notebooks.associate { it.id to it.name }
         val total = quillpadBackup.notes.size
-        progress?.value = ImportProgress(0, total, stage = ImportStage.IMPORT_NOTES)
+        progress?.value = ImportProgress(total = total, stage = ImportStage.IMPORT_NOTES)
         var counter = 1
 
         val baseNotes =

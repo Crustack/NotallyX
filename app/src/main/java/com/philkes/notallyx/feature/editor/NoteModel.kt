@@ -232,7 +232,7 @@ open class NoteModel(
                 R.string.error_while_renaming_file
             }
         viewModelScope.launch(Dispatchers.IO) {
-            addingFiles.value = AddFilesProgress(0, uris.size)
+            addingFiles.value = AddFilesProgress(total = uris.size)
 
             val successes = ArrayList<FileAttachment>()
             val errors = ArrayList<FileError>()

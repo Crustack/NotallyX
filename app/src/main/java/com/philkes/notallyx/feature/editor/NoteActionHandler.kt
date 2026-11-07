@@ -9,7 +9,6 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -79,14 +78,14 @@ class NoteActionHandler(
         recordAudioActivityResultLauncher =
             activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                 result ->
-                if (result.resultCode == AppCompatActivity.RESULT_OK) {
+                if (result.resultCode == RESULT_OK) {
                     notallyModel.addAudio()
                 }
             }
         addImagesActivityResultLauncher =
             activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                 result ->
-                if (result.resultCode == AppCompatActivity.RESULT_OK) {
+                if (result.resultCode == RESULT_OK) {
                     val uri = result.data?.data
                     val clipData = result.data?.clipData
                     if (uri != null) {
@@ -102,7 +101,7 @@ class NoteActionHandler(
         viewImagesActivityResultLauncher =
             activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                 result ->
-                if (result.resultCode == AppCompatActivity.RESULT_OK) {
+                if (result.resultCode == RESULT_OK) {
                     val list =
                         result.data?.let {
                             IntentCompat.getParcelableArrayListExtra(
@@ -119,7 +118,7 @@ class NoteActionHandler(
         selectLabelsActivityResultLauncher =
             activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                 result ->
-                if (result.resultCode == AppCompatActivity.RESULT_OK) {
+                if (result.resultCode == RESULT_OK) {
                     val list =
                         result.data?.getStringArrayListExtra(
                             SelectLabelsActivity.EXTRA_SELECTED_LABELS
@@ -134,7 +133,7 @@ class NoteActionHandler(
         playAudioActivityResultLauncher =
             activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                 result ->
-                if (result.resultCode == AppCompatActivity.RESULT_OK) {
+                if (result.resultCode == RESULT_OK) {
                     val audio =
                         result.data?.let {
                             IntentCompat.getParcelableExtra(
@@ -151,7 +150,7 @@ class NoteActionHandler(
         attachFilesActivityResultLauncher =
             activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                 result ->
-                if (result.resultCode == AppCompatActivity.RESULT_OK) {
+                if (result.resultCode == RESULT_OK) {
                     val uri = result.data?.data
                     val clipData = result.data?.clipData
                     if (uri != null) {
@@ -167,7 +166,7 @@ class NoteActionHandler(
         exportFileActivityResultLauncher =
             activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                 result ->
-                if (result.resultCode == AppCompatActivity.RESULT_OK) {
+                if (result.resultCode == RESULT_OK) {
                     result.data?.data?.let { uri ->
                         notallyModel.exportNoteToFile(
                             uri,
@@ -300,7 +299,6 @@ class NoteActionHandler(
         if (!notallyModel.isPinnedToStatus) {
             activity.checkNotificationPermission(
                 REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
-                alsoCheckAlarmPermission = false,
                 onShowRationale = { msgResId, onConfirm ->
                     notallyModel.activeDialog.value =
                         EditorDialogState.PermissionRationale(msgResId, onConfirm)
@@ -367,7 +365,7 @@ class NoteActionHandler(
 
     private fun duplicate() {
         activity.lifecycleScope.launch {
-            activity.saveNote(true)
+            activity.saveNote()
             val duplicateId = notallyModel.duplicateNote(notallyModel.getBaseNote())
             activity.openNote(duplicateId, notallyModel.type, clearBackStack = true)
         }
@@ -408,7 +406,7 @@ class NoteActionHandler(
                 putExtra(EditActivity.EXTRA_FOLDER_TO, toFolder.name)
             }
         notallyModel.folder = toFolder
-        activity.setResult(AppCompatActivity.RESULT_OK, resultIntent)
+        activity.setResult(RESULT_OK, resultIntent)
         activity.finish()
     }
 
@@ -581,7 +579,6 @@ fun Activity.refreshStatusBarPin(note: BaseNote) {
     if (note.isPinnedToStatus) {
         checkNotificationPermission(
             REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
-            alsoCheckAlarmPermission = false,
             onShowRationale = { msgResId, onConfirm ->
                 if (this is EditActivity) {
                     notallyModel.activeDialog.value =

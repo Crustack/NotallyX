@@ -629,8 +629,7 @@ suspend fun ContextWrapper.exportAsZip(
         val totalAttachments = images.count() + files.count() + audios.size
         backupProgress?.value =
             BackupProgress(
-                0,
-                totalAttachments,
+                total = totalAttachments,
                 countSuffix = getQuantityString(R.plurals.attachments, totalAttachments),
             )
 

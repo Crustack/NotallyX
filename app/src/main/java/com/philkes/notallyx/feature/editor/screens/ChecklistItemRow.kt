@@ -184,7 +184,7 @@ internal fun ChecklistItemRow(
                             else Modifier
                         )
                         .onKeyEvent { keyEvent ->
-                            if (keyEvent.type == KeyEventType.KeyDown) {
+                            keyEvent.type == KeyEventType.KeyDown &&
                                 if (keyEvent.key == Key.Enter && onEnterKey != null) {
                                     onEnterKey()
                                     true
@@ -196,7 +196,6 @@ internal fun ChecklistItemRow(
                                     onBackspaceOnEmpty()
                                     true
                                 } else false
-                            } else false
                         }
 
                 BasicTextField(
