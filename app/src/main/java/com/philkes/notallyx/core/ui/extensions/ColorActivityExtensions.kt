@@ -1,9 +1,9 @@
 package com.philkes.notallyx.core.ui.extensions
 
-// import com.philkes.notallyx.setLightStatusAndNavBar
+import android.app.Dialog
+import android.view.Window
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.platform.ComposeView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.dialog.ColorPickerDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
@@ -19,7 +19,12 @@ fun AppCompatActivity.showColorSelectDialog(
 ) {
     val preferences = NotallyXPreferences.getInstance(this)
     val composeView = ComposeView(this)
-    val dialog = MaterialAlertDialogBuilder(this).setView(composeView).create()
+    val dialog =
+        Dialog(this).apply {
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+            setContentView(composeView)
+        }
 
     composeView.setContent {
         NotallyXTheme(theme = preferences.theme.value) {
@@ -54,7 +59,12 @@ private fun AppCompatActivity.showEditColorDialog(
 ) {
     val preferences = NotallyXPreferences.getInstance(this)
     val composeView = ComposeView(this)
-    val dialog = MaterialAlertDialogBuilder(this).setView(composeView).create()
+    val dialog =
+        Dialog(this).apply {
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+            setContentView(composeView)
+        }
 
     composeView.setContent {
         NotallyXTheme(theme = preferences.theme.value) {
@@ -85,7 +95,12 @@ private fun AppCompatActivity.showDeleteColorDialog(
 ) {
     val preferences = NotallyXPreferences.getInstance(this)
     val composeView = ComposeView(this)
-    val dialog = MaterialAlertDialogBuilder(this).setView(composeView).create()
+    val dialog =
+        Dialog(this).apply {
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+            setContentView(composeView)
+        }
 
     composeView.setContent {
         NotallyXTheme(theme = preferences.theme.value) {

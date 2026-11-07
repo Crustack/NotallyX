@@ -1,19 +1,21 @@
 package com.philkes.notallyx.feature.media.image
 
-// import com.philkes.notallyx.setCancelButton
+import android.app.Dialog
 import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.Window
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.core.os.BundleCompat
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.SUBFOLDER_IMAGES
 import com.philkes.notallyx.core.common.extensions.getUriForFile
@@ -22,8 +24,8 @@ import com.philkes.notallyx.core.common.extensions.wrapWithChooser
 import com.philkes.notallyx.core.database.Converters
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.NotallyXPreferences
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.extensions.collectIn
-import com.philkes.notallyx.core.ui.extensions.setCancelButton
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.feature.editor.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
@@ -38,11 +40,12 @@ class ViewImageActivity : AppCompatActivity() {
     private var currentImage: FileAttachment? = null
     private lateinit var deletedImages: ArrayList<FileAttachment>
     private lateinit var exportFileActivityResultLauncher: ActivityResultLauncher<Intent>
+    private lateinit var preferences: NotallyXPreferences
     private val imagesState = mutableStateOf<List<FileAttachment>>(emptyList())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val preferences = NotallyXPreferences.getInstance(application)
+        preferences = NotallyXPreferences.getInstance(application)
 
         val savedList = savedInstanceState?.let {
             BundleCompat.getParcelableArrayList(
@@ -169,21 +172,35 @@ class ViewImageActivity : AppCompatActivity() {
     }
 
     private fun delete(position: Int) {
-        MaterialAlertDialogBuilder(this)
-            .setMessage(R.string.delete_image_forever)
-            .setCancelButton()
-            .setPositiveButton(R.string.delete) { _, _ ->
-                val currentList = imagesState.value.toMutableList()
-                if (position in currentList.indices) {
-                    val image = currentList.removeAt(position)
-                    deletedImages.add(image)
-                    imagesState.value = currentList
-                    if (currentList.isEmpty()) {
-                        finish()
-                    }
-                }
+        val composeView = ComposeView(this)
+        val dialog =
+            Dialog(this).apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                setContentView(composeView)
             }
-            .show()
+
+        composeView.setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                ConfirmDialog(
+                    message = stringResource(R.string.delete_image_forever),
+                    positiveButtonText = stringResource(R.string.delete),
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = {
+                        val currentList = imagesState.value.toMutableList()
+                        if (position in currentList.indices) {
+                            val image = currentList.removeAt(position)
+                            deletedImages.add(image)
+                            imagesState.value = currentList
+                            if (currentList.isEmpty()) {
+                                finish()
+                            }
+                        }
+                    },
+                )
+            }
+        }
+        dialog.show()
     }
 
     companion object {

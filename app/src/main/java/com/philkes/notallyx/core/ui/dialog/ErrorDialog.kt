@@ -33,6 +33,8 @@ internal fun ErrorDialog(
     title: String,
     details: String? = null,
     message: String? = null,
+    neutralButtonText: String? = null,
+    onNeutralButtonClick: (() -> Unit)? = null,
     onDismissRequest: () -> Unit,
 ) {
     val clipboardManager: ClipboardManager = LocalClipboardManager.current
@@ -83,6 +85,18 @@ internal fun ErrorDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismissRequest) { Text(stringResource(android.R.string.ok)) }
+        },
+        dismissButton = {
+            if (neutralButtonText != null && onNeutralButtonClick != null) {
+                TextButton(
+                    onClick = {
+                        onNeutralButtonClick()
+                        onDismissRequest()
+                    }
+                ) {
+                    Text(neutralButtonText)
+                }
+            }
         },
     )
 }

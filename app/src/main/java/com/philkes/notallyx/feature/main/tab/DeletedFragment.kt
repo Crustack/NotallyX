@@ -1,15 +1,17 @@
 package com.philkes.notallyx.feature.main.tab
 
-// import com.philkes.notallyx.add
-// import com.philkes.notallyx.setCancelButton
+import android.app.Dialog
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.View
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import android.view.Window
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.extensions.add
-import com.philkes.notallyx.core.ui.extensions.setCancelButton
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.Folder
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -27,13 +29,24 @@ class DeletedFragment : NotesFragment() {
     }
 
     private fun deleteAllNotes() {
-        MaterialAlertDialogBuilder(requireContext())
-            .setMessage(R.string.delete_all_notes)
-            .setPositiveButton(R.string.delete) { _, _ ->
-                deletedViewModel.deleteAllTrashedBaseNotes()
+        val composeView = ComposeView(requireContext())
+        val dialog =
+            Dialog(requireContext()).apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                setContentView(composeView)
             }
-            .setCancelButton()
-            .show()
+        composeView.setContent {
+            NotallyXTheme(theme = deletedViewModel.preferences.theme.value) {
+                ConfirmDialog(
+                    message = stringResource(R.string.delete_all_notes),
+                    positiveButtonText = stringResource(R.string.delete),
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = { deletedViewModel.deleteAllTrashedBaseNotes() },
+                )
+            }
+        }
+        dialog.show()
     }
 
     override fun getBackgroundResId() = R.drawable.delete

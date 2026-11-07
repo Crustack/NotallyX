@@ -1,5 +1,6 @@
 package com.philkes.notallyx.core.ui.dialog
 
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -7,7 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
 @Composable
 internal fun ConfirmDialog(
@@ -15,6 +18,8 @@ internal fun ConfirmDialog(
     message: String,
     positiveButtonText: String = stringResource(R.string.delete),
     negativeButtonText: String = stringResource(R.string.cancel),
+    neutralButtonText: String? = null,
+    onNeutralButtonClick: (() -> Unit)? = null,
     onDismissRequest: () -> Unit,
     onConfirm: () -> Unit,
 ) {
@@ -33,6 +38,37 @@ internal fun ConfirmDialog(
                 Text(positiveButtonText)
             }
         },
-        dismissButton = { TextButton(onClick = onDismissRequest) { Text(negativeButtonText) } },
+        dismissButton = {
+            if (neutralButtonText != null && onNeutralButtonClick != null) {
+                Row {
+                    TextButton(
+                        onClick = {
+                            onNeutralButtonClick()
+                            onDismissRequest()
+                        }
+                    ) {
+                        Text(neutralButtonText)
+                    }
+                    if (negativeButtonText.isNotEmpty()) {
+                        TextButton(onClick = onDismissRequest) { Text(negativeButtonText) }
+                    }
+                }
+            } else if (negativeButtonText.isNotEmpty()) {
+                TextButton(onClick = onDismissRequest) { Text(negativeButtonText) }
+            }
+        },
     )
+}
+
+@Preview
+@Composable
+private fun ConfirmDialogPreview() {
+    NotallyXTheme {
+        ConfirmDialog(
+            title = "Title",
+            message = "Are you sure you want to proceed?",
+            onDismissRequest = {},
+            onConfirm = {},
+        )
+    }
 }

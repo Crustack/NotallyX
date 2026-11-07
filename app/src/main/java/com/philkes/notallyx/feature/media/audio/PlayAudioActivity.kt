@@ -1,27 +1,29 @@
 package com.philkes.notallyx.feature.media.audio
 
+import android.app.Dialog
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
+import android.view.Window
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.IntentCompat
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getCurrentAudioDirectory
 import com.philkes.notallyx.core.common.extensions.getUriForFile
 import com.philkes.notallyx.core.common.extensions.wrapWithChooser
 import com.philkes.notallyx.core.security.ComposeBinding
 import com.philkes.notallyx.core.security.LockedActivity
-import com.philkes.notallyx.core.ui.extensions.setCancelButton
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.Audio
 import java.io.File
@@ -144,16 +146,30 @@ class PlayAudioActivity : LockedActivity<ComposeBinding>() {
     }
 
     private fun delete() {
-        MaterialAlertDialogBuilder(this)
-            .setMessage(R.string.delete_audio_recording_forever)
-            .setCancelButton()
-            .setPositiveButton(R.string.delete) { _, _ ->
-                val intent = Intent()
-                intent.putExtra(EXTRA_AUDIO, audio)
-                setResult(RESULT_OK, intent)
-                finish()
+        val composeView = ComposeView(this)
+        val dialog =
+            Dialog(this).apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                setContentView(composeView)
             }
-            .show()
+
+        composeView.setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                ConfirmDialog(
+                    message = stringResource(R.string.delete_audio_recording_forever),
+                    positiveButtonText = stringResource(R.string.delete),
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = {
+                        val intent = Intent()
+                        intent.putExtra(EXTRA_AUDIO, audio)
+                        setResult(RESULT_OK, intent)
+                        finish()
+                    },
+                )
+            }
+        }
+        dialog.show()
     }
 
     private fun saveToDevice() {

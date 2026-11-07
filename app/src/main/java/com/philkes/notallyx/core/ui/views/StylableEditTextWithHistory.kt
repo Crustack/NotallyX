@@ -1,6 +1,7 @@
 package com.philkes.notallyx.core.ui.views
 
 import android.app.Activity
+import android.app.Dialog
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Typeface
@@ -13,11 +14,11 @@ import android.text.style.TypefaceSpan
 import android.text.style.URLSpan
 import android.util.AttributeSet
 import android.view.ActionMode
+import android.view.Window
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.findWebUrls
 import com.philkes.notallyx.core.common.extensions.getLatestText
@@ -341,7 +342,12 @@ class StylableEditTextWithHistory(context: Context, attrs: AttributeSet) :
         val activity = context as? Activity ?: return
         val preferences = NotallyXPreferences.getInstance(activity)
         val composeView = ComposeView(context)
-        val dialog = MaterialAlertDialogBuilder(context).setView(composeView).create()
+        val dialog =
+            Dialog(context).apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                setContentView(composeView)
+            }
 
         composeView.setContent {
             NotallyXTheme(theme = preferences.theme.value) {

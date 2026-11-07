@@ -4,10 +4,11 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.deleteAttachments
 import com.philkes.notallyx.core.common.extensions.getBackupDir
@@ -21,10 +22,12 @@ import com.philkes.notallyx.core.preference.NotallyXPreferences.Companion.EMPTY_
 import com.philkes.notallyx.core.preference.NotallyXPreferences.Companion.START_VIEW_DEFAULT
 import com.philkes.notallyx.core.preference.NotallyXPreferences.Companion.START_VIEW_UNLABELED
 import com.philkes.notallyx.core.preference.Theme
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
+import com.philkes.notallyx.core.ui.extensions.createComposeDialog
 import com.philkes.notallyx.core.ui.extensions.exportedText
 import com.philkes.notallyx.core.ui.extensions.restartApplication
-import com.philkes.notallyx.core.ui.extensions.setCancelButton
 import com.philkes.notallyx.core.ui.extensions.showToast
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.dao.CommonDao
 import com.philkes.notallyx.data.dao.LabelDao
@@ -355,19 +358,29 @@ class SettingsViewModel(
         try {
             val backupFolderUri = backupFolder.toUri()
             var isPositiveButtonClicked = false
-            MaterialAlertDialogBuilder(context)
-                .setMessage(R.string.auto_backups_folder_rechoose)
-                .setCancelButton { _, _ -> cancelFolderSelection(oldBackupsFolder) }
-                .setOnDismissListener {
-                    if (!isPositiveButtonClicked) {
-                        cancelFolderSelection(oldBackupsFolder)
-                    }
+            val composeView = ComposeView(context)
+            val dialog = createComposeDialog(context, composeView)
+
+            composeView.setContent {
+                NotallyXTheme(theme = preferences.theme.value) {
+                    ConfirmDialog(
+                        message = stringResource(R.string.auto_backups_folder_rechoose),
+                        positiveButtonText = stringResource(R.string.choose_folder),
+                        negativeButtonText = stringResource(R.string.cancel),
+                        onDismissRequest = {
+                            if (!isPositiveButtonClicked) {
+                                cancelFolderSelection(oldBackupsFolder)
+                            }
+                            dialog.dismiss()
+                        },
+                        onConfirm = {
+                            isPositiveButtonClicked = true
+                            askForUriPermissions(backupFolderUri)
+                        },
+                    )
                 }
-                .setPositiveButton(R.string.choose_folder) { _, _ ->
-                    isPositiveButtonClicked = true
-                    askForUriPermissions(backupFolderUri)
-                }
-                .show()
+            }
+            dialog.show()
         } catch (_: Exception) {
             cancelFolderSelection(oldBackupsFolder)
         }

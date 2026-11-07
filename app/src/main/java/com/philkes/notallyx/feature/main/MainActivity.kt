@@ -1,10 +1,12 @@
 package com.philkes.notallyx.feature.main
 
+import android.app.Dialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.Window
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
@@ -24,7 +27,6 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.deleteAttachments
@@ -40,17 +42,18 @@ import com.philkes.notallyx.core.preference.NotallyXPreferences.Companion.START_
 import com.philkes.notallyx.core.security.AuthenticatorProvider
 import com.philkes.notallyx.core.security.ComposeBinding
 import com.philkes.notallyx.core.security.LockedActivity
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
+import com.philkes.notallyx.core.ui.dialog.ListDialog
+import com.philkes.notallyx.core.ui.dialog.TriStateMultiChoiceDialog
 import com.philkes.notallyx.core.ui.extensions.checkNotificationPermission
 import com.philkes.notallyx.core.ui.extensions.collectIn
 import com.philkes.notallyx.core.ui.extensions.getQuantityString
 import com.philkes.notallyx.core.ui.extensions.movedToResId
 import com.philkes.notallyx.core.ui.extensions.repeatOnLifecycleScope
-import com.philkes.notallyx.core.ui.extensions.setCancelButton
 import com.philkes.notallyx.core.ui.extensions.setupProgressDialog
 import com.philkes.notallyx.core.ui.extensions.showColorSelectDialog
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
-import com.philkes.notallyx.core.ui.views.setMultiChoiceTriStateItems
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.feature.editor.EditListActivity
@@ -473,26 +476,41 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     }
 
     private fun showBiometricEncryptionWarningDialog() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.biometric_lock)
-            .setMessage(R.string.biometric_encryption_experimental_warning)
-            .setPositiveButton(R.string.decrypt) { _, _ ->
-                AuthenticatorProvider.instance.authenticate(
-                    this,
-                    preferences.iv.value,
-                    isForDecrypt = true,
-                    onSuccess = { cipher ->
-                        DatabaseTransitionActivity.start(
-                            this,
-                            enableBiometricLock = true,
-                            encryptDatabase = false,
-                            cipher = cipher,
-                        )
-                    },
-                ) {}
+        val composeView = ComposeView(this)
+        val dialog =
+            Dialog(this).apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                setContentView(composeView)
             }
-            .setNegativeButton(android.R.string.ok, null)
-            .show()
+
+        composeView.setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                ConfirmDialog(
+                    title = stringResource(R.string.biometric_lock),
+                    message = stringResource(R.string.biometric_encryption_experimental_warning),
+                    positiveButtonText = stringResource(R.string.decrypt),
+                    negativeButtonText = stringResource(android.R.string.ok),
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = {
+                        AuthenticatorProvider.instance.authenticate(
+                            this,
+                            preferences.iv.value,
+                            isForDecrypt = true,
+                            onSuccess = { cipher ->
+                                DatabaseTransitionActivity.start(
+                                    this,
+                                    enableBiometricLock = true,
+                                    encryptDatabase = false,
+                                    cipher = cipher,
+                                )
+                            },
+                        ) {}
+                    },
+                )
+            }
+        }
+        dialog.show()
     }
 
     private fun getStartViewNavigation(): Pair<Int, Bundle> {
@@ -601,12 +619,26 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     }
 
     private fun displayExportFormatDialog() {
-        val formats = ExportMimeType.entries.map { it.name }.toTypedArray()
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.export)
-            .setItems(formats) { _, which -> exportSelectedNotes(ExportMimeType.entries[which]) }
-            .setCancelButton()
-            .show()
+        val formats = ExportMimeType.entries.map { it.name }
+        val composeView = ComposeView(this)
+        val dialog =
+            Dialog(this).apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                setContentView(composeView)
+            }
+
+        composeView.setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                ListDialog(
+                    title = stringResource(R.string.export),
+                    items = formats,
+                    onDismissRequest = { dialog.dismiss() },
+                    onItemClick = { which -> exportSelectedNotes(ExportMimeType.entries[which]) },
+                )
+            }
+        }
+        dialog.show()
     }
 
     private fun moveSelectedNotes(folderTo: Folder) {
@@ -637,45 +669,60 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     }
 
     private fun deleteSelectedNotesForever() {
-        MaterialAlertDialogBuilder(this)
-            .setMessage(R.string.delete_selected_notes)
-            .setPositiveButton(R.string.delete) { _, _ ->
-                val removedNotes = notallyFragmentModel.actionMode.selectedNotes.values.toList()
-                lifecycleScope.launch {
-                    val deletedNotes = notallyFragmentModel.deleteSelectedBaseNotes()
-                    Snackbar.make(
-                            binding.root,
-                            getQuantityString(
-                                R.plurals.deleted_selected_notes,
-                                removedNotes.size,
-                            ),
-                            Snackbar.LENGTH_SHORT,
-                        )
-                        .apply {
-                            setAction(R.string.undo) {
-                                notallyFragmentModel.saveNotes(removedNotes)
-                            }
-                            addCallback(
-                                object : Snackbar.Callback() {
-                                    override fun onDismissed(
-                                        transientBottomBar: Snackbar?,
-                                        event: Int,
-                                    ) {
-                                        if (event != DISMISS_EVENT_ACTION) {
-                                            deleteAttachments(
-                                                deletedNotes,
-                                                notallyFragmentModel.progress,
-                                            )
-                                        }
-                                    }
-                                }
-                            )
-                        }
-                        .show()
-                }
+        val composeView = ComposeView(this)
+        val dialog =
+            Dialog(this).apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                setContentView(composeView)
             }
-            .setCancelButton()
-            .show()
+
+        composeView.setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                ConfirmDialog(
+                    message = stringResource(R.string.delete_selected_notes),
+                    positiveButtonText = stringResource(R.string.delete),
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = {
+                        val removedNotes =
+                            notallyFragmentModel.actionMode.selectedNotes.values.toList()
+                        lifecycleScope.launch {
+                            val deletedNotes = notallyFragmentModel.deleteSelectedBaseNotes()
+                            Snackbar.make(
+                                    binding.root,
+                                    getQuantityString(
+                                        R.plurals.deleted_selected_notes,
+                                        removedNotes.size,
+                                    ),
+                                    Snackbar.LENGTH_SHORT,
+                                )
+                                .apply {
+                                    setAction(R.string.undo) {
+                                        notallyFragmentModel.saveNotes(removedNotes)
+                                    }
+                                    addCallback(
+                                        object : Snackbar.Callback() {
+                                            override fun onDismissed(
+                                                transientBottomBar: Snackbar?,
+                                                event: Int,
+                                            ) {
+                                                if (event != DISMISS_EVENT_ACTION) {
+                                                    deleteAttachments(
+                                                        deletedNotes,
+                                                        notallyFragmentModel.progress,
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    )
+                                }
+                                .show()
+                        }
+                    },
+                )
+            }
+        }
+        dialog.show()
     }
 
     private fun displaySelectLabelsDialog(labels: Array<String>, baseNotes: Collection<BaseNote>) {
@@ -692,43 +739,55 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                 }
                 .toTypedArray()
 
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.labels)
-            .setCancelButton()
-            .setMultiChoiceTriStateItems(this, labels, checkedPositions) { idx, state ->
-                checkedPositions[idx] = state
+        val composeView = ComposeView(this)
+        val dialog =
+            Dialog(this).apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                setContentView(composeView)
             }
-            .setPositiveButton(R.string.save) { _, _ ->
-                val checkedLabels = checkedPositions.mapIndexedNotNull { index, checked ->
-                    if (checked == ToggleableState.On) {
-                        labels[index]
-                    } else null
-                }
-                val uncheckedLabels = checkedPositions.mapIndexedNotNull { index, checked ->
-                    if (checked == ToggleableState.Off) {
-                        labels[index]
-                    } else null
-                }
-                val updatedBaseNotesLabels = baseNotes.map { baseNote ->
-                    val noteLabels = baseNote.labels.toMutableList()
-                    checkedLabels.forEach { checkedLabel ->
-                        if (!noteLabels.contains(checkedLabel)) {
-                            noteLabels.add(checkedLabel)
+
+        composeView.setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                TriStateMultiChoiceDialog(
+                    title = stringResource(R.string.labels),
+                    items = labels,
+                    initialStates = checkedPositions,
+                    onDismissRequest = { dialog.dismiss() },
+                    onConfirm = { finalStates ->
+                        val checkedLabels = finalStates.mapIndexedNotNull { index, checked ->
+                            if (checked == ToggleableState.On) {
+                                labels[index]
+                            } else null
                         }
-                    }
-                    uncheckedLabels.forEach { uncheckedLabel ->
-                        if (noteLabels.contains(uncheckedLabel)) {
-                            noteLabels.remove(uncheckedLabel)
+                        val uncheckedLabels = finalStates.mapIndexedNotNull { index, checked ->
+                            if (checked == ToggleableState.Off) {
+                                labels[index]
+                            } else null
                         }
-                    }
-                    noteLabels
-                }
-                baseNotes.zip(updatedBaseNotesLabels).forEach { (baseNote, updatedLabels) ->
-                    notallyFragmentModel.updateBaseNoteLabels(updatedLabels, baseNote.id)
-                }
-                notallyFragmentModel.actionMode.close(true)
+                        val updatedBaseNotesLabels = baseNotes.map { baseNote ->
+                            val noteLabels = baseNote.labels.toMutableList()
+                            checkedLabels.forEach { checkedLabel ->
+                                if (!noteLabels.contains(checkedLabel)) {
+                                    noteLabels.add(checkedLabel)
+                                }
+                            }
+                            uncheckedLabels.forEach { uncheckedLabel ->
+                                if (noteLabels.contains(uncheckedLabel)) {
+                                    noteLabels.remove(uncheckedLabel)
+                                }
+                            }
+                            noteLabels
+                        }
+                        baseNotes.zip(updatedBaseNotesLabels).forEach { (baseNote, updatedLabels) ->
+                            notallyFragmentModel.updateBaseNoteLabels(updatedLabels, baseNote.id)
+                        }
+                        notallyFragmentModel.actionMode.close(true)
+                    },
+                )
             }
-            .show()
+        }
+        dialog.show()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
