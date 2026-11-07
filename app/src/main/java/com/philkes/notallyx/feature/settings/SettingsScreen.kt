@@ -23,6 +23,7 @@ import com.philkes.notallyx.core.common.extensions.getDocumentFolder
 import com.philkes.notallyx.core.common.extensions.toReadablePath
 import com.philkes.notallyx.core.common.result.ImportProgress
 import com.philkes.notallyx.core.common.result.ImportStage
+import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.BiometricLock
 import com.philkes.notallyx.core.preference.Constants.PASSWORD_EMPTY
 import com.philkes.notallyx.core.preference.DateFormat
@@ -339,7 +340,11 @@ private fun SettingsSecuritySection(
 ) {
     val context = LocalContext.current
     val biometricLockText =
-        if (state.biometricLock == BiometricLock.ENABLED && state.biometricLockEncryptsDb) {
+        if (
+            NotallyDatabase.FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB &&
+                state.biometricLock == BiometricLock.ENABLED &&
+                state.biometricLockEncryptsDb
+        ) {
             stringResource(id = R.string.biometric_lock_enabled_with_encryption)
         } else {
             state.biometricLock.getText(context)
@@ -574,10 +579,12 @@ internal fun SettingsScreen(
             )
         }
         is SettingsDialogState.EncryptDatabase -> {
-            EncryptDatabaseDialog(
-                onDismissRequest = { onAction(SettingsAction.DismissDialog) },
-                onContinue = dialogState.onContinue,
-            )
+            if (NotallyDatabase.FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB) {
+                EncryptDatabaseDialog(
+                    onDismissRequest = { onAction(SettingsAction.DismissDialog) },
+                    onContinue = dialogState.onContinue,
+                )
+            }
         }
         null -> {}
     }

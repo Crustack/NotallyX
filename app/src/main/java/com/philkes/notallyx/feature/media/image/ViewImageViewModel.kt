@@ -7,13 +7,19 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.BaseViewModel
 import com.philkes.notallyx.core.common.extensions.SUBFOLDER_IMAGES
 import com.philkes.notallyx.core.common.extensions.getUriForFile
-import com.philkes.notallyx.core.common.extensions.resolveAttachmentFile
 import com.philkes.notallyx.core.database.Converters
+import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.platform.AndroidFileStorage
+import com.philkes.notallyx.core.platform.AndroidPathProvider
+import com.philkes.notallyx.core.platform.DesktopPathProvider
+import com.philkes.notallyx.core.platform.FileStorage
+import com.philkes.notallyx.core.platform.JvmFileStorage
+import com.philkes.notallyx.core.platform.PathProvider
+import com.philkes.notallyx.core.platform.PlatformUri
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.navigation.NotallyNavKey
 import java.io.FileInputStream
-import java.io.FileOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -30,9 +36,23 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class ViewImageViewModel(
-    app: Application,
     preferences: NotallyXPreferences,
-) : BaseViewModel(app, preferences) {
+    databaseStateFlow: StateFlow<NotallyDatabase?> = NotallyDatabase.instance,
+    pathProvider: PathProvider = DesktopPathProvider(),
+    private val fileStorage: FileStorage = JvmFileStorage(),
+) : BaseViewModel(preferences, databaseStateFlow, pathProvider) {
+
+    constructor(
+        app: Application,
+        preferences: NotallyXPreferences,
+    ) : this(
+        preferences = preferences,
+        databaseStateFlow = NotallyDatabase.getDatabase(app),
+        pathProvider = AndroidPathProvider(app),
+        fileStorage = AndroidFileStorage(app),
+    ) {
+        this.app = app
+    }
 
     private val _sideEffects = Channel<ViewImageSideEffect>(Channel.BUFFERED)
     val sideEffects: Flow<ViewImageSideEffect> = _sideEffects.receiveAsFlow()
@@ -104,8 +124,13 @@ class ViewImageViewModel(
         val currentImages = _images.value
         if (position !in currentImages.indices) return
         val image = currentImages[position]
-        val file = app.resolveAttachmentFile(SUBFOLDER_IMAGES, image.localName)
-        if (file != null && file.exists()) {
+        val file =
+            pathProvider.resolveAttachmentFile(
+                SUBFOLDER_IMAGES,
+                image.localName,
+                preferences.dataInPublicFolder.value,
+            )
+        if (file != null && file.exists() && hasApp) {
             val uri = app.getUriForFile(file)
             viewModelScope.launch {
                 _sideEffects.send(ViewImageSideEffect.ShareImage(uri, image.mimeType))
@@ -125,13 +150,17 @@ class ViewImageViewModel(
 
     private fun exportImage(destinationUri: Uri) {
         val image = _currentImageToExport.value ?: return
-        val file = app.resolveAttachmentFile(SUBFOLDER_IMAGES, image.localName) ?: return
+        val file =
+            pathProvider.resolveAttachmentFile(
+                SUBFOLDER_IMAGES,
+                image.localName,
+                preferences.dataInPublicFolder.value,
+            ) ?: return
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                app.contentResolver.openFileDescriptor(destinationUri, "w")?.use { pfd ->
-                    FileOutputStream(pfd.fileDescriptor).use { output ->
-                        FileInputStream(file).use { input -> input.copyTo(output) }
-                    }
+                fileStorage.openOutputStream(PlatformUri(destinationUri.toString()))?.use { output
+                    ->
+                    FileInputStream(file).use { input -> input.copyTo(output) }
                 }
                 _sideEffects.send(ViewImageSideEffect.ShowToast(R.string.saved_to_device))
             } catch (e: Exception) {

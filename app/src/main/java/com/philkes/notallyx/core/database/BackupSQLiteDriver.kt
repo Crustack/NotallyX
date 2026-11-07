@@ -7,8 +7,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.driver.SupportSQLiteConnection
 
-private const val DATABASE_VERSION = 11
-
 /**
  * [SQLiteDriver] that delegates opening the database to a [SupportSQLiteOpenHelper.Factory], such
  * as [BackupOpenHelperFactory] or SQLCipher's SupportOpenHelperFactory.
@@ -33,7 +31,7 @@ open class BackupSQLiteDriver(
             SupportSQLiteOpenHelper.Configuration.builder(context)
                 .name(dbName)
                 .callback(
-                    object : SupportSQLiteOpenHelper.Callback(DATABASE_VERSION) {
+                    object : SupportSQLiteOpenHelper.Callback(NotallyDatabase.DATABASE_VERSION) {
                         private var initialVersion: Int? = null
 
                         override fun onCreate(db: SupportSQLiteDatabase) {

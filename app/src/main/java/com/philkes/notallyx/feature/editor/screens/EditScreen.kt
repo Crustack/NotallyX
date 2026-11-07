@@ -56,7 +56,6 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -79,8 +78,8 @@ import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.core.ui.components.ImageCountChip
 import com.philkes.notallyx.core.ui.components.LabelChip
 import com.philkes.notallyx.core.ui.components.ReminderChip
+import com.philkes.notallyx.core.ui.components.parseNoteColor
 import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
-import com.philkes.notallyx.core.ui.extensions.extractColor
 import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.core.ui.theme.contentColorFor
@@ -804,7 +803,6 @@ fun EditNoteScreen(
     onAction: (EditNoteAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     val noteState =
         remember(state) {
             EditNoteState(
@@ -997,7 +995,7 @@ fun EditNoteScreen(
             }
         }
 
-    val backgroundColor = Color(context.extractColor(state.color))
+    val backgroundColor = parseNoteColor(state.color)
 
     Box(modifier = modifier.fillMaxSize()) {
         EditNoteScreen(
@@ -1278,7 +1276,6 @@ fun EditListScreen(
     onAction: (EditListAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     val noteState =
         remember(state) {
             EditNoteState(
@@ -1456,7 +1453,7 @@ fun EditListScreen(
             }
         }
 
-    val backgroundColor = Color(context.extractColor(state.color))
+    val backgroundColor = parseNoteColor(state.color)
 
     Box(modifier = modifier.fillMaxSize()) {
         EditListScreen(

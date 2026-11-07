@@ -56,7 +56,7 @@ Adjust how much information is previewed for each note in the overview:
 
 Protect your notes and app data:
 
-- **Biometric / PIN Lock**: Require biometric authentication (fingerprint, face) or device PIN whenever opening NotallyX. When enabling this lock, you can optionally enable experimental database encryption via biometric credentials (using SQLCipher). Disabling the lock will also decrypt the database.
+- **Biometric / PIN Lock**: Require biometric authentication (fingerprint, face) or device PIN whenever opening NotallyX. (Note: experimental SQLCipher database encryption has been sunset and any previously encrypted database is automatically decrypted to standard SQLite while keeping app lock active.)
 - **Backup Password**: Set a password to encrypt exported backups using AES encryption.
 - **Secure Flag**: Prevent screenshots, screen recordings, and hide app content previews in the Android recent apps switcher.
 

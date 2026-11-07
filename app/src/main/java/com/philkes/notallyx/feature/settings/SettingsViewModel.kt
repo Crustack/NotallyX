@@ -3,19 +3,14 @@ package com.philkes.notallyx.feature.settings
 import android.Manifest
 import android.app.Application
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.hardware.biometrics.BiometricManager
 import android.net.Uri
-import android.os.Build
-import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.WorkManager
 import com.philkes.notallyx.R
-import com.philkes.notallyx.cancelAutoRemoveOldDeletedNotes
 import com.philkes.notallyx.core.common.extensions.copyToClipBoard
-import com.philkes.notallyx.core.common.extensions.deleteAttachments
+import com.philkes.notallyx.core.common.extensions.deleteNoteAttachments
 import com.philkes.notallyx.core.common.extensions.getBackupDir
 import com.philkes.notallyx.core.common.extensions.getExternalCrashesDirectory
 import com.philkes.notallyx.core.common.extensions.getLastExceptionLog
@@ -25,6 +20,12 @@ import com.philkes.notallyx.core.common.extensions.log
 import com.philkes.notallyx.core.common.extensions.toMessage
 import com.philkes.notallyx.core.common.result.Progress
 import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.platform.AndroidPathProvider
+import com.philkes.notallyx.core.platform.AndroidTaskScheduler
+import com.philkes.notallyx.core.platform.AppInfo
+import com.philkes.notallyx.core.platform.AppInfoProvider
+import com.philkes.notallyx.core.platform.PathProvider
+import com.philkes.notallyx.core.platform.TaskScheduler
 import com.philkes.notallyx.core.preference.BasePreference
 import com.philkes.notallyx.core.preference.BiometricLock
 import com.philkes.notallyx.core.preference.Constants.PASSWORD_EMPTY
@@ -46,6 +47,9 @@ import com.philkes.notallyx.core.ui.dialog.IconListItem
 import com.philkes.notallyx.core.ui.dialog.SelectionItem
 import com.philkes.notallyx.core.ui.extensions.exportedText
 import com.philkes.notallyx.core.ui.extensions.restartApplication
+import com.philkes.notallyx.core.ui.platform.AndroidPermissionChecker
+import com.philkes.notallyx.core.ui.platform.AppPermission
+import com.philkes.notallyx.core.ui.platform.PermissionChecker
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.dao.CommonDao
 import com.philkes.notallyx.data.dao.LabelDao
@@ -64,9 +68,9 @@ import com.philkes.notallyx.feature.migration.imports.ImportException
 import com.philkes.notallyx.feature.migration.imports.ImportSource
 import com.philkes.notallyx.feature.migration.imports.NotesImporter
 import com.philkes.notallyx.feature.migration.imports.txt.APPLICATION_TEXT_MIME_TYPES
-import com.philkes.notallyx.feature.reminder.cancelPinAndReminders
+import com.philkes.notallyx.feature.reminder.AndroidReminderScheduler
+import com.philkes.notallyx.feature.reminder.ReminderScheduler
 import com.philkes.notallyx.navigation.NotallyNavKey
-import com.philkes.notallyx.scheduleAutoRemoveOldDeletedNotes
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -90,21 +94,20 @@ import kotlinx.coroutines.withContext
 class SettingsViewModel(
     private val app: Application,
     val preferences: NotallyXPreferences,
-) : AndroidViewModel(app) {
+    private val appInfo: AppInfo = AppInfoProvider.current,
+    private val pathProvider: PathProvider = AndroidPathProvider(app),
+    private val taskScheduler: TaskScheduler = AndroidTaskScheduler(app),
+    private val reminderScheduler: ReminderScheduler = AndroidReminderScheduler(app),
+    private val permissionChecker: PermissionChecker = AndroidPermissionChecker(app),
+) : ViewModel() {
 
     private var database: NotallyDatabase? = null
     private lateinit var baseNoteDao: BaseNoteDao
     private lateinit var labelDao: LabelDao
     private lateinit var commonDao: CommonDao
 
-    private val appVersion: String by lazy {
-        try {
-            val pInfo = app.packageManager.getPackageInfo(app.packageName, 0)
-            pInfo.versionName ?: ""
-        } catch (_: Exception) {
-            ""
-        }
-    }
+    private val appVersion: String
+        get() = appInfo.versionName
 
     private enum class BiometricFlowState {
         IDLE,
@@ -495,28 +498,23 @@ class SettingsViewModel(
             }
             is SettingsAction.SetupBackupsFolder -> {
                 setupBackupsFolder(action.uri)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (!permissionChecker.isGranted(AppPermission.POST_NOTIFICATIONS)) {
                     val permission = Manifest.permission.POST_NOTIFICATIONS
-                    if (
-                        ContextCompat.checkSelfPermission(app, permission) !=
-                            PackageManager.PERMISSION_GRANTED
-                    ) {
-                        _activeDialog.update {
-                            SettingsDialogState.Confirm(
-                                message =
-                                    app.getString(
-                                        R.string.please_grant_notally_notification_auto_backup
-                                    ),
-                                positiveButtonText = app.getString(R.string.continue_),
-                                negativeButtonText = app.getString(R.string.skip),
-                                onConfirm = {
-                                    _activeDialog.update { null }
-                                    emitSideEffect(
-                                        SettingsSideEffect.RequestNotificationPermission(permission)
-                                    )
-                                },
-                            )
-                        }
+                    _activeDialog.update {
+                        SettingsDialogState.Confirm(
+                            message =
+                                app.getString(
+                                    R.string.please_grant_notally_notification_auto_backup
+                                ),
+                            positiveButtonText = app.getString(R.string.continue_),
+                            negativeButtonText = app.getString(R.string.skip),
+                            onConfirm = {
+                                _activeDialog.update { null }
+                                emitSideEffect(
+                                    SettingsSideEffect.RequestNotificationPermission(permission)
+                                )
+                            },
+                        )
                     }
                 }
             }
@@ -888,6 +886,13 @@ class SettingsViewModel(
     }
 
     private fun showEncryptDatabaseDialog() {
+        if (!NotallyDatabase.FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB) {
+            savePreference(preferences.biometricLockEncryptsDb, false)
+            savePreference(preferences.biometricLock, BiometricLock.ENABLED)
+            emitSideEffect(SettingsSideEffect.ShowToast(R.string.biometrics_setup_success))
+            _activeDialog.update { null }
+            return
+        }
         _activeDialog.update {
             SettingsDialogState.EncryptDatabase(
                 onContinue = { shouldEncrypt ->
@@ -1069,11 +1074,10 @@ class SettingsViewModel(
 
     fun updateAutoRemoveDeletedNotes(days: Int) {
         savePreference(preferences.autoRemoveDeletedNotesAfterDays, days)
-        val workManager = WorkManager.getInstance(app)
         if (days > 0) {
-            workManager.scheduleAutoRemoveOldDeletedNotes(app)
+            taskScheduler.scheduleAutoRemoveDeletedNotes()
         } else {
-            workManager.cancelAutoRemoveOldDeletedNotes()
+            taskScheduler.cancelAutoRemoveDeletedNotes()
         }
     }
 
@@ -1254,9 +1258,11 @@ class SettingsViewModel(
                 withContext(Dispatchers.IO) {
                     Pair(baseNoteDao.getAllIds().toLongArray(), baseNoteDao.getAllReminders())
                 }
-            noteReminders.forEach { app.cancelPinAndReminders(it.id, it.reminders) }
+            noteReminders.forEach {
+                reminderScheduler.cancelAllRemindersForNote(it.id, it.reminders)
+            }
             val deletedNotes = deleteBaseNotes(ids)
-            app.deleteAttachments(deletedNotes)
+            pathProvider.deleteNoteAttachments(deletedNotes, preferences.dataInPublicFolder.value)
             withContext(Dispatchers.IO) { labelDao.deleteAll() }
             savePreference(preferences.startView, START_VIEW_DEFAULT)
             emitSideEffect(SettingsSideEffect.ShowToast(R.string.cleared_data))
@@ -1265,7 +1271,7 @@ class SettingsViewModel(
 
     private suspend fun deleteBaseNotes(ids: LongArray): Collection<BaseNote> {
         val notes = withContext(Dispatchers.IO) { baseNoteDao.getByIds(ids) }
-        app.cancelPinAndReminders(notes)
+        reminderScheduler.cancelAllRemindersForNotes(notes)
         return withContext(Dispatchers.IO) {
             baseNoteDao.delete(ids)
             return@withContext notes

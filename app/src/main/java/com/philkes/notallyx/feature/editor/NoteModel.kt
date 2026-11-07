@@ -6,12 +6,11 @@ import android.net.Uri
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.Cache
 import com.philkes.notallyx.core.common.extensions.deleteAttachments
-import com.philkes.notallyx.core.common.extensions.getCurrentAudioDirectory
 import com.philkes.notallyx.core.common.extensions.getCurrentFilesDirectory
 import com.philkes.notallyx.core.common.extensions.getCurrentImagesDirectory
 import com.philkes.notallyx.core.common.extensions.getTempAudioFile
@@ -20,6 +19,8 @@ import com.philkes.notallyx.core.common.result.FileError
 import com.philkes.notallyx.core.common.result.Progress
 import com.philkes.notallyx.core.database.DatabaseNotConnectedException
 import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.platform.AndroidPathProvider
+import com.philkes.notallyx.core.platform.PathProvider
 import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.extensions.showToast
@@ -148,12 +149,13 @@ sealed interface EditorBottomSheetState {
 open class NoteModel(
     protected val app: Application,
     val preferences: NotallyXPreferences,
-) : AndroidViewModel(app) {
+) : ViewModel() {
 
+    protected val pathProvider: PathProvider = AndroidPathProvider(app)
     val activeDialog = MutableStateFlow<EditorDialogState?>(null)
     val activeBottomSheet = MutableStateFlow<EditorBottomSheetState?>(null)
 
-    protected val database = NotallyDatabase.getDatabase(app)
+    protected val database: StateFlow<NotallyDatabase?> = NotallyDatabase.getDatabase(app)
     protected var baseNoteDao: BaseNoteDao? = null
     private val attachmentMutex = Mutex()
 
@@ -206,9 +208,12 @@ open class NoteModel(
         return newMode
     }
 
-    var imageRoot = app.getCurrentImagesDirectory()
-    var audioRoot = app.getCurrentAudioDirectory()
-    var filesRoot = app.getCurrentFilesDirectory()
+    var imageRoot: File? =
+        pathProvider.getMediaDirectory("Images", preferences.dataInPublicFolder.value)
+    var audioRoot: File? =
+        pathProvider.getMediaDirectory("Audios", preferences.dataInPublicFolder.value)
+    var filesRoot: File? =
+        pathProvider.getMediaDirectory("Files", preferences.dataInPublicFolder.value)
 
     var originalNote: BaseNote? = null
 
@@ -389,7 +394,15 @@ open class NoteModel(
         if (createInDb) {
             id =
                 withContext(Dispatchers.IO) {
-                    baseNoteDao?.insertSafe(app, baseNote) ?: throw DatabaseNotConnectedException()
+                    baseNoteDao?.insertSafe(baseNote) { truncatedLen, origLen ->
+                        app.showToast(
+                            app.getString(
+                                R.string.note_too_big_truncating,
+                                truncatedLen.toString(),
+                                origLen.toString(),
+                            )
+                        )
+                    } ?: throw DatabaseNotConnectedException()
                 }
         }
         return baseNote.copy(id = id)
@@ -418,7 +431,16 @@ open class NoteModel(
     suspend fun saveNote(checkBackupOnSave: Boolean = true): Long {
         return withContext(Dispatchers.IO) {
             val note = getBaseNote()
-            val id = baseNoteDao?.insertSafe(app, note) ?: throw DatabaseNotConnectedException()
+            val id =
+                baseNoteDao?.insertSafe(note) { truncatedLen, origLen ->
+                    app.showToast(
+                        app.getString(
+                            R.string.note_too_big_truncating,
+                            truncatedLen.toString(),
+                            origLen.toString(),
+                        )
+                    )
+                } ?: throw DatabaseNotConnectedException()
             if (checkBackupOnSave) {
                 checkBackupOnSave(note)
             }

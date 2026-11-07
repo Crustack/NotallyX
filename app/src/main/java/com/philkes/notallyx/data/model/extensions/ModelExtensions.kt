@@ -1,21 +1,9 @@
 package com.philkes.notallyx.data.model.extensions
 
-import android.content.ContextWrapper
-import android.content.Intent
-import android.net.Uri
-import android.text.Html
-import android.util.Base64
-import androidx.core.content.IntentCompat
-import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.extensions.decodeToBitmap
-import com.philkes.notallyx.core.common.extensions.getFileName
-import com.philkes.notallyx.core.common.extensions.getMimeType
-import com.philkes.notallyx.core.common.extensions.log
+import com.philkes.notallyx.core.common.extensions.decodeImageDimensions
 import com.philkes.notallyx.core.database.Converters
 import com.philkes.notallyx.core.ui.extensions.applySpans
-import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.core.ui.extensions.toHtml
-import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.BaseNote.Companion.COLOR_DEFAULT
 import com.philkes.notallyx.data.model.ColorString
@@ -24,17 +12,35 @@ import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.feature.editor.NoteModel
+import com.philkes.notallyx.data.model.isValidColorString
 import com.philkes.notallyx.feature.migration.imports.utils.createMarkdownFromBodyAndSpans
 import java.io.File
 import java.text.DateFormat
-import org.json.JSONArray
-import org.json.JSONException
-import org.json.JSONObject
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.longOrNull
+import kotlinx.serialization.json.put
+import org.jsoup.nodes.Entities
 
 private const val NOTE_URL_PREFIX = "note://"
 private val NOTE_URL_POSTFIX_NOTE = "/${Type.NOTE.name}"
 private val NOTE_URL_POSTFIX_LIST = "/${Type.LIST.name}"
+
+@OptIn(ExperimentalSerializationApi::class)
+private val prettyJson = Json {
+    prettyPrint = true
+    prettyPrintIndent = "  "
+}
 
 fun CharSequence?.isNoteUrl(): Boolean {
     return this?.let { startsWith(NOTE_URL_PREFIX) } ?: false
@@ -61,7 +67,8 @@ val FileAttachment.isImage: Boolean
     get() {
         return mimeType.isImageMimeType
     }
-private val String.isImageMimeType: Boolean
+
+internal val String.isImageMimeType: Boolean
     get() {
         return startsWith("image/")
     }
@@ -86,33 +93,33 @@ fun BaseNote.toTxt(includeTitle: Boolean = true, includeCreationDate: Boolean = 
     }
 
 fun BaseNote.toJson(): String {
-    val jsonObject =
-        JSONObject()
-            .put("type", type.name)
-            .put("color", color)
-            .put("title", title)
-            .put("pinned", pinned)
-            .put("timestamp", timestamp)
-            .put("modifiedTimestamp", modifiedTimestamp)
-            .put("labels", JSONArray(labels))
+    val jsonObject = buildJsonObject {
+        put("type", type.name)
+        put("color", color)
+        put("title", title)
+        put("pinned", pinned)
+        put("timestamp", timestamp)
+        put("modifiedTimestamp", modifiedTimestamp)
+        put("labels", buildJsonArray { labels.forEach { add(JsonPrimitive(it)) } })
 
-    when (type) {
-        Type.NOTE -> {
-            jsonObject.put("body", body)
-            jsonObject.put("spans", Converters.spansToJSONArray(spans))
-        }
+        when (type) {
+            Type.NOTE -> {
+                put("body", body)
+                put("spans", Converters.spansToJSONArray(spans))
+            }
 
-        Type.LIST -> {
-            jsonObject.put("items", Converters.itemsToJSONArray(items))
+            Type.LIST -> {
+                put("items", Converters.itemsToJSONArray(items))
+            }
         }
+        put("reminders", Converters.remindersToJSONArray(reminders))
+        put("viewMode", viewMode.name)
     }
-    jsonObject.put("reminders", Converters.remindersToJSONArray(reminders))
-    jsonObject.put("viewMode", viewMode.name)
-    return jsonObject.toString(2)
+    return prettyJson.encodeToString(JsonObject.serializer(), jsonObject)
 }
 
 fun String.toBaseNote(): BaseNote {
-    val jsonObject = JSONObject(this)
+    val jsonObject = Json.parseToJsonElement(this).jsonObject
     val id = jsonObject.getLongOrDefault("id", -1L)
     val type = Type.valueOfOrDefault(jsonObject.getStringOrDefault("type", Type.NOTE.name))
     val folder = Folder.valueOfOrDefault(jsonObject.getStringOrDefault("folder", Folder.NOTES.name))
@@ -155,41 +162,33 @@ fun String.toBaseNote(): BaseNote {
     )
 }
 
-private fun JSONObject.getStringOrDefault(key: String, defaultValue: String): String {
-    return try {
-        getString(key)
-    } catch (_: JSONException) {
-        defaultValue
-    }
+private fun JsonObject.getStringOrDefault(key: String, defaultValue: String): String {
+    val element = this[key] ?: return defaultValue
+    if (element is JsonNull) return defaultValue
+    return (element as? JsonPrimitive)?.content ?: defaultValue
 }
 
-private fun JSONObject.getArrayOrEmpty(key: String): JSONArray {
-    return try {
-        getJSONArray(key)
-    } catch (exception: JSONException) {
-        JSONArray("[]")
-    }
+private fun JsonObject.getArrayOrEmpty(key: String): JsonArray {
+    val element = this[key] ?: return buildJsonArray {}
+    return element as? JsonArray ?: buildJsonArray {}
 }
 
-private fun JSONObject.getBooleanOrDefault(key: String, defaultValue: Boolean): Boolean {
-    return try {
-        getBoolean(key)
-    } catch (exception: JSONException) {
-        defaultValue
-    }
+private fun JsonObject.getBooleanOrDefault(key: String, defaultValue: Boolean): Boolean {
+    val element = this[key] ?: return defaultValue
+    if (element is JsonNull) return defaultValue
+    return (element as? JsonPrimitive)?.booleanOrNull ?: defaultValue
 }
 
-private fun JSONObject.getLongOrDefault(key: String, defaultValue: Long): Long {
-    return try {
-        getLong(key)
-    } catch (exception: JSONException) {
-        defaultValue
-    }
+private fun JsonObject.getLongOrDefault(key: String, defaultValue: Long): Long {
+    val element = this[key] ?: return defaultValue
+    if (element is JsonNull) return defaultValue
+    return (element as? JsonPrimitive)?.longOrNull ?: defaultValue
 }
 
+@OptIn(ExperimentalEncodingApi::class)
 fun BaseNote.toHtml(showDateCreated: Boolean, imagesRootFolder: File?) = buildString {
     val date = DateFormat.getDateInstance(DateFormat.FULL).format(timestamp)
-    val title = Html.escapeHtml(title)
+    val title = Entities.escape(title)
 
     append("<!DOCTYPE html>")
     append("<html><head>")
@@ -241,7 +240,7 @@ fun BaseNote.toHtml(showDateCreated: Boolean, imagesRootFolder: File?) = buildSt
         Type.LIST -> {
             append("<ol style=\"list-style: none; padding: 0;\">")
             items.forEach { item ->
-                val body = Html.escapeHtml(item.body)
+                val body = Entities.escape(item.body)
                 val checked = if (item.checked) "checked" else ""
                 val child = if (item.isChild) "style=\"margin-left: 20px\"" else ""
                 append("<li><input type=\"checkbox\" $child $checked>$body</li>")
@@ -255,12 +254,16 @@ fun BaseNote.toHtml(showDateCreated: Boolean, imagesRootFolder: File?) = buildSt
             val file =
                 if (imagesRootFolder != null) File(imagesRootFolder, image.localName) else null
             file?.readBytes()?.let { bytes ->
-                val base64String = Base64.encodeToString(bytes, Base64.NO_WRAP)
-                val options = file.decodeToBitmap()
-                val width = options?.width
-                val height = options?.height
+                val base64String = Base64.encode(bytes)
+                val dimensions = file.decodeImageDimensions()
+                val sizeAttributes =
+                    if (dimensions != null) {
+                        " width=\"${dimensions.first}\" height=\"${dimensions.second}\""
+                    } else {
+                        ""
+                    }
                 append(
-                    "<img src=\"data:image/jpeg;base64,$base64String\" alt=\"${image.originalName}\"${options?.let { " width=\"$width\" height=\"$height\"" } ?: ""} />"
+                    "<img src=\"data:image/jpeg;base64,$base64String\" alt=\"${image.originalName}\"$sizeAttributes />"
                 )
             }
         }
@@ -310,13 +313,7 @@ fun Collection<ListItem>.deepCopy() = map { it.copy(children = mutableListOf()) 
 private fun ColorString.isValid() =
     when (this) {
         COLOR_DEFAULT -> true
-        else ->
-            try {
-                android.graphics.Color.parseColor(this)
-                true
-            } catch (_: Exception) {
-                false
-            }
+        else -> isValidColorString()
     }
 
 data class SharedNote(
@@ -325,64 +322,3 @@ data class SharedNote(
     val images: List<FileAttachment>,
     val files: List<FileAttachment>,
 )
-
-fun Intent.generateBaseNote(context: ContextWrapper): SharedNote {
-    val title = getStringExtra(Intent.EXTRA_SUBJECT) ?: data?.let { context.getFileName(it) } ?: ""
-    val intentFiles =
-        IntentCompat.getParcelableArrayListExtra(this, Intent.EXTRA_STREAM, Uri::class.java)
-            ?: IntentCompat.getParcelableExtra(this, Intent.EXTRA_STREAM, Uri::class.java)?.let {
-                listOf(it)
-            }
-    val text =
-        (data?.let { uri ->
-                context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                    try {
-                        inputStream.bufferedReader().readText()
-                    } catch (e: Exception) {
-                        context.log(
-                            tag = "",
-                            msg = "Reading text contents from intent failed",
-                            throwable = e,
-                        )
-                        null
-                    }
-                }
-                    ?: run {
-                        context.showToast(R.string.cant_load_file)
-                        null
-                    }
-            } ?: getStringExtra(Intent.EXTRA_TEXT) ?: "")
-            .let {
-                if (it.length > MAX_BODY_CHAR_LENGTH) {
-                    context.showToast(
-                        context.getString(
-                            R.string.note_text_too_long_truncated,
-                            MAX_BODY_CHAR_LENGTH,
-                        )
-                    )
-                }
-                it.take(MAX_BODY_CHAR_LENGTH)
-            }
-    val (images, files) =
-        intentFiles?.let {
-            val filesByType = it.groupBy { uri ->
-                context.getMimeType(uri)?.let { mimeType ->
-                    if (mimeType.isImageMimeType) {
-                        NoteModel.FileType.IMAGE
-                    } else {
-                        NoteModel.FileType.ANY
-                    }
-                } ?: NoteModel.FileType.ANY
-            }
-            val images =
-                filesByType[NoteModel.FileType.IMAGE]?.let { images ->
-                    images.map { FileAttachment("", it.toString(), "") }
-                } ?: listOf()
-            val files =
-                filesByType[NoteModel.FileType.ANY]?.let { otherFiles ->
-                    otherFiles.map { FileAttachment("", it.toString(), "") }
-                } ?: listOf()
-            Pair(images, files)
-        } ?: Pair(listOf(), listOf())
-    return SharedNote(title, text, images, files = files)
-}

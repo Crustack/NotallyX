@@ -1,6 +1,5 @@
 package com.philkes.notallyx.core.database
 
-import android.app.Dialog
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,7 +10,7 @@ object ConverterErrorReporter {
     val enabled = AtomicBoolean(true)
     val errors: StateFlow<Throwable?>
         field = MutableStateFlow<Throwable?>(null)
-    val activeDialogs = Collections.synchronizedSet(mutableSetOf<Dialog>())
+    val dismissCallbacks = Collections.synchronizedSet(mutableSetOf<() -> Unit>())
 
     fun reportError(throwable: Throwable) {
         if (enabled.get() && errors.value == null) {
@@ -20,8 +19,8 @@ object ConverterErrorReporter {
     }
 
     fun dismissAllDialogs() {
-        activeDialogs.toList().forEach { it.dismiss() }
-        synchronized(activeDialogs) { activeDialogs.clear() }
+        dismissCallbacks.toList().forEach { it.invoke() }
+        synchronized(dismissCallbacks) { dismissCallbacks.clear() }
         errors.value = null
     }
 }

@@ -1,5 +1,6 @@
 package com.philkes.notallyx.data.model
 
-import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
 
-@Parcelize data class Audio(var name: String, var duration: Long?, var timestamp: Long) : Attachment
+@Serializable
+data class Audio(var name: String, var duration: Long?, var timestamp: Long) : Attachment

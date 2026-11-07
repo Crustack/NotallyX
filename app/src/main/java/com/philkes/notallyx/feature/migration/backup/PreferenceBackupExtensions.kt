@@ -9,8 +9,16 @@ import com.philkes.notallyx.core.common.extensions.log
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import java.io.IOException
 import java.io.InputStream
-import org.json.JSONArray
-import org.json.JSONObject
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 
 private const val TAG = "PreferenceBackupExtensions"
 
@@ -38,21 +46,27 @@ fun Context.importPreferences(
     try {
         val inputStream: InputStream? = contentResolver.openInputStream(jsonFile)
         val jsonString = inputStream?.bufferedReader()?.use { it.readText() } ?: return false
-        val jsonObject = JSONObject(jsonString)
-        for (key in jsonObject.keys()) {
-            if (key in ignore) {
+        val jsonObject = Json.parseToJsonElement(jsonString).jsonObject
+        for ((key, value) in jsonObject.entries) {
+            if (key in ignore || value is JsonNull) {
                 continue
             }
-            when (val value = jsonObject.get(key)) {
-                is Int -> to.putInt(key, value)
-                is Boolean -> to.putBoolean(key, value)
-                is Double -> to.putFloat(key, value.toFloat())
-                is Long -> to.putLong(key, value)
-                is JSONArray -> {
-                    val set = (0 until value.length()).map { value.getString(it) }.toSet()
+            when (value) {
+                is JsonArray -> {
+                    val set = value.map { it.jsonPrimitive.content }.toSet()
                     to.putStringSet(key, set)
                 }
-
+                is JsonPrimitive -> {
+                    if (value.isString) {
+                        to.putString(key, value.content)
+                    } else {
+                        value.booleanOrNull?.let { to.putBoolean(key, it) }
+                            ?: value.intOrNull?.let { to.putInt(key, it) }
+                            ?: value.longOrNull?.let { to.putLong(key, it) }
+                            ?: value.doubleOrNull?.let { to.putFloat(key, it.toFloat()) }
+                            ?: to.putString(key, value.content)
+                    }
+                }
                 else -> to.putString(key, value.toString())
             }
         }

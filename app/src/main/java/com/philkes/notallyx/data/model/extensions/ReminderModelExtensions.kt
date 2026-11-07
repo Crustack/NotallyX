@@ -1,8 +1,7 @@
 package com.philkes.notallyx.data.model.extensions
 
-import android.content.Context
-import com.philkes.notallyx.R
-import com.philkes.notallyx.core.ui.extensions.getQuantityStringPlain
+import com.philkes.notallyx.core.preference.DateFormat
+import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Repetition
 import com.philkes.notallyx.data.model.RepetitionTimeUnit
@@ -11,60 +10,174 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-fun Reminder.toRepetitionText(context: Context): String {
-    val rep = repetition ?: return context.getString(R.string.reminder_no_repetition)
+/**
+ * Platform-independent localized strings for formatting [Reminder] and [Repetition] descriptions
+ * without requiring `android.content.Context` (`PREP-008`).
+ */
+data class RepetitionStrings(
+    val noRepetition: String = "Does not repeat",
+    val every: String = "Every",
+    val daily: String = "Daily",
+    val weekly: String = "Weekly",
+    val monthly: String = "Monthly",
+    val yearly: String = "Yearly",
+    val minutes: String = "Minutes",
+    val hours: String = "Hours",
+    val daysSingular: String = "Day",
+    val daysPlural: String = "Days",
+    val weeks: String = "Weeks",
+    val months: String = "Months",
+    val years: String = "Years",
+    val ofTheMonthPattern: String = "%1\$s of the month",
+    val ofTheMonthLastPattern: String = "Last %1\$s of the month",
+) {
+    fun ofTheMonth(arg: String): String = String.format(ofTheMonthPattern, arg)
+
+    fun ofTheMonthLast(arg: String): String = String.format(ofTheMonthLastPattern, arg)
+
+    companion object {
+        fun forLocale(locale: Locale = Locale.getDefault()): RepetitionStrings {
+            return when (locale.language) {
+                "de" ->
+                    RepetitionStrings(
+                        noRepetition = "Keine Wiederholung",
+                        every = "Alle",
+                        daily = "Täglich",
+                        weekly = "Wöchentlich",
+                        monthly = "Monatlich",
+                        yearly = "Jährlich",
+                        minutes = "Minuten",
+                        hours = "Stunden",
+                        daysSingular = "Tag",
+                        daysPlural = "Tage",
+                        weeks = "Wochen",
+                        months = "Monate",
+                        years = "Jahre",
+                        ofTheMonthPattern = "%1\$s des Monats",
+                        ofTheMonthLastPattern = "Letzter %1\$s des Monats",
+                    )
+                "fr" ->
+                    RepetitionStrings(
+                        noRepetition = "Aucune répétition",
+                        every = "Tous les",
+                        daily = "Quotidien",
+                        weekly = "Hebdomadaire",
+                        monthly = "Mensuel",
+                        yearly = "Annuel",
+                        minutes = "Minutes",
+                        hours = "Heures",
+                        daysSingular = "Jour",
+                        daysPlural = "Jours",
+                        weeks = "Semaines",
+                        months = "Mois",
+                        years = "Années",
+                        ofTheMonthPattern = "%1\$s du mois",
+                        ofTheMonthLastPattern = "Dernier %1\$s du mois",
+                    )
+                "es" ->
+                    RepetitionStrings(
+                        noRepetition = "Sin repetición",
+                        every = "Cada",
+                        daily = "Diariamente",
+                        weekly = "Semanalmente",
+                        monthly = "Mensualmente",
+                        yearly = "Anualmente",
+                        minutes = "Minutos",
+                        hours = "Horas",
+                        daysSingular = "Día",
+                        daysPlural = "Días",
+                        weeks = "Semanas",
+                        months = "Meses",
+                        years = "Años",
+                        ofTheMonthPattern = "%1\$s del mes",
+                        ofTheMonthLastPattern = "Último %1\$s del mes",
+                    )
+                else -> RepetitionStrings()
+            }
+        }
+    }
+}
+
+fun Date.formatDate(
+    dateFormat: DateFormat = DateFormat.DD_MM_YY_GER,
+    timeFormat: TimeFormat = TimeFormat.TWENTY_FOUR_H,
+    ensureFullFormat: Boolean = false,
+): String {
+    val (effectiveDateFormat, effectiveTimeFormat) =
+        if (ensureFullFormat && dateFormat != DateFormat.RELATIVE) {
+            Pair(
+                dateFormat.takeIf { it != DateFormat.NONE } ?: DateFormat.DD_MM_YY_GER,
+                timeFormat.takeIf { it != TimeFormat.NONE } ?: TimeFormat.TWENTY_FOUR_H,
+            )
+        } else Pair(dateFormat, timeFormat)
+    if (effectiveDateFormat == DateFormat.NONE && effectiveTimeFormat == TimeFormat.NONE) {
+        return ""
+    }
+    val datePart = effectiveDateFormat.format(this)
+    val timePart = effectiveTimeFormat.format(this)
+
+    return if (datePart.isNotEmpty() && timePart.isNotEmpty()) {
+        "$datePart $timePart"
+    } else {
+        datePart + timePart
+    }
+}
+
+fun Reminder.toRepetitionText(
+    locale: Locale = Locale.getDefault(),
+    strings: RepetitionStrings = RepetitionStrings.forLocale(locale),
+): String {
+    val rep = repetition ?: return strings.noRepetition
     if (rep.unit == RepetitionTimeUnit.MONTHS && rep.occurrence == null && rep.value == 1) {
         val calendar = dateTime.toCalendar()
         val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
         val isLastDayOfMonth = dayOfMonth == calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
 
-        return if (isLastDayOfMonth)
-            context.getString(
-                R.string.of_the_month_last,
-                context.getQuantityStringPlain(R.plurals.days, 1),
-            )
-        else context.getString(R.string.of_the_month, "$dayOfMonth.")
+        return if (isLastDayOfMonth) {
+            strings.ofTheMonthLast(strings.daysSingular)
+        } else {
+            strings.ofTheMonth("$dayOfMonth.")
+        }
     }
-    return rep.toText(context)
+    return rep.toText(locale, strings)
 }
 
-fun Repetition.toText(context: Context): String {
+fun Repetition.toText(
+    locale: Locale = Locale.getDefault(),
+    strings: RepetitionStrings = RepetitionStrings.forLocale(locale),
+): String {
     if (unit == RepetitionTimeUnit.MONTHS && occurrence != null && dayOfWeek != null) {
         val dayOfWeekStr =
-            SimpleDateFormat("EEEE", Locale.getDefault())
+            SimpleDateFormat("EEEE", locale)
                 .format(
                     Calendar.getInstance().apply { set(Calendar.DAY_OF_WEEK, dayOfWeek!!) }.time
                 )
         val monthlyOptionText =
             when (occurrence) {
-                -1 -> context.getString(R.string.of_the_month_last, dayOfWeekStr)
-                else -> "$occurrence. ${context.getString(R.string.of_the_month, dayOfWeekStr)}"
+                -1 -> strings.ofTheMonthLast(dayOfWeekStr)
+                else -> "$occurrence. ${strings.ofTheMonth(dayOfWeekStr)}"
             }
-        val prefix =
-            if (value == 1) ""
-            else "${context.getString(R.string.every)} $value ${context.getString(R.string.months)}"
+        val prefix = if (value == 1) "" else "${strings.every} $value ${strings.months}"
         return "$prefix $monthlyOptionText"
     }
     return when {
-        value == 1 && unit == RepetitionTimeUnit.DAYS -> context.getString(R.string.daily)
-        value == 1 && unit == RepetitionTimeUnit.WEEKS -> context.getString(R.string.weekly)
-        value == 1 && unit == RepetitionTimeUnit.MONTHS -> context.getString(R.string.monthly)
-        value == 1 && unit == RepetitionTimeUnit.YEARS -> context.getString(R.string.yearly)
-        else -> "${context.getString(R.string.every)} $value ${unit.toText(context)}"
+        value == 1 && unit == RepetitionTimeUnit.DAYS -> strings.daily
+        value == 1 && unit == RepetitionTimeUnit.WEEKS -> strings.weekly
+        value == 1 && unit == RepetitionTimeUnit.MONTHS -> strings.monthly
+        value == 1 && unit == RepetitionTimeUnit.YEARS -> strings.yearly
+        else -> "${strings.every} $value ${unit.toText(strings)}"
     }
 }
 
-private fun RepetitionTimeUnit.toText(context: Context): String {
-    val resId =
-        when (this) {
-            RepetitionTimeUnit.MINUTES -> R.string.minutes
-            RepetitionTimeUnit.HOURS -> R.string.hours
-            RepetitionTimeUnit.DAYS -> return context.getQuantityStringPlain(R.plurals.days, 10)
-            RepetitionTimeUnit.WEEKS -> R.string.weeks
-            RepetitionTimeUnit.MONTHS -> R.string.months
-            RepetitionTimeUnit.YEARS -> R.string.years
-        }
-    return context.getString(resId)
+private fun RepetitionTimeUnit.toText(strings: RepetitionStrings): String {
+    return when (this) {
+        RepetitionTimeUnit.MINUTES -> strings.minutes
+        RepetitionTimeUnit.HOURS -> strings.hours
+        RepetitionTimeUnit.DAYS -> strings.daysPlural
+        RepetitionTimeUnit.WEEKS -> strings.weeks
+        RepetitionTimeUnit.MONTHS -> strings.months
+        RepetitionTimeUnit.YEARS -> strings.years
+    }
 }
 
 fun Collection<Reminder>.copy() = map { it.copy() }

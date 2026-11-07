@@ -17,8 +17,39 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.runtime.result.ResultEventBus
 import androidx.navigation3.runtime.result.rememberResultEventBus
 import androidx.navigation3.runtime.result.rememberResultEventBusNavEntryDecorator
-import androidx.navigation3.runtime.serialization.NavKeySerializer
 import androidx.savedstate.compose.serialization.serializers.MutableStateSerializer
+import androidx.savedstate.serialization.SavedStateConfiguration
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
+import kotlinx.serialization.modules.subclass
+
+val NotallyNavSavedStateConfig = SavedStateConfiguration {
+    serializersModule = SerializersModule {
+        polymorphic(NavKey::class) {
+            subclass(NotallyNavKey.Notes.serializer())
+            subclass(NotallyNavKey.Unlabeled.serializer())
+            subclass(NotallyNavKey.Labels.serializer())
+            subclass(NotallyNavKey.Deleted.serializer())
+            subclass(NotallyNavKey.Archived.serializer())
+            subclass(NotallyNavKey.Reminders.serializer())
+            subclass(NotallyNavKey.Settings.serializer())
+            subclass(NotallyNavKey.DisplayLabel.serializer())
+            subclass(NotallyNavKey.Search.serializer())
+            subclass(NotallyNavKey.EditNote.serializer())
+            subclass(NotallyNavKey.EditList.serializer())
+            subclass(NotallyNavKey.EditTextPlain.serializer())
+            subclass(NotallyNavKey.ViewImage.serializer())
+            subclass(NotallyNavKey.PlayAudio.serializer())
+            subclass(NotallyNavKey.RecordAudio.serializer())
+            subclass(NotallyNavKey.PickNote.serializer())
+            subclass(NotallyNavKey.NoteReminders.serializer())
+            subclass(NotallyNavKey.SelectLabels.serializer())
+            subclass(NotallyNavKey.ColorPicker.serializer())
+            subclass(NotallyNavKey.ExportFormat.serializer())
+            subclass(NotallyNavKey.Confirm.serializer())
+        }
+    }
+}
 
 val DEFAULT_TOP_LEVEL_NAV_KEYS: Set<NotallyNavKey> =
     setOf(
@@ -49,12 +80,15 @@ fun rememberNavigationState(
         rememberSerializable(
             startRoute,
             allTopLevelRoutes,
-            serializer = MutableStateSerializer(NavKeySerializer()),
+            configuration = NotallyNavSavedStateConfig,
+            serializer = MutableStateSerializer(NotallyNavKey.serializer()),
         ) {
             mutableStateOf(startRoute)
         }
 
-    val backStacks = allTopLevelRoutes.associateWith { key -> rememberNavBackStack(key) }
+    val backStacks = allTopLevelRoutes.associateWith { key ->
+        rememberNavBackStack(NotallyNavSavedStateConfig, key)
+    }
 
     val resultEventBus = rememberResultEventBus()
 

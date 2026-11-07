@@ -17,6 +17,7 @@ fun PickNoteScreen(
     LegacyPickNoteScreen(
         notes = state.notes,
         isGrid = state.isGrid,
+        imageRoot = state.imageRoot,
         onNoteClick = { onAction(PickNoteAction.NoteClicked(it)) },
         onBackClick = onBackClick,
         modifier = modifier,

@@ -1,10 +1,12 @@
 package com.philkes.notallyx.feature.labels
 
-import android.app.Application
-import android.database.sqlite.SQLiteConstraintException
 import androidx.lifecycle.viewModelScope
+import androidx.sqlite.SQLiteException
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.BaseViewModel
+import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.platform.DesktopPathProvider
+import com.philkes.notallyx.core.platform.PathProvider
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.data.model.Label
 import kotlinx.coroutines.Dispatchers
@@ -25,9 +27,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class SelectLabelsViewModel(
-    app: Application,
     preferences: NotallyXPreferences,
-) : BaseViewModel(app, preferences) {
+    databaseStateFlow: StateFlow<NotallyDatabase?> = NotallyDatabase.instance,
+    pathProvider: PathProvider = DesktopPathProvider(),
+) : BaseViewModel(preferences, databaseStateFlow, pathProvider) {
 
     private val _selectedLabels = MutableStateFlow<Set<String>>(emptySet())
     private val _activeDialog = MutableStateFlow<LabelDialogState?>(null)
@@ -114,7 +117,9 @@ class SelectLabelsViewModel(
                 dao.insert(Label(labelValue, maxOrder + 1))
                 _activeDialog.update { null }
                 _selectedLabels.update { it + labelValue }
-            } catch (_: SQLiteConstraintException) {
+            } catch (_: SQLiteException) {
+                _sideEffects.send(SelectLabelsSideEffect.ShowToast(R.string.label_exists))
+            } catch (_: Exception) {
                 _sideEffects.send(SelectLabelsSideEffect.ShowToast(R.string.label_exists))
             }
         }

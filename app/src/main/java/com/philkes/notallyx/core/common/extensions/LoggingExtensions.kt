@@ -5,12 +5,11 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.util.Log
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
-import com.philkes.notallyx.BuildConfig
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.platform.AppInfoProvider
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.feature.migration.ExportMimeType
 import com.philkes.notallyx.feature.migration.backup.FILE_TIMESTAMP_FORMAT
@@ -95,14 +94,15 @@ fun ContextWrapper.exportCrashLogs(pid: Int, now: Date = Date()): File? {
 }
 
 private fun PrintWriter.printBuildInfos(timeString: String) {
+    val appInfo = AppInfoProvider.current
     this.println("Time : $timeString")
-    this.println("Version code : " + BuildConfig.VERSION_CODE)
-    this.println("Version name : " + BuildConfig.VERSION_NAME)
-    this.println("Model : " + Build.MODEL)
-    this.println("Device : " + Build.DEVICE)
-    this.println("Brand : " + Build.BRAND)
-    this.println("Manufacturer : " + Build.MANUFACTURER)
-    this.println("Android : " + Build.VERSION.SDK_INT)
+    this.println("Version code : " + appInfo.versionCode)
+    this.println("Version name : " + appInfo.versionName)
+    this.println("Model : " + appInfo.model)
+    this.println("Device : " + appInfo.device)
+    this.println("Brand : " + appInfo.brand)
+    this.println("Manufacturer : " + appInfo.manufacturer)
+    this.println("Android : " + appInfo.osVersion)
 }
 
 private fun Context.logToFile(
@@ -208,10 +208,11 @@ fun Context.createReportBugIntent(
         return this?.let { "&$paramName=${URLEncoder.encode(this, "UTF-8")}" } ?: ""
     }
 
+    val appInfo = AppInfoProvider.current
     val url =
         "https://github.com/Crustack/NotallyX/issues/new?labels=bug&projects=&template=bug_report.yml${
             title.asQueryParam("title")
-        }&version=${BuildConfig.VERSION_NAME}&android-version=${Build.VERSION.SDK_INT}${
+        }&version=${appInfo.versionName}&android-version=${appInfo.osVersion}${
             stackTrace.asQueryParam("logs")
         }${
             body.asQueryParam("what-happened")

@@ -40,6 +40,7 @@ import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.dialog.SelectionItem
 import com.philkes.notallyx.core.ui.dialog.SingleSelectionDialog
 import com.philkes.notallyx.core.ui.extensions.format
+import com.philkes.notallyx.core.ui.extensions.toRepetitionStrings
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Repetition
@@ -111,7 +112,8 @@ fun NoteRemindersScreen(
                                     state.timeFormat,
                                     ensureFullFormat = true,
                                 ),
-                            repetitionText = reminder.toRepetitionText(context),
+                            repetitionText =
+                                reminder.toRepetitionText(strings = context.toRepetitionStrings()),
                             onEdit = {
                                 onAction(NoteRemindersAction.EditReminderClicked(reminder))
                             },

@@ -1,10 +1,10 @@
 package com.philkes.notallyx.data.dao
 
-import android.util.Log
 import androidx.room3.Dao
 import androidx.room3.Transaction
 import com.philkes.notallyx.core.common.NoteSplitUtils
 import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.platform.AppLogger
 import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Label
@@ -125,7 +125,7 @@ abstract class CommonDao(private val database: NotallyDatabase) {
                         Pair(newId, listOf(Pair(newId, original.spans)))
                     }
                 } catch (e: Exception) {
-                    Log.e(
+                    AppLogger.e(
                         "Import",
                         "Failed to import note ${original.title} (id: ${original.id}), skipping it as corrupted",
                         e,
@@ -158,7 +158,7 @@ abstract class CommonDao(private val database: NotallyDatabase) {
                 try {
                     baseNoteDao.updateSpans(noteId, updated)
                 } catch (e: Exception) {
-                    Log.e("Import", "Failed to update spans for noteId: ${noteId})", e)
+                    AppLogger.e("Import", "Failed to update spans for noteId: ${noteId})", e)
                 }
             }
         }

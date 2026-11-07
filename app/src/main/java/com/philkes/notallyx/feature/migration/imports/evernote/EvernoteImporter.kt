@@ -2,15 +2,14 @@ package com.philkes.notallyx.feature.migration.imports.evernote
 
 import android.app.Application
 import android.net.Uri
-import android.util.Base64
-import android.webkit.MimeTypeMap
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.extensions.log
 import com.philkes.notallyx.core.common.extensions.startsWithAnyOf
 import com.philkes.notallyx.core.common.extensions.write
 import com.philkes.notallyx.core.common.result.ImportProgress
 import com.philkes.notallyx.core.common.result.ImportStage
 import com.philkes.notallyx.core.common.result.Progress
+import com.philkes.notallyx.core.platform.AppLogger
+import com.philkes.notallyx.core.platform.MimeTypeUtils
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
@@ -28,6 +27,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.simpleframework.xml.Serializer
 import org.simpleframework.xml.convert.AnnotationStrategy
@@ -43,14 +44,25 @@ class EvernoteImporter : ExternalImporter {
         progress: MutableStateFlow<Progress?>?,
     ): Pair<List<BaseNote>, File> {
         progress?.value = ImportProgress(indeterminate = true)
-        if (MimeTypeMap.getFileExtensionFromUrl(source.toString()) != "enex") {
+        if (MimeTypeUtils.getFileExtensionFromUrl(source.toString()) != "enex") {
             throw ImportException(
                 R.string.invalid_evernote,
                 IllegalArgumentException("Provided file is not in ENEX format"),
             )
         }
-        val evernoteExport: EvernoteExport =
-            parseExport(app.contentResolver.openInputStream(source)!!)!!
+        return importFromStream(
+            inputStream = app.contentResolver.openInputStream(source)!!,
+            destination = destination,
+            progress = progress,
+        )
+    }
+
+    fun importFromStream(
+        inputStream: InputStream,
+        destination: File,
+        progress: MutableStateFlow<Progress?>? = null,
+    ): Pair<List<BaseNote>, File> {
+        val evernoteExport: EvernoteExport = parseExport(inputStream)!!
 
         val total = evernoteExport.notes.size
         progress?.value = ImportProgress(total = total)
@@ -64,7 +76,7 @@ class EvernoteImporter : ExternalImporter {
                 }
             val resources =
                 evernoteExport.notes.flatMap { it.resources }.distinctBy { it.attributes?.fileName }
-            saveResourcesToFiles(app, resources, destination, progress)
+            saveResourcesToFiles(resources, destination, progress)
             return Pair(notes, destination)
         } catch (e: Exception) {
             throw ImportException(R.string.invalid_evernote, e)
@@ -78,8 +90,8 @@ class EvernoteImporter : ExternalImporter {
             throw ImportException(R.string.invalid_evernote, e)
         }
 
+    @OptIn(ExperimentalEncodingApi::class)
     private fun saveResourcesToFiles(
-        app: Application,
         resources: Collection<EvernoteResource>,
         dir: File,
         progress: MutableStateFlow<Progress?>? = null,
@@ -88,10 +100,10 @@ class EvernoteImporter : ExternalImporter {
         resources.forEachIndexed { idx, it ->
             val file = File(dir, it.attributes!!.fileName)
             try {
-                val data = Base64.decode(it.data!!.content.trimStart(), Base64.DEFAULT)
+                val data = Base64.Mime.decode(it.data!!.content.trim())
                 file.write(data)
             } catch (e: Exception) {
-                app.log(TAG, throwable = e)
+                AppLogger.e(TAG, "Failed to decode Evernote resource", e)
             }
             progress?.value =
                 ImportProgress(

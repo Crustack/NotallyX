@@ -2,13 +2,10 @@ package com.philkes.notallyx.feature.editor
 
 import android.Manifest
 import android.app.Application
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.print.PdfPrintListener
 import android.view.View
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
-import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.viewModelScope
@@ -21,6 +18,7 @@ import com.philkes.notallyx.core.common.extensions.resolveAttachmentFile
 import com.philkes.notallyx.core.common.extensions.toReadablePath
 import com.philkes.notallyx.core.common.extensions.uniqueCurrentMillis
 import com.philkes.notallyx.core.common.extensions.viewFile
+import com.philkes.notallyx.core.platform.PlatformUri
 import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.preference.EditListAction as PrefEditListAction
 import com.philkes.notallyx.core.preference.ListItemSort
@@ -28,6 +26,9 @@ import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.extensions.getQuantityString
 import com.philkes.notallyx.core.ui.extensions.showSnackbar
 import com.philkes.notallyx.core.ui.extensions.showToast
+import com.philkes.notallyx.core.ui.platform.AndroidPermissionChecker
+import com.philkes.notallyx.core.ui.platform.AppPermission
+import com.philkes.notallyx.core.ui.platform.PermissionChecker
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.ColorString
@@ -38,6 +39,7 @@ import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.deepCopy
+import com.philkes.notallyx.data.model.extensions.toHtml
 import com.philkes.notallyx.feature.editor.history.ChangeHistory
 import com.philkes.notallyx.feature.editor.history.changes.ListItemBodyDeltaChange
 import com.philkes.notallyx.feature.editor.history.changes.ListItemsChange
@@ -52,9 +54,11 @@ import com.philkes.notallyx.feature.editor.listitem.splitByChecked
 import com.philkes.notallyx.feature.editor.screens.EditNotePreferences
 import com.philkes.notallyx.feature.editor.screens.SearchState
 import com.philkes.notallyx.feature.migration.ExportMimeType
-import com.philkes.notallyx.feature.migration.backup.exportPdfFile
+import com.philkes.notallyx.feature.migration.backup.AndroidPdfExporter
+import com.philkes.notallyx.feature.migration.backup.PdfExporter
 import com.philkes.notallyx.feature.migration.backup.exportPlainTextFile
-import com.philkes.notallyx.feature.reminder.cancelPinAndReminders
+import com.philkes.notallyx.feature.reminder.AndroidReminderScheduler
+import com.philkes.notallyx.feature.reminder.ReminderScheduler
 import com.philkes.notallyx.feature.widget.NoteWidget
 import com.philkes.notallyx.navigation.NotallyNavKey
 import kotlin.time.Duration.Companion.milliseconds
@@ -78,6 +82,9 @@ import kotlinx.coroutines.withContext
 class EditListViewModel(
     app: Application,
     preferences: NotallyXPreferences,
+    private val permissionChecker: PermissionChecker = AndroidPermissionChecker(app),
+    private val reminderScheduler: ReminderScheduler = AndroidReminderScheduler(app),
+    private val pdfExporter: PdfExporter = AndroidPdfExporter(app),
 ) : NoteModel(app, preferences), NoteActionHandler {
 
     private val changeHistory = ChangeHistory()
@@ -705,7 +712,7 @@ class EditListViewModel(
 
     private fun moveNote(toFolder: Folder) {
         if (toFolder != Folder.NOTES) {
-            app.cancelPinAndReminders(id, reminders.value)
+            reminderScheduler.cancelAllRemindersForNote(id, reminders.value)
         }
         folder = toFolder
         viewModelScope.launch {
@@ -750,9 +757,7 @@ class EditListViewModel(
 
     override fun recordAudio() {
         val permission = Manifest.permission.RECORD_AUDIO
-        if (
-            ContextCompat.checkSelfPermission(app, permission) != PackageManager.PERMISSION_GRANTED
-        ) {
+        if (!permissionChecker.isGranted(AppPermission.RECORD_AUDIO)) {
             emitSideEffect(
                 EditListSideEffect.RequestAudioPermission(permission, showRationale = false)
             )
@@ -948,27 +953,22 @@ class EditListViewModel(
         viewModelScope.launch(exceptionHandler) {
             when (selectedExportMimeType) {
                 ExportMimeType.PDF -> {
-                    exportPdfFile(
-                        app,
-                        note,
-                        DocumentFile.fromSingleUri(app, fileUri)!!,
-                        pdfPrintListener =
-                            object : PdfPrintListener {
-                                override fun onSuccess(file: DocumentFile) {
-                                    val message = app.getQuantityString(R.plurals.exported_notes, 1)
-                                    snackbarView.showSnackbar(
-                                        "$message to '${app.toReadablePath(fileUri)}'",
-                                        R.string.open_link,
-                                    ) {
-                                        app.viewFile(fileUri, ExportMimeType.PDF.mimeType)
-                                    }
-                                }
-
-                                override fun onFailure(message: CharSequence?) {
-                                    app.log("EditListViewModel", stackTrace = message as String?)
-                                }
-                            },
-                    )
+                    val html = note.toHtml(preferences.showDateCreated(), imageRoot)
+                    val result = pdfExporter.exportHtmlToPdf(html, PlatformUri(fileUri.toString()))
+                    if (result.isSuccess) {
+                        val message = app.getQuantityString(R.plurals.exported_notes, 1)
+                        snackbarView.showSnackbar(
+                            "$message to '${app.toReadablePath(fileUri)}'",
+                            R.string.open_link,
+                        ) {
+                            app.viewFile(fileUri, ExportMimeType.PDF.mimeType)
+                        }
+                    } else {
+                        app.log(
+                            "EditListViewModel",
+                            stackTrace = result.exceptionOrNull()?.message,
+                        )
+                    }
                 }
                 else -> {
                     exportPlainTextFile(

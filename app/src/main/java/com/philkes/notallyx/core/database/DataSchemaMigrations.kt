@@ -2,11 +2,11 @@ package com.philkes.notallyx.core.database
 
 import android.app.Application
 import android.content.ContextWrapper
-import android.database.sqlite.SQLiteBlobTooBigException
+import androidx.sqlite.SQLiteException
 import com.philkes.notallyx.core.common.NoteRepairUtils.truncateBodyAndFixSpans
 import com.philkes.notallyx.core.common.NoteSplitUtils.splitOversizedExistingNoteForMigration
-import com.philkes.notallyx.core.common.extensions.log
 import com.philkes.notallyx.core.common.extensions.migrateAllAttachments
+import com.philkes.notallyx.core.platform.AppLogger
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.security.isEncryptedDatabase
 import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
@@ -48,8 +48,22 @@ suspend fun Application.runMigrations(onProgressTitle: (Int) -> Unit = {}): Migr
         if (newDataSchemaId < 3) {
             val dbFile = NotallyDatabase.getCurrentDatabaseFile(this@runMigrations)
             if (preferences.isLockEnabled && dbFile.isEncryptedDatabase(this@runMigrations)) {
-                preferences.biometricLockEncryptsDb.save(true)
-                showBiometricWarning = true
+                if (NotallyDatabase.FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB) {
+                    preferences.biometricLockEncryptsDb.save(true)
+                    showBiometricWarning = true
+                } else {
+                    val decrypted =
+                        NotallyDatabase.decryptDatabaseOnStartupIfNeeded(
+                            this@runMigrations,
+                            preferences,
+                        )
+                    preferences.biometricLockEncryptsDb.save(false)
+                    if (!decrypted) {
+                        showBiometricWarning = true
+                    } else {
+                        NotallyDatabase.postNewInstance(this@runMigrations)
+                    }
+                }
             }
             newDataSchemaId = 3
             didWork = true
@@ -64,9 +78,9 @@ suspend fun Application.runMigrations(onProgressTitle: (Int) -> Unit = {}): Migr
 private fun Application.moveAttachments(preferences: NotallyXPreferences) {
     val toPrivate = !preferences.dataInPublicFolder.value
     val destination = if (toPrivate) "private" else "public"
-    log(TAG, "Running migration 1: Moving attachments to $destination folder")
+    AppLogger.d(TAG, "Running migration 1: Moving attachments to $destination folder")
     val (moved, failed) = migrateAllAttachments(toPrivate)
-    log(
+    AppLogger.d(
         TAG,
         "Migration 1 finished. Moved $moved notes to $destination folder. Failed to move $failed notes.",
     )
@@ -79,13 +93,16 @@ private fun Application.moveAttachments(preferences: NotallyXPreferences) {
  * and must also fit within the size limit.
  */
 suspend fun Application.splitOversizedNotes() {
-    log(
+    val db = NotallyDatabase.getDatabase(this@splitOversizedNotes as ContextWrapper).value ?: return
+    splitOversizedNotes(db)
+}
+
+suspend fun splitOversizedNotes(db: NotallyDatabase) {
+    AppLogger.d(
         TAG,
         "Running migration 2: Splitting notes exceeding the body size limit (limit: $MAX_BODY_CHAR_LENGTH characters)",
     )
 
-    // Obtain a direct DB instance matching current storage location
-    val db = NotallyDatabase.getDatabase(this@splitOversizedNotes as ContextWrapper).value!!
     val dao = db.getBaseNoteDao()
 
     // ID-first to avoid loading huge rows into a single cursor; repair per-row if needed
@@ -96,23 +113,27 @@ suspend fun Application.splitOversizedNotes() {
         val original =
             try {
                 dao.get(id)
-            } catch (e: SQLiteBlobTooBigException) {
-                // Repair the single offending row, then retry
-                log(
-                    TAG,
-                    "Note (id: $id) threw exception (${e.javaClass.simpleName}) since body is too large or corrupted to load. Repairing...",
-                    e,
-                )
-                repaired += 1
-                try {
-                    truncateBodyAndFixSpans(dao, id)
-                    dao.get(id)
-                } catch (e2: Exception) {
-                    log(TAG, "Note (id: $id) could not be repaired. Deleting...", e2)
+            } catch (e: Exception) {
+                if (e is SQLiteException || e.javaClass.simpleName == "SQLiteBlobTooBigException") {
+                    // Repair the single offending row, then retry
+                    AppLogger.e(
+                        TAG,
+                        "Note (id: $id) threw exception (${e.javaClass.simpleName}) since body is too large or corrupted to load. Repairing...",
+                        e,
+                    )
+                    repaired += 1
                     try {
-                        dao.delete(id)
-                    } catch (_: Exception) {}
-                    null
+                        truncateBodyAndFixSpans(dao, id)
+                        dao.get(id)
+                    } catch (e2: Exception) {
+                        AppLogger.e(TAG, "Note (id: $id) could not be repaired. Deleting...", e2)
+                        try {
+                            dao.delete(id)
+                        } catch (_: Exception) {}
+                        null
+                    }
+                } else {
+                    throw e
                 }
             }
         if (original == null) return@forEach
@@ -122,11 +143,14 @@ suspend fun Application.splitOversizedNotes() {
 
         affected += 1
         val created = splitOversizedExistingNoteForMigration(original, dao)
-        log(
+        AppLogger.d(
             TAG,
             "Note (id: ${original.id}, title: '${original.title}') split into ${created+1} notes (was: $bodyLen characters).",
         )
     }
 
-    log(TAG, "Migration 2 finished. Processed $affected oversized notes. Repaired rows: $repaired")
+    AppLogger.d(
+        TAG,
+        "Migration 2 finished. Processed $affected oversized notes. Repaired rows: $repaired",
+    )
 }

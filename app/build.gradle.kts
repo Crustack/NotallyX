@@ -20,6 +20,7 @@ plugins {
     alias(libs.plugins.android.compose.screenshot)
     kotlin("plugin.compose") version libs.versions.kotlin
     // See build-logic module
+    id("notallyx.android.convention")
     id("notallyx.android.packaging")
     id("notallyx.android.screenshots")
     id("notallyx.android.localization")
@@ -303,3 +304,12 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(project(":test-lib"))
 }
+
+configurations
+    .matching { it.name.contains("UnitTest") }
+    .configureEach {
+        resolutionStrategy.dependencySubstitution {
+            substitute(module("androidx.sqlite:sqlite-bundled-android"))
+                .using(module("androidx.sqlite:sqlite-bundled-jvm:${libs.versions.sqlite.get()}"))
+        }
+    }

@@ -1,23 +1,27 @@
 package com.philkes.notallyx.feature.reminder
 
-import android.Manifest
 import android.app.Application
-import android.content.pm.PackageManager
-import android.os.Build
-import android.util.Log
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.BaseViewModel
 import com.philkes.notallyx.core.common.extensions.now
+import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.platform.AndroidPathProvider
+import com.philkes.notallyx.core.platform.AppLogger
+import com.philkes.notallyx.core.platform.DesktopPathProvider
+import com.philkes.notallyx.core.platform.PathProvider
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.extensions.getQuantityStringPlain
+import com.philkes.notallyx.core.ui.platform.AlwaysGrantedPermissionChecker
+import com.philkes.notallyx.core.ui.platform.AndroidPermissionChecker
+import com.philkes.notallyx.core.ui.platform.AppPermission
+import com.philkes.notallyx.core.ui.platform.PermissionChecker
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Repetition
 import com.philkes.notallyx.data.model.RepetitionTimeUnit
 import com.philkes.notallyx.data.model.extensions.toCalendar
-import com.philkes.notallyx.data.model.extensions.toText
+import com.philkes.notallyx.data.model.extensions.toRepetitionText
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -34,9 +38,25 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class NoteRemindersViewModel(
-    app: Application,
     preferences: NotallyXPreferences,
-) : BaseViewModel(app, preferences) {
+    databaseStateFlow: StateFlow<NotallyDatabase?> = NotallyDatabase.instance,
+    pathProvider: PathProvider = DesktopPathProvider(),
+    private val reminderScheduler: ReminderScheduler = NoOpReminderScheduler(),
+    private val permissionChecker: PermissionChecker = AlwaysGrantedPermissionChecker(),
+) : BaseViewModel(preferences, databaseStateFlow, pathProvider) {
+
+    constructor(
+        app: Application,
+        preferences: NotallyXPreferences,
+    ) : this(
+        preferences = preferences,
+        databaseStateFlow = NotallyDatabase.getDatabase(app),
+        pathProvider = AndroidPathProvider(app),
+        reminderScheduler = AndroidReminderScheduler(app),
+        permissionChecker = AndroidPermissionChecker(app),
+    ) {
+        this.app = app
+    }
 
     private var noteId: Long = -1L
     private val _reminders = MutableStateFlow<List<Reminder>>(emptyList())
@@ -102,9 +122,7 @@ class NoteRemindersViewModel(
                         preferences.timeFormatNoteView.value,
                         ensureFullFormat = true,
                     )
-                val repetitionText =
-                    reminder.repetition?.toText(app)
-                        ?: app.getString(R.string.reminder_no_repetition)
+                val repetitionText = reminder.toRepetitionText()
 
                 _activeDialog.value =
                     NoteRemindersDialogState.ConfirmDelete(
@@ -259,7 +277,7 @@ class NoteRemindersViewModel(
             is NoteRemindersAction.PermissionResult -> {
                 if (action.isGranted) {
                     if (action.permissionType == PermissionType.NOTIFICATION) {
-                        if (app.canScheduleAlarms()) {
+                        if (reminderScheduler.canScheduleExactAlarms()) {
                             openDatePicker(pendingReminder, pendingCalendar)
                         } else {
                             viewModelScope.launch {
@@ -295,11 +313,11 @@ class NoteRemindersViewModel(
                 _isLoading.value = false
                 if (loadedReminders.isEmpty()) {
                     checkPermissionsAndOpenDatePicker(null, null)
-                } else if (!app.canScheduleAlarms()) {
+                } else if (!reminderScheduler.canScheduleExactAlarms()) {
                     _sideEffects.send(NoteRemindersSideEffect.CheckPermissions())
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to load note $id", e)
+                AppLogger.e(TAG, "Failed to load note $id", e)
                 _isLoading.value = false
             }
         }
@@ -308,13 +326,8 @@ class NoteRemindersViewModel(
     private fun checkPermissionsAndOpenDatePicker(reminder: Reminder?, calendar: Calendar?) {
         pendingReminder = reminder
         pendingCalendar = calendar
-        val hasNotification =
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                ContextCompat.checkSelfPermission(
-                    app,
-                    Manifest.permission.POST_NOTIFICATIONS,
-                ) == PackageManager.PERMISSION_GRANTED
-        val hasAlarm = app.canScheduleAlarms()
+        val hasNotification = permissionChecker.isGranted(AppPermission.POST_NOTIFICATIONS)
+        val hasAlarm = reminderScheduler.canScheduleExactAlarms()
 
         if (hasNotification && hasAlarm) {
             openDatePicker(reminder, calendar)
@@ -465,14 +478,14 @@ class NoteRemindersViewModel(
     }
 
     private fun deleteReminder(reminder: Reminder) {
-        app.cancelReminder(noteId, reminder.id)
+        reminderScheduler.cancelReminder(noteId, reminder.id)
         val currentReminders = _reminders.value.filter { it.id != reminder.id }
         _reminders.value = currentReminders
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 baseNoteDao?.updateReminders(noteId, currentReminders)
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to delete reminder from database", e)
+                AppLogger.e(TAG, "Failed to delete reminder from database", e)
             }
         }
     }
@@ -485,16 +498,16 @@ class NoteRemindersViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 baseNoteDao?.updateReminders(noteId, currentReminders)
-                app.scheduleReminder(noteId, newReminder)
+                reminderScheduler.scheduleReminder(noteId, newReminder)
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to add reminder to database", e)
+                AppLogger.e(TAG, "Failed to add reminder to database", e)
             }
         }
     }
 
     private fun updateReminder(updatedReminder: Reminder) {
         if (updatedReminder.id != NEW_REMINDER_ID) {
-            app.cancelReminder(noteId, updatedReminder.id)
+            reminderScheduler.cancelReminder(noteId, updatedReminder.id)
         }
         val currentReminders = _reminders.value.toMutableList()
         val idx = currentReminders.indexOfFirst { it.id == updatedReminder.id }
@@ -504,9 +517,9 @@ class NoteRemindersViewModel(
             viewModelScope.launch(Dispatchers.IO) {
                 try {
                     baseNoteDao?.updateReminders(noteId, currentReminders)
-                    app.scheduleReminder(noteId, updatedReminder)
+                    reminderScheduler.scheduleReminder(noteId, updatedReminder)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to update reminder in database", e)
+                    AppLogger.e(TAG, "Failed to update reminder in database", e)
                 }
             }
         }

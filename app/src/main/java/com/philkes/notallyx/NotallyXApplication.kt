@@ -67,6 +67,8 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
 
     override fun onCreate() {
         super.onCreate()
+        com.philkes.notallyx.core.platform.AppInfoProvider.current =
+            com.philkes.notallyx.core.platform.AndroidAppInfo()
         if (GlobalContext.getOrNull() == null) {
             startKoin {
                 androidLogger(Level.DEBUG)

@@ -25,7 +25,9 @@ import com.philkes.notallyx.feature.media.image.ViewImageViewModel
 import com.philkes.notallyx.feature.reminder.NoteRemindersViewModel
 import com.philkes.notallyx.feature.reminder.RemindersViewModel
 import com.philkes.notallyx.feature.settings.SettingsViewModel
+import org.koin.android.ext.koin.androidApplication
 import org.koin.androidx.workmanager.dsl.workerOf
+import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
@@ -38,21 +40,21 @@ val featureModule = module {
     viewModelOf(::ArchivedViewModel)
     viewModelOf(::DeletedViewModel)
     viewModelOf(::DisplayLabelViewModel)
-    viewModelOf(::LabelsViewModel)
-    viewModelOf(::SelectLabelsViewModel)
+    viewModel { LabelsViewModel(get(), get(), get()) }
+    viewModel { SelectLabelsViewModel(get(), get(), get()) }
     viewModelOf(::RemindersViewModel)
-    viewModelOf(::NoteRemindersViewModel)
-    viewModelOf(::SettingsViewModel)
+    viewModel { NoteRemindersViewModel(androidApplication(), get()) }
+    viewModel { SettingsViewModel(androidApplication(), get(), get(), get(), get(), get(), get()) }
     viewModelOf(::UnlabeledViewModel)
     viewModelOf(::SearchViewModel)
-    viewModelOf(::PickNoteViewModel)
-    viewModelOf(::ViewImageViewModel)
-    viewModelOf(::PlayAudioViewModel)
-    viewModelOf(::RecordAudioViewModel)
+    viewModel { PickNoteViewModel(get(), get(), get()) }
+    viewModel { ViewImageViewModel(androidApplication(), get()) }
+    viewModel { PlayAudioViewModel(androidApplication(), get()) }
+    viewModel { RecordAudioViewModel(androidApplication(), get()) }
     viewModelOf(::NoteModel)
     viewModelOf(::EditActivityViewModel)
-    viewModelOf(::EditNoteViewModel)
-    viewModelOf(::EditListViewModel)
-    viewModelOf(::EditTextPlainViewModel)
+    viewModel { EditNoteViewModel(androidApplication(), get(), get(), get(), get()) }
+    viewModel { EditListViewModel(androidApplication(), get(), get(), get(), get()) }
+    viewModel { EditTextPlainViewModel(androidApplication(), get(), get()) }
     viewModelOf(::ErrorActivityViewModel)
 }

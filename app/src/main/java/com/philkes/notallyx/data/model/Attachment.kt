@@ -1,5 +1,5 @@
 package com.philkes.notallyx.data.model
 
-import android.os.Parcelable
+import kotlinx.serialization.Serializable
 
-sealed interface Attachment : Parcelable
+@Serializable sealed interface Attachment

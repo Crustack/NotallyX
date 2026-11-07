@@ -16,8 +16,83 @@ import com.philkes.notallyx.core.common.extensions.createChannelIfNotExists
 import com.philkes.notallyx.core.common.extensions.log
 import com.philkes.notallyx.core.common.extensions.resolveAttachmentFile
 import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.platform.AndroidPathProvider
+import com.philkes.notallyx.core.platform.PathProvider
+import com.philkes.notallyx.core.preference.NotallyXPreferences
+import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.FileAttachment
+
+/**
+ * Pure suspend use-case that scans all notes and removes references to attachments whose underlying
+ * files are missing. Returns `Pair(totalRemovedAttachments, affectedNotesCount)`.
+ */
+suspend fun cleanupMissingAttachments(
+    dao: BaseNoteDao,
+    pathProvider: PathProvider,
+    dataInPublicFolder: Boolean = false,
+): Pair<Int, Int> {
+    var removedImages = 0
+    var removedFiles = 0
+    var removedAudios = 0
+    var affectedNotes = 0
+
+    val notes = dao.getAll()
+    notes.forEach { note ->
+        val originalImages = ArrayList(note.images)
+        val originalFiles = ArrayList(note.files)
+        val originalAudios = ArrayList(note.audios)
+
+        val filteredImages = originalImages.filter { fa: FileAttachment ->
+            val file =
+                pathProvider.resolveAttachmentFile(
+                    SUBFOLDER_IMAGES,
+                    fa.localName,
+                    dataInPublicFolder,
+                )
+            file != null && file.exists()
+        }
+        val filteredFiles = originalFiles.filter { fa: FileAttachment ->
+            val file =
+                pathProvider.resolveAttachmentFile(
+                    SUBFOLDER_FILES,
+                    fa.localName,
+                    dataInPublicFolder,
+                )
+            file != null && file.exists()
+        }
+        val filteredAudios = originalAudios.filter { au: Audio ->
+            val file =
+                pathProvider.resolveAttachmentFile(
+                    SUBFOLDER_AUDIOS,
+                    au.name,
+                    dataInPublicFolder,
+                )
+            file != null && file.exists()
+        }
+
+        val imgRemoved = originalImages.size - filteredImages.size
+        val fileRemoved = originalFiles.size - filteredFiles.size
+        val audRemoved = originalAudios.size - filteredAudios.size
+
+        if (imgRemoved + fileRemoved + audRemoved > 0) {
+            affectedNotes++
+            if (imgRemoved > 0) {
+                removedImages += imgRemoved
+                dao.updateImages(note.id, filteredImages)
+            }
+            if (fileRemoved > 0) {
+                removedFiles += fileRemoved
+                dao.updateFiles(note.id, filteredFiles)
+            }
+            if (audRemoved > 0) {
+                removedAudios += audRemoved
+                dao.updateAudios(note.id, filteredAudios)
+            }
+        }
+    }
+    return Pair(removedImages + removedFiles + removedAudios, affectedNotes)
+}
 
 /** Scans all notes and removes references to attachments whose underlying files are missing. */
 class CleanupMissingAttachmentsWorker(appContext: Context, params: WorkerParameters) :
@@ -27,55 +102,15 @@ class CleanupMissingAttachmentsWorker(appContext: Context, params: WorkerParamet
         val ctx = ContextWrapper(applicationContext)
         val database = NotallyDatabase.getDatabase(ctx).value!!
         val dao = database.getBaseNoteDao()
-
-        var removedImages = 0
-        var removedFiles = 0
-        var removedAudios = 0
-        var affectedNotes = 0
-
-        val notes = dao.getAll()
-        ctx.log(TAG, "Scanning ${notes.size} notes to check for missing attachments...")
-        notes.forEach { note ->
-            val originalImages = ArrayList(note.images)
-            val originalFiles = ArrayList(note.files)
-            val originalAudios = ArrayList(note.audios)
-
-            val filteredImages = originalImages.filter { fa: FileAttachment ->
-                val file = ctx.resolveAttachmentFile(SUBFOLDER_IMAGES, fa.localName)
-                file != null && file.exists()
-            }
-            val filteredFiles = originalFiles.filter { fa: FileAttachment ->
-                val file = ctx.resolveAttachmentFile(SUBFOLDER_FILES, fa.localName)
-                file != null && file.exists()
-            }
-            val filteredAudios = originalAudios.filter { au: Audio ->
-                val file = ctx.resolveAttachmentFile(SUBFOLDER_AUDIOS, au.name)
-                file != null && file.exists()
-            }
-
-            val imgRemoved = originalImages.size - filteredImages.size
-            val fileRemoved = originalFiles.size - filteredFiles.size
-            val audRemoved = originalAudios.size - filteredAudios.size
-
-            if (imgRemoved + fileRemoved + audRemoved > 0) {
-                affectedNotes++
-                if (imgRemoved > 0) {
-                    removedImages += imgRemoved
-                    dao.updateImages(note.id, filteredImages)
-                }
-                if (fileRemoved > 0) {
-                    removedFiles += fileRemoved
-                    dao.updateFiles(note.id, filteredFiles)
-                }
-                if (audRemoved > 0) {
-                    removedAudios += audRemoved
-                    dao.updateAudios(note.id, filteredAudios)
-                }
-            }
+        val dataInPublicFolder = runCatching {
+            NotallyXPreferences.getInstance(ctx).dataInPublicFolder.value
         }
+            .getOrDefault(false)
+        val (totalRemoved, affectedNotes) =
+            cleanupMissingAttachments(dao, AndroidPathProvider(ctx), dataInPublicFolder)
         ctx.log(TAG, "Cleaned up missing attachments from $affectedNotes notes")
 
-        postCompletionNotification(removedImages + removedFiles + removedAudios, affectedNotes)
+        postCompletionNotification(totalRemoved, affectedNotes)
         return Result.success()
     }
 

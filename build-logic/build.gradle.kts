@@ -1,6 +1,4 @@
-plugins {
-    `kotlin-dsl`
-}
+plugins { `kotlin-dsl` }
 
 group = "com.philkes.notallyx.buildlogic"
 
@@ -12,6 +10,16 @@ dependencies {
 
 gradlePlugin {
     plugins {
+        register("kotlinConvention") {
+            id = "notallyx.kotlin.convention"
+            implementationClass =
+                "com.philkes.notallyx.buildlogic.convention.NotallyxKotlinConventionPlugin"
+        }
+        register("androidConvention") {
+            id = "notallyx.android.convention"
+            implementationClass =
+                "com.philkes.notallyx.buildlogic.convention.NotallyxAndroidConventionPlugin"
+        }
         register("androidPackaging") {
             id = "notallyx.android.packaging"
             implementationClass = "com.philkes.notallyx.buildlogic.AndroidPackagingPlugin"

@@ -2,7 +2,9 @@ package com.philkes.notallyx.di
 
 import androidx.datastore.core.DataStore
 import com.google.crypto.tink.Aead
+import com.philkes.notallyx.core.preference.AndroidSecurePreferencesStore
 import com.philkes.notallyx.core.preference.NotallyXPreferences
+import com.philkes.notallyx.core.preference.SecurePreferencesStore
 import com.philkes.notallyx.core.preference.model.SecurePreferences
 import com.philkes.notallyx.core.preference.model.UserPreferences
 import com.philkes.notallyx.core.security.TinkAeadProvider
@@ -15,6 +17,8 @@ val SECURE_DATASTORE_QUALIFIER = named("securePreferencesDataStore")
 
 val preferencesModule = module {
     single<Aead> { TinkAeadProvider.provideAead(androidContext()) }
+
+    single<SecurePreferencesStore> { AndroidSecurePreferencesStore(androidContext(), get()) }
 
     factory { NotallyXPreferences.getInstance(androidContext()) }
 

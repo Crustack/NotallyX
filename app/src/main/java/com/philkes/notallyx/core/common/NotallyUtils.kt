@@ -6,7 +6,8 @@ import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Repetition
 import com.philkes.notallyx.data.model.RepetitionTimeUnit
 import java.util.Date
-import org.json.JSONObject
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 
 typealias NotallyReminderJson = String
 
@@ -17,10 +18,11 @@ typealias NotallyReminderJson = String
  */
 fun NotallyReminderJson?.toNotallyXReminder(): Reminder? {
     if (this == null) return null
-    return with(JSONObject(this)) {
-        val dateTime = getSafeLong("timestamp")?.let { Date(it) } ?: return null
+    return runCatching {
+        val jsonObject = Json.parseToJsonElement(this).jsonObject
+        val dateTime = jsonObject.getSafeLong("timestamp")?.let { Date(it) } ?: return null
         val repetition =
-            getSafeString("frequency")?.let {
+            jsonObject.getSafeString("frequency")?.let {
                 when (it) {
                     "DAILY" -> Repetition(1, RepetitionTimeUnit.DAYS)
                     "MONTHLY" -> Repetition(1, RepetitionTimeUnit.MONTHS)
@@ -29,4 +31,5 @@ fun NotallyReminderJson?.toNotallyXReminder(): Reminder? {
             }
         Reminder(0, dateTime, repetition)
     }
+        .getOrNull()
 }

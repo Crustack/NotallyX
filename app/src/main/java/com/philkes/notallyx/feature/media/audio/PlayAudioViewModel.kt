@@ -10,14 +10,20 @@ import android.os.IBinder
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.BaseViewModel
-import com.philkes.notallyx.core.common.extensions.getCurrentAudioDirectory
+import com.philkes.notallyx.core.common.extensions.SUBFOLDER_AUDIOS
 import com.philkes.notallyx.core.common.extensions.getUriForFile
+import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.platform.AndroidFileStorage
+import com.philkes.notallyx.core.platform.AndroidPathProvider
+import com.philkes.notallyx.core.platform.DesktopPathProvider
+import com.philkes.notallyx.core.platform.FileStorage
+import com.philkes.notallyx.core.platform.JvmFileStorage
+import com.philkes.notallyx.core.platform.PathProvider
+import com.philkes.notallyx.core.platform.PlatformUri
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.navigation.NotallyNavKey
-import java.io.File
 import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.text.DateFormat
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
@@ -35,9 +41,25 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class PlayAudioViewModel(
-    app: Application,
     preferences: NotallyXPreferences,
-) : BaseViewModel(app, preferences) {
+    databaseStateFlow: StateFlow<NotallyDatabase?> = NotallyDatabase.instance,
+    pathProvider: PathProvider = DesktopPathProvider(),
+    private val fileStorage: FileStorage = JvmFileStorage(),
+    private val audioPlayer: AudioPlayer = NoOpAudioPlayer(),
+) : BaseViewModel(preferences, databaseStateFlow, pathProvider) {
+
+    constructor(
+        app: Application,
+        preferences: NotallyXPreferences,
+    ) : this(
+        preferences = preferences,
+        databaseStateFlow = NotallyDatabase.getDatabase(app),
+        pathProvider = AndroidPathProvider(app),
+        fileStorage = AndroidFileStorage(app),
+        audioPlayer = NoOpAudioPlayer(),
+    ) {
+        this.app = app
+    }
 
     private val _sideEffects = Channel<PlayAudioSideEffect>(Channel.BUFFERED)
     val sideEffects: Flow<PlayAudioSideEffect> = _sideEffects.receiveAsFlow()
@@ -76,10 +98,9 @@ class PlayAudioViewModel(
     init {
         viewModelScope.launch {
             while (isActive) {
-                service?.let { s ->
-                    if (s.getState() == AudioPlayService.STARTED) {
-                        _currentPosition.value = s.getCurrentPosition().toLong()
-                    }
+                val s = service
+                if (s != null && s.getState() == AudioPlayService.STARTED) {
+                    _currentPosition.value = s.getCurrentPosition().toLong()
                 }
                 delay(100.milliseconds)
             }
@@ -166,7 +187,7 @@ class PlayAudioViewModel(
         val audio = Audio(name = key.audioName, duration = key.duration, timestamp = key.timestamp)
         _audio.value = audio
 
-        if (!isBound) {
+        if (!isBound && hasApp) {
             val intent = Intent(app, AudioPlayService::class.java)
             serviceIntent = intent
             app.startService(intent)
@@ -177,9 +198,10 @@ class PlayAudioViewModel(
 
     private fun share() {
         val audio = _audio.value ?: return
-        val audioRoot = app.getCurrentAudioDirectory()
-        val file = if (audioRoot != null) File(audioRoot, audio.name) else null
-        if (file != null && file.exists()) {
+        val audioRoot =
+            pathProvider.getMediaDirectory(SUBFOLDER_AUDIOS, preferences.dataInPublicFolder.value)
+        val file = java.io.File(audioRoot, audio.name)
+        if (file.exists() && hasApp) {
             val uri = app.getUriForFile(file)
             viewModelScope.launch { _sideEffects.send(PlayAudioSideEffect.ShareAudio(uri)) }
         }
@@ -194,15 +216,15 @@ class PlayAudioViewModel(
 
     private fun exportConfirmed(destinationUri: Uri) {
         val audio = _audio.value ?: return
-        val audioRoot = app.getCurrentAudioDirectory()
-        val file = if (audioRoot != null) File(audioRoot, audio.name) else null
-        if (file != null && file.exists()) {
+        val audioRoot =
+            pathProvider.getMediaDirectory(SUBFOLDER_AUDIOS, preferences.dataInPublicFolder.value)
+        val file = java.io.File(audioRoot, audio.name)
+        if (file.exists()) {
             viewModelScope.launch(Dispatchers.IO) {
                 try {
-                    app.contentResolver.openFileDescriptor(destinationUri, "w")?.use { pfd ->
-                        FileOutputStream(pfd.fileDescriptor).use { output ->
-                            FileInputStream(file).use { input -> input.copyTo(output) }
-                        }
+                    fileStorage.openOutputStream(PlatformUri(destinationUri.toString()))?.use {
+                        output ->
+                        FileInputStream(file).use { input -> input.copyTo(output) }
                     }
                     _sideEffects.send(PlayAudioSideEffect.ShowToast(R.string.saved_to_device))
                 } catch (e: Exception) {
@@ -223,7 +245,7 @@ class PlayAudioViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        if (isBound) {
+        if (isBound && hasApp) {
             service?.onStateChange = null
             app.unbindService(serviceConnection)
             service = null

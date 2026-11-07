@@ -42,11 +42,41 @@ fun Color.toColorString() =
         Color.CLAY -> "#E9E3D3"
     }
 
+private val HEX_COLOR_REGEX = Regex("^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
+private val NAMED_COLORS =
+    setOf(
+        "red",
+        "blue",
+        "green",
+        "black",
+        "white",
+        "gray",
+        "cyan",
+        "magenta",
+        "yellow",
+        "lightgray",
+        "darkgray",
+        "grey",
+        "lightgrey",
+        "darkgrey",
+        "aqua",
+        "fuchsia",
+        "lime",
+        "maroon",
+        "navy",
+        "olive",
+        "purple",
+        "silver",
+        "teal",
+    )
+
+fun String.isValidColorString(): Boolean =
+    isNotEmpty() && (HEX_COLOR_REGEX.matches(this) || lowercase() in NAMED_COLORS)
+
 fun String.parseToColorString() =
-    try {
-        android.graphics.Color.parseColor(this)
+    if (isValidColorString()) {
         this
-    } catch (_: Exception) {
+    } else {
         try {
             val colorEnum = Color.valueOf(this)
             colorEnum.toColorString()

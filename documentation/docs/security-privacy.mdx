@@ -21,13 +21,10 @@ To set up the app lock:
 2. Navigate to **Security**
 3. Tap **Lock app with device biometric or PIN**
 4. If you haven't set up device security, you will be prompted to do so (at least a PIN or screen lock is required)
-5. You can optionally check **Encrypt Database via Biometric** in the prompt dialog to encrypt the database on disk using SQLCipher
-6. Once enabled, NotallyX will require authentication whenever opening the app or returning to it from background/recent apps. When you disable the lock, the database is automatically decrypted.
+5. Once enabled, NotallyX will require authentication whenever opening the app or returning to it from background/recent apps.
 
-:::caution Experimental Database Encryption
-By default, enabling the app lock protects the user interface with authentication, but does not encrypt the underlying database file on disk.
-
-Optionally, you can enable **Encrypt Database via Biometric** (powered by SQLCipher). Please note that database encryption is an **optional EXPERIMENTAL feature** and should be used with caution, as it is not yet fully stable. It is particularly useful if you store your data in a public folder, but you should always maintain regular backups of your notes when using this feature.
+:::info Database Encryption Sunset
+To ensure reliable cross-platform database compatibility (Room 3 + bundled SQLite across Android and Desktop) and prevent keystore-related data loss, experimental SQLCipher on-disk database encryption has been sunset (`FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB = false`). Any previously encrypted database is automatically and non-destructively decrypted to standard SQLite on startup while keeping your Biometric / PIN app lock enabled. For encrypted storage at rest or in transit, use **Password-Protected Backups** (AES-256 ZIP encryption).
 :::
 
 ## Backup Encryption (Password Protection)

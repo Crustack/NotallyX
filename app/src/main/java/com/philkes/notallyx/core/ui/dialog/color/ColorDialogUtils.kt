@@ -1,6 +1,5 @@
 package com.philkes.notallyx.core.ui.dialog.color
 
-import android.graphics.Color
 import androidx.compose.ui.graphics.Color as ComposeColor
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.parseToColorString
@@ -15,18 +14,17 @@ internal enum class DialogMode {
 internal fun parseHexToComposeColor(colorStr: String): ComposeColor {
     val hex = colorStr.parseToColorString()
     if (hex == BaseNote.COLOR_DEFAULT) return ComposeColor.Transparent
-    return try {
-        ComposeColor(Color.parseColor(hex))
-    } catch (_: Exception) {
-        ComposeColor.Transparent
-    }
+    return parseColorOrNull(hex)?.let { ComposeColor(it) } ?: ComposeColor.Transparent
 }
 
 internal fun parseColorOrNull(hex: String): Int? {
-    val trimmed = hex.trim()
-    val formatted = if (trimmed.startsWith("#")) trimmed else "#$trimmed"
+    val clean = hex.trim().removePrefix("#")
     return try {
-        Color.parseColor(formatted)
+        when (clean.length) {
+            6 -> (0xFF000000L or clean.toLong(16)).toInt()
+            8 -> clean.toLong(16).toInt()
+            else -> null
+        }
     } catch (_: Exception) {
         null
     }

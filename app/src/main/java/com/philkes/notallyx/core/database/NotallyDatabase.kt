@@ -2,7 +2,6 @@ package com.philkes.notallyx.core.database
 
 import android.content.Context
 import android.content.ContextWrapper
-import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.room3.ColumnTypeConverters
 import androidx.room3.Database
@@ -13,10 +12,13 @@ import androidx.room3.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
 import com.philkes.notallyx.NotallyXApplication.Companion.isTestRunner
-import com.philkes.notallyx.core.common.extensions.getExternalMediaDirectory
-import com.philkes.notallyx.core.common.extensions.log
+import com.philkes.notallyx.core.common.extensions.copyToLarge
+import com.philkes.notallyx.core.platform.AndroidPathProvider
+import com.philkes.notallyx.core.platform.AppLogger
+import com.philkes.notallyx.core.platform.PathProvider
 import com.philkes.notallyx.core.preference.BiometricLock
 import com.philkes.notallyx.core.preference.NotallyXPreferences
+import com.philkes.notallyx.core.security.decryptDatabase
 import com.philkes.notallyx.core.security.getInitializedCipherForDecryption
 import com.philkes.notallyx.core.security.isEncryptedDatabase
 import com.philkes.notallyx.data.dao.BaseNoteDao
@@ -33,7 +35,7 @@ import kotlinx.coroutines.flow.StateFlow
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @ColumnTypeConverters(Converters::class)
-@Database(entities = [BaseNote::class, Label::class], version = 11)
+@Database(entities = [BaseNote::class, Label::class], version = NotallyDatabase.DATABASE_VERSION)
 abstract class NotallyDatabase : RoomDatabase() {
 
     abstract fun getLabelDao(): LabelDao
@@ -56,65 +58,112 @@ abstract class NotallyDatabase : RoomDatabase() {
     companion object {
 
         const val DATABASE_NAME = "NotallyDatabase"
+        const val DATABASE_VERSION = 11
+        const val FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB = false
+
+        val ALL_MIGRATIONS: Array<Migration>
+            get() =
+                arrayOf(
+                    Migration2,
+                    Migration3,
+                    Migration4,
+                    Migration5,
+                    Migration6,
+                    Migration7,
+                    Migration8,
+                    Migration9,
+                    Migration10,
+                    Migration11,
+                )
 
         val instance: StateFlow<NotallyDatabase?>
             field = MutableStateFlow(null)
         @Volatile private var replacementInProgress = false
 
+        fun getCurrentDatabaseFile(
+            pathProvider: PathProvider,
+            dataInPublicFolder: Boolean = false,
+        ): File {
+            return pathProvider.getDatabaseFile(DATABASE_NAME, dataInPublicFolder)
+        }
+
+        fun getCurrentDatabaseFiles(
+            pathProvider: PathProvider,
+            dataInPublicFolder: Boolean = false,
+        ): List<File> {
+            return pathProvider.getDatabaseFiles(DATABASE_NAME, dataInPublicFolder)
+        }
+
+        fun getExternalDatabaseFile(pathProvider: PathProvider): File {
+            return pathProvider.getDatabaseFile(DATABASE_NAME, dataInPublicFolder = true)
+        }
+
+        fun getExternalDatabaseFiles(pathProvider: PathProvider): List<File> {
+            return pathProvider.getDatabaseFiles(DATABASE_NAME, dataInPublicFolder = true)
+        }
+
+        fun getInternalDatabaseFile(pathProvider: PathProvider): File {
+            return pathProvider.getDatabaseFile(DATABASE_NAME, dataInPublicFolder = false)
+        }
+
+        fun getInternalDatabaseFiles(pathProvider: PathProvider): List<File> {
+            return pathProvider.getDatabaseFiles(DATABASE_NAME, dataInPublicFolder = false)
+        }
+
         fun getCurrentDatabaseFile(context: ContextWrapper): File {
-            return if (NotallyXPreferences.getInstance(context).dataInPublicFolder.value) {
-                getExternalDatabaseFile(context)
-            } else {
-                getInternalDatabaseFile(context)
-            }
+            val dataInPublic = NotallyXPreferences.getInstance(context).dataInPublicFolder.value
+            return getCurrentDatabaseFile(AndroidPathProvider(context), dataInPublic)
         }
 
         fun getCurrentDatabaseFiles(context: ContextWrapper): List<File> {
-            return if (NotallyXPreferences.getInstance(context).dataInPublicFolder.value) {
-                getExternalDatabaseFiles(context)
-            } else {
-                getInternalDatabaseFiles(context)
-            }
+            val dataInPublic = NotallyXPreferences.getInstance(context).dataInPublicFolder.value
+            return getCurrentDatabaseFiles(AndroidPathProvider(context), dataInPublic)
         }
 
         fun getExternalDatabaseFile(context: ContextWrapper): File {
-            return File(context.getExternalMediaDirectory(), DATABASE_NAME)
+            return getExternalDatabaseFile(AndroidPathProvider(context))
         }
 
         fun getExternalDatabaseFiles(context: ContextWrapper): List<File> {
-            val directory = context.getExternalMediaDirectory()
-            return listOf(
-                    File(directory, DATABASE_NAME),
-                    File(directory, "$DATABASE_NAME-shm"),
-                    File(directory, "$DATABASE_NAME-wal"),
-                    File(directory, "$DATABASE_NAME-journal"),
-                )
-                .filter { it.exists() }
+            return getExternalDatabaseFiles(AndroidPathProvider(context))
         }
 
         fun getInternalDatabaseFile(context: Context): File {
-            return context.getDatabasePath(DATABASE_NAME)
+            return getInternalDatabaseFile(AndroidPathProvider(context))
         }
 
         fun getInternalDatabaseFiles(context: ContextWrapper): List<File> {
-            val directory = context.getDatabasePath(DATABASE_NAME).parentFile
-            return listOf(
-                    File(directory, DATABASE_NAME),
-                    File(directory, "$DATABASE_NAME-shm"),
-                    File(directory, "$DATABASE_NAME-wal"),
-                )
-                .filter { it.exists() }
+            return getInternalDatabaseFiles(AndroidPathProvider(context))
         }
 
         private fun getCurrentDatabaseName(
-            context: ContextWrapper,
+            pathProvider: PathProvider,
             dataInPublicFolder: Boolean,
         ): String {
             return if (dataInPublicFolder) {
-                getExternalDatabaseFile(context).absolutePath
+                getExternalDatabaseFile(pathProvider).absolutePath
             } else {
                 DATABASE_NAME
             }
+        }
+
+        fun builder(
+            driverFactory: DatabaseDriverFactory,
+            dataInPublic: Boolean = false,
+            inMemory: Boolean = false,
+        ): Builder<NotallyDatabase> {
+            return driverFactory
+                .createBuilder(DATABASE_NAME, dataInPublic, inMemory)
+                .setDriver(driverFactory.createDriver(DATABASE_NAME, dataInPublic))
+                .addMigrations(*ALL_MIGRATIONS)
+        }
+
+        fun createDatabase(
+            driverFactory: DatabaseDriverFactory,
+            dataInPublic: Boolean = false,
+            inMemory: Boolean = false,
+        ): NotallyDatabase {
+            return builder(driverFactory, dataInPublic, inMemory).build()
         }
 
         fun getDatabase(context: ContextWrapper): StateFlow<NotallyDatabase?> {
@@ -192,7 +241,7 @@ abstract class NotallyDatabase : RoomDatabase() {
             dataInPublic: Boolean = preferences.dataInPublicFolder.value,
             biometricLock: BiometricLock = preferences.biometricLock.value,
         ): NotallyDatabase {
-            Log.d(
+            AppLogger.d(
                 DATABASE_NAME,
                 "Creating database instance with dataInPublic: '$dataInPublic' and biometric lock: '$biometricLock' (experimental encryption: ${preferences.biometricLockEncryptsDb.value})",
             )
@@ -200,18 +249,19 @@ abstract class NotallyDatabase : RoomDatabase() {
             val instanceBuilder =
                 builder(context, dataInPublic)
                     .setDriver(BackupSQLiteDriver(context, BackupOpenHelperFactory(context)))
-                    .setupEncryption(context, preferences, biometricLock)
+                    .setupEncryption(context, preferences, biometricLock, dataInPublic)
             return instanceBuilder.build()
         }
 
         internal fun builder(
             context: ContextWrapper,
             dataInPublic: Boolean,
-        ): Builder<NotallyDatabase> =
-            Room.databaseBuilder(
+        ): Builder<NotallyDatabase> {
+            val pathProvider = AndroidPathProvider(context)
+            return Room.databaseBuilder(
                     context,
                     NotallyDatabase::class.java,
-                    getCurrentDatabaseName(context, dataInPublic),
+                    getCurrentDatabaseName(pathProvider, dataInPublic),
                 )
                 .setDriver(
                     BackupSQLiteDriver(
@@ -219,44 +269,111 @@ abstract class NotallyDatabase : RoomDatabase() {
                         androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory(),
                     )
                 )
-                .addMigrations(
-                    Migration2,
-                    Migration3,
-                    Migration4,
-                    Migration5,
-                    Migration6,
-                    Migration7,
-                    Migration8,
-                    Migration9,
-                    Migration10,
-                    Migration11,
-                )
+                .addMigrations(*ALL_MIGRATIONS)
+        }
 
         @VisibleForTesting
         internal fun Builder<NotallyDatabase>.setupEncryption(
             context: ContextWrapper,
             preferences: NotallyXPreferences,
             biometricLock: BiometricLock = preferences.biometricLock.value,
+            dataInPublic: Boolean = preferences.dataInPublicFolder.value,
         ): Builder<NotallyDatabase> {
             return this.apply {
-                val dbFile = getCurrentDatabaseFile(context)
+                val pathProvider = AndroidPathProvider(context)
+                val dbFile = getCurrentDatabaseFile(pathProvider, dataInPublic)
                 if (
                     preferences.biometricLockEncryptsDb.value ||
                         (biometricLock == BiometricLock.ENABLED &&
                             dbFile.isEncryptedDatabase(context))
                 ) {
                     if (dbFile.isEncryptedDatabase(context)) {
-                        initializeDecryption(context, preferences, this)
+                        if (!FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB) {
+                            val decrypted =
+                                decryptDatabaseOnStartupIfNeeded(context, preferences, dataInPublic)
+                            if (!decrypted) {
+                                initializeDecryption(context, preferences, this)
+                            }
+                        } else {
+                            initializeDecryption(context, preferences, this)
+                        }
                     } else {
-                        context.log(
+                        AppLogger.w(
                             DATABASE_NAME,
-                            "Database is not encrypted even though biometric lock is enabled, disabling biometric lock",
+                            "Database is not encrypted even though biometric lock encryption was set, clearing biometricLockEncryptsDb",
                         )
-
-                        preferences.biometricLock.save(BiometricLock.DISABLED)
+                        preferences.biometricLockEncryptsDb.save(false)
+                        if (FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB) {
+                            preferences.biometricLock.save(BiometricLock.DISABLED)
+                        }
                     }
                 }
             }
+        }
+
+        /**
+         * Performs a one-time non-destructive decryption migration on startup when
+         * [FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB] is `false` and the database on disk is still
+         * encrypted with SQLCipher. Preserves [BiometricLock.ENABLED] while resetting
+         * `biometricLockEncryptsDb` to `false`.
+         */
+        fun decryptDatabaseOnStartupIfNeeded(
+            context: ContextWrapper,
+            preferences: NotallyXPreferences,
+            dataInPublic: Boolean = preferences.dataInPublicFolder.value,
+        ): Boolean {
+            if (FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB) return false
+            val pathProvider = AndroidPathProvider(context)
+            val dbFile = getCurrentDatabaseFile(pathProvider, dataInPublic)
+            if (!dbFile.exists() || !dbFile.isEncryptedDatabase(context)) {
+                if (preferences.biometricLockEncryptsDb.value) {
+                    preferences.biometricLockEncryptsDb.save(false)
+                }
+                return false
+            }
+            return try {
+                val passphrase = resolveDecryptionPassphrase(preferences)
+                val parentDir = dbFile.parentFile ?: context.filesDir
+                val tempCopy = File(parentDir, "${dbFile.name}-startup-decrypt")
+                val backupCopy = File(parentDir, "${dbFile.name}-startup-decrypt-backup")
+                dbFile.copyToLarge(tempCopy, overwrite = true)
+                dbFile.copyToLarge(backupCopy, overwrite = true)
+                decryptDatabase(context, tempCopy, passphrase)
+                getCurrentDatabaseFiles(pathProvider, dataInPublic).forEach { it.delete() }
+                tempCopy.copyToLarge(dbFile, overwrite = true, deleteSourceFile = true)
+                if (dbFile.isEncryptedDatabase(context)) {
+                    backupCopy.copyToLarge(dbFile, overwrite = true, deleteSourceFile = true)
+                    false
+                } else {
+                    backupCopy.delete()
+                    preferences.biometricLockEncryptsDb.save(false)
+                    true
+                }
+            } catch (e: Exception) {
+                AppLogger.e(
+                    DATABASE_NAME,
+                    "Startup decryption migration failed, keeping encrypted fallback",
+                    e,
+                )
+                false
+            }
+        }
+
+        private fun resolveDecryptionPassphrase(preferences: NotallyXPreferences): ByteArray {
+            val fallback = preferences.fallbackDatabaseEncryptionKey.value
+            if (fallback != null && fallback.isNotEmpty()) {
+                return fallback
+            }
+            val initializationVector =
+                requireNotNull(preferences.iv.value) {
+                    "IV cannot be null when initializing database decryption"
+                }
+            val cipher = getInitializedCipherForDecryption(iv = initializationVector)
+            val encryptedPassphrase = preferences.databaseEncryptionKey.value
+            require(encryptedPassphrase.isNotEmpty()) {
+                "Encrypted passphrase is empty when initializing database decryption"
+            }
+            return cipher.doFinal(encryptedPassphrase)
         }
 
         private fun initializeDecryption(
@@ -265,13 +382,7 @@ abstract class NotallyDatabase : RoomDatabase() {
             instanceBuilder: Builder<NotallyDatabase>,
         ) {
             System.loadLibrary("sqlcipher")
-            val initializationVector =
-                requireNotNull(preferences.iv.value) {
-                    "IV cannot be null when initializing database decryption"
-                }
-            val cipher = getInitializedCipherForDecryption(iv = initializationVector)
-            val encryptedPassphrase = preferences.databaseEncryptionKey.value
-            val passphrase = cipher.doFinal(encryptedPassphrase)
+            val passphrase = resolveDecryptionPassphrase(preferences)
             val factory = BackupOpenHelperFactory(context, SupportOpenHelperFactory(passphrase))
             instanceBuilder.setDriver(BackupSQLiteDriver(context, factory))
         }
@@ -316,20 +427,20 @@ abstract class NotallyDatabase : RoomDatabase() {
             }
         }
 
-        object Migration4 : Migration(3, 4) {
-
-            override suspend fun migrate(connection: SQLiteConnection) {
-                connection.execSQL(
-                    "ALTER TABLE `BaseNote` ADD COLUMN `audios` TEXT NOT NULL DEFAULT `[]`"
-                )
-            }
-        }
-
         object Migration5 : Migration(4, 5) {
 
             override suspend fun migrate(connection: SQLiteConnection) {
                 connection.execSQL(
                     "ALTER TABLE `BaseNote` ADD COLUMN `files` TEXT NOT NULL DEFAULT `[]`"
+                )
+            }
+        }
+
+        object Migration4 : Migration(3, 4) {
+
+            override suspend fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
+                    "ALTER TABLE `BaseNote` ADD COLUMN `audios` TEXT NOT NULL DEFAULT `[]`"
                 )
             }
         }

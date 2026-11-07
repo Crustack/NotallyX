@@ -7,12 +7,16 @@ import org.gradle.api.Project
 class LocalizationPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
+            val composeResDir = layout.projectDirectory.dir("src/main/composeResources")
             val generateLocalesPreview =
                 tasks.register("generateLocalesPreview", GenerateLocalesPreviewTask::class.java) {
                     group = "build"
                     description =
-                        "Generates AppStorePreview multi-preview annotation for all locales in res/values-*/strings.xml"
+                        "Generates AppStorePreview multi-preview annotation for all locales in composeResources/values-* or res/values-*/strings.xml"
                     resDir.set(layout.projectDirectory.dir("src/main/res"))
+                    if (composeResDir.asFile.exists()) {
+                        composeResourcesDir.set(composeResDir)
+                    }
                     outputDir.set(
                         layout.buildDirectory.dir("generated/source/localesPreview/kotlin")
                     )

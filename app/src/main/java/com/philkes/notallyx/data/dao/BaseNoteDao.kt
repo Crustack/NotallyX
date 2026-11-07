@@ -1,6 +1,5 @@
 package com.philkes.notallyx.data.dao
 
-import android.content.ContextWrapper
 import androidx.room3.Dao
 import androidx.room3.Insert
 import androidx.room3.OnConflictStrategy
@@ -8,10 +7,8 @@ import androidx.room3.Query
 import androidx.room3.RawQuery
 import androidx.room3.RoomRawQuery
 import androidx.room3.Update
-import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.charLimit
-import com.philkes.notallyx.core.common.extensions.log
-import com.philkes.notallyx.core.ui.extensions.showToast
+import com.philkes.notallyx.core.platform.AppLogger
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
@@ -46,20 +43,17 @@ interface BaseNoteDao {
         } else Pair(false, this)
     }
 
-    suspend fun insertSafe(context: ContextWrapper, baseNote: BaseNote): Long {
+    suspend fun insertSafe(
+        baseNote: BaseNote,
+        onTruncated: (truncatedLength: Int, originalLength: Int) -> Unit = { _, _ -> },
+    ): Long {
         val (truncated, note) = baseNote.truncated()
         if (truncated) {
-            context.log(
+            AppLogger.e(
                 TAG,
                 "Note (id: ${note.id}, title: '${note.title}') is too big to insert. Truncating to ${note.body.length} characters (was: ${baseNote.body.length})",
             )
-            context.showToast(
-                context.getString(
-                    R.string.note_too_big_truncating,
-                    note.body.length,
-                    baseNote.body.length,
-                )
-            )
+            onTruncated(note.body.length, baseNote.body.length)
         }
         return insert(note)
     }

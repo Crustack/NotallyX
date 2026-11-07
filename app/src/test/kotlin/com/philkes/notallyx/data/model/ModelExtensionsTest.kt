@@ -4,10 +4,9 @@ import com.philkes.notallyx.data.model.extensions.toBaseNote
 import com.philkes.notallyx.data.model.extensions.toJson
 import com.philkes.notallyx.test.createListItem
 import java.util.Date
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.mockito.Mockito.anyString
-import org.mockito.Mockito.mockStatic
 
 class ModelExtensionsTest {
 
@@ -68,8 +67,6 @@ class ModelExtensionsTest {
               "viewMode": "READ_ONLY"
             }
         """
-        val colorMock = mockStatic(android.graphics.Color::class.java)
-        colorMock.`when`<Int> { android.graphics.Color.parseColor(anyString()) }.thenReturn(1)
 
         val baseNote = json.toBaseNote()
 
@@ -124,7 +121,7 @@ class ModelExtensionsTest {
 
         val json = baseNote.toJson()
 
-        assertEquals(
+        val expectedJson =
             """
             {
               "reminders": [{
@@ -159,8 +156,13 @@ class ModelExtensionsTest {
             }
             """
                 .trimIndent()
-                .trimStart(),
-            json,
-        )
+                .trimStart()
+
+        assertEquals(Json.parseToJsonElement(expectedJson), Json.parseToJsonElement(json))
+        val roundTrip = json.toBaseNote()
+        assertEquals(baseNote.title, roundTrip.title)
+        assertEquals(baseNote.color, roundTrip.color)
+        assertEquals(baseNote.items, roundTrip.items)
+        assertEquals(baseNote.reminders, roundTrip.reminders)
     }
 }

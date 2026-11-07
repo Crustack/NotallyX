@@ -1,7 +1,6 @@
 package com.philkes.notallyx.data.model
 
-import android.content.ContextWrapper
-import com.philkes.notallyx.core.common.extensions.log
+import com.philkes.notallyx.core.platform.AppLogger
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +20,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class SearchResult(
-    context: ContextWrapper,
     scope: CoroutineScope,
     var baseNoteDao: BaseNoteDao,
     private val transform: (List<BaseNote>) -> List<Item>,
@@ -44,7 +42,7 @@ class SearchResult(
                         .getByKeyword(params.keyword, params.folder, params.label)
                         .map { transform(it) }
                         .catch {
-                            context.log(TAG, throwable = it)
+                            AppLogger.e(TAG, "Search failed", it)
                             emit(emptyList())
                         }
                 }

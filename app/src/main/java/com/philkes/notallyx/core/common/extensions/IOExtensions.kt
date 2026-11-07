@@ -256,6 +256,11 @@ fun File.decodeToBitmap(): Bitmap? {
     return BitmapFactory.decodeFile(absolutePath, options)
 }
 
+fun File.decodeImageDimensions(): Pair<Int, Int>? {
+    val bitmap = decodeToBitmap() ?: return null
+    return Pair(bitmap.width, bitmap.height)
+}
+
 internal const val BUFFER_SIZE = 512 * 1024
 
 fun File.copyToLarge(
@@ -312,6 +317,57 @@ fun Context.deleteAttachments(
         attachments.addAll(note.audios)
     }
     deleteAttachments(attachments, notes.map { it.id }.toLongArray(), progress)
+}
+
+fun com.philkes.notallyx.core.platform.PathProvider.deleteNoteAttachments(
+    notes: Collection<BaseNote>,
+    dataInPublicFolder: Boolean = false,
+    progress: StateFlow<Progress?>? = null,
+) {
+    val attachments = ArrayList<Attachment>()
+    notes.forEach { note ->
+        attachments.addAll(note.images)
+        attachments.addAll(note.files)
+        attachments.addAll(note.audios)
+    }
+    deleteAttachments(attachments, dataInPublicFolder, progress)
+}
+
+fun com.philkes.notallyx.core.platform.PathProvider.deleteAttachments(
+    attachments: Collection<Attachment>,
+    dataInPublicFolder: Boolean = false,
+    progress: StateFlow<Progress?>? = null,
+) {
+    if (attachments.isNotEmpty()) {
+        (progress as? MutableStateFlow<Progress?>)?.value =
+            DeleteAttachmentProgress(total = attachments.size)
+        attachments.forEachIndexed { index, attachment ->
+            val file =
+                when (attachment) {
+                    is Audio ->
+                        resolveAttachmentFile(
+                            SUBFOLDER_AUDIOS,
+                            attachment.name,
+                            dataInPublicFolder,
+                        )
+                    is FileAttachment -> {
+                        val subfolder =
+                            if (attachment.isImage) SUBFOLDER_IMAGES else SUBFOLDER_FILES
+                        resolveAttachmentFile(
+                            subfolder,
+                            attachment.localName,
+                            dataInPublicFolder,
+                        )
+                    }
+                }
+            if (file != null && file.exists()) {
+                file.delete()
+            }
+            (progress as? MutableStateFlow<Progress?>)?.value =
+                DeleteAttachmentProgress(index + 1, attachments.size)
+        }
+    }
+    (progress as? MutableStateFlow<Progress?>)?.value = DeleteAttachmentProgress(inProgress = false)
 }
 
 fun Context.deleteAttachments(

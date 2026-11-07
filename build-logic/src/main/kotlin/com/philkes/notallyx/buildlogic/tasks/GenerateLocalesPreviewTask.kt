@@ -4,6 +4,7 @@ import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -14,15 +15,21 @@ abstract class GenerateLocalesPreviewTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val resDir: DirectoryProperty
 
+    @get:Optional
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val composeResourcesDir: DirectoryProperty
+
     @get:OutputDirectory abstract val outputDir: DirectoryProperty
 
     @TaskAction
     fun generate() {
-        val resDirectory = resDir.asFile.get()
+        val primaryDir =
+            composeResourcesDir.orNull?.asFile?.takeIf { it.exists() } ?: resDir.asFile.get()
         val outputDirectory = outputDir.asFile.get()
 
         val localeDirs =
-            resDirectory
+            primaryDir
                 .listFiles { f ->
                     f.isDirectory &&
                         f.name.startsWith("values-") &&
@@ -57,7 +64,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 /**
  * Multi-preview annotation for generating app store screenshots across multiple locales.
- * Auto-generated during build from res/values-* folders by the generateLocalesPreview task.
+ * Auto-generated during build from composeResources/values-* or res/values-* folders by the generateLocalesPreview task.
  */
 @Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.FUNCTION)
@@ -71,7 +78,7 @@ typealias LocalesPreview = AppStorePreview
         if (!outputFile.exists() || outputFile.readText() != generatedContent) {
             outputFile.writeText(generatedContent)
             logger.lifecycle(
-                "Generated AppStorePreview with ${locales.size} locales at: ${outputFile.absolutePath}"
+                "Generated AppStorePreview with ${locales.size} locales (discovered ${localeDirs.size} locale folders) at: ${outputFile.absolutePath}"
             )
         }
     }

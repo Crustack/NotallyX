@@ -1,7 +1,6 @@
 package com.philkes.notallyx.feature.editor
 
 import android.app.Application
-import android.content.ContentResolver
 import android.net.Uri
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
@@ -10,15 +9,16 @@ import androidx.core.net.toUri
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.findAllOccurrences
-import com.philkes.notallyx.core.common.extensions.getFileName
-import com.philkes.notallyx.core.common.extensions.log
+import com.philkes.notallyx.core.platform.AndroidFileStorage
+import com.philkes.notallyx.core.platform.AppLogger
+import com.philkes.notallyx.core.platform.FileStorage
+import com.philkes.notallyx.core.platform.PlatformUri
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.feature.editor.history.ChangeHistory
 import com.philkes.notallyx.feature.editor.history.changes.NoteBodyDeltaChange
 import com.philkes.notallyx.feature.editor.history.computeBodyDelta
 import com.philkes.notallyx.feature.editor.screens.SearchState
-import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -36,6 +36,7 @@ import kotlinx.coroutines.withContext
 class EditTextPlainViewModel(
     app: Application,
     preferences: NotallyXPreferences,
+    private val fileStorage: FileStorage = AndroidFileStorage(app),
 ) : NoteModel(app, preferences) {
 
     private val changeHistory = ChangeHistory()
@@ -132,7 +133,8 @@ class EditTextPlainViewModel(
             _fileUri.value = uri
 
             if (uri != null) {
-                val fileName = app.getFileName(uri) ?: ""
+                val platformUri = PlatformUri(uri.toString())
+                val fileName = fileStorage.getFileName(platformUri) ?: ""
                 _title.value = fileName
                 title = fileName
 
@@ -140,18 +142,11 @@ class EditTextPlainViewModel(
                 val text =
                     withContext(Dispatchers.IO) {
                         try {
-                            val inputStream =
-                                if (
-                                    uri.scheme == ContentResolver.SCHEME_FILE ||
-                                        uri.scheme == "file"
-                                ) {
-                                    uri.path?.let { File(it).inputStream() }
-                                } else {
-                                    app.contentResolver.openInputStream(uri)
-                                }
-                            inputStream?.use { stream -> stream.bufferedReader().readText() } ?: ""
+                            fileStorage.openInputStream(platformUri)?.use { stream ->
+                                stream.bufferedReader().readText()
+                            } ?: ""
                         } catch (e: Exception) {
-                            app.log("EditTextPlainViewModel", "Failed to read file", throwable = e)
+                            AppLogger.e("EditTextPlainViewModel", "Failed to read file", e)
                             ""
                         }
                     }
@@ -251,16 +246,14 @@ class EditTextPlainViewModel(
         val textToSave = _bodyValue.value.text
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                val platformUri = PlatformUri(uri.toString())
                 val outputStream =
-                    if (uri.scheme == ContentResolver.SCHEME_FILE || uri.scheme == "file") {
-                        uri.path?.let { File(it).outputStream() }
-                    } else {
-                        app.contentResolver.openOutputStream(uri)
-                    } ?: throw IOException("Failed to open output stream for URI: $uri")
+                    fileStorage.openOutputStream(platformUri)
+                        ?: throw IOException("Failed to open output stream for URI: $uri")
                 outputStream.use { it.write(textToSave.toByteArray()) }
 
                 _fileUri.value = uri
-                val fileName = app.getFileName(uri)
+                val fileName = fileStorage.getFileName(platformUri)
                 if (!fileName.isNullOrEmpty()) {
                     _title.value = fileName
                     title = fileName

@@ -1,68 +1,79 @@
 package com.philkes.notallyx.feature.reminder
 
-import android.app.Application
-import androidx.test.core.app.ApplicationProvider
-import com.philkes.notallyx.core.common.extensions.getDefaultSharedPreferences
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.components.SampleNotes
-import com.philkes.notallyx.data.ShadowContextImplMedia
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Repetition
 import com.philkes.notallyx.data.model.RepetitionTimeUnit
+import com.philkes.notallyx.test.fakes.FakeDatabaseDriverFactory
+import com.philkes.notallyx.test.fakes.FakePathProvider
+import com.philkes.notallyx.test.fakes.FakePermissionChecker
+import com.philkes.notallyx.test.fakes.FakeReminderScheduler
 import java.util.Date
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
-import org.robolectric.shadows.ShadowLooper
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@RunWith(RobolectricTestRunner::class)
-@Config(manifest = Config.NONE, sdk = [35], shadows = [ShadowContextImplMedia::class])
 class NoteRemindersViewModelTest {
 
-    private lateinit var application: Application
+    private lateinit var pathProvider: FakePathProvider
     private lateinit var preferences: NotallyXPreferences
     private lateinit var database: NotallyDatabase
+    private lateinit var dbFlow: MutableStateFlow<NotallyDatabase?>
+    private lateinit var reminderScheduler: FakeReminderScheduler
+    private lateinit var permissionChecker: FakePermissionChecker
     private lateinit var viewModel: NoteRemindersViewModel
 
     @Before
     fun setUp() {
-        application = ApplicationProvider.getApplicationContext()
-        application.getDefaultSharedPreferences().edit().clear().commit()
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+        pathProvider = FakePathProvider()
         NotallyXPreferences.clearInstance()
-        preferences = NotallyXPreferences.getInstance(application)
-        preferences.reset()
+        preferences = NotallyXPreferences.createPortable(pathProvider)
 
         NotallyDatabase.clearInstance()
-        database = NotallyDatabase.getDatabase(application).value!!
+        database =
+            NotallyDatabase.createDatabase(
+                driverFactory = FakeDatabaseDriverFactory(pathProvider),
+                inMemory = true,
+            )
+        dbFlow = MutableStateFlow(database)
+        reminderScheduler = FakeReminderScheduler()
+        permissionChecker = FakePermissionChecker()
 
-        viewModel = NoteRemindersViewModel(application, preferences)
-        drainTasks()
+        viewModel =
+            NoteRemindersViewModel(
+                preferences = preferences,
+                databaseStateFlow = dbFlow,
+                pathProvider = pathProvider,
+                reminderScheduler = reminderScheduler,
+                permissionChecker = permissionChecker,
+            )
     }
 
     @After
     fun tearDown() {
-        drainTasks()
+        database.close()
         NotallyDatabase.clearInstance()
         NotallyXPreferences.clearInstance()
-    }
-
-    private fun drainTasks() {
-        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        pathProvider.rootDirectory.deleteRecursively()
+        Dispatchers.resetMain()
     }
 
     private fun waitUntil(condition: () -> Boolean) {
         val end = System.currentTimeMillis() + 3000
         while (!condition() && System.currentTimeMillis() < end) {
-            drainTasks()
             Thread.sleep(10)
         }
     }
@@ -117,7 +128,6 @@ class NoteRemindersViewModelTest {
         runBlocking { database.getBaseNoteDao().insert(note) }
 
         viewModel.onAction(NoteRemindersAction.Init(200L))
-        // When empty, it opens date picker
         waitUntil { viewModel.uiState.value.activeDialog is NoteRemindersDialogState.DatePicker }
 
         viewModel.onAction(NoteRemindersAction.DateSelected(2026, 9, 31))
@@ -138,6 +148,7 @@ class NoteRemindersViewModelTest {
         assertThat(viewModel.uiState.value.reminders).hasSize(1)
         assertThat(viewModel.uiState.value.reminders[0].repetition?.unit)
             .isEqualTo(RepetitionTimeUnit.DAYS)
+        assertThat(reminderScheduler.scheduledReminders).hasSize(1)
     }
 
     @Test
@@ -166,5 +177,6 @@ class NoteRemindersViewModelTest {
         }
 
         assertThat(viewModel.uiState.value.reminders).isEmpty()
+        assertThat(reminderScheduler.cancelledReminders).containsExactly(300L to 1L)
     }
 }

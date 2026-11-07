@@ -27,6 +27,7 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.components.BaseNoteCard
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.BaseNote
+import java.io.File
 
 /** Composable replacing activity_pick_note.xml layout. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,6 +36,7 @@ internal fun PickNoteScreen(
     notes: List<BaseNote>,
     modifier: Modifier = Modifier,
     isGrid: Boolean = false,
+    imageRoot: File? = null,
     onNoteClick: (BaseNote) -> Unit = {},
     onBackClick: () -> Unit = {},
 ) {
@@ -71,6 +73,7 @@ internal fun PickNoteScreen(
                     itemsIndexed(notes, key = { _, note -> note.id }) { _, note ->
                         BaseNoteCard(
                             baseNote = note,
+                            imageRoot = imageRoot,
                             onClick = { onNoteClick(note) },
                         )
                     }
@@ -83,6 +86,7 @@ internal fun PickNoteScreen(
                     itemsIndexed(notes, key = { _, note -> note.id }) { _, note ->
                         BaseNoteCard(
                             baseNote = note,
+                            imageRoot = imageRoot,
                             onClick = { onNoteClick(note) },
                         )
                     }

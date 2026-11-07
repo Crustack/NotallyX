@@ -1,8 +1,10 @@
 package com.philkes.notallyx.feature.main.routes.picknote
 
-import android.app.Application
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.core.common.BaseViewModel
+import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.platform.DesktopPathProvider
+import com.philkes.notallyx.core.platform.PathProvider
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.preference.NotesView
 import com.philkes.notallyx.data.model.Folder
@@ -24,9 +26,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class PickNoteViewModel(
-    app: Application,
     preferences: NotallyXPreferences,
-) : BaseViewModel(app, preferences) {
+    databaseStateFlow: StateFlow<NotallyDatabase?> = NotallyDatabase.instance,
+    pathProvider: PathProvider = DesktopPathProvider(),
+) : BaseViewModel(preferences, databaseStateFlow, pathProvider) {
 
     private val _sideEffects = Channel<PickNoteSideEffect>(Channel.BUFFERED)
     val sideEffects: Flow<PickNoteSideEffect> = _sideEffects.receiveAsFlow()
@@ -60,6 +63,11 @@ class PickNoteViewModel(
                     notes = notes,
                     isGrid = userPrefs.notesView == NotesView.GRID,
                     isLoading = false,
+                    imageRoot =
+                        pathProvider.getMediaDirectory(
+                            "Images",
+                            preferences.dataInPublicFolder.value,
+                        ),
                 )
             }
             .stateIn(
@@ -69,6 +77,11 @@ class PickNoteViewModel(
                     PickNoteUiState(
                         isGrid = preferences.userPreferencesFlow.value.notesView == NotesView.GRID,
                         isLoading = true,
+                        imageRoot =
+                            pathProvider.getMediaDirectory(
+                                "Images",
+                                preferences.dataInPublicFolder.value,
+                            ),
                     ),
             )
 

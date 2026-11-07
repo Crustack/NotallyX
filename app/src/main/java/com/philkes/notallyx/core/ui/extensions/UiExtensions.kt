@@ -33,6 +33,8 @@ import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
+import com.philkes.notallyx.data.model.extensions.RepetitionStrings
+import com.philkes.notallyx.data.model.extensions.formatDate
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.migration.backup.NotesAndAttachments
 import com.philkes.notallyx.navigation.NotallyNavKey
@@ -142,26 +144,26 @@ fun Date.format(
     dateFormat: DateFormat = DateFormat.DD_MM_YY_GER,
     timeFormat: TimeFormat = TimeFormat.TWENTY_FOUR_H,
     ensureFullFormat: Boolean = false,
-): String {
-    val (effectiveDateFormat, effectiveTimeFormat) =
-        if (ensureFullFormat && dateFormat != DateFormat.RELATIVE) {
-            Pair(
-                dateFormat.takeIf { it != DateFormat.NONE } ?: DateFormat.DD_MM_YY_GER,
-                timeFormat.takeIf { it != TimeFormat.NONE } ?: TimeFormat.TWENTY_FOUR_H,
-            )
-        } else Pair(dateFormat, timeFormat)
-    if (effectiveDateFormat == DateFormat.NONE && effectiveTimeFormat == TimeFormat.NONE) {
-        return ""
-    }
-    val datePart = effectiveDateFormat.format(this)
-    val timePart = effectiveTimeFormat.format(this)
+): String = formatDate(dateFormat, timeFormat, ensureFullFormat)
 
-    return if (datePart.isNotEmpty() && timePart.isNotEmpty()) {
-        "$datePart $timePart"
-    } else {
-        datePart + timePart
-    }
-}
+fun Context.toRepetitionStrings() =
+    RepetitionStrings(
+        noRepetition = getString(R.string.reminder_no_repetition),
+        every = getString(R.string.every),
+        daily = getString(R.string.daily),
+        weekly = getString(R.string.weekly),
+        monthly = getString(R.string.monthly),
+        yearly = getString(R.string.yearly),
+        minutes = getString(R.string.minutes),
+        hours = getString(R.string.hours),
+        daysSingular = getQuantityStringPlain(R.plurals.days, 1),
+        daysPlural = getQuantityStringPlain(R.plurals.days, 10),
+        weeks = getString(R.string.weeks),
+        months = getString(R.string.months),
+        years = getString(R.string.years),
+        ofTheMonthPattern = getString(R.string.of_the_month, "%1\$s"),
+        ofTheMonthLastPattern = getString(R.string.of_the_month_last, "%1\$s"),
+    )
 
 fun Context.getQuantityString(id: Int, quantity: Int, vararg formatArgs: Any): String {
     return resources.getQuantityString(id, quantity, quantity, *formatArgs)

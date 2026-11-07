@@ -123,7 +123,9 @@ class ReminderReceiver : BroadcastReceiver() {
 
     private suspend fun deleteNote(context: Context, noteId: Long): Boolean {
         return getDatabase(context)?.let {
-            context.moveBaseNotes(it.getBaseNoteDao(), longArrayOf(noteId), Folder.DELETED)
+            it.getBaseNoteDao().moveBaseNotes(longArrayOf(noteId), Folder.DELETED) { notes, _ ->
+                context.cancelPinAndReminders(notes)
+            }
             true
         } ?: false
     }

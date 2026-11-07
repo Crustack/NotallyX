@@ -1,7 +1,6 @@
 package com.philkes.notallyx.core.ui.dialog.color
 
 import android.content.res.Configuration
-import android.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -61,7 +60,7 @@ import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Color as NoteColor
 
 internal class ColorPickerState(
-    val initialColorInt: Int = Color.WHITE,
+    val initialColorInt: Int = ComposeColor.White.toArgb(),
     val controller: ColorPickerController = ColorPickerController(),
 ) {
     var pickerColorInt by mutableIntStateOf(initialColorInt)
@@ -98,7 +97,7 @@ internal class ColorPickerState(
 
 @Composable
 internal fun rememberColorPickerState(
-    initialColorInt: Int = Color.WHITE,
+    initialColorInt: Int = ComposeColor.White.toArgb(),
     controller: ColorPickerController = rememberColorPickerController(),
 ): ColorPickerState {
     return remember(initialColorInt, controller) { ColorPickerState(initialColorInt, controller) }
@@ -271,7 +270,7 @@ internal fun ColorPickerControls(
                     contentDescription = presetHex,
                     onClick = {
                         if (isDefault) {
-                            state.updateColor(Color.WHITE)
+                            state.updateColor(ComposeColor.White.toArgb())
                         } else {
                             parseColorOrNull(presetHex)?.let { parsed -> state.updateColor(parsed) }
                         }
@@ -288,7 +287,7 @@ internal fun ColorPickerControls(
 private fun ColorPickerControlsPreview() {
     NotallyXTheme {
         ColorPickerControls(
-            state = rememberColorPickerState(Color.RED),
+            state = rememberColorPickerState(ComposeColor.Red.toArgb()),
             isDuplicate = true,
             modifier = Modifier.padding(16.dp),
         )

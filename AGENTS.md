@@ -41,17 +41,18 @@
   - `Dispatchers.Default`: Intensive CPU calculations (e.g. search occurrences, text delta calculations).
 
 ### Database & Storage Patterns
-- **Database**: Room 3 Database (`NotallyDatabase`, versioned with KSP schema exports in `app/schemas/`). Uses Room SQLite Driver (`BackupSQLiteDriver`), `@ColumnTypeConverters(Converters::class)`, and `RoomRawQuery`.
+- **Database**: Room 3 Database (`NotallyDatabase`, versioned with KSP schema exports in `app/schemas/`). Uses Room SQLite Driver (`BackupSQLiteDriver`) via `DatabaseDriverFactory` (`AndroidDatabaseDriverFactory` on Android, `JvmBundledDatabaseDriverFactory` using `BundledSQLiteDriver` on JVM/Desktop), `@ColumnTypeConverters(Converters::class)`, and `RoomRawQuery`.
 - **Migrations**: Incremental Room schema migrations defined as `Migration(from, to)` in `NotallyDatabase.kt`. High-level application data migrations (attachment relocation, note splitting) in `core/database/DataSchemaMigrations.kt`.
 - **Preferences & Encryption**:
   - General preferences: Jetpack DataStore (`androidx.datastore.preferences`, `UserPreferences`).
-  - Sensitive preferences: Encrypted DataStore (`androidx.datastore.tink`) using Google Tink AEAD (`SecurePreferences`).
-  - Database encryption: Optional SQLCipher database encryption (`net.zetetic:sqlcipher-android`) and biometric database lock.
+  - Sensitive preferences: Encrypted DataStore (`androidx.datastore.tink`) using Google Tink AEAD (`SecurePreferences`, `SecurePreferencesStore`).
+  - Database encryption: Sunset via `FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB = false` with an automatic one-time non-destructive decryption migration (`decryptDatabaseOnStartupIfNeeded`) on startup while preserving biometric app-access locking (`LockedActivity`).
 - **Storage Strategy**:
-  - Internal storage for private app data and default SQLite database.
+  - Platform-abstracted file and path resolution via `PathProvider` (`AndroidPathProvider`, `DesktopPathProvider`) and `FileStorage` (`AndroidFileStorage`, `JvmFileStorage`).
+  - Internal storage for private app data and default SQLite database on Android, or OS standard application data directories on Desktop.
   - Optional external storage mode (`dataInPublicFolder`).
   - Strict WAL checkpointing: `NotallyDatabase.checkpoint()` executes `RoomRawQuery("pragma wal_checkpoint(TRUNCATE)")` to ensure WAL is flushed before any database export, backup, or replacement.
-- **Type Converters**: `core/database/Converters.kt` converts complex models (spans, attachments, folders, reminders, labels) to/from JSON strings.
+- **Type Converters**: `core/database/Converters.kt` converts complex models (spans, attachments, folders, reminders, labels) to/from JSON strings using `kotlinx.serialization.json`.
 
 ### App Documentation
 - **Docusaurus Website**: App user and developer documentation is located in `@documentation` (`/documentation`). It is a Docusaurus website containing feature guides, setup instructions, FAQs, settings, security & privacy details, and contribution docs.
@@ -123,7 +124,7 @@ NotallyX/
 - **NO Direct State Mutation in UI Tests**: Interact exclusively through Compose semantics (`performClick()`, `performTextInput()`) or Espresso actions. Never directly assign activity/viewmodel state fields in UI tests.
 - **NO Blocking Main Thread**: Offload synchronous database queries, heavy regex, DataStore writes, or file operations to `Dispatchers.IO`.
 - **NO Raw SQL Injections**: Use Room DAO annotations (`@Query`, `@Insert`, `@Update`, `@Delete`) or properly parameterized `RoomRawQuery`.
-- **NO Hardcoded Strings**: Use string resources (`R.string.*`) for all UI-visible text to preserve localization support across 30+ languages.
+- **NO Hardcoded Strings**: Use string resources (`R.string.*` or Compose Multiplatform `Res.string.*` / `UiText`) for all UI-visible text to preserve localization support across 30+ languages.
 - **NO Lambda Bags**: Avoid passing multiple individual lambda callbacks through screen composable hierarchies; use a single `onAction: (Action) -> Unit`.
 - **NO Context Casting While-Loops**: Avoid traversing `while (context is ContextWrapper)` to find an Activity. Use `LocalActivity.current as? FragmentActivity`.
 - **NO Transient Closures in `remember`**: Never store pending action closures in Compose `remember` state across dialogs or authentication. Model workflow state transitions explicitly in the ViewModel.

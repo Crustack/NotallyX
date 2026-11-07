@@ -34,6 +34,7 @@ import com.philkes.notallyx.feature.migration.backup.exportPlainTextFile
 import com.philkes.notallyx.feature.migration.backup.exportPlainTextFileFolder
 import com.philkes.notallyx.feature.migration.progress.ExportNotesProgress
 import com.philkes.notallyx.feature.reminder.cancelPinAndReminders
+import com.philkes.notallyx.feature.reminder.pinAndScheduleReminders
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
@@ -91,7 +92,7 @@ class NotesRouteViewModel(
         @Suppress("UNNECESSARY_SAFE_CALL") val currentFolder = folder?.value ?: Folder.NOTES
         @Suppress("UNNECESSARY_SAFE_CALL") val currentKeyword = keywordFlow?.value ?: ""
         if (searchResults == null) {
-            searchResults = SearchResult(app, viewModelScope, dao, app::createItemsFromNotes)
+            searchResults = SearchResult(viewModelScope, dao, app::createItemsFromNotes)
             searchResults!!.fetch(currentKeyword, currentFolder, currentLabel)
         } else {
             searchResults!!.baseNoteDao = dao
@@ -110,7 +111,12 @@ class NotesRouteViewModel(
         val dao = baseNoteDao ?: return
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                app.moveBaseNotes(dao, ids, folder)
+                dao.moveBaseNotes(ids, folder) { notes, targetFolder ->
+                    when (targetFolder) {
+                        Folder.NOTES -> app.pinAndScheduleReminders(notes)
+                        else -> app.cancelPinAndReminders(notes)
+                    }
+                }
             } finally {
                 callable?.invoke()
             }

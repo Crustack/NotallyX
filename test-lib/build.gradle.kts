@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
+    id("notallyx.android.convention")
 }
 
 android {
@@ -10,10 +11,6 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 

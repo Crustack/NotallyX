@@ -2,24 +2,17 @@ package com.philkes.notallyx.core.preference
 
 import android.content.Context
 import android.net.Uri
-import androidx.core.net.toUri
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
-import androidx.datastore.core.FileStorage
-import androidx.datastore.dataStoreFile
-import androidx.datastore.tink.AeadSerializer
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.extensions.getExternalBackupsDirectory
+import com.philkes.notallyx.core.platform.AndroidPathProvider
+import com.philkes.notallyx.core.platform.PathProvider
 import com.philkes.notallyx.core.preference.Constants.PASSWORD_EMPTY
-import com.philkes.notallyx.core.preference.migration.LegacyEncryptedPrefsMigration
 import com.philkes.notallyx.core.preference.migration.SharedPreferencesToUserPreferencesMigration
 import com.philkes.notallyx.core.preference.model.SecurePreferences
-import com.philkes.notallyx.core.preference.model.SecurePreferencesCorruptionHandler
-import com.philkes.notallyx.core.preference.model.SecurePreferencesSerializer
 import com.philkes.notallyx.core.preference.model.UserPreferences
 import com.philkes.notallyx.core.preference.model.UserPreferencesCorruptionHandler
 import com.philkes.notallyx.core.preference.model.UserPreferencesSerializer
-import com.philkes.notallyx.core.security.TinkAeadProvider
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Type
 import java.io.IOException
@@ -57,8 +50,11 @@ const val MAX_ITEMS_MAX = 10
 class NotallyXPreferences(
     val userDataStore: DataStore<UserPreferences>,
     val secureDataStore: DataStore<SecurePreferences>,
-    val context: Context,
+    val context: Context? = null,
     val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+    val pathProvider: PathProvider =
+        if (context != null) AndroidPathProvider(context)
+        else com.philkes.notallyx.core.platform.DesktopPathProvider(),
 ) {
 
     val userPreferencesFlow: StateFlow<UserPreferences> =
@@ -339,7 +335,9 @@ class NotallyXPreferences(
     val defaultBackupsFolder: String
         get() =
             try {
-                context.getExternalBackupsDirectory().toUri().toString()
+                java.net
+                    .URI("file", "", pathProvider.getBackupsDirectory().absolutePath, null)
+                    .toString()
             } catch (_: Exception) {
                 EMPTY_PATH
             }
@@ -708,12 +706,16 @@ class NotallyXPreferences(
             userDataStore: DataStore<UserPreferences>? = null,
             secureDataStore: DataStore<SecurePreferences>? = null,
             scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+            pathProvider: PathProvider? = null,
         ): NotallyXPreferences {
+            val basePathProvider = pathProvider ?: AndroidPathProvider(context)
             val userStore =
                 userDataStore
                     ?: DataStoreFactory.create(
                         serializer = UserPreferencesSerializer,
-                        produceFile = { context.dataStoreFile("notallyx_preferences.json") },
+                        produceFile = {
+                            basePathProvider.getDataStoreFile(USER_PREFERENCES_FILE_NAME)
+                        },
                         migrations = listOf(SharedPreferencesToUserPreferencesMigration(context)),
                         corruptionHandler = UserPreferencesCorruptionHandler,
                         scope = scope,
@@ -721,27 +723,29 @@ class NotallyXPreferences(
 
             val secureStore =
                 secureDataStore
-                    ?: run {
-                        val aead = TinkAeadProvider.provideAead(context)
-                        val secureFile = "notallyx_secure_preferences.bin"
-                        DataStoreFactory.create(
-                            storage =
-                                FileStorage(
-                                    serializer =
-                                        AeadSerializer(
-                                            aead = aead,
-                                            wrappedSerializer = SecurePreferencesSerializer,
-                                            associatedData = secureFile.encodeToByteArray(),
-                                        ),
-                                    produceFile = { context.dataStoreFile(secureFile) },
-                                ),
-                            migrations = listOf(LegacyEncryptedPrefsMigration(context)),
-                            corruptionHandler = SecurePreferencesCorruptionHandler,
-                            scope = scope,
-                        )
-                    }
+                    ?: AndroidSecurePreferencesStore(context, basePathProvider, scope).dataStore
 
-            return NotallyXPreferences(userStore, secureStore, context, scope).also {
+            return NotallyXPreferences(userStore, secureStore, context, scope, basePathProvider)
+                .also {
+                    if (instance == null) {
+                        instance = it
+                    }
+                }
+        }
+
+        fun createPortable(
+            pathProvider: PathProvider = com.philkes.notallyx.core.platform.DesktopPathProvider(),
+            scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+        ): NotallyXPreferences {
+            val userStore =
+                DataStoreFactory.create(
+                    serializer = UserPreferencesSerializer,
+                    produceFile = { pathProvider.getDataStoreFile(USER_PREFERENCES_FILE_NAME) },
+                    corruptionHandler = UserPreferencesCorruptionHandler,
+                    scope = scope,
+                )
+            val secureStore = JvmSecurePreferencesStore(pathProvider, scope).dataStore
+            return NotallyXPreferences(userStore, secureStore, null, scope, pathProvider).also {
                 if (instance == null) {
                     instance = it
                 }
@@ -755,9 +759,11 @@ class NotallyXPreferences(
                         runBlocking { oldInstance.scope.coroutineContext.job.cancelAndJoin() }
                     } catch (_: Exception) {}
                     try {
-                        oldInstance.context.dataStoreFile("notallyx_preferences.json").delete()
-                        oldInstance.context
-                            .dataStoreFile("notallyx_secure_preferences.bin")
+                        oldInstance.pathProvider
+                            .getDataStoreFile(USER_PREFERENCES_FILE_NAME)
+                            .delete()
+                        oldInstance.pathProvider
+                            .getDataStoreFile(SECURE_PREFERENCES_FILE_NAME)
                             .delete()
                     } catch (_: Exception) {}
                 }

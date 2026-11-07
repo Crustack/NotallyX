@@ -10,18 +10,29 @@ import com.philkes.notallyx.data.model.RepetitionTimeUnit
 import com.philkes.notallyx.data.model.SpanRepresentation
 import java.util.Calendar
 import java.util.Date
-import org.json.JSONArray
-import org.json.JSONException
-import org.json.JSONObject
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
+import kotlinx.serialization.json.put
 
 class ConverterException(message: String, cause: Throwable) : RuntimeException(message, cause)
 
 object Converters {
 
     @ColumnTypeConverter
-    fun labelsToJson(labels: List<String>) =
+    fun labelsToJson(labels: List<String>): String =
         try {
-            JSONArray(labels).toString()
+            buildJsonArray { labels.forEach { add(JsonPrimitive(it)) } }.toString()
         } catch (e: Exception) {
             ConverterErrorReporter.reportError(
                 ConverterException("Failed to convert Labels to JSON", e)
@@ -30,9 +41,9 @@ object Converters {
         }
 
     @ColumnTypeConverter
-    fun jsonToLabels(json: String) =
+    fun jsonToLabels(json: String): List<String> =
         try {
-            jsonToLabels(JSONArray(json))
+            jsonToLabels(Json.parseToJsonElement(json).jsonArray)
         } catch (e: Exception) {
             ConverterErrorReporter.reportError(
                 ConverterException("Failed to convert JSON to Labels", e)
@@ -40,30 +51,38 @@ object Converters {
             emptyList()
         }
 
-    fun jsonToLabels(jsonArray: JSONArray) = jsonArray.iterable<String>().toList()
+    fun jsonToLabels(jsonArray: JsonArray): List<String> = jsonArray.map { element ->
+        val primitive = element.jsonPrimitive
+        require(primitive !is JsonNull) { "Null label element" }
+        primitive.content
+    }
 
     @ColumnTypeConverter
-    fun filesToJson(files: List<FileAttachment>): String {
-        return try {
-            val objects = files.map { file ->
-                val jsonObject = JSONObject()
-                jsonObject.put("localName", file.localName)
-                jsonObject.put("originalName", file.originalName)
-                jsonObject.put("mimeType", file.mimeType)
+    fun filesToJson(files: List<FileAttachment>): String =
+        try {
+            buildJsonArray {
+                files.forEach { file ->
+                    add(
+                        buildJsonObject {
+                            put("localName", file.localName)
+                            put("originalName", file.originalName)
+                            put("mimeType", file.mimeType)
+                        }
+                    )
+                }
             }
-            JSONArray(objects).toString()
+                .toString()
         } catch (e: Exception) {
             ConverterErrorReporter.reportError(
                 ConverterException("Failed to convert Files attachments to JSON", e)
             )
             "[]"
         }
-    }
 
     @ColumnTypeConverter
-    fun jsonToFiles(json: String) =
+    fun jsonToFiles(json: String): List<FileAttachment> =
         try {
-            jsonToFiles(JSONArray(json))
+            jsonToFiles(Json.parseToJsonElement(json).jsonArray)
         } catch (e: Exception) {
             ConverterErrorReporter.reportError(
                 ConverterException("Failed to convert JSON to Files attachments", e)
@@ -71,37 +90,40 @@ object Converters {
             emptyList()
         }
 
-    fun jsonToFiles(jsonArray: JSONArray): List<FileAttachment> {
-        return jsonArray.iterable<JSONObject>().map { jsonObject ->
-            val localName = getSafeLocalName(jsonObject)
-            val originalName = getSafeOriginalName(jsonObject)
-            val mimeType = jsonObject.getString("mimeType")
-            FileAttachment(localName, originalName, mimeType)
-        }
+    fun jsonToFiles(jsonArray: JsonArray): List<FileAttachment> = jsonArray.map { element ->
+        val jsonObject = element.jsonObject
+        val localName = getSafeLocalName(jsonObject)
+        val originalName = getSafeOriginalName(jsonObject)
+        val mimeType = jsonObject.getRequiredString("mimeType")
+        FileAttachment(localName, originalName, mimeType)
     }
 
     @ColumnTypeConverter
-    fun audiosToJson(audios: List<Audio>): String {
-        return try {
-            val objects = audios.map { audio ->
-                val jsonObject = JSONObject()
-                jsonObject.put("name", audio.name)
-                jsonObject.put("duration", audio.duration)
-                jsonObject.put("timestamp", audio.timestamp)
+    fun audiosToJson(audios: List<Audio>): String =
+        try {
+            buildJsonArray {
+                audios.forEach { audio ->
+                    add(
+                        buildJsonObject {
+                            put("name", audio.name)
+                            audio.duration?.let { put("duration", it) }
+                            put("timestamp", audio.timestamp)
+                        }
+                    )
+                }
             }
-            JSONArray(objects).toString()
+                .toString()
         } catch (e: Exception) {
             ConverterErrorReporter.reportError(
                 ConverterException("Failed to convert Audios attachments to JSON", e)
             )
             "[]"
         }
-    }
 
     @ColumnTypeConverter
-    fun jsonToAudios(json: String) =
+    fun jsonToAudios(json: String): List<Audio> =
         try {
-            jsonToAudios(JSONArray(json))
+            jsonToAudios(Json.parseToJsonElement(json).jsonArray)
         } catch (e: Exception) {
             ConverterErrorReporter.reportError(
                 ConverterException("Failed to convert JSON to Audios attachments", e)
@@ -109,19 +131,18 @@ object Converters {
             emptyList()
         }
 
-    fun jsonToAudios(json: JSONArray): List<Audio> {
-        return json.iterable<JSONObject>().map { jsonObject ->
-            val name = jsonObject.getString("name")
-            val duration = jsonObject.getSafeLong("duration")
-            val timestamp = jsonObject.getLong("timestamp")
-            Audio(name, duration, timestamp)
-        }
+    fun jsonToAudios(json: JsonArray): List<Audio> = json.map { element ->
+        val jsonObject = element.jsonObject
+        val name = jsonObject.getRequiredString("name")
+        val duration = jsonObject.getSafeLong("duration")
+        val timestamp = jsonObject.getRequiredLong("timestamp")
+        Audio(name, duration, timestamp)
     }
 
     @ColumnTypeConverter
-    fun jsonToSpans(json: String) =
+    fun jsonToSpans(json: String): List<SpanRepresentation> =
         try {
-            jsonToSpans(JSONArray(json))
+            jsonToSpans(Json.parseToJsonElement(json).jsonArray)
         } catch (e: Exception) {
             ConverterErrorReporter.reportError(
                 ConverterException("Failed to convert JSON to Spans", e)
@@ -129,38 +150,35 @@ object Converters {
             emptyList()
         }
 
-    fun jsonToSpans(jsonArray: JSONArray): List<SpanRepresentation> {
-        return jsonArray
-            .iterable<JSONObject>()
-            .map { jsonObject ->
-                val bold = jsonObject.getSafeBoolean("bold")
-                val link = jsonObject.getSafeBoolean("link")
-                val linkData = jsonObject.getSafeString("linkData")
-                val italic = jsonObject.getSafeBoolean("italic")
-                val monospace = jsonObject.getSafeBoolean("monospace")
-                val strikethrough = jsonObject.getSafeBoolean("strikethrough")
-                try {
-                    val start = jsonObject.getInt("start")
-                    val end = jsonObject.getInt("end")
-                    SpanRepresentation(
-                        start,
-                        end,
-                        bold,
-                        link,
-                        linkData,
-                        italic,
-                        monospace,
-                        strikethrough,
-                    )
-                } catch (e: Exception) {
-                    null
-                }
+    fun jsonToSpans(jsonArray: JsonArray): List<SpanRepresentation> =
+        jsonArray.mapNotNull { element ->
+            val jsonObject = element.jsonObject
+            val bold = jsonObject.getSafeBoolean("bold")
+            val link = jsonObject.getSafeBoolean("link")
+            val linkData = jsonObject.getSafeString("linkData")
+            val italic = jsonObject.getSafeBoolean("italic")
+            val monospace = jsonObject.getSafeBoolean("monospace")
+            val strikethrough = jsonObject.getSafeBoolean("strikethrough")
+            try {
+                val start = jsonObject.getRequiredInt("start")
+                val end = jsonObject.getRequiredInt("end")
+                SpanRepresentation(
+                    start,
+                    end,
+                    bold,
+                    link,
+                    linkData,
+                    italic,
+                    monospace,
+                    strikethrough,
+                )
+            } catch (e: Exception) {
+                null
             }
-            .filterNotNull()
-    }
+        }
 
     @ColumnTypeConverter
-    fun spansToJson(list: List<SpanRepresentation>) =
+    fun spansToJson(list: List<SpanRepresentation>): String =
         try {
             spansToJSONArray(list).toString()
         } catch (e: Exception) {
@@ -170,25 +188,27 @@ object Converters {
             "[]"
         }
 
-    fun spansToJSONArray(list: List<SpanRepresentation>): JSONArray {
-        val objects = list.map { representation ->
-            val jsonObject = JSONObject()
-            jsonObject.put("bold", representation.bold)
-            jsonObject.put("link", representation.link)
-            jsonObject.put("linkData", representation.linkData)
-            jsonObject.put("italic", representation.italic)
-            jsonObject.put("monospace", representation.monospace)
-            jsonObject.put("strikethrough", representation.strikethrough)
-            jsonObject.put("start", representation.start)
-            jsonObject.put("end", representation.end)
+    fun spansToJSONArray(list: List<SpanRepresentation>): JsonArray = buildJsonArray {
+        list.forEach { representation ->
+            add(
+                buildJsonObject {
+                    put("bold", representation.bold)
+                    put("link", representation.link)
+                    representation.linkData?.let { put("linkData", it) }
+                    put("italic", representation.italic)
+                    put("monospace", representation.monospace)
+                    put("strikethrough", representation.strikethrough)
+                    put("start", representation.start)
+                    put("end", representation.end)
+                }
+            )
         }
-        return JSONArray(objects)
     }
 
     @ColumnTypeConverter
-    fun jsonToItems(json: String) =
+    fun jsonToItems(json: String): List<ListItem> =
         try {
-            jsonToItems(JSONArray(json))
+            jsonToItems(Json.parseToJsonElement(json).jsonArray)
         } catch (e: Exception) {
             ConverterErrorReporter.reportError(
                 ConverterException("Failed to convert JSON to List Items", e)
@@ -196,26 +216,25 @@ object Converters {
             emptyList()
         }
 
-    fun jsonToItems(json: JSONArray): List<ListItem> {
-        return json.iterable<JSONObject>().map { jsonObject ->
-            val body = jsonObject.getSafeString("body") ?: ""
-            val checked = jsonObject.getSafeBoolean("checked")
-            val isChild = jsonObject.getSafeBoolean("isChild")
-            val order = jsonObject.getSafeInt("order")
-            val checkedTimestamp = jsonObject.getSafeLong("checkedTimestamp")
-            ListItem(
-                body,
-                checked,
-                isChild,
-                order,
-                mutableListOf(),
-                checkedTimestamp = checkedTimestamp,
-            )
-        }
+    fun jsonToItems(json: JsonArray): List<ListItem> = json.map { element ->
+        val jsonObject = element.jsonObject
+        val body = jsonObject.getSafeString("body") ?: ""
+        val checked = jsonObject.getSafeBoolean("checked")
+        val isChild = jsonObject.getSafeBoolean("isChild")
+        val order = jsonObject.getSafeInt("order")
+        val checkedTimestamp = jsonObject.getSafeLong("checkedTimestamp")
+        ListItem(
+            body,
+            checked,
+            isChild,
+            order,
+            mutableListOf(),
+            checkedTimestamp = checkedTimestamp,
+        )
     }
 
     @ColumnTypeConverter
-    fun itemsToJson(list: List<ListItem>) =
+    fun itemsToJson(list: List<ListItem>): String =
         try {
             itemsToJSONArray(list).toString()
         } catch (e: Exception) {
@@ -225,20 +244,22 @@ object Converters {
             "[]"
         }
 
-    fun itemsToJSONArray(list: List<ListItem>): JSONArray {
-        val objects = list.map { item ->
-            val jsonObject = JSONObject()
-            jsonObject.put("body", item.body)
-            jsonObject.put("checked", item.checked)
-            jsonObject.put("isChild", item.isChild)
-            jsonObject.put("order", item.order)
-            jsonObject.put("checkedTimestamp", item.checkedTimestamp)
+    fun itemsToJSONArray(list: List<ListItem>): JsonArray = buildJsonArray {
+        list.forEach { item ->
+            add(
+                buildJsonObject {
+                    put("body", item.body)
+                    put("checked", item.checked)
+                    put("isChild", item.isChild)
+                    item.order?.let { put("order", it) }
+                    item.checkedTimestamp?.let { put("checkedTimestamp", it) }
+                }
+            )
         }
-        return JSONArray(objects)
     }
 
     @ColumnTypeConverter
-    fun remindersToJson(reminders: List<Reminder>) =
+    fun remindersToJson(reminders: List<Reminder>): String =
         try {
             remindersToJSONArray(reminders).toString()
         } catch (e: Exception) {
@@ -248,22 +269,23 @@ object Converters {
             "[]"
         }
 
-    fun remindersToJSONArray(reminders: List<Reminder>): JSONArray {
-        val objects = reminders.map { reminder ->
-            JSONObject().apply {
-                put("id", reminder.id) // Store date as long timestamp
-                put("dateTime", reminder.dateTime.time) // Store date as long timestamp
-                put("repetition", reminder.repetition?.let { repetitionToJsonObject(it) })
-                put("isNotificationVisible", reminder.isNotificationVisible)
-            }
+    fun remindersToJSONArray(reminders: List<Reminder>): JsonArray = buildJsonArray {
+        reminders.forEach { reminder ->
+            add(
+                buildJsonObject {
+                    put("id", reminder.id)
+                    put("dateTime", reminder.dateTime.time)
+                    reminder.repetition?.let { put("repetition", repetitionToJsonObject(it)) }
+                    put("isNotificationVisible", reminder.isNotificationVisible)
+                }
+            )
         }
-        return JSONArray(objects)
     }
 
     @ColumnTypeConverter
-    fun jsonToReminders(json: String) =
+    fun jsonToReminders(json: String): List<Reminder> =
         try {
-            jsonToReminders(JSONArray(json))
+            jsonToReminders(Json.parseToJsonElement(json).jsonArray)
         } catch (e: Exception) {
             ConverterErrorReporter.reportError(
                 ConverterException("Failed to convert JSON to Reminders", e)
@@ -271,19 +293,30 @@ object Converters {
             emptyList()
         }
 
-    fun jsonToReminders(jsonArray: JSONArray): List<Reminder> {
-        return jsonArray.iterable<JSONObject>().map { jsonObject ->
-            val id = jsonObject.getLong("id")
-            val dateTime = Date(jsonObject.getLong("dateTime"))
-            val repetition = jsonObject.getSafeString("repetition")?.let { jsonToRepetition(it) }
-            val isNotificationVisible = jsonObject.getSafeBoolean("isNotificationVisible")
-            Reminder(id, dateTime, repetition, isNotificationVisible)
-        }
+    fun jsonToReminders(jsonArray: JsonArray): List<Reminder> = jsonArray.map { element ->
+        val jsonObject = element.jsonObject
+        val id = jsonObject.getRequiredLong("id")
+        val dateTime = Date(jsonObject.getRequiredLong("dateTime"))
+        val repetition =
+            when (val repElement = jsonObject["repetition"]) {
+                null,
+                is JsonNull -> null
+                is JsonObject -> jsonObjectToRepetition(repElement)
+                is JsonPrimitive ->
+                    if (repElement.isString && repElement.content.isNotEmpty()) {
+                        jsonToRepetition(repElement.content)
+                    } else {
+                        null
+                    }
+                else -> null
+            }
+        val isNotificationVisible = jsonObject.getSafeBoolean("isNotificationVisible")
+        Reminder(id, dateTime, repetition, isNotificationVisible)
     }
 
     @ColumnTypeConverter
-    fun repetitionToJson(repetition: Repetition): String {
-        return try {
+    fun repetitionToJson(repetition: Repetition): String =
+        try {
             repetitionToJsonObject(repetition).toString()
         } catch (e: Exception) {
             ConverterErrorReporter.reportError(
@@ -291,108 +324,97 @@ object Converters {
             )
             ""
         }
-    }
 
-    fun repetitionToJsonObject(repetition: Repetition): JSONObject {
-        val jsonObject = JSONObject()
-        jsonObject.put("value", repetition.value)
-        jsonObject.put("unit", repetition.unit.name) // Store the TimeUnit as a string
-        repetition.occurrence?.let { jsonObject.put("occurrence", it) }
-        repetition.dayOfWeek?.let { jsonObject.put("dayOfWeek", it) }
-        return jsonObject
+    fun repetitionToJsonObject(repetition: Repetition): JsonObject = buildJsonObject {
+        put("value", repetition.value)
+        put("unit", repetition.unit.name)
+        repetition.occurrence?.let { put("occurrence", it) }
+        repetition.dayOfWeek?.let { put("dayOfWeek", it) }
     }
 
     @ColumnTypeConverter
-    fun jsonToRepetition(json: String): Repetition {
-        return try {
-            val jsonObject = JSONObject(json)
-            val value = jsonObject.getInt("value").coerceAtLeast(1)
-            val unit = RepetitionTimeUnit.valueOf(jsonObject.getString("unit"))
-            val (occurrence, dayOfWeek) = getSafeRepetitionCustomization(jsonObject)
-            Repetition(value, unit, occurrence, dayOfWeek)
+    fun jsonToRepetition(json: String): Repetition =
+        try {
+            val jsonObject = Json.parseToJsonElement(json).jsonObject
+            jsonObjectToRepetition(jsonObject)
         } catch (e: Exception) {
             ConverterErrorReporter.reportError(
                 ConverterException("Failed to convert JSON to Reminder Repetition", e)
             )
             Repetition(1, RepetitionTimeUnit.DAYS)
         }
+
+    private fun jsonObjectToRepetition(jsonObject: JsonObject): Repetition {
+        val value = jsonObject.getRequiredInt("value").coerceAtLeast(1)
+        val unit = RepetitionTimeUnit.valueOf(jsonObject.getRequiredString("unit"))
+        val (occurrence, dayOfWeek) = getSafeRepetitionCustomization(jsonObject)
+        return Repetition(value, unit, occurrence, dayOfWeek)
     }
 
-    private fun getSafeRepetitionCustomization(jsonObject: JSONObject): Pair<Int?, Int?> {
-        if (jsonObject.has("occurrence") && jsonObject.has("dayOfWeek")) {
-            val occurrence = jsonObject.getInt("occurrence")
-            val dayOfWeek = jsonObject.getInt("dayOfWeek")
-            if (
+    private fun getSafeRepetitionCustomization(jsonObject: JsonObject): Pair<Int?, Int?> {
+        val occurrence = jsonObject.getSafeInt("occurrence")
+        val dayOfWeek = jsonObject.getSafeInt("dayOfWeek")
+        if (
+            occurrence != null &&
+                dayOfWeek != null &&
                 occurrence in setOf(-1, 1, 2, 3, 4) &&
-                    dayOfWeek in Calendar.SUNDAY..Calendar.SATURDAY
-            ) {
-                return Pair(occurrence, dayOfWeek)
-            }
+                dayOfWeek in Calendar.SUNDAY..Calendar.SATURDAY
+        ) {
+            return Pair(occurrence, dayOfWeek)
         }
         return Pair(null, null)
     }
 
-    private fun getSafeLocalName(jsonObject: JSONObject): String {
-        return try {
-            jsonObject.getString("localName")
-        } catch (e: JSONException) {
-            jsonObject.getString("name")
-        }
-    }
+    private fun getSafeLocalName(jsonObject: JsonObject): String =
+        jsonObject.getSafeString("localName") ?: jsonObject.getRequiredString("name")
 
-    private fun getSafeOriginalName(jsonObject: JSONObject): String {
-        return try {
-            jsonObject.getString("originalName")
-        } catch (e: JSONException) {
-            getSafeLocalName(jsonObject).substringAfterLast("/")
-        }
-    }
-
-    private fun JSONObject.getSafeBoolean(name: String): Boolean {
-        return try {
-            getBoolean(name)
-        } catch (exception: JSONException) {
-            false
-        }
-    }
-
-    private fun JSONObject.getSafeInt(name: String): Int? {
-        return try {
-            getInt(name)
-        } catch (exception: JSONException) {
-            null
-        }
-    }
-
-    private fun <T> JSONArray.iterable() = Iterable {
-        object : Iterator<T> {
-            var index = 0
-
-            override fun next(): T {
-                val element = get(index)
-                index++
-                return element as T
-            }
-
-            override fun hasNext(): Boolean {
-                return index < length()
-            }
-        }
-    }
+    private fun getSafeOriginalName(jsonObject: JsonObject): String =
+        jsonObject.getSafeString("originalName")
+            ?: getSafeLocalName(jsonObject).substringAfterLast("/")
 }
 
-fun JSONObject.getSafeString(name: String): String? {
-    return try {
-        getString(name)
-    } catch (exception: JSONException) {
-        null
-    }
+fun JsonObject.getSafeString(name: String): String? {
+    val element = this[name] ?: return null
+    if (element is JsonNull) return null
+    return (element as? JsonPrimitive)?.content ?: element.toString()
 }
 
-fun JSONObject.getSafeLong(name: String): Long? {
-    return try {
-        getLong(name)
-    } catch (exception: JSONException) {
-        null
-    }
+fun JsonObject.getSafeLong(name: String): Long? {
+    val element = this[name] ?: return null
+    if (element is JsonNull) return null
+    return (element as? JsonPrimitive)?.longOrNull
+}
+
+fun JsonObject.getSafeBoolean(name: String): Boolean {
+    val element = this[name] ?: return false
+    if (element is JsonNull) return false
+    return (element as? JsonPrimitive)?.booleanOrNull ?: false
+}
+
+fun JsonObject.getSafeInt(name: String): Int? {
+    val element = this[name] ?: return null
+    if (element is JsonNull) return null
+    return (element as? JsonPrimitive)?.intOrNull
+}
+
+internal fun JsonObject.getRequiredString(name: String): String {
+    val element =
+        this[name] ?: throw IllegalArgumentException("Missing required string field '$name'")
+    require(element !is JsonNull) { "Null required string field '$name'" }
+    return element.jsonPrimitive.content
+}
+
+internal fun JsonObject.getRequiredLong(name: String): Long {
+    val element =
+        this[name] ?: throw IllegalArgumentException("Missing required long field '$name'")
+    require(element !is JsonNull) { "Null required long field '$name'" }
+    return element.jsonPrimitive.longOrNull
+        ?: throw IllegalArgumentException("Invalid long field '$name'")
+}
+
+internal fun JsonObject.getRequiredInt(name: String): Int {
+    val element = this[name] ?: throw IllegalArgumentException("Missing required int field '$name'")
+    require(element !is JsonNull) { "Null required int field '$name'" }
+    return element.jsonPrimitive.intOrNull
+        ?: throw IllegalArgumentException("Invalid int field '$name'")
 }

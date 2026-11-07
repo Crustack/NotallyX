@@ -11,8 +11,10 @@ import com.philkes.notallyx.core.common.extensions.deleteAttachments
 import com.philkes.notallyx.core.common.extensions.log
 import com.philkes.notallyx.core.database.Converters
 import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.platform.PathProvider
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.extensions.format
+import com.philkes.notallyx.data.dao.BaseNoteDao
 import java.util.Date
 
 class AutoRemoveDeletedNotesWorker(
@@ -31,6 +33,35 @@ class AutoRemoveDeletedNotesWorker(
 }
 
 private const val ONE_DAY_MILLIS = 24 * 60 * 60 * 1000L
+
+/**
+ * Pure suspend use-case that removes deleted notes older than [days] days and deletes their
+ * attachment files via [pathProvider]. Returns the list of removed note IDs.
+ */
+suspend fun removeOldDeletedNotes(
+    baseNoteDao: BaseNoteDao,
+    pathProvider: PathProvider,
+    days: Int,
+    dataInPublicFolder: Boolean = false,
+    nowMillis: Long = System.currentTimeMillis(),
+): LongArray {
+    if (days <= 0) return LongArray(0)
+    val before = nowMillis - (days * ONE_DAY_MILLIS)
+    val ids = baseNoteDao.getDeletedNoteIdsOlderThan(before)
+    if (ids.isNotEmpty()) {
+        val imageStrings = baseNoteDao.getImages(ids)
+        val fileStrings = baseNoteDao.getFiles(ids)
+        val audioStrings = baseNoteDao.getAudios(ids)
+
+        val images = imageStrings.flatMap { json -> Converters.jsonToFiles(json) }
+        val files = fileStrings.flatMap { json -> Converters.jsonToFiles(json) }
+        val audios = audioStrings.flatMap { json -> Converters.jsonToAudios(json) }
+
+        baseNoteDao.delete(ids)
+        pathProvider.deleteAttachments(images + files + audios, dataInPublicFolder)
+    }
+    return ids
+}
 
 suspend fun ContextWrapper.removeOldDeletedNotes(
     preferences: NotallyXPreferences

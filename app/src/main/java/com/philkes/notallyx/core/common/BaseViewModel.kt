@@ -1,19 +1,36 @@
 package com.philkes.notallyx.core.common
 
 import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.platform.AndroidPathProvider
+import com.philkes.notallyx.core.platform.DesktopPathProvider
+import com.philkes.notallyx.core.platform.PathProvider
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 abstract class BaseViewModel(
-    protected val app: Application,
     val preferences: NotallyXPreferences,
-) : AndroidViewModel(app) {
+    protected val databaseStateFlow: StateFlow<NotallyDatabase?> = NotallyDatabase.instance,
+    protected val pathProvider: PathProvider = DesktopPathProvider(),
+) : ViewModel() {
 
-    protected val databaseStateFlow: StateFlow<NotallyDatabase?> = NotallyDatabase.getDatabase(app)
+    protected lateinit var app: Application
+    protected val hasApp: Boolean
+        get() = ::app.isInitialized
+
+    constructor(
+        app: Application,
+        preferences: NotallyXPreferences,
+    ) : this(
+        preferences = preferences,
+        databaseStateFlow = NotallyDatabase.getDatabase(app),
+        pathProvider = AndroidPathProvider(app),
+    ) {
+        this.app = app
+    }
 
     protected val database: NotallyDatabase?
         get() = databaseStateFlow.value

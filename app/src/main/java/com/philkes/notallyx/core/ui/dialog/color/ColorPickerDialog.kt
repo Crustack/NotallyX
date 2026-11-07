@@ -7,9 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.BaseNote
 
@@ -25,14 +23,10 @@ internal fun ColorPickerDialog(
     onColorDeleted: ((colorToDelete: String, newColor: String) -> Unit)? = null,
     onSetDefaultColor: ((String) -> Unit)? = null,
 ) {
-    val context = LocalContext.current
-    val preferences = remember { NotallyXPreferences.getInstance(context) }
     var mode by remember { mutableStateOf(DialogMode.SELECT) }
     var editingColor by remember { mutableStateOf<String?>(null) }
     var currentDefaultColor by
-        remember(defaultColor) {
-            mutableStateOf(defaultColor.ifEmpty { preferences.defaultNoteColor.value })
-        }
+        remember(defaultColor) { mutableStateOf(defaultColor.ifEmpty { BaseNote.COLOR_DEFAULT }) }
 
     when (mode) {
         DialogMode.SELECT -> {
@@ -73,7 +67,6 @@ internal fun ColorPickerDialog(
                 onDeleteClick = { mode = DialogMode.DELETE_SELECT },
                 onMakeDefaultClick = {
                     currentDefaultColor = colorToEdit
-                    preferences.defaultNoteColor.save(colorToEdit)
                     onSetDefaultColor?.invoke(colorToEdit)
                 },
                 onSaveColor = { newColor ->

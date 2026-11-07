@@ -1,7 +1,7 @@
 package com.philkes.notallyx.data.model
 
-import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
 
-@Parcelize
+@Serializable
 data class FileAttachment(var localName: String, var originalName: String, var mimeType: String) :
     Attachment

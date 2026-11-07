@@ -1,47 +1,44 @@
 package com.philkes.notallyx.feature.main.routes.picknote
 
-import android.app.Application
-import androidx.test.core.app.ApplicationProvider
-import com.philkes.notallyx.core.common.extensions.getDefaultSharedPreferences
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.components.SampleNotes
-import com.philkes.notallyx.data.ShadowContextImplMedia
+import com.philkes.notallyx.test.fakes.FakePathProvider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
-import org.robolectric.shadows.ShadowLooper
 
-@RunWith(RobolectricTestRunner::class)
-@Config(manifest = Config.NONE, sdk = [35], shadows = [ShadowContextImplMedia::class])
+@OptIn(ExperimentalCoroutinesApi::class)
 class PickNoteViewModelTest {
 
-    private lateinit var application: Application
+    private lateinit var pathProvider: FakePathProvider
     private lateinit var preferences: NotallyXPreferences
 
     @Before
     fun setUp() {
-        application = ApplicationProvider.getApplicationContext()
-        application.getDefaultSharedPreferences().edit().clear().commit()
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+        pathProvider = FakePathProvider()
         NotallyXPreferences.clearInstance()
-        preferences = NotallyXPreferences.getInstance(application)
-        preferences.reset()
+        preferences = NotallyXPreferences.createPortable(pathProvider)
     }
 
     @After
     fun tearDown() {
-        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
         NotallyXPreferences.clearInstance()
+        pathProvider.rootDirectory.deleteRecursively()
+        Dispatchers.resetMain()
     }
 
     @Test
     fun testPickNoteActionsAndSideEffects() = runTest {
-        val viewModel = PickNoteViewModel(application, preferences)
+        val viewModel = PickNoteViewModel(preferences, pathProvider = pathProvider)
 
         viewModel.onAction(PickNoteAction.Init(excludeNoteId = 42L))
 

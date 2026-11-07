@@ -27,17 +27,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.toColorInt
 import coil3.compose.SubcomposeAsyncImage
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.extensions.getCurrentImagesDirectory
 import com.philkes.notallyx.core.common.extensions.isPreview
 import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.NotesSortBy
@@ -100,7 +97,7 @@ internal fun BaseNoteCard(
     modifier: Modifier = Modifier,
     isGrid: Boolean = false,
     config: NoteCardDisplayConfig = NoteCardDisplayConfig(),
-    imageRoot: File? = if (isPreview()) null else LocalContext.current.getCurrentImagesDirectory(),
+    imageRoot: File? = null,
     isSelected: Boolean = false,
     onClick: () -> Unit = {},
     onLongClick: (() -> Unit)? = null,
@@ -462,20 +459,16 @@ private fun BaseNote.getEmptyMessage() =
     }
 
 @Composable
-private fun parseNoteColor(colorHex: String): Color {
+internal fun parseNoteColor(colorHex: String): Color {
     if (colorHex == BaseNote.COLOR_DEFAULT) {
         return MaterialTheme.colorScheme.surface
     }
     return try {
-        val cleanHex = colorHex.removePrefix("#")
+        val cleanHex = colorHex.trim().removePrefix("#")
         val hex = cleanHex.toLong(16)
         if (cleanHex.length <= 6) Color(0xFF000000 or hex) else Color(hex)
     } catch (_: Exception) {
-        try {
-            Color(colorHex.toColorInt())
-        } catch (_: Exception) {
-            MaterialTheme.colorScheme.surface
-        }
+        MaterialTheme.colorScheme.surface
     }
 }
 

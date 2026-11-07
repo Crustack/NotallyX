@@ -1,69 +1,66 @@
 package com.philkes.notallyx.feature.labels
 
-import android.app.Application
-import androidx.test.core.app.ApplicationProvider
-import com.philkes.notallyx.core.common.extensions.getDefaultSharedPreferences
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.NotallyXPreferences
-import com.philkes.notallyx.data.ShadowContextImplMedia
+import com.philkes.notallyx.test.fakes.FakeDatabaseDriverFactory
+import com.philkes.notallyx.test.fakes.FakePathProvider
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
-import org.robolectric.shadows.ShadowLooper
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@RunWith(RobolectricTestRunner::class)
-@Config(manifest = Config.NONE, sdk = [35], shadows = [ShadowContextImplMedia::class])
 class SelectLabelsViewModelTest {
 
-    private lateinit var application: Application
+    private lateinit var pathProvider: FakePathProvider
     private lateinit var preferences: NotallyXPreferences
     private lateinit var database: NotallyDatabase
+    private lateinit var dbFlow: MutableStateFlow<NotallyDatabase?>
 
     @Before
     fun setUp() {
-        application = ApplicationProvider.getApplicationContext()
-        application.getDefaultSharedPreferences().edit().clear().commit()
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+        pathProvider = FakePathProvider()
         NotallyXPreferences.clearInstance()
-        preferences = NotallyXPreferences.getInstance(application)
-        preferences.reset()
+        preferences = NotallyXPreferences.createPortable(pathProvider)
 
         NotallyDatabase.clearInstance()
-        database = NotallyDatabase.getDatabase(application).value!!
-        drainTasks()
+        database =
+            NotallyDatabase.createDatabase(
+                driverFactory = FakeDatabaseDriverFactory(pathProvider),
+                inMemory = true,
+            )
+        dbFlow = MutableStateFlow(database)
     }
 
     @After
     fun tearDown() {
-        drainTasks()
+        database.close()
         NotallyDatabase.clearInstance()
         NotallyXPreferences.clearInstance()
-    }
-
-    private fun drainTasks() {
-        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        pathProvider.rootDirectory.deleteRecursively()
+        Dispatchers.resetMain()
     }
 
     private fun waitUntil(condition: () -> Boolean) {
         val end = System.currentTimeMillis() + 3000
         while (!condition() && System.currentTimeMillis() < end) {
-            drainTasks()
             Thread.sleep(10)
         }
     }
 
     @Test
     fun selectLabelsFlow() = runTest {
-        val viewModel = SelectLabelsViewModel(application, preferences)
-        drainTasks()
+        val viewModel = SelectLabelsViewModel(preferences, dbFlow, pathProvider)
 
         viewModel.onAction(SelectLabelsAction.Init(listOf("Personal")))
         waitUntil { viewModel.uiState.value.selectedLabels.contains("Personal") }

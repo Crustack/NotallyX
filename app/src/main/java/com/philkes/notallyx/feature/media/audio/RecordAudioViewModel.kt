@@ -8,8 +8,12 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.core.common.BaseViewModel
-import com.philkes.notallyx.core.common.extensions.getTempAudioFile
+import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.platform.AndroidPathProvider
+import com.philkes.notallyx.core.platform.DesktopPathProvider
+import com.philkes.notallyx.core.platform.PathProvider
 import com.philkes.notallyx.core.preference.NotallyXPreferences
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -23,9 +27,28 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class RecordAudioViewModel(
-    app: Application,
     preferences: NotallyXPreferences,
-) : BaseViewModel(app, preferences) {
+    databaseStateFlow: StateFlow<NotallyDatabase?> = NotallyDatabase.instance,
+    pathProvider: PathProvider = DesktopPathProvider(),
+    private val audioRecorder: AudioRecorder = NoOpAudioRecorder(),
+) : BaseViewModel(preferences, databaseStateFlow, pathProvider) {
+
+    constructor(
+        app: Application,
+        preferences: NotallyXPreferences,
+    ) : this(
+        preferences = preferences,
+        databaseStateFlow = NotallyDatabase.getDatabase(app),
+        pathProvider = AndroidPathProvider(app),
+        audioRecorder = NoOpAudioRecorder(),
+    ) {
+        this.app = app
+        val intent = Intent(app, AudioRecordService::class.java)
+        serviceIntent = intent
+        app.startService(intent)
+        app.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+        isBound = true
+    }
 
     private val _sideEffects = Channel<RecordAudioSideEffect>(Channel.BUFFERED)
     val sideEffects: Flow<RecordAudioSideEffect> = _sideEffects.receiveAsFlow()
@@ -55,14 +78,6 @@ class RecordAudioViewModel(
                 service = null
             }
         }
-
-    init {
-        val intent = Intent(app, AudioRecordService::class.java)
-        serviceIntent = intent
-        app.startService(intent)
-        app.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
-        isBound = true
-    }
 
     val uiState: StateFlow<RecordAudioUiState> =
         combine(_status, _baseTime, _activeDialog) { status, baseTime, activeDialog ->
@@ -125,7 +140,7 @@ class RecordAudioViewModel(
                 _activeDialog.update { null }
                 service?.stop()
                 viewModelScope.launch(Dispatchers.IO) {
-                    app.getTempAudioFile().delete()
+                    File(pathProvider.getCacheDirectory("audio_records"), "Temp.m4a").delete()
                     _sideEffects.send(RecordAudioSideEffect.NavigateBack)
                 }
             }
@@ -133,7 +148,7 @@ class RecordAudioViewModel(
     }
 
     override fun onCleared() {
-        if (isBound) {
+        if (isBound && hasApp) {
             app.unbindService(serviceConnection)
             service = null
             serviceIntent?.let { app.stopService(it) }

@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.deleteAttachments
+import com.philkes.notallyx.core.common.extensions.generateBaseNote
 import com.philkes.notallyx.core.common.extensions.getNavKey
 import com.philkes.notallyx.core.common.extensions.log
 import com.philkes.notallyx.core.database.ConverterErrorReporter
@@ -32,7 +33,6 @@ import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.data.model.extensions.generateBaseNote
 import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel
 import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel.Companion.CURRENT_LABEL_EMPTY
 import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel.Companion.CURRENT_LABEL_NONE
