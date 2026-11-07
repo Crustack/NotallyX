@@ -6,6 +6,7 @@ import android.content.Intent
 import android.database.sqlite.SQLiteBlobTooBigException
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
 import androidx.activity.result.ActivityResultLauncher
@@ -33,6 +34,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
+
+class ComposeBinding(private val rootView: View) : ViewBinding {
+    override fun getRoot(): View = rootView
+}
 
 abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
 
