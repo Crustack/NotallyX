@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.feature.labels.LabelData
 import com.philkes.notallyx.feature.labels.LabelsScreen
 import com.philkes.notallyx.feature.labels.LabelsScreenActions
@@ -80,6 +81,13 @@ fun LabelsRoute(
                 onConfirmDeleteLabel = { label ->
                     labelsViewModel.deleteLabel(label)
                     labelsViewModel.dismissDialog()
+                },
+                onLabelsReordered = { reorderedLabels ->
+                    val size = reorderedLabels.size
+                    val updatedLabels = reorderedLabels.mapIndexed { index, label ->
+                        Label(label.value, size - index)
+                    }
+                    labelsViewModel.updateLabels(updatedLabels)
                 },
             ),
         modifier = modifier,

@@ -85,6 +85,10 @@ class LabelsViewModel(app: Application, val preferences: NotallyXPreferences) :
             onComplete,
         )
 
+    fun updateLabels(labels: List<Label>) {
+        viewModelScope.launch(Dispatchers.IO) { labelDao.update(labels) }
+    }
+
     fun deleteLabel(value: String) {
         viewModelScope.launch(Dispatchers.IO) { commonDao.deleteLabel(value) }
         val labelsHiddenPreference = preferences.labelsHidden
