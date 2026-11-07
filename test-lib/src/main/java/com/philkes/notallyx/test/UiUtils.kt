@@ -112,55 +112,6 @@ fun childAtPosition(parentMatcher: Matcher<View>, position: Int): Matcher<View> 
     }
 }
 
-// fun waitFor(matcher: Matcher<View>, timeoutMs: Long = 5_000) {
-//    val start = System.currentTimeMillis()
-//
-//    while (System.currentTimeMillis() - start < timeoutMs) {
-//        try {
-//            onView(matcher).check(matches(isDisplayed()))
-//            return
-//        } catch (_: NoMatchingViewException) {
-//            // Keep waiting
-//        } catch (_: AssertionError) {
-//            // View exists but isn't displayed yet
-//        }
-//
-//        Thread.sleep(50)
-//    }
-//
-//    // Let Espresso produce the normal, useful failure message
-//    onView(matcher).check(matches(isDisplayed()))
-// }
-//
-// fun waitForRecyclerViewPosition(
-//    recyclerViewMatcher: Matcher<View>,
-//    position: Int,
-//    timeoutMs: Long = 10_000,
-// ) {
-//    val start = System.currentTimeMillis()
-//
-//    while (System.currentTimeMillis() - start < timeoutMs) {
-//        try {
-//            onView(recyclerViewMatcher)
-//                .perform(
-//                    RecyclerViewActions.scrollToPosition<RecyclerView.ViewHolder>(position)
-//                )
-//
-//            return
-//        } catch (_: NoMatchingViewException) {
-//            // RecyclerView not found yet
-//        } catch (_: PerformException) {
-//            // Position doesn't exist yet
-//        }
-//
-//        Thread.sleep(50)
-//    }
-//
-//    // Produce Espresso's normal failure
-//    onView(recyclerViewMatcher)
-//        .perform(RecyclerViewActions.scrollToPosition<RecyclerView.ViewHolder>(position))
-// }
-
 fun ViewInteraction.checkIsPositionChildItem(position: Int, isChild: Boolean = true) =
     check(
         matches(
@@ -190,10 +141,6 @@ fun ViewInteraction.checkListItem(
 ): ViewInteraction {
     checkPositionHasText(position, text)
     checked?.let { this.checkIsPositionItemChecked(position, it) }
-    //    isChild?.let {
-    //        SystemClock.sleep(300)
-    //        this.checkIsPositionChildItem(position, it)
-    //    }
     return this
 }
 
@@ -233,16 +180,6 @@ fun atPosition(position: Int, itemMatcher: Matcher<View>): Matcher<View> {
 }
 
 /**
- * Finds the [dragHandleResId] inside the items matched by [sourceSelector] and [targetSelector],
- * and delegates the drag-and-drop operation to [dragAndDrop].
- *
- * @param sourceSelector Selector matching the source item container or a child within it
- * @param targetSelector Selector matching the target item container or a child within it
- * @param dragSpeedMs Duration of the drag gesture in milliseconds
- * @param dragHandleResId The resource ID of the drag handle icon (defaults to "dragHandle")
- * @param packageName The application package ID
- */
-/**
  * Finds the parent item views matching [sourceSelector] and [targetSelector], extracts their
  * sibling @+id/DragHandle views, and delegates to [dragAndDrop].
  *
@@ -262,8 +199,6 @@ fun dragAndDropByDragHandle(
     val packageName = InstrumentationRegistry.getInstrumentation().targetContext.packageName
     val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
-    // 1. Find the parent item containers that contain the target text/selector anywhere in their
-    // subtree
     val sourceItemContainer =
         device.wait(
             Until.findObject(By.res(packageName, "Content").hasDescendant(sourceSelector)),
@@ -276,7 +211,6 @@ fun dragAndDropByDragHandle(
             5000,
         ) ?: throw IllegalStateException("Target item container matching $targetSelector not found")
 
-    // 2. Extract the actual @+id/DragHandle child view from each parent container
     val sourceHandleObject =
         sourceItemContainer.findObject(By.res(packageName, dragHandleResId))
             ?: throw IllegalStateException("DragHandle ($dragHandleResId) not found in source item")
@@ -310,7 +244,6 @@ fun dragAndDrop(
     longClickBefore: Boolean = false,
 ) {
     val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-    // 1. Wait for source and target objects to be present
     val sourceObject =
         device.wait(Until.findObject(sourceSelector), 5000)
             ?: throw IllegalStateException("Source element not found: $sourceSelector")
@@ -326,12 +259,9 @@ fun dragAndDrop(
     dragSpeedMs: Int = 300,
     longClickBefore: Boolean = false,
 ) {
-    // 2. Extract bounds for calculation
     val sourceBounds = sourceObject.visibleBounds
     val targetBounds = targetObject.visibleBounds
 
-    // Target point: 10% past the bottom edge of the target item if dragging down,
-    // or 10% above the top edge if dragging up
     val isDraggingDown = targetBounds.centerY() > sourceBounds.centerY()
     val endX = targetBounds.centerX()
     val endY =
@@ -344,11 +274,9 @@ fun dragAndDrop(
         sourceObject.longClick()
     }
 
-    // 3. Execute drag with target Point
     val dropPoint = Point(endX, endY)
     sourceObject.drag(dropPoint, dragSpeedMs)
 
-    // 4. Brief pause for ItemTouchHelper animation to settle
     SystemClock.sleep(300)
 }
 
@@ -360,15 +288,12 @@ fun swipeItem(
 ) {
     val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
-    // 1. Locate the parent item container holding the target selector
     val itemContainer =
         device.wait(Until.findObject(itemSelector), 5000)
             ?: throw IllegalStateException("Item container matching $itemSelector not found")
 
-    // 2. Perform swipe on the container object
     itemContainer.swipe(direction, percent, (speed * 1000).toInt())
 
-    // Brief sleep for swipe drawer animation to settle
     SystemClock.sleep(300)
 }
 
@@ -393,21 +318,19 @@ fun ViewInteraction.performListItemCheck(text: String, checked: Boolean = true):
             )
         )
 
-    // Check current state to avoid unnecessary toggle clicks
     val currentMatcher = if (checked) isNotChecked() else isChecked()
 
     try {
-        // If it matches the opposite state, click to toggle
         targetCheckBox.check(matches(currentMatcher)).perform(click())
     } catch (e: AssertionError) {
-        // Already in the desired state, no action needed
+        // Already in desired state
     }
 
     return this
 }
 
 /**
- * Returns a ViewInteraction targeting a specific child view matching [viewMatcher] inside the
+ * Returns a ViewInteraction targeting a specific child view matching [childMatcher] inside the
  * RecyclerView item at [position].
  */
 fun ViewInteraction.onPositionView(
@@ -438,7 +361,6 @@ fun ViewInteraction.onPositionView(
     return onView(allOf(childMatcher, isDescendantOfA(org.hamcrest.Matchers.`is`(targetItem))))
 }
 
-// TODO: not working yet
 /** Matches a SwipeDrawer that is currently open in the specified direction. */
 fun isDrawerOpen(): Matcher<View> {
     return object : BoundedMatcher<View, SwipeDrawer>(SwipeDrawer::class.java) {
@@ -513,17 +435,6 @@ fun createBaseNote(
         NoteViewMode.EDIT,
         isPinnedToStatus = isPinnedToStatus,
     )
-}
-
-fun createListItem(
-    body: String,
-    checked: Boolean = false,
-    isChild: Boolean = false,
-    order: Int? = null,
-    children: MutableList<ListItem> = mutableListOf(),
-    id: Int = -1,
-): ListItem {
-    return ListItem(body, checked, isChild, order, children, id)
 }
 
 fun onDisplayView(viewMatcher: Matcher<View>) = onView(allOf(viewMatcher, isDisplayed()))
@@ -649,35 +560,26 @@ fun assertToastDisplayed(textResId: Int, timeoutMs: Long = 10000) {
     assertToastDisplayed(context.getString(textResId), timeoutMs)
 }
 
-// TODO: broken on API 30+
-/**
- * Source:
- * https://medium.com/@andre.mendes.peixoto/how-to-reliably-assert-toast-messages-in-android-instrumented-tests-f94d830f4de1
- */
 fun assertToastDisplayed(text: String, timeoutMs: Long = 10000) {
     var toastDisplayed = false
     val startTimeMs = System.currentTimeMillis()
 
-    // Set up accessibility event listener to catch toast notifications
     InstrumentationRegistry.getInstrumentation().uiAutomation.setOnAccessibilityEventListener {
         event ->
         if (event.eventType == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) {
             val className = event.className?.toString() ?: ""
             val eventText = event.text.toString()
 
-            // Check if this is a Toast event with matching text
             if (className.contains("android.widget.Toast") && eventText.contains(text)) {
                 toastDisplayed = true
             }
         }
     }
 
-    // Wait for the toast to appear
     while (!toastDisplayed && System.currentTimeMillis() - startTimeMs < timeoutMs) {
         SystemClock.sleep(100)
     }
 
-    // Clean up the listener
     InstrumentationRegistry.getInstrumentation().uiAutomation.setOnAccessibilityEventListener(null)
 
     assertTrue("Toast with text '$text' not found within ${timeoutMs}ms", toastDisplayed)
@@ -688,10 +590,9 @@ fun assertLogAppeared(tag: String, expectedMessagePrefix: String, timeoutMs: Lon
     val startTime = System.currentTimeMillis()
 
     while (System.currentTimeMillis() - startTime < timeoutMs) {
-        // Dump recent logcat output for the specified tag
         val logcatOutput = device.executeShellCommand("logcat -d -s $tag")
         if (logcatOutput.contains(expectedMessagePrefix)) {
-            return // Log found!
+            return
         }
         Thread.sleep(200)
     }
@@ -711,18 +612,14 @@ fun assertWorkExecuted(workName: String, timeoutMs: Long = 5000, pollIntervalMs:
         val workInfo = workInfos.firstOrNull()
 
         if (workInfo != null) {
-            // ONE-TIME WORK: Transitions to SUCCEEDED
             if (workInfo.state == WorkInfo.State.SUCCEEDED) {
-                return // Execution succeeded!
+                return
             }
 
-            // PERIODIC WORK: Re-enqueues after successful run (runAttemptCount == 0)
-            // or is currently running
             if (workInfo.state == WorkInfo.State.ENQUEUED && workInfo.runAttemptCount == 0) {
-                // If it was enqueued and runAttemptCount is 0, check if execution happened
                 val hasCompletedPeriod = workInfo.nextScheduleTimeMillis > 0
                 if (hasCompletedPeriod) {
-                    return // Periodic execution completed successfully!
+                    return
                 }
             }
         }
@@ -730,7 +627,6 @@ fun assertWorkExecuted(workName: String, timeoutMs: Long = 5000, pollIntervalMs:
         Thread.sleep(pollIntervalMs)
     }
 
-    // Capture final state for descriptive failure message
     val finalState =
         workManager.getWorkInfosForUniqueWork(workName).get().firstOrNull()?.state?.name
             ?: "NOT_SCHEDULED"
@@ -1020,12 +916,9 @@ fun waitUntilNoDialogShown(timeoutMs: Long = 5000, pollIntervalMs: Long = 100) {
 
     while (System.currentTimeMillis() < endTime) {
         try {
-            // Tries to access the root view inside any active Dialog window
             onView(isRoot()).inRoot(isDialog()).check(matches(not(isDisplayed())))
-            // Dialog window still present; pause and check again
             Thread.sleep(pollIntervalMs)
         } catch (e: NoMatchingRootException) {
-            // No dialog window found — dialog is gone!
             return
         }
     }

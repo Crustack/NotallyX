@@ -72,7 +72,7 @@ abstract class BasePreference<T>(
         return dataFlow!!
     }
 
-    internal fun save(value: T) {
+    fun save(value: T) {
         sharedPreferences.edit(true) { put(value) }
         cachedValue = value
         isCached = true

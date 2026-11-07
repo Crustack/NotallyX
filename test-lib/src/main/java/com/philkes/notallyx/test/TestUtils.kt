@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.SortedList
 import androidx.test.core.app.ApplicationProvider
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.data.NotallyDatabase
-import com.philkes.notallyx.data.imports.google.GoogleKeepImporterTest.Companion.createBaseNote
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Color
 import com.philkes.notallyx.data.model.FileAttachment
@@ -171,39 +170,9 @@ fun ListItem.assertChildren(vararg childrenBodies: String) {
     }
 }
 
-// fun ListMoveChange.assert(from: Int, itemsBeforeMove: List<ListItem>) {
-//    assertEquals("from", from, position)
-//    assertEquals("itemsBeforeMove", itemsBeforeMove, this.itemsBefore)
-// }
-
-// fun ListCheckedChange.assert(newValue: Boolean, itemId: Int) {
-//    assertEquals("checked", newValue, this.newValue)
-//    assertEquals("itemId", itemId, this.itemId)
-// }
-
 fun ListIsChildChange.assert(newValue: Boolean, position: Int) {
-    //    assertEquals("isChild", newValue, this.newValue)
-    //    assertEquals("position", position, this.position)
+    // Intentionally empty
 }
-
-// fun ListAddChange.assert(position: Int, newItem: ListItem) {
-//    assertEquals("position", position, this.position)
-//    assertEquals("newItem", newItem, this.itemBeforeInsert)
-// }
-//
-// fun ListDeleteChange.assert(order: Int, deletedItem: ListItem?) {
-//    assertEquals("order", order, this.itemOrder)
-//    assertEquals("deletedItem", deletedItem, this.deletedItem)
-// }
-
-// fun ChangeCheckedForAllChange.assert(checked: Boolean, changedPositions: Collection<Int>) {
-//    assertEquals("checked", checked, this.checked)
-//    assertEquals("changedIds", changedPositions, this.changedIds)
-// }
-
-// fun DeleteCheckedChange.assert(itemsBeforeDelete: List<ListItem>) {
-//    assertEquals("itemsBeforeDelete", itemsBeforeDelete, this.deletedItems)
-// }
 
 object MockitoHelper {
     fun <T> anyObject(): T {
@@ -277,18 +246,15 @@ fun createDummyImageFile(
     width: Int = 400,
     height: Int = 400,
 ): File {
-    // 1. Resolve internal folder: /data/user/0/<package>/files/media
     val mediaDir = context.getCurrentImagesDirectory().apply { if (!exists()) mkdirs() }
     val imageFile = File(mediaDir, fileName)
 
-    // 2. Create a Bitmap with stable RGB color
     val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
 
     val backgroundColor = android.graphics.Color.rgb(100, 150, 200)
     canvas.drawColor(backgroundColor)
 
-    // Optional: Draw text or shapes to make images visually distinct in screenshots
     val paint =
         Paint().apply {
             color = android.graphics.Color.WHITE
@@ -297,18 +263,17 @@ fun createDummyImageFile(
         }
     canvas.drawText("Dummy Image", 50f, (height / 2).toFloat(), paint)
 
-    // 3. Save Bitmap to internal file stream as JPEG
     FileOutputStream(imageFile).use { out ->
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out) // 90% quality compression
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
     }
 
-    bitmap.recycle() // Clean up memory
+    bitmap.recycle()
     return imageFile
 }
 
 fun String.toMillis(
     pattern: String = "yyyy-MM-dd HH:mm",
-    zoneId: ZoneId = ZoneId.of("UTC"), // Locking to UTC ensures determinism in Roborazzi
+    zoneId: ZoneId = ZoneId.of("UTC"),
 ): Long {
     val formatter = DateTimeFormatter.ofPattern(pattern)
     return LocalDateTime.parse(this, formatter).atZone(zoneId).toInstant().toEpochMilli()
