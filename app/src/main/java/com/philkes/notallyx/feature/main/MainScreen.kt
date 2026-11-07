@@ -74,7 +74,7 @@ internal interface ActionModeListener {
 }
 
 @Composable
-private fun MainDrawerContent(
+internal fun MainDrawerContent(
     selectedNavKey: NotallyNavKey,
     title: String,
     labels: List<Label>,

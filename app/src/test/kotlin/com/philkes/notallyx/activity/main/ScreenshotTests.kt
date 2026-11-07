@@ -8,11 +8,14 @@ import android.net.Uri
 import android.os.SystemClock
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -451,10 +454,23 @@ class ScreenshotTests {
     @Test
     fun navigationDrawer() = runTest {
         withContext(Dispatchers.IO) {
-            database.getLabelDao().apply { insert((1..5).map { Label("Label$it", it) }) }
-            preferences.labelsHidden.save(setOf("Label1", "Label4"))
+            database.getLabelDao().apply {
+                insert(
+                    listOf(
+                        Label(
+                            "Very Long Label Name That Should Wrap Or Ellipsize In Navigation Drawer",
+                            0,
+                        ),
+                        Label("Work", 1),
+                        Label("Personal", 2),
+                        Label("Hidden Label 1", 3),
+                        Label("Hidden Label 2", 4),
+                    )
+                )
+            }
+            preferences.labelsHidden.save(setOf("Hidden Label 1", "Hidden Label 2"))
         }
-        val intent = Intent(context, MainActivity::class.java).putNavKey(NotallyNavKey.Labels)
+        val intent = Intent(context, MainActivity::class.java).putNavKey(NotallyNavKey.Notes)
         ActivityScenario.launch<MainActivity>(intent).use { scenario ->
             composeTestRule
                 .onNodeWithContentDescription(context.getString(R.string.app_name))
@@ -468,112 +484,96 @@ class ScreenshotTests {
         }
     }
 
-    //
-    //    @Test
-    //    fun labels() = runTest {
-    //        withContext(Dispatchers.IO) {
-    //            database.getLabelDao().apply { insert((1..5).map { Label("Label$it", it) }) }
-    //            preferences.labelsHidden.save(setOf("Label1", "Label4"))
-    //        }
-    //        val intent =
-    //            Intent(context, MainActivity::class.java).apply {
-    //                putExtra(EXTRA_DESTINATION_TO_OPEN, NotallyNavKey.Labels.toString())
-    //            }
-    //        ActivityScenario.launch<MainActivity>(intent).use { scenario ->
-    //            composeTestRule.onRoot()
-    //
-    // .captureRoboImage("${ScreenshotTests::class.java.simpleName}/labels/00_initial.png")
-    //
-    ////            waitUntilSucceeds {
-    ////                "Label1".byText().check(matches(isDisplayed()))
-    ////            }
-    //            // Edit Label
-    //            R.id.MainListView.byId().onPositionView(1,
-    // withId(R.id.EditButton)).perform(click())
-    //            R.id.EditText.byId()
-    //                .inRoot(isDialog())
-    //                .perform(replaceText(""), typeText("Label Foo"), closeSoftKeyboard())
-    //            onView(isRoot())
-    //                .inRoot(isDialog())
-    //                .captureRoboImage(
-    //
-    // "${ScreenshotTests::class.java.simpleName}/labels/01_edit_label_dialog.png"
-    //                )
-    //            R.string.save
-    //                .byText(withId(android.R.id.button1))
-    //                .inRoot(isDialog())
-    //                .perform(scrollTo(), click())
-    //            waitUntilSucceeds {
-    //                R.id.MainListView.byId()
-    //                    .onPositionView(1, withId(R.id.LabelText))
-    //                    .check(matches(withText("Label Foo")))
-    //            }
-    //            composeTestRule.onRoot()
-    //                .captureRoboImage(
-    //                    "${ScreenshotTests::class.java.simpleName}/labels/02_edit_label_saved.png"
-    //                )
-    //
-    //            // Toggle Visibilities
-    //            R.id.MainListView.byId()
-    //                .onPositionView(1, withId(R.id.VisibilityButton))
-    //                .perform(click())
-    //            R.id.MainListView.byId()
-    //                .onPositionView(0, withId(R.id.VisibilityButton))
-    //                .perform(click())
-    //            composeTestRule.onRoot()
-    //                .captureRoboImage(
-    //
-    // "${ScreenshotTests::class.java.simpleName}/labels/03_label_visibility_toggled.png"
-    //                )
-    //
-    //            // Delete Label
-    //            R.id.MainListView.byId().onPositionView(2,
-    // withId(R.id.DeleteButton)).perform(click())
-    //            onView(isRoot())
-    //                .inRoot(isDialog())
-    //                .captureRoboImage(
-    //
-    // "${ScreenshotTests::class.java.simpleName}/labels/04_delete_label_dialog.png"
-    //                )
-    //            R.string.delete
-    //                .byText(withId(android.R.id.button1))
-    //                .inRoot(isDialog())
-    //                .perform(scrollTo(), click())
-    //            waitUntilSucceeds {
-    //                R.id.MainListView.byId()
-    //                    .onPositionView(2, withId(R.id.LabelText))
-    //                    .check(matches(withText("Label2")))
-    //            }
-    //            composeTestRule.onRoot()
-    //                .captureRoboImage(
-    //                    "${ScreenshotTests::class.java.simpleName}/labels/05_deleted_label.png"
-    //                )
-    //
-    //            // Add Label
-    //            R.string.add_label.byContentDescription().perform(click())
-    //            R.id.EditText.byId()
-    //                .inRoot(isDialog())
-    //                .perform(typeText("Label New"), closeSoftKeyboard())
-    //            onView(isRoot())
-    //                .inRoot(isDialog())
-    //                .captureRoboImage(
-    //                    "${ScreenshotTests::class.java.simpleName}/labels/06_new_label_dialog.png"
-    //                )
-    //            R.string.save
-    //                .byText(withId(android.R.id.button1))
-    //                .inRoot(isDialog())
-    //                .perform(scrollTo(), click())
-    //            waitUntilSucceeds {
-    //                R.id.MainListView.byId()
-    //                    .onPositionView(0, withId(R.id.LabelText))
-    //                    .check(matches(withText("Label New")))
-    //            }
-    //            composeTestRule.onRoot()
-    //                .captureRoboImage(
-    //                    "${ScreenshotTests::class.java.simpleName}/labels/07_label_added.png"
-    //                )
-    //        }
-    //    }
+    @Test
+    fun labels() = runTest {
+        withContext(Dispatchers.IO) {
+            database.getLabelDao().apply {
+                insert(
+                    listOf(
+                        Label("Label1", 0),
+                        Label("Label2", 1),
+                        Label(
+                            "Very Long Label Name That Should Wrap Or Ellipsize In Labels Manager",
+                            2,
+                        ),
+                        Label("Label4", 3),
+                        Label("Label5", 4),
+                    )
+                )
+            }
+            preferences.labelsHidden.save(setOf("Label1", "Label4"))
+        }
+        val intent = Intent(context, MainActivity::class.java).putNavKey(NotallyNavKey.Labels)
+        ActivityScenario.launch<MainActivity>(intent).use { scenario ->
+            ShadowLooper.idleMainLooper()
+            composeTestRule
+                .onRoot()
+                .captureRoboImage("${ScreenshotTests::class.java.simpleName}/labels/00_initial.png")
+
+            // Edit Label Dialog
+            composeTestRule
+                .onAllNodes(hasContentDescription(context.getString(R.string.edit)))
+                .onFirst()
+                .performClick()
+            composeTestRule.mainClock.advanceTimeBy(500)
+            ShadowLooper.idleMainLooper()
+            composeTestRule
+                .onNode(isDialog())
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/labels/01_edit_label_dialog.png"
+                )
+            Espresso.pressBack()
+            composeTestRule.mainClock.advanceTimeBy(1000)
+            ShadowLooper.idleMainLooper()
+
+            // Toggle Visibilities
+            composeTestRule
+                .onAllNodes(
+                    hasContentDescription(
+                        context.getString(R.string.labels_hidden_in_overview_title)
+                    )
+                )
+                .onFirst()
+                .performClick()
+            ShadowLooper.idleMainLooper()
+            composeTestRule
+                .onRoot()
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/labels/03_label_visibility_toggled.png"
+                )
+
+            // Delete Label Dialog
+            composeTestRule
+                .onAllNodes(hasContentDescription(context.getString(R.string.delete)))
+                .onLast()
+                .performClick()
+            composeTestRule.mainClock.advanceTimeBy(500)
+            ShadowLooper.idleMainLooper()
+            composeTestRule
+                .onNode(isDialog())
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/labels/04_delete_label_dialog.png"
+                )
+            Espresso.pressBack()
+            composeTestRule.mainClock.advanceTimeBy(1000)
+            ShadowLooper.idleMainLooper()
+
+            // Add Label Dialog
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.add_label))
+                .performClick()
+            composeTestRule.mainClock.advanceTimeBy(500)
+            ShadowLooper.idleMainLooper()
+            composeTestRule
+                .onNode(isDialog())
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/labels/06_new_label_dialog.png"
+                )
+            Espresso.pressBack()
+            composeTestRule.mainClock.advanceTimeBy(1000)
+            ShadowLooper.idleMainLooper()
+        }
+    }
 
     @Test
     fun reminders() {
@@ -619,6 +619,48 @@ class ScreenshotTests {
                 .onRoot()
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/reminders/00_initial.png"
+                )
+            composeTestRule.onNodeWithText(context.getString(R.string.elapsed)).performClick()
+            ShadowLooper.idleMainLooper()
+            composeTestRule
+                .onRoot()
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/reminders/01_filter_elapsed.png"
+                )
+            composeTestRule.onNodeWithText(context.getString(R.string.all)).performClick()
+            ShadowLooper.idleMainLooper()
+            composeTestRule
+                .onRoot()
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/reminders/02_filter_all.png"
+                )
+        }
+    }
+
+    @Test
+    fun remindersEmpty() {
+        SystemClock.setCurrentTimeMillis(fixedTime.time)
+        val intent = Intent(context, MainActivity::class.java).putNavKey(NotallyNavKey.Reminders)
+        ActivityScenario.launch<MainActivity>(intent).use {
+            ShadowLooper.idleMainLooper()
+            composeTestRule
+                .onRoot()
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/reminders/03_empty_upcoming.png"
+                )
+            composeTestRule.onNodeWithText(context.getString(R.string.elapsed)).performClick()
+            ShadowLooper.idleMainLooper()
+            composeTestRule
+                .onRoot()
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/reminders/04_empty_elapsed.png"
+                )
+            composeTestRule.onNodeWithText(context.getString(R.string.all)).performClick()
+            ShadowLooper.idleMainLooper()
+            composeTestRule
+                .onRoot()
+                .captureRoboImage(
+                    "${ScreenshotTests::class.java.simpleName}/reminders/05_empty_all.png"
                 )
         }
     }

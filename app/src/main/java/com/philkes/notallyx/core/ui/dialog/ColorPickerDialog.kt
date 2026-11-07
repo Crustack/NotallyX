@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -24,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -79,14 +77,12 @@ internal fun ColorPickerDialog(
                         Box(
                             modifier =
                                 Modifier.size(44.dp)
-                                    .clip(CircleShape)
                                     .background(colorValue)
                                     .border(
                                         width = if (isSelected) 3.dp else 1.dp,
                                         color =
                                             if (isSelected) MaterialTheme.colorScheme.primary
                                             else MaterialTheme.colorScheme.outline,
-                                        shape = CircleShape,
                                     )
                                     .semantics { contentDescription = colorString }
                                     .clickable { selectedColor = colorString },
@@ -107,11 +103,9 @@ internal fun ColorPickerDialog(
                     Box(
                         modifier =
                             Modifier.size(44.dp)
-                                .clip(CircleShape)
                                 .border(
                                     width = 1.dp,
                                     color = MaterialTheme.colorScheme.outline,
-                                    shape = CircleShape,
                                 )
                                 .semantics { contentDescription = BaseNote.COLOR_NEW }
                                 .clickable { selectedColor = BaseNote.COLOR_NEW },
