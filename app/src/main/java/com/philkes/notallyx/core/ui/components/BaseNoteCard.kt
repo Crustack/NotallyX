@@ -29,7 +29,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,7 +39,6 @@ import coil3.compose.SubcomposeAsyncImage
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getCurrentImagesDirectory
 import com.philkes.notallyx.core.common.extensions.isPreview
-import com.philkes.notallyx.core.common.extensions.plus
 import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.NotesSortBy
 import com.philkes.notallyx.core.preference.TimeFormat
@@ -62,7 +60,6 @@ import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.toColorString
 import com.philkes.notallyx.feature.editor.listitem.init
-import com.philkes.notallyx.feature.editor.screens.FileAttachmentPreviewChip
 import java.io.File
 import java.util.Date
 import kotlin.time.Duration.Companion.days
@@ -101,6 +98,7 @@ fun UserPreferences.toDisplayConfig(): NoteCardDisplayConfig =
 internal fun BaseNoteCard(
     baseNote: BaseNote,
     modifier: Modifier = Modifier,
+    isGrid: Boolean = false,
     config: NoteCardDisplayConfig = NoteCardDisplayConfig(),
     imageRoot: File? = if (isPreview()) null else LocalContext.current.getCurrentImagesDirectory(),
     isSelected: Boolean = false,
@@ -144,10 +142,8 @@ internal fun BaseNoteCard(
                 ImagePreview(imageFile, baseNote)
             }
 
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
+            val contentPadding = if (isGrid) 10.dp else 12.dp
+            Column(modifier = Modifier.fillMaxWidth().padding(contentPadding)) {
                 // Title and Reminder
                 val titleText =
                     if (baseNote.title.isNotEmpty()) {
@@ -158,11 +154,10 @@ internal fun BaseNoteCard(
                 val hasReminder = baseNote.reminders.isNotEmpty()
 
                 if (titleText.isNotEmpty() || hasReminder) {
-                    FlowRow(
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        itemVerticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top,
                     ) {
                         if (titleText.isNotEmpty()) {
                             Text(
@@ -172,71 +167,28 @@ internal fun BaseNoteCard(
                                 color = LocalContentColor.current,
                                 maxLines = config.maxTitleLines,
                                 overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false),
                             )
+                        } else {
+                            Spacer(modifier = Modifier.weight(1f))
                         }
 
                         if (hasReminder) {
-                            Spacer(modifier = Modifier.weight(1f))
-                            ReminderChip(
-                                baseNote = baseNote,
-                                dateFormat = config.dateFormat,
-                                timeFormat = config.timeFormat,
-                                textSize = config.textSize,
-                                onClick = onReminderClick,
-                            )
-                        }
-                    }
-                }
-
-                // Date text
-                val (dateTimestamp, datePrefixResId) =
-                    when (config.sortBy) {
-                        NotesSortBy.CREATION_DATE ->
-                            Pair(baseNote.timestamp, R.string.creation_date)
-
-                        NotesSortBy.MODIFIED_DATE ->
-                            Pair(baseNote.modifiedTimestamp, R.string.modified_date)
-
-                        else -> Pair(null, null)
-                    }
-
-                val hasDate =
-                    dateTimestamp != null &&
-                        (config.dateFormat != DateFormat.NONE ||
-                            config.timeFormat != TimeFormat.NONE)
-
-                if (hasDate) {
-                    val prefixText = datePrefixResId?.let { stringResource(it) } ?: ""
-                    val formattedDate =
-                        Date(dateTimestamp).format(config.dateFormat, config.timeFormat)
-                    Text(
-                        text = "$prefixText $formattedDate".trim(),
-                        fontSize = config.textSize.displayBodySize.sp,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = LocalContentColor.current.copy(alpha = 0.7f),
-                    )
-                }
-
-                // Files (placed under Date & Reminder row, before Body text or Checklist)
-                if (baseNote.files.isNotEmpty()) {
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        FileAttachmentPreviewChip(fileName = baseNote.files[0].originalName)
-                        if (baseNote.files.size > 1) {
-                            val moreCount = baseNote.files.size - 1
-                            val moreFilesText =
-                                pluralStringResource(
-                                    R.plurals.more_files,
-                                    moreCount,
-                                    moreCount,
+                            Spacer(modifier = Modifier.width(8.dp))
+                            if (isGrid) {
+                                ReminderIconBadge(
+                                    baseNote = baseNote,
+                                    onClick = onReminderClick,
                                 )
-                            FileAttachmentPreviewChip(
-                                fileName = moreFilesText,
-                                showIcon = false,
-                            )
+                            } else {
+                                ReminderChip(
+                                    baseNote = baseNote,
+                                    dateFormat = config.dateFormat,
+                                    timeFormat = config.timeFormat,
+                                    textSize = config.textSize,
+                                    onClick = onReminderClick,
+                                )
+                            }
                         }
                     }
                 }
@@ -318,23 +270,123 @@ internal fun BaseNoteCard(
                     }
                 }
 
-                // Labels
-                if (!config.hideLabels && baseNote.labels.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        baseNote.labels.forEach { label ->
-                            LabelChip(
-                                text = label,
-                                textColor = LocalContentColor.current,
-                            )
-                        }
+                // Metadata Footnote
+                val (dateTimestamp, datePrefixResId) =
+                    when (config.sortBy) {
+                        NotesSortBy.CREATION_DATE ->
+                            Pair(baseNote.timestamp, R.string.creation_date)
+
+                        NotesSortBy.MODIFIED_DATE ->
+                            Pair(baseNote.modifiedTimestamp, R.string.modified_date)
+
+                        else -> Pair(null, null)
                     }
+
+                val timestampText =
+                    if (
+                        dateTimestamp != null &&
+                            (config.dateFormat != DateFormat.NONE ||
+                                config.timeFormat != TimeFormat.NONE)
+                    ) {
+                        val prefixText = datePrefixResId?.let { stringResource(it) } ?: ""
+                        val formattedDate =
+                            Date(dateTimestamp).format(config.dateFormat, config.timeFormat)
+                        "$prefixText $formattedDate".trim()
+                    } else null
+
+                val labels = if (config.hideLabels) emptyList() else baseNote.labels
+                val attachmentCount = baseNote.files.size + baseNote.audios.size
+
+                val hasFootnote =
+                    attachmentCount > 0 || labels.isNotEmpty() || timestampText != null
+                if (hasFootnote) {
+                    val hasContentAbove =
+                        titleText.isNotEmpty() ||
+                            (baseNote.type == Type.NOTE &&
+                                baseNote.body.isNotEmpty() &&
+                                (config.maxLines >= 1 || baseNote.title.isEmpty())) ||
+                            (baseNote.type == Type.LIST && baseNote.items.isNotEmpty())
+                    if (hasContentAbove) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    NoteFootnoteRow(
+                        attachmentCount = attachmentCount,
+                        labels = labels,
+                        timestampText = timestampText,
+                    )
                 }
             }
+        }
+    }
+}
+
+@Composable
+internal fun AttachmentSummaryBadge(
+    count: Int,
+    modifier: Modifier = Modifier,
+    contentColor: Color = LocalContentColor.current.copy(alpha = 0.7f),
+) {
+    if (count <= 0) return
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.text_file),
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier.size(14.dp),
+        )
+        Text(
+            text = count.toString(),
+            fontSize = 12.sp,
+            style = MaterialTheme.typography.labelSmall,
+            color = contentColor,
+        )
+    }
+}
+
+@Composable
+internal fun NoteFootnoteRow(
+    attachmentCount: Int,
+    labels: List<String>,
+    timestampText: String?,
+    modifier: Modifier = Modifier,
+    contentColor: Color = LocalContentColor.current,
+) {
+    val hasAttachments = attachmentCount > 0
+    val hasLabels = labels.isNotEmpty()
+    val hasTimestamp = !timestampText.isNullOrBlank()
+
+    if (!hasAttachments && !hasLabels && !hasTimestamp) return
+
+    FlowRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (hasAttachments) {
+            AttachmentSummaryBadge(
+                count = attachmentCount,
+                contentColor = contentColor.copy(alpha = 0.7f),
+            )
+        }
+        if (hasLabels) {
+            labels.forEach { label ->
+                LabelChip(
+                    text = label,
+                    textColor = contentColor,
+                )
+            }
+        }
+        if (hasTimestamp) {
+            Text(
+                text = timestampText,
+                style = MaterialTheme.typography.labelSmall,
+                color = contentColor.copy(alpha = 0.7f),
+            )
         }
     }
 }

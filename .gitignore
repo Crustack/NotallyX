@@ -25,4 +25,5 @@ skills-lock.json
 !.agents/skills/roborazzi/
 !.agents/skills/write-ui-tests/
 !.agents/skills/create-route/
+!.agents/skills/speckit*
 

@@ -125,6 +125,62 @@ internal fun ReminderChip(
     )
 }
 
+@Composable
+internal fun ReminderIconBadge(
+    reminders: List<Reminder>,
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    onClick: (() -> Unit)? = null,
+) {
+    if (reminders.isEmpty()) return
+
+    val now = remember { Date() }
+    val mostRecentNotificationDate =
+        remember(reminders) {
+            reminders.findNextNotificationDate() ?: reminders.maxOfOrNull { it.dateTime }
+        } ?: return
+
+    val hasRepetition = remember(reminders) { reminders.haveAnyRepetition() }
+    val isElapsed = mostRecentNotificationDate < now
+
+    val remindersLabel = stringResource(id = R.string.reminders)
+    val surfaceColor = contentColorFor(backgroundColor)
+    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+        Surface(
+            onClick = onClick ?: {},
+            enabled = onClick != null,
+            shape = CircleShape,
+            color = surfaceColor.copy(alpha = 0.1f),
+            modifier = modifier.semantics { contentDescription = remindersLabel },
+        ) {
+            Icon(
+                painter =
+                    painterResource(
+                        id = if (hasRepetition) R.drawable.repetition else R.drawable.notifications
+                    ),
+                contentDescription = null,
+                tint = if (isElapsed) surfaceColor.copy(alpha = 0.5f) else surfaceColor,
+                modifier = Modifier.padding(6.dp).size(16.dp),
+            )
+        }
+    }
+}
+
+@Composable
+internal fun ReminderIconBadge(
+    baseNote: BaseNote,
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    onClick: (() -> Unit)? = null,
+) {
+    ReminderIconBadge(
+        reminders = baseNote.reminders,
+        modifier = modifier,
+        backgroundColor = backgroundColor,
+        onClick = onClick,
+    )
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun ReminderChipPreview() {

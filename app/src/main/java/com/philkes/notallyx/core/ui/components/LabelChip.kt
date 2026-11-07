@@ -33,14 +33,14 @@ internal fun LabelChip(
 
     Surface(
         modifier = clickableModifier,
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, borderColor),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, borderColor.copy(alpha = 0.5f)),
         color = Color.Transparent,
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+            style = MaterialTheme.typography.labelSmall,
             color = textColor,
         )
     }

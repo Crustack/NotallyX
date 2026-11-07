@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import com.android.tools.screenshot.PreviewTest
 import com.philkes.notallyx.core.ui.components.BaseNoteCard
 import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
+import com.philkes.notallyx.core.ui.components.SampleNotes
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
@@ -301,5 +302,33 @@ fun NoteCard_TextSize_Large22() {
             baseNote = PREVIEW_TEXT_NOTE,
             config = NoteCardDisplayConfig(textSize = 22f),
         )
+    }
+}
+
+// ==================== isGrid (List vs Grid View) ====================
+
+@Preview(showBackground = true)
+@PreviewTest
+@Composable
+fun NoteCard_ListView_Default() {
+    CardScreenshotWrapper {
+        BaseNoteCard(
+            baseNote = SampleNotes.RICH_TEXT_NOTE,
+            isGrid = false,
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@PreviewTest
+@Composable
+fun NoteCard_GridView_Compact() {
+    NotallyXTheme {
+        Box(modifier = Modifier.width(180.dp).padding(4.dp)) {
+            BaseNoteCard(
+                baseNote = SampleNotes.RICH_TEXT_NOTE,
+                isGrid = true,
+            )
+        }
     }
 }

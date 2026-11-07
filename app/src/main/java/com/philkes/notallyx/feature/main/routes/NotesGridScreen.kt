@@ -169,6 +169,7 @@ internal fun NotesGridScreen(
                                 val isSelected = selectedNoteIds.contains(item.id)
                                 BaseNoteCard(
                                     baseNote = item,
+                                    isGrid = true,
                                     config = displayConfig,
                                     imageRoot = imageRoot,
                                     isSelected = isSelected,
@@ -218,6 +219,7 @@ internal fun NotesGridScreen(
                                 } else {
                                     BaseNoteCard(
                                         baseNote = item,
+                                        isGrid = false,
                                         config = displayConfig,
                                         imageRoot = imageRoot,
                                         isSelected = isSelected,
