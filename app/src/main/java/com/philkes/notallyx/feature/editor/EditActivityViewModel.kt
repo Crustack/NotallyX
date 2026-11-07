@@ -1,12 +1,12 @@
 package com.philkes.notallyx.feature.editor
 
-// import com.philkes.notallyx.getQuantityString
-// import com.philkes.notallyx.showSnackbar
-// import com.philkes.notallyx.showToast
 import android.app.Application
 import android.net.Uri
 import android.print.PdfPrintListener
 import android.view.View
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.R
@@ -34,8 +34,17 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+sealed interface UiState {
+    object Loading : UiState
+
+    object Success : UiState
+}
+
 class EditActivityViewModel(app: Application, preferences: NotallyXPreferences) :
     NoteModel(app, preferences) {
+
+    var uiState by mutableStateOf<UiState>(UiState.Loading)
+        private set
 
     private val labelDao: LabelDao by lazy { database.value!!.getLabelDao() }
     private val commonDao: CommonDao by lazy { database.value!!.getCommonDao() }
@@ -44,6 +53,10 @@ class EditActivityViewModel(app: Application, preferences: NotallyXPreferences) 
 
     val allLabels: StateFlow<List<Label>> by lazy {
         labelDao.getAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }
+
+    fun changeUiState(uiState: UiState) {
+        this.uiState = uiState
     }
 
     fun exportNoteToFile(fileUri: Uri, note: BaseNote, snackbarView: View) {

@@ -1,5 +1,7 @@
 package com.philkes.notallyx.feature.editor.screens
 
+import android.util.Log
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -7,6 +9,8 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -16,8 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -73,6 +75,10 @@ import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.feature.editor.formatting.TextFormattingBar
 import com.philkes.notallyx.feature.editor.formatting.TextFormattingBarActions
 import com.philkes.notallyx.feature.editor.formatting.TextFormattingState
+import com.philkes.notallyx.feature.editor.listitem.dragContainer
+import com.philkes.notallyx.feature.editor.listitem.draggableModifier
+import com.philkes.notallyx.feature.editor.listitem.rememberDragDropState
+import com.philkes.notallyx.feature.editor.listitem.removeWithChildren
 import com.philkes.notallyx.feature.media.audio.AudioItemRow
 import java.io.File
 import java.util.Date
@@ -311,13 +317,12 @@ internal fun EditScreen(
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     canUndo: Boolean = false,
     canRedo: Boolean = false,
-    lazyListState: LazyListState = rememberLazyListState(),
     isFormattingMenuVisible: Boolean = false,
     formattingState: TextFormattingState = TextFormattingState(),
     changeHandlers: EditChangeHandlers = object : EditChangeHandlers {},
     clickHandlers: EditClickHandlers = object : EditClickHandlers {},
     bottomLeftActions: @Composable RowScope.() -> Unit = {},
-    content: LazyListScope.() -> Unit = {},
+    content: @Composable ColumnScope.() -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -442,156 +447,133 @@ internal fun EditScreen(
             }
         },
     ) { innerPadding ->
-        LazyColumn(
-            state = lazyListState,
-            modifier = Modifier.fillMaxSize().padding(innerPadding).padding(bottom = 16.dp),
-        ) {
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(bottom = 16.dp)) {
             // Image Preview
             if (noteState.images.isNotEmpty()) {
-                item {
-                    EditScreenImageSection(
-                        images = noteState.images,
-                        mediaRoot = noteState.mediaRoot,
-                        onImageClick = { clickHandlers.onImageClick(it) },
-                    )
-                }
-            }
-
-            // Title Field
-            item {
-                val titleDesc = stringResource(id = R.string.title)
-                BasicTextField(
-                    value = noteState.title,
-                    onValueChange = { changeHandlers.onTitleChange(it) },
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .padding(start = 24.dp, end = 24.dp, top = 4.dp, bottom = 2.dp)
-                            .semantics { contentDescription = titleDesc },
-                    textStyle =
-                        MaterialTheme.typography.headlineSmall.copy(
-                            color = MaterialTheme.colorScheme.onSurface
-                        ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    decorationBox = { innerTextField ->
-                        Box {
-                            if (noteState.title.isEmpty()) {
-                                Text(
-                                    text = stringResource(id = R.string.title),
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    color =
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                            alpha = 0.6f
-                                        ),
-                                )
-                            }
-                            innerTextField()
-                        }
-                    },
+                EditScreenImageSection(
+                    images = noteState.images,
+                    mediaRoot = noteState.mediaRoot,
+                    onImageClick = { clickHandlers.onImageClick(it) },
                 )
             }
 
-            item {
-                val prefixRes =
-                    if (preferences.notesSortBy == NotesSortBy.CREATION_DATE) R.string.creation_date
-                    else R.string.modified_date
-                val prefixText = stringResource(id = prefixRes)
-
-                val targetTimestamp =
-                    when (preferences.notesSortBy) {
-                        NotesSortBy.CREATION_DATE ->
-                            noteState.createdTimestamp ?: noteState.modifiedTimestamp
-                        else -> noteState.modifiedTimestamp ?: noteState.createdTimestamp
-                    }
-                val formattedDateText =
-                    if (
-                        targetTimestamp != null &&
-                            (preferences.dateFormat != DateFormat.NONE ||
-                                preferences.timeFormat != TimeFormat.NONE)
-                    ) {
-                        val formatted =
-                            Date(targetTimestamp)
-                                .format(preferences.dateFormat, preferences.timeFormat)
-                        if (formatted.isNotEmpty()) "$prefixText $formatted" else ""
-                    } else ""
-
-                if (formattedDateText.isNotEmpty() || noteState.reminders.isNotEmpty()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        if (formattedDateText.isNotEmpty()) {
+            // Title Field
+            val titleDesc = stringResource(id = R.string.title)
+            BasicTextField(
+                value = noteState.title,
+                onValueChange = { changeHandlers.onTitleChange(it) },
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .padding(start = 24.dp, end = 24.dp, top = 4.dp, bottom = 2.dp)
+                        .semantics { contentDescription = titleDesc },
+                textStyle =
+                    MaterialTheme.typography.headlineSmall.copy(
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                decorationBox = { innerTextField ->
+                    Box {
+                        if (noteState.title.isEmpty()) {
                             Text(
-                                text = formattedDateText,
-                                style = MaterialTheme.typography.bodyMedium,
+                                text = stringResource(id = R.string.title),
+                                style = MaterialTheme.typography.headlineSmall,
                                 color =
                                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                             )
                         }
+                        innerTextField()
+                    }
+                },
+            )
 
-                        if (noteState.reminders.isNotEmpty()) {
-                            Spacer(modifier = Modifier.weight(1f))
-                            ReminderChip(
-                                reminders = noteState.reminders,
-                                dateFormat = preferences.dateFormat,
-                                timeFormat = preferences.timeFormat,
-                                onClick = {
-                                    clickHandlers.onReminderClick(noteState.reminders.first())
-                                },
-                            )
-                        }
+            val prefixRes =
+                if (preferences.notesSortBy == NotesSortBy.CREATION_DATE) R.string.creation_date
+                else R.string.modified_date
+            val prefixText = stringResource(id = prefixRes)
+
+            val targetTimestamp =
+                when (preferences.notesSortBy) {
+                    NotesSortBy.CREATION_DATE ->
+                        noteState.createdTimestamp ?: noteState.modifiedTimestamp
+                    else -> noteState.modifiedTimestamp ?: noteState.createdTimestamp
+                }
+            val formattedDateText =
+                if (
+                    targetTimestamp != null &&
+                        (preferences.dateFormat != DateFormat.NONE ||
+                            preferences.timeFormat != TimeFormat.NONE)
+                ) {
+                    val formatted =
+                        Date(targetTimestamp).format(preferences.dateFormat, preferences.timeFormat)
+                    if (formatted.isNotEmpty()) "$prefixText $formatted" else ""
+                } else ""
+
+            if (formattedDateText.isNotEmpty() || noteState.reminders.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (formattedDateText.isNotEmpty()) {
+                        Text(
+                            text = formattedDateText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        )
+                    }
+
+                    if (noteState.reminders.isNotEmpty()) {
+                        Spacer(modifier = Modifier.weight(1f))
+                        ReminderChip(
+                            reminders = noteState.reminders,
+                            dateFormat = preferences.dateFormat,
+                            timeFormat = preferences.timeFormat,
+                            onClick = {
+                                clickHandlers.onReminderClick(noteState.reminders.first())
+                            },
+                        )
                     }
                 }
             }
 
             // Files Preview
             if (noteState.files.isNotEmpty()) {
-                item {
-                    LazyRow(
-                        modifier =
-                            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 2.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        items(noteState.files, key = { it.originalName }) { fileAttachment ->
-                            FileAttachmentPreviewChip(
-                                fileName = fileAttachment.originalName,
-                                onClick = { clickHandlers.onFileClick(fileAttachment) },
-                            )
-                        }
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(noteState.files, key = { it.originalName }) { fileAttachment ->
+                        FileAttachmentPreviewChip(
+                            fileName = fileAttachment.originalName,
+                            onClick = { clickHandlers.onFileClick(fileAttachment) },
+                        )
                     }
                 }
             }
 
             // Labels
             if (noteState.labels.isNotEmpty()) {
-                item {
-                    LazyRow(
-                        modifier =
-                            Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 2.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        items(noteState.labels, key = { it }) { labelName ->
-                            LabelChip(text = labelName)
-                        }
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(noteState.labels, key = { it }) { labelName ->
+                        LabelChip(text = labelName)
                     }
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(4.dp))
-                HorizontalDivider(modifier = Modifier.fillMaxWidth())
-                Spacer(modifier = Modifier.height(4.dp))
-            }
+            Spacer(modifier = Modifier.height(4.dp))
+            HorizontalDivider(modifier = Modifier.fillMaxWidth())
+            Spacer(modifier = Modifier.height(4.dp))
 
             content()
 
             // Audio Recordings Section
             if (noteState.audios.isNotEmpty()) {
-                item {
-                    EditScreenAudioSection(
-                        audios = noteState.audios,
-                        onAudioClick = { clickHandlers.onAudioClick(it) },
-                    )
-                }
+                EditScreenAudioSection(
+                    audios = noteState.audios,
+                    onAudioClick = { clickHandlers.onAudioClick(it) },
+                )
             }
         }
     }
@@ -631,37 +613,33 @@ internal fun EditNoteScreen(
         clickHandlers = clickHandlers,
         bottomLeftActions = bottomLeftActions,
         content = {
-            item {
-                val bodyDesc = stringResource(id = R.string.note)
-                BasicTextField(
-                    value = noteState.bodyText,
-                    onValueChange = { changeHandlers.onBodyTextChange(it) },
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 8.dp)
-                            .semantics { contentDescription = bodyDesc },
-                    textStyle =
-                        MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurface
-                        ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    decorationBox = { innerTextField ->
-                        Box {
-                            if (noteState.bodyText.isEmpty()) {
-                                Text(
-                                    text = stringResource(id = R.string.note),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color =
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                            alpha = 0.6f
-                                        ),
-                                )
-                            }
-                            innerTextField()
-                        }
+            val bodyDesc = stringResource(id = R.string.note)
+            BasicTextField(
+                value = noteState.bodyText,
+                onValueChange = { changeHandlers.onBodyTextChange(it) },
+                modifier =
+                    Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp).semantics {
+                        contentDescription = bodyDesc
                     },
-                )
-            }
+                textStyle =
+                    MaterialTheme.typography.bodyLarge.copy(
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                decorationBox = { innerTextField ->
+                    Box {
+                        if (noteState.bodyText.isEmpty()) {
+                            Text(
+                                text = stringResource(id = R.string.note),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color =
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            )
+                        }
+                        innerTextField()
+                    }
+                },
+            )
         },
     )
 }
@@ -717,6 +695,19 @@ internal fun EditListScreen(
         }
     }
 
+    // Drag and Drop
+    val listState = rememberLazyListState()
+    Log.d("TEST", "listItems: ${noteState.items.joinToString(", ") { it.body }}")
+    var listItems by remember { mutableStateOf(noteState.items) }
+    val dragDropState =
+        rememberDragDropState(listState) { fromIndex, toIndex ->
+            Log.d("TEST", "listItems: ${listItems.joinToString(", ") { it.body }}")
+            Log.d("TEST", "from: $fromIndex, to: $toIndex")
+            val updatedList = listItems.toMutableList()
+            val removed = updatedList.removeWithChildren(fromIndex)
+            updatedList.addAll(toIndex, removed)
+        }
+
     EditScreen(
         noteState = noteState.copy(type = Type.LIST),
         modifier = modifier,
@@ -728,70 +719,33 @@ internal fun EditListScreen(
         clickHandlers = wrappedClickHandlers,
         bottomLeftActions = {},
         content = {
-            // Checklist Unchecked Items
-            itemsIndexed(
-                items = noteState.items,
-                key = { _, item -> item.id },
-            ) { index, item ->
-                ChecklistItemRow(
-                    value = item.body,
-                    onValueChange = { newText -> changeHandlers.onItemTextChange(item, newText) },
-                    isChecked = item.checked,
-                    isChild = item.isChild,
-                    onCheckedChange = { checked ->
-                        changeHandlers.onItemCheckedChange(item, checked)
-                    },
-                    onEnterKey = { wrappedClickHandlers.onAddItemClick() },
-                    onBackspaceOnEmpty = {
-                        val prevItem = if (index > 0) noteState.items[index - 1] else null
-                        if (prevItem != null) {
-                            itemToFocusId = prevItem.id
-                        }
-                        changeHandlers.onItemDelete(item)
-                    },
-                    onDelete = { changeHandlers.onItemDelete(item) },
-                    onSwipeRight = { changeHandlers.onItemSwipeRight(item) },
-                    onSwipeLeft = { changeHandlers.onItemSwipeLeft(item) },
-                    focusRequester = if (item.id == itemToFocusId) focusRequester else null,
-                )
-            }
-
-            // Add Item Button
-            item {
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .clickable { wrappedClickHandlers.onAddItemClick() }
-                            .padding(horizontal = 20.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.add),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 12.dp),
-                    )
-                    Text(
-                        text = stringResource(id = R.string.add_item),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            // Checklist Checked Items
-            if (noteState.checkedItems.isNotEmpty()) {
-                item {
-                    HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
-                }
-                items(
-                    items = noteState.checkedItems,
-                    key = { it.id },
-                ) { item ->
+            LazyColumn(
+                modifier = Modifier.dragContainer(dragDropState),
+                state = listState,
+            ) {
+                // Checklist Unchecked Items
+                itemsIndexed(
+                    items = noteState.items,
+                    key = { _, item -> item.id },
+                ) { index, item ->
+                    val onSwipeRight = { changeHandlers.onItemSwipeRight(item) }
+                    val onSwipeLeft = { changeHandlers.onItemSwipeLeft(item) }
+                    val swipeModifier =
+                        if (onSwipeRight != null && onSwipeLeft != null) {
+                            createSwipeModifier(onSwipeRight, onSwipeLeft)
+                        } else Modifier
+                    val isDragging = index == dragDropState.draggingItemIndex
+                    val elevation by animateDpAsState(if (isDragging) 4.dp else 1.dp)
                     ChecklistItemRow(
+                        modifier =
+                            Modifier.then(swipeModifier)
+                                .then(draggableModifier(dragDropState, index)),
                         value = item.body,
                         onValueChange = { newText ->
-                            changeHandlers.onItemTextChange(item, newText)
+                            changeHandlers.onItemTextChange(
+                                item,
+                                newText,
+                            )
                         },
                         isChecked = item.checked,
                         isChild = item.isChild,
@@ -799,12 +753,68 @@ internal fun EditListScreen(
                             changeHandlers.onItemCheckedChange(item, checked)
                         },
                         onEnterKey = { wrappedClickHandlers.onAddItemClick() },
-                        onBackspaceOnEmpty = { changeHandlers.onItemDelete(item) },
+                        onBackspaceOnEmpty = {
+                            val prevItem = if (index > 0) noteState.items[index - 1] else null
+                            if (prevItem != null) {
+                                itemToFocusId = prevItem.id
+                            }
+                            changeHandlers.onItemDelete(item)
+                        },
                         onDelete = { changeHandlers.onItemDelete(item) },
-                        onSwipeRight = { changeHandlers.onItemSwipeRight(item) },
-                        onSwipeLeft = { changeHandlers.onItemSwipeLeft(item) },
                         focusRequester = if (item.id == itemToFocusId) focusRequester else null,
+                        elevation = elevation,
                     )
+                }
+            }
+
+            // Add Item Button
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .clickable { wrappedClickHandlers.onAddItemClick() }
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.add),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(end = 12.dp),
+                )
+                Text(
+                    text = stringResource(id = R.string.add_item),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            // Checklist Checked Items
+            if (noteState.checkedItems.isNotEmpty()) {
+                HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    items(
+                        items = noteState.checkedItems,
+                        key = { it.id },
+                    ) { item ->
+                        ChecklistItemRow(
+                            value = item.body,
+                            onValueChange = { newText ->
+                                changeHandlers.onItemTextChange(item, newText)
+                            },
+                            isChecked = item.checked,
+                            onCheckedChange = { checked ->
+                                changeHandlers.onItemCheckedChange(item, checked)
+                            },
+                            isChild = item.isChild,
+                            focusRequester = if (item.id == itemToFocusId) focusRequester else null,
+                            onEnterKey = { wrappedClickHandlers.onAddItemClick() },
+                            onBackspaceOnEmpty = { changeHandlers.onItemDelete(item) },
+                            onDelete = { changeHandlers.onItemDelete(item) },
+                        )
+                    }
                 }
             }
         },

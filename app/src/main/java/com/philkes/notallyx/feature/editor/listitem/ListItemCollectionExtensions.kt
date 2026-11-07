@@ -122,6 +122,13 @@ fun MutableList<ListItem>.removeWithChildren(item: ListItem): Pair<Int, Int> {
     return Pair(index, item.children.size + 1)
 }
 
+fun MutableList<ListItem>.removeWithChildren(index: Int): List<ListItem> {
+    val item = this[index]
+    val removed = item + item.children
+    removeAll(item.children + item)
+    return removed
+}
+
 fun MutableList<ListItem>.addWithChildren(item: ListItem): Pair<Int, Int> {
     val insertIdx = findInsertIdx(item)
     addAll(insertIdx, item + item.children)

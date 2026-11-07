@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -17,6 +18,7 @@ import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -40,11 +42,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
-private fun createSwipeModifier(onSwipeRight: (() -> Unit), onSwipeLeft: (() -> Unit)): Modifier {
+fun createSwipeModifier(onSwipeRight: (() -> Unit), onSwipeLeft: (() -> Unit)): Modifier {
     return Modifier.pointerInput(onSwipeRight, onSwipeLeft) {
         var horizontalDragOffset = 0f
         detectHorizontalDragGestures(
@@ -87,111 +90,118 @@ internal fun ChecklistItemRow(
     onEnterKey: (() -> Unit)? = null,
     onBackspaceOnEmpty: (() -> Unit)? = null,
     onDelete: () -> Unit = {},
-    onSwipeRight: (() -> Unit)? = null,
-    onSwipeLeft: (() -> Unit)? = null,
+    elevation: Dp = 0.dp,
 ) {
-    val swipeModifier =
-        if (onSwipeRight != null && onSwipeLeft != null) {
-            createSwipeModifier(onSwipeRight, onSwipeLeft)
-        } else Modifier
-
-    Row(
-        modifier = modifier.fillMaxWidth().then(swipeModifier).padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(0.dp),
+        shadowElevation = elevation, // Controls the depth of the shadow
+        color = MaterialTheme.colorScheme.surface, // Background color of the row
     ) {
-        if (isChild) {
-            Spacer(modifier = Modifier.width(20.dp))
-        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (isChild) {
+                Spacer(modifier = Modifier.width(20.dp))
+            }
 
-        if (showDragHandle) {
-            Box(
-                modifier = Modifier.padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.drag_handle),
-                    contentDescription = stringResource(R.string.drag_handle),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            if (showDragHandle) {
+                Box(
+                    modifier =
+                        Modifier.padding(
+                            start = 12.dp,
+                            end = 4.dp,
+                            top = 8.dp,
+                            bottom = 8.dp,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.drag_handle),
+                        contentDescription = stringResource(R.string.drag_handle),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Checkbox(
+                checked = isChecked,
+                onCheckedChange = onCheckedChange,
+                modifier = Modifier.semantics { contentDescription = value },
+                colors =
+                    CheckboxDefaults.colors(
+                        checkedColor = MaterialTheme.colorScheme.onSurface,
+                        uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        checkmarkColor = MaterialTheme.colorScheme.surface,
+                    ),
+            )
+
+            Box(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
+                val textStyle =
+                    MaterialTheme.typography.bodyLarge.copy(
+                        textDecoration =
+                            if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
+                        color =
+                            if (isChecked) MaterialTheme.colorScheme.onSurfaceVariant
+                            else MaterialTheme.colorScheme.onSurface,
+                    )
+
+                val textFieldModifier =
+                    Modifier.fillMaxWidth()
+                        .then(
+                            if (focusRequester != null) Modifier.focusRequester(focusRequester)
+                            else Modifier
+                        )
+                        .onKeyEvent { keyEvent ->
+                            if (keyEvent.type == KeyEventType.KeyDown) {
+                                if (keyEvent.key == Key.Enter && onEnterKey != null) {
+                                    onEnterKey()
+                                    true
+                                } else if (
+                                    keyEvent.key == Key.Backspace &&
+                                        value.isEmpty() &&
+                                        onBackspaceOnEmpty != null
+                                ) {
+                                    onBackspaceOnEmpty()
+                                    true
+                                } else false
+                            } else false
+                        }
+
+                BasicTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    modifier = textFieldModifier,
+                    textStyle = textStyle,
+                    singleLine = true,
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { onEnterKey?.invoke() }),
+                    decorationBox = { innerTextField ->
+                        TextFieldDefaults.DecorationBox(
+                            value = value,
+                            innerTextField = innerTextField,
+                            enabled = true,
+                            singleLine = true,
+                            visualTransformation = VisualTransformation.None,
+                            interactionSource = remember { MutableInteractionSource() },
+                            placeholder = { Text(stringResource(R.string.item)) },
+                            container = {},
+                            contentPadding = PaddingValues(0.dp),
+                        )
+                    },
                 )
             }
-        }
 
-        Checkbox(
-            checked = isChecked,
-            onCheckedChange = onCheckedChange,
-            modifier = Modifier.semantics { contentDescription = value },
-            colors =
-                CheckboxDefaults.colors(
-                    checkedColor = MaterialTheme.colorScheme.onSurface,
-                    uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    checkmarkColor = MaterialTheme.colorScheme.surface,
-                ),
-        )
-
-        Box(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
-            val textStyle =
-                MaterialTheme.typography.bodyLarge.copy(
-                    textDecoration =
-                        if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
-                    color =
-                        if (isChecked) MaterialTheme.colorScheme.onSurfaceVariant
-                        else MaterialTheme.colorScheme.onSurface,
-                )
-
-            val textFieldModifier =
-                Modifier.fillMaxWidth()
-                    .then(
-                        if (focusRequester != null) Modifier.focusRequester(focusRequester)
-                        else Modifier
+            if (showDelete) {
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.delete),
+                        contentDescription = stringResource(R.string.delete),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    .onKeyEvent { keyEvent ->
-                        if (keyEvent.type == KeyEventType.KeyDown) {
-                            if (keyEvent.key == Key.Enter && onEnterKey != null) {
-                                onEnterKey()
-                                true
-                            } else if (
-                                keyEvent.key == Key.Backspace &&
-                                    value.isEmpty() &&
-                                    onBackspaceOnEmpty != null
-                            ) {
-                                onBackspaceOnEmpty()
-                                true
-                            } else false
-                        } else false
-                    }
-
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = textFieldModifier,
-                textStyle = textStyle,
-                singleLine = true,
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { onEnterKey?.invoke() }),
-                decorationBox = { innerTextField ->
-                    TextFieldDefaults.DecorationBox(
-                        value = value,
-                        innerTextField = innerTextField,
-                        enabled = true,
-                        singleLine = true,
-                        visualTransformation = VisualTransformation.None,
-                        interactionSource = remember { MutableInteractionSource() },
-                        placeholder = { Text(stringResource(R.string.item)) },
-                        container = {},
-                        contentPadding = PaddingValues(0.dp),
-                    )
-                },
-            )
-        }
-
-        if (showDelete) {
-            IconButton(onClick = onDelete) {
-                Icon(
-                    painter = painterResource(id = R.drawable.delete),
-                    contentDescription = stringResource(R.string.delete),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                }
             }
         }
     }
