@@ -89,6 +89,12 @@ internal constructor(
     internal var previousItemOffset = Animatable(0f)
         private set
 
+    private var internalItems: MutableList<ListItem>? = null
+
+    private fun currentItems(): List<ListItem> {
+        return internalItems ?: getItems()
+    }
+
     fun isItemOrChildDragging(index: Int): Boolean {
         return isItemOrChildOf(index, draggingItemIndex)
     }
@@ -97,7 +103,7 @@ internal constructor(
         if (targetParentIndex == null) return false
         if (index == targetParentIndex) return true
 
-        val currentItems = getItems()
+        val currentItems = currentItems()
         val targetParentItem = currentItems.getOrNull(targetParentIndex)
         val currentItem = currentItems.getOrNull(index)
 
@@ -122,9 +128,12 @@ internal constructor(
         state.layoutInfo.visibleItemsInfo
             .firstOrNull { item -> offset.y.toInt() in item.offset..(item.offset + item.size) }
             ?.also {
+                val snapshot = getItems().map { item -> item.clone() as ListItem }.toMutableList()
+                initChildren(snapshot)
+                internalItems = snapshot
                 draggingItemIndex = it.index
                 draggingItemInitialOffset = it.offset
-                val item = getItems().getOrNull(it.index)
+                val item = snapshot.getOrNull(it.index)
                 draggedOriginalItem = item?.clone() as? ListItem
             }
     }
@@ -140,7 +149,10 @@ internal constructor(
                     spring(stiffness = Spring.StiffnessMediumLow, visibilityThreshold = 1f),
                 )
                 previousIndexOfDraggedItem = null
+                internalItems = null
             }
+        } else {
+            internalItems = null
         }
         draggingItemDraggedDelta = 0f
         draggingItemIndex = null
@@ -162,7 +174,7 @@ internal constructor(
                     draggingItem.index != item.index
             }
         if (targetItem != null) {
-            val currentItems = getItems()
+            val currentItems = currentItems()
             val original = draggedOriginalItem
             val targetListItem = currentItems.getOrNull(targetItem.index)
 
@@ -180,8 +192,9 @@ internal constructor(
                 }
                 if (original != null) {
                     onMove(draggingItem.index, targetItem.index, original)
+                    internalItems?.moveWithChildren(draggingItem.index, targetItem.index, original)
                 }
-                val updatedItems = getItems()
+                val updatedItems = currentItems()
                 val draggedId = original?.id
                 val updatedIndex =
                     if (draggedId != null) {
@@ -189,11 +202,19 @@ internal constructor(
                     } else {
                         -1
                     }
-                draggingItemIndex =
-                    if (updatedIndex != -1 && updatedIndex != draggingItem.index) {
-                        updatedIndex
+                val groupSize =
+                    if (original != null && !original.isChild) original.children.size + 1 else 1
+                val fallbackIndex =
+                    if (draggingItem.index < targetItem.index) {
+                        (targetItem.index - groupSize + 1).coerceAtLeast(0)
                     } else {
                         targetItem.index
+                    }
+                draggingItemIndex =
+                    if (updatedIndex != -1) {
+                        updatedIndex
+                    } else {
+                        fallbackIndex
                     }
             }
         } else {
