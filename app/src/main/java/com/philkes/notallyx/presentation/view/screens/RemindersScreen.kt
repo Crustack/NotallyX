@@ -17,8 +17,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.Reminder
@@ -45,12 +48,15 @@ fun RemindersScreen(
     val context = LocalContext.current
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().semantics { testTagsAsResourceId = true },
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(R.string.edit_reminders)) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier.testTag("Back"),
+                    ) {
                         Icon(
                             painter = painterResource(id = R.drawable.close),
                             contentDescription = stringResource(R.string.back),

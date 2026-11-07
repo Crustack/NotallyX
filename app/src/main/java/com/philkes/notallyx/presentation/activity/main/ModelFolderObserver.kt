@@ -170,7 +170,6 @@ class ModelFolderObserver(
         onCountChange: ((Int) -> Unit)? = null,
     ) {
         collectIn(lifecycleOwner) { count ->
-            activity.binding.ActionMode.title = count.toString()
             onCountChange?.invoke(count)
             share.isVisible = count == 1
         }
@@ -225,7 +224,7 @@ class ModelFolderObserver(
             val folderFrom = model.actionMode.getFirstNote().folder
             val ids = model.moveBaseNotes(folderTo) { model.actionMode.setLoading(false) }
             Snackbar.make(
-                    activity.findViewById(R.id.DrawerLayout),
+                    activity.binding.root,
                     activity.getQuantityString(folderTo.movedToResId(), ids.size),
                     Snackbar.LENGTH_SHORT,
                 )
@@ -249,7 +248,7 @@ class ModelFolderObserver(
                 activity.lifecycleScope.launch {
                     val deletedNotes = model.deleteSelectedBaseNotes()
                     Snackbar.make(
-                            activity.findViewById(R.id.DrawerLayout),
+                            activity.binding.root,
                             activity.getQuantityString(
                                 R.plurals.deleted_selected_notes,
                                 removedNotes.size,

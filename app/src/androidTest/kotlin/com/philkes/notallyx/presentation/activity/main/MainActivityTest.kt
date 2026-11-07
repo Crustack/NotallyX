@@ -2,23 +2,26 @@ package com.philkes.notallyx.presentation.activity.main
 
 import android.app.Notification
 import android.util.Log
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performTouchInput
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
-import androidx.test.espresso.action.ViewActions.longClick
-import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.action.ViewActions.scrollTo
-import androidx.test.espresso.action.ViewActions.typeText
-import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
-import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.contrib.RecyclerViewActions.actionOnItemAtPosition
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withClassName
+import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withParent
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.NotallyXApplication
@@ -27,15 +30,10 @@ import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.presentation.activity.note.refreshStatusBarPin
 import com.philkes.notallyx.test.UiTestBase
-import com.philkes.notallyx.test.byContentDescription
-import com.philkes.notallyx.test.byId
-import com.philkes.notallyx.test.byText
 import com.philkes.notallyx.test.childAtPosition
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.createListItem
-import com.philkes.notallyx.test.onDisplayView
 import com.philkes.notallyx.test.waitUntil
-import com.philkes.notallyx.test.waitUntilSucceeds
 import com.philkes.notallyx.utils.PinnedNotificationManager
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
@@ -44,11 +42,9 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import org.hamcrest.Matchers.allOf
-import org.hamcrest.Matchers.`is`
-import org.hamcrest.core.IsInstanceOf
 import org.junit.Assert.assertTrue
 import org.junit.FixMethodOrder
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -56,6 +52,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder
 class MainActivityTest : UiTestBase() {
+
+    @get:Rule val composeTestRule = createEmptyComposeRule()
 
     @Test
     fun multiSelectAndApplyLabel() {
@@ -84,52 +82,37 @@ class MainActivityTest : UiTestBase() {
         // 2. Recreate Activity so it reads the newly inserted data
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(1, longClick()))
-        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(2, longClick()))
+        // 1. longclick the first note ("Test")
+        composeTestRule.onNodeWithText("Test").performTouchInput { longClick() }
+        // 2. click the 2nd note ("List") to also select it
+        composeTestRule.onNodeWithText("List").performClick()
 
-        "Unpin".byContentDescription().perform(click())
+        // 3. Press unpin action to unpin both notes
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.unpin))
+            .performClick()
 
-        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, longClick()))
+        // 4. longclick first note again and click second note to select them
+        composeTestRule.onNodeWithText("Test").performTouchInput { longClick() }
+        composeTestRule.onNodeWithText("List").performClick()
 
-        "Labels".byContentDescription().perform(click())
+        // 5. click labels action
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.labels))
+            .performClick()
 
+        // 6. click the "label" twice to give both notes the "label" Label
         val labelDialogList =
-            onDisplayView(childAtPosition(withId(androidx.appcompat.R.id.custom), 0))
+            onView(childAtPosition(withId(androidx.appcompat.R.id.custom), 0)).inRoot(isDialog())
+        labelDialogList.perform(actionOnItemAtPosition<ViewHolder>(0, click()))
         labelDialogList.perform(actionOnItemAtPosition<ViewHolder>(0, click()))
 
-        val labelDialogCheckBox =
-            onDisplayView(
-                allOf(
-                    withId(R.id.CheckBox),
-                    childAtPosition(
-                        allOf(
-                            withId(R.id.Layout),
-                            childAtPosition(
-                                withClassName(`is`("androidx.recyclerview.widget.RecyclerView")),
-                                0,
-                            ),
-                        ),
-                        0,
-                    ),
-                )
-            )
-        labelDialogCheckBox.perform(click())
+        onView(withId(android.R.id.button1)).inRoot(isDialog()).perform(scrollTo(), click())
 
-        R.string.save.byText(withId(android.R.id.button1)).perform(scrollTo(), click())
-
-        val noteLabelChip =
-            onDisplayView(
-                allOf(
-                    withText("label"),
-                    withParent(
-                        allOf(
-                            withId(R.id.LabelGroup),
-                            withParent(IsInstanceOf.instanceOf(android.view.ViewGroup::class.java)),
-                        )
-                    ),
-                )
-            )
-        noteLabelChip.check(matches(withText("label")))
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("label")).fetchSemanticsNodes().size >= 2
+        }
+        composeTestRule.onAllNodes(hasText("label"))[1].assertIsDisplayed()
 
         scenario.close()
     }
@@ -269,43 +252,72 @@ class MainActivityTest : UiTestBase() {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
         // 2. Open Search fragment
-        R.string.search.byContentDescription().perform(click())
+        composeTestRule.onNodeWithTag("SearchActionButton").performClick()
 
         // 3. Type search keyword matching "Grocery"
-        R.id.EnterSearchKeyword.byId().perform(typeText("Grocery"), closeSoftKeyboard())
+        composeTestRule.onNodeWithTag("EnterSearchKeyword").performTextInput("Grocery")
 
         // 4. Verify default "Notes" folder chip only shows normal notes
-        waitUntilSucceeds { "Normal Note".byText().check(matches(isDisplayed())) }
-        "Work Meeting".byText(checkDisplayed = false).check(doesNotExist())
-        "Archived Note".byText(checkDisplayed = false).check(doesNotExist())
-        "Deleted Note".byText(checkDisplayed = false).check(doesNotExist())
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("Normal Note")).fetchSemanticsNodes().isNotEmpty() &&
+                composeTestRule.onAllNodes(hasText("Work Meeting")).fetchSemanticsNodes().isEmpty()
+        }
+        composeTestRule.onNodeWithText("Normal Note").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Work Meeting").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Archived Note").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Deleted Note").assertDoesNotExist()
 
         // 5. Switch filter to "Archived" folder chip
-        R.id.Archived.byId().perform(click())
-        waitUntilSucceeds { "Archived Note".byText().check(matches(isDisplayed())) }
-        "Normal Note".byText(checkDisplayed = false).check(doesNotExist())
-        "Deleted Note".byText(checkDisplayed = false).check(doesNotExist())
+        composeTestRule.onNodeWithTag("ArchivedFilterChip").performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText("Archived Note"))
+                .fetchSemanticsNodes()
+                .isNotEmpty() &&
+                composeTestRule.onAllNodes(hasText("Normal Note")).fetchSemanticsNodes().isEmpty()
+        }
+        composeTestRule.onNodeWithText("Archived Note").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Normal Note").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Deleted Note").assertDoesNotExist()
 
         // 6. Switch filter to "Deleted" folder chip
-        R.id.Deleted.byId().perform(click())
-        waitUntilSucceeds { "Deleted Note".byText().check(matches(isDisplayed())) }
-        "Normal Note".byText(checkDisplayed = false).check(doesNotExist())
-        "Archived Note".byText(checkDisplayed = false).check(doesNotExist())
+        composeTestRule.onNodeWithTag("DeletedFilterChip").performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText("Deleted Note"))
+                .fetchSemanticsNodes()
+                .isNotEmpty() &&
+                composeTestRule.onAllNodes(hasText("Archived Note")).fetchSemanticsNodes().isEmpty()
+        }
+        composeTestRule.onNodeWithText("Deleted Note").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Normal Note").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Archived Note").assertDoesNotExist()
 
         // 7. Switch filter back to "Notes" folder chip
-        R.id.Notes.byId().perform(click())
-        waitUntilSucceeds { "Normal Note".byText().check(matches(isDisplayed())) }
+        composeTestRule.onNodeWithTag("NotesFilterChip").performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("Normal Note")).fetchSemanticsNodes().isNotEmpty() &&
+                composeTestRule.onAllNodes(hasText("Deleted Note")).fetchSemanticsNodes().isEmpty()
+        }
+        composeTestRule.onNodeWithText("Normal Note").assertIsDisplayed()
 
         // 8. Search for keyword with no matches
-        R.id.EnterSearchKeyword.byId()
-            .perform(replaceText("NonExistentKeyword"), closeSoftKeyboard())
-        waitUntilSucceeds { "Normal Note".byText(checkDisplayed = false).check(doesNotExist()) }
-        "Archived Note".byText(checkDisplayed = false).check(doesNotExist())
-        "Deleted Note".byText(checkDisplayed = false).check(doesNotExist())
+        composeTestRule
+            .onNodeWithTag("EnterSearchKeyword")
+            .performTextReplacement("NonExistentKeyword")
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("Normal Note")).fetchSemanticsNodes().isEmpty()
+        }
+        composeTestRule.onNodeWithText("Normal Note").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Archived Note").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Deleted Note").assertDoesNotExist()
 
         // 9. Cancel search to return to main notes list
-        R.string.cancel.byContentDescription().perform(click())
-        waitUntilSucceeds { "Work Meeting".byText().check(matches(isDisplayed())) }
+        composeTestRule.onNodeWithTag("SearchActionButton").performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("Work Meeting")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("Work Meeting").assertIsDisplayed()
 
         scenario.close()
     }

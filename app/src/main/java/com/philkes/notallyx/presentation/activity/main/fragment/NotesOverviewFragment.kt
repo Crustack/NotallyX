@@ -18,5 +18,5 @@ class NotesOverviewFragment : NotesFragment() {
 
     override fun getFlow() = notesViewModel.baseNotes
 
-    override fun getBackground() = R.drawable.notebook
+    override fun getBackgroundResId() = R.drawable.notebook
 }

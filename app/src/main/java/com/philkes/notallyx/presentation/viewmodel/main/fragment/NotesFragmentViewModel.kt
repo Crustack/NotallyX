@@ -64,11 +64,13 @@ class NotesFragmentViewModel(app: Application, preferences: NotallyXPreferences)
 
     var currentLabel: String? = CURRENT_LABEL_EMPTY
 
-    var keyword = String()
+    val keywordFlow = MutableStateFlow("")
+    var keyword: String
+        get() = keywordFlow.value
         set(value) {
-            if (field != value || searchResults?.value?.isEmpty() == true) {
-                field = value
-                searchResults?.fetch(keyword, folder.value, currentLabel)
+            if (keywordFlow.value != value || searchResults?.value?.isEmpty() == true) {
+                keywordFlow.value = value
+                searchResults?.fetch(value, folder.value, currentLabel)
             }
         }
 
@@ -84,10 +86,14 @@ class NotesFragmentViewModel(app: Application, preferences: NotallyXPreferences)
         super.initDatabase(database)
         if (database == null) return
         val dao = baseNoteDao ?: return
+        @Suppress("UNNECESSARY_SAFE_CALL") val currentFolder = folder?.value ?: Folder.NOTES
+        @Suppress("UNNECESSARY_SAFE_CALL") val currentKeyword = keywordFlow?.value ?: ""
         if (searchResults == null) {
             searchResults = SearchResult(app, viewModelScope, dao, app::createItemsFromNotes)
+            searchResults!!.fetch(currentKeyword, currentFolder, currentLabel)
         } else {
             searchResults!!.baseNoteDao = dao
+            searchResults!!.fetch(currentKeyword, currentFolder, currentLabel)
         }
     }
 

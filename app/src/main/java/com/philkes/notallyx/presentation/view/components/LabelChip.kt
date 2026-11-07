@@ -1,8 +1,11 @@
 package com.philkes.notallyx.presentation.view.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -26,12 +29,19 @@ fun LabelChip(
             modifier
         }
 
-    Text(
-        text = text,
-        modifier = clickableModifier.padding(horizontal = 12.dp, vertical = 6.dp),
-        style = MaterialTheme.typography.bodyMedium,
-        color = textColor,
-    )
+    Surface(
+        modifier = clickableModifier.padding(end = 4.dp, bottom = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        color = Color.Transparent,
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = textColor,
+        )
+    }
 }
 
 @Preview(showBackground = true)

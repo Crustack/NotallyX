@@ -3,50 +3,56 @@ package com.philkes.notallyx.presentation.activity.main
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.transition.TransitionManager
 import android.view.Menu
-import android.view.Menu.CATEGORY_CONTAINER
-import android.view.Menu.CATEGORY_SYSTEM
 import android.view.MenuItem
-import android.view.View
-import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.view.GravityCompat
-import androidx.core.view.ViewCompat
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.children
-import androidx.drawerlayout.widget.DrawerLayout
+import androidx.fragment.app.FragmentContainerView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
-import androidx.navigation.ui.setupActionBarWithNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.transition.platform.MaterialFade
+import com.google.android.material.snackbar.Snackbar
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.ConverterErrorReporter
-import com.philkes.notallyx.data.model.Label
-import com.philkes.notallyx.databinding.ActivityMainBinding
+import com.philkes.notallyx.data.model.Folder
+import com.philkes.notallyx.presentation.activity.ComposeBinding
 import com.philkes.notallyx.presentation.activity.DatabaseTransitionActivity
 import com.philkes.notallyx.presentation.activity.LockedActivity
 import com.philkes.notallyx.presentation.activity.main.fragment.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
+import com.philkes.notallyx.presentation.activity.main.fragment.LabelsFragment
 import com.philkes.notallyx.presentation.activity.main.fragment.NotesFragment
 import com.philkes.notallyx.presentation.activity.main.fragment.SearchFragment
 import com.philkes.notallyx.presentation.activity.note.EditListActivity
 import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
 import com.philkes.notallyx.presentation.activity.note.NoteActionHandler
 import com.philkes.notallyx.presentation.activity.note.handleRejection
+import com.philkes.notallyx.presentation.checkNotificationPermission
 import com.philkes.notallyx.presentation.collectIn
-import com.philkes.notallyx.presentation.dp
+import com.philkes.notallyx.presentation.getQuantityString
+import com.philkes.notallyx.presentation.movedToResId
 import com.philkes.notallyx.presentation.repeatOnLifecycleScope
+import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.setupProgressDialog
 import com.philkes.notallyx.presentation.showToast
+import com.philkes.notallyx.presentation.theme.NotallyXTheme
+import com.philkes.notallyx.presentation.view.misc.tristatecheckbox.TriStateCheckBox
+import com.philkes.notallyx.presentation.view.misc.tristatecheckbox.setMultiChoiceTriStateItems
+import com.philkes.notallyx.presentation.view.screens.MainScreen
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
 import com.philkes.notallyx.presentation.viewmodel.main.MainActivityViewModel
 import com.philkes.notallyx.presentation.viewmodel.main.fragment.NotesFragmentViewModel
@@ -57,22 +63,31 @@ import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreference
 import com.philkes.notallyx.presentation.viewmodel.progress.MigrationProgress
 import com.philkes.notallyx.utils.LATEST_DATA_SCHEMA
 import com.philkes.notallyx.utils.backup.exportNotes
+import com.philkes.notallyx.utils.deleteAttachments
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.runMigrations
 import com.philkes.notallyx.utils.security.AuthenticatorProvider
+import com.philkes.notallyx.utils.shareNote
+import com.philkes.notallyx.utils.showColorSelectDialog
 import com.philkes.notallyx.utils.showErrorDialog
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-class MainActivity : LockedActivity<ActivityMainBinding>() {
+class MainActivity : LockedActivity<ComposeBinding>() {
 
     private val notallyFragmentModel: NotesFragmentViewModel by viewModel()
     private val mainActivityViewModel: MainActivityViewModel by viewModel()
 
-    private lateinit var navController: NavController
-    private lateinit var configuration: AppBarConfiguration
+    private var navController: NavController? = null
+    private var configuration: AppBarConfiguration? = null
     private lateinit var exportFileActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var exportNotesActivityResultLauncher: ActivityResultLauncher<Intent>
+
+    private val currentDestinationIdFlow = MutableStateFlow(R.id.Notes)
+    private val currentTitleFlow = MutableStateFlow("")
 
     private var isStartViewFragment = false
     private val actionModeCancelCallback =
@@ -86,28 +101,276 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
 
     override fun onSupportNavigateUp(): Boolean {
         notallyFragmentModel.keyword = ""
-        return navController.navigateUp(configuration)
+        val config = configuration ?: return false
+        return navController?.navigateUp(config) ?: false
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        setSupportActionBar(binding.Toolbar)
-        configureEdgeToEdgeInsets()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        setupFAB()
-        setupMenu()
-        setupActionMode()
-        setupNavigation()
+        val composeView = ComposeView(this)
+        binding = ComposeBinding(composeView)
+        setContentView(composeView)
 
         setupActivityResultLaunchers()
+
+        composeView.setContent {
+            NotallyXTheme(theme = preferences.theme.value) {
+                val labelsState =
+                    mainActivityViewModel.labels.collectAsStateWithLifecycle(emptyList())
+                val actionModeEnabledState =
+                    notallyFragmentModel.actionMode.enabled.collectAsStateWithLifecycle(false)
+                val selectedNoteIds by
+                    notallyFragmentModel.actionMode.selectedIdsFlow.collectAsStateWithLifecycle(
+                        emptySet()
+                    )
+                val selectedNotesCount = selectedNoteIds.size
+
+                val currentDestinationId by currentDestinationIdFlow.collectAsStateWithLifecycle()
+                val currentTitleState by currentTitleFlow.collectAsStateWithLifecycle()
+                val currentTitle = currentTitleState.ifEmpty { getString(R.string.app_name) }
+
+                val currentFolder by
+                    notallyFragmentModel.folder.collectAsStateWithLifecycle(Folder.NOTES)
+
+                val selectedNotes = notallyFragmentModel.actionMode.selectedNotes.values
+                val isAllPinned = selectedNotes.isNotEmpty() && selectedNotes.all { it.pinned }
+                val isAllPinnedToStatus =
+                    selectedNotes.isNotEmpty() && selectedNotes.all { it.isPinnedToStatus }
+
+                val actionModeListener = remember {
+                    object : com.philkes.notallyx.presentation.view.screens.ActionModeListener {
+                        override fun onClose() {
+                            notallyFragmentModel.actionMode.close(true)
+                        }
+
+                        override fun onSelectAll() {
+                            getCurrentFragmentNotes?.invoke()?.let { notes ->
+                                notallyFragmentModel.actionMode.add(notes)
+                            }
+                        }
+
+                        override fun onPin() {
+                            val baseNotes = notallyFragmentModel.actionMode.selectedNotes.values
+                            val allPinned = baseNotes.isNotEmpty() && baseNotes.all { it.pinned }
+                            notallyFragmentModel.pinBaseNotes(!allPinned)
+                        }
+
+                        override fun onLabels() {
+                            val baseNotes = notallyFragmentModel.actionMode.selectedNotes.values
+                            lifecycleScope.launch {
+                                val labels = notallyFragmentModel.getAllLabels()
+                                if (labels.isNotEmpty()) {
+                                    displaySelectLabelsDialog(labels, baseNotes)
+                                } else {
+                                    notallyFragmentModel.actionMode.close(true)
+                                    navigateWithAnimation(R.id.Labels)
+                                }
+                            }
+                        }
+
+                        override fun onDelete() {
+                            moveSelectedNotes(Folder.DELETED)
+                        }
+
+                        override fun onRestore() {
+                            moveSelectedNotes(Folder.NOTES)
+                        }
+
+                        override fun onArchive() {
+                            moveSelectedNotes(Folder.ARCHIVED)
+                        }
+
+                        override fun onDeleteForever() {
+                            deleteSelectedNotesForever()
+                        }
+
+                        override fun onDuplicate() {
+                            notallyFragmentModel.duplicateSelectedBaseNotes()
+                        }
+
+                        override fun onChangeColor() {
+                            lifecycleScope.launch {
+                                val database =
+                                    NotallyDatabase.getDatabase(this@MainActivity).value
+                                        ?: return@launch
+                                val colors =
+                                    withContext(Dispatchers.IO) {
+                                        database.getBaseNoteDao().getAllColors().toSet()
+                                    }
+                                val currentColor =
+                                    notallyFragmentModel.actionMode.selectedNotes.values
+                                        .map { it.color }
+                                        .distinct()
+                                        .takeIf { it.size == 1 }
+                                        ?.firstOrNull()
+                                showColorSelectDialog(
+                                    colors,
+                                    currentColor,
+                                    null,
+                                    { selectedColor, oldColor ->
+                                        if (oldColor != null) {
+                                            notallyFragmentModel.changeColor(
+                                                oldColor,
+                                                selectedColor,
+                                            )
+                                        }
+                                        notallyFragmentModel.colorBaseNote(selectedColor)
+                                    },
+                                ) { colorToDelete, newColor ->
+                                    notallyFragmentModel.changeColor(colorToDelete, newColor)
+                                }
+                            }
+                        }
+
+                        override fun onPinToStatus() {
+                            val baseNotes = notallyFragmentModel.actionMode.selectedNotes.values
+                            val anyNotPinned = baseNotes.any { !it.isPinnedToStatus }
+                            if (anyNotPinned) {
+                                checkNotificationPermission(
+                                    NoteActionHandler.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
+                                    alsoCheckAlarmPermission = false,
+                                ) {
+                                    notallyFragmentModel.pinBaseNotesToStatusBar(
+                                        this@MainActivity,
+                                        true,
+                                    )
+                                }
+                            } else {
+                                notallyFragmentModel.pinBaseNotesToStatusBar(
+                                    this@MainActivity,
+                                    false,
+                                )
+                            }
+                        }
+
+                        override fun onShare() {
+                            if (!notallyFragmentModel.actionMode.isEmpty()) {
+                                val baseNote = notallyFragmentModel.actionMode.getFirstNote()
+                                shareNote(baseNote)
+                            }
+                        }
+
+                        override fun onExport() {
+                            displayExportFormatDialog()
+                        }
+                    }
+                }
+
+                MainScreen(
+                    title = currentTitle,
+                    labels = labelsState.value,
+                    selectedDestinationId = currentDestinationId,
+                    actionModeEnabled = actionModeEnabledState.value,
+                    selectedCount = selectedNotesCount,
+                    currentFolder = currentFolder,
+                    isAllPinned = isAllPinned,
+                    isAllPinnedToStatus = isAllPinnedToStatus,
+                    showFabs =
+                        currentDestinationId == R.id.Notes ||
+                            currentDestinationId == R.id.DisplayLabel ||
+                            currentDestinationId == R.id.Unlabeled,
+                    showSearchOption =
+                        !preferences.alwaysShowSearchBar.value &&
+                            !ACTIVITES_WITHOUT_SEARCH.contains(currentDestinationId),
+                    isInSearchMode = currentDestinationId == R.id.Search,
+                    onNavigationItemClick = { destinationId, labelArg ->
+                        if (destinationId == R.id.DisplayLabel && labelArg != null) {
+                            navigateToLabel(labelArg)
+                        } else {
+                            navigateWithAnimation(destinationId)
+                        }
+                    },
+                    onTakeNoteClick = {
+                        val intent = Intent(this@MainActivity, EditNoteActivity::class.java)
+                        startActivity(prepareNewNoteIntent(intent))
+                    },
+                    onMakeListClick = {
+                        val intent = Intent(this@MainActivity, EditListActivity::class.java)
+                        startActivity(prepareNewNoteIntent(intent))
+                    },
+                    onSearchClick = {
+                        if (currentDestinationId == R.id.Search) {
+                            notallyFragmentModel.keyword = ""
+                            navController?.popBackStack()
+                        } else {
+                            navController?.navigate(
+                                R.id.Search,
+                                Bundle().apply {
+                                    putSerializable(
+                                        SearchFragment.EXTRA_INITIAL_FOLDER,
+                                        notallyFragmentModel.folder.value,
+                                    )
+                                    putSerializable(
+                                        SearchFragment.EXTRA_INITIAL_LABEL,
+                                        notallyFragmentModel.currentLabel,
+                                    )
+                                },
+                            )
+                        }
+                    },
+                    onAddClick =
+                        if (currentDestinationId == R.id.Labels) {
+                            {
+                                val navHost =
+                                    supportFragmentManager.findFragmentById(R.id.NavHostFragment)
+                                        as? NavHostFragment
+                                val labelsFragment =
+                                    navHost?.childFragmentManager?.fragments?.firstOrNull()
+                                        as? LabelsFragment
+                                labelsFragment?.displayAddLabelDialog()
+                            }
+                        } else null,
+                    actionModeListener = actionModeListener,
+                ) {
+                    AndroidView(
+                        factory = { context ->
+                            FragmentContainerView(context).apply {
+                                id = R.id.NavHostFragment
+                                addOnAttachStateChangeListener(
+                                    object : android.view.View.OnAttachStateChangeListener {
+                                        override fun onViewAttachedToWindow(v: android.view.View) {
+                                            val existingFragment =
+                                                supportFragmentManager.findFragmentById(id)
+                                                    as? NavHostFragment
+                                            val fragment =
+                                                existingFragment
+                                                    ?: NavHostFragment.create(
+                                                            R.navigation.navigation
+                                                        )
+                                                        .also { navHost ->
+                                                            supportFragmentManager
+                                                                .beginTransaction()
+                                                                .replace(id, navHost)
+                                                                .setPrimaryNavigationFragment(
+                                                                    navHost
+                                                                )
+                                                                .commitNowAllowingStateLoss()
+                                                        }
+                                            navController = fragment.navController
+                                            configuration =
+                                                AppBarConfiguration(fragment.navController.graph)
+                                            setupNavigationListeners()
+                                            checkForMigrations(savedInstanceState)
+                                        }
+
+                                        override fun onViewDetachedFromWindow(
+                                            v: android.view.View
+                                        ) {}
+                                    }
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+        }
 
         repeatOnLifecycleScope {
             launch { preferences.alwaysShowSearchBar.flow.collect { invalidateOptionsMenu() } }
         }
-
-        checkForMigrations(savedInstanceState)
 
         ConverterErrorReporter.errors.collectIn(this@MainActivity) { throwable ->
             if (throwable == null) {
@@ -120,7 +383,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                         R.string.error,
                         getString(R.string.error_loading_data, getString(R.string.clean_up)),
                         neutralButtonTextResId = R.string.clean_up,
-                        neutralButtonClickListener = { dialog, _ ->
+                        neutralButtonClickListener = { _, _ ->
                             ConverterErrorReporter.dismissAllDialogs()
                             mainActivityViewModel.cleanupDatabase {
                                 showToast(getString(R.string.cleanup_finished_title))
@@ -182,12 +445,11 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     }
 
     private fun checkForMigrations(savedInstanceState: Bundle?) {
-        // Run migrations first (blocking dialog), then proceed with initial navigation
         val proceed: () -> Unit = {
             mainActivityViewModel.startObserving()
             val fragmentIdToLoad = intent.getIntExtra(EXTRA_FRAGMENT_TO_OPEN, -1)
             if (fragmentIdToLoad != -1) {
-                navController.navigate(fragmentIdToLoad, intent.extras)
+                navController?.navigate(fragmentIdToLoad, intent.extras)
             } else if (savedInstanceState == null) {
                 navigateToStartView()
             }
@@ -195,14 +457,12 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         if (preferences.dataSchemaId.value < LATEST_DATA_SCHEMA) {
             migrationProgress.setupProgressDialog(this)
             lifecycleScope.launch {
-                // Initial title
                 setMigrationProgress(
                     MigrationProgress(R.string.migrating_data, indeterminate = true)
                 )
                 val migrationResult = application.runMigrations { titleId ->
                     setMigrationProgress(MigrationProgress(titleId, indeterminate = true))
                 }
-                // Dismiss
                 setMigrationProgress(MigrationProgress(R.string.migrating_data, inProgress = false))
                 if (migrationResult.showBiometricWarning) {
                     showBiometricEncryptionWarningDialog()
@@ -237,58 +497,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             .show()
     }
 
-    private fun configureEdgeToEdgeInsets() {
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        val navHostFragment = binding.NavHostFragment
-        ViewCompat.setOnApplyWindowInsetsListener(binding.RelativeLayout) { view, insets ->
-            val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
-
-            // Apply padding to the main content views
-            // Top margin for the Toolbar to avoid being under the status bar
-            binding.Toolbar.apply {
-                (layoutParams as ViewGroup.MarginLayoutParams).topMargin = systemBarsInsets.top
-                requestLayout()
-            }
-
-            binding.ActionMode.apply {
-                (layoutParams as ViewGroup.MarginLayoutParams).topMargin = systemBarsInsets.top
-                requestLayout()
-            }
-
-            // Apply padding to the navigationview top header
-            binding.NavigationView.getHeaderView(0).apply {
-                (layoutParams as ViewGroup.MarginLayoutParams).topMargin = systemBarsInsets.top
-                requestLayout()
-            }
-
-            // TakeNote FAB is at the very bottom
-            binding.TakeNote.apply {
-                val marginLayoutParams = layoutParams as ViewGroup.MarginLayoutParams
-                marginLayoutParams.bottomMargin = 16.dp + systemBarsInsets.bottom + imeInsets.bottom
-                marginLayoutParams.marginEnd = 16.dp
-                requestLayout()
-            }
-
-            // The ActionMode toolbar's position will naturally be below the Toolbar,
-            // so its top offset is handled by the Toolbar's adjustment.
-
-            // The main content (NavHostFragment) needs bottom padding to avoid
-            // being obscured by the system navigation bar and the keyboard.
-            // If NavHostFragment contains a ScrollView/RecyclerView, you might apply
-            // this padding to that scrollable view instead for better behavior.
-            navHostFragment.apply {
-                setPadding(
-                    paddingLeft,
-                    paddingTop,
-                    paddingRight,
-                    systemBarsInsets.bottom + imeInsets.bottom,
-                )
-            }
-            insets
-        }
-    }
-
     private fun getStartViewNavigation(): Pair<Int, Bundle> {
         return when (val startView = preferences.startView.value) {
             START_VIEW_DEFAULT -> Pair(R.id.Notes, Bundle())
@@ -302,18 +510,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
 
     private fun navigateToStartView() {
         val (id, bundle) = getStartViewNavigation()
-        navController.navigate(id, bundle)
-    }
-
-    private fun setupFAB() {
-        binding.TakeNote.setOnClickListener {
-            val intent = Intent(this, EditNoteActivity::class.java)
-            startActivity(prepareNewNoteIntent(intent))
-        }
-        binding.MakeList.setOnClickListener {
-            val intent = Intent(this, EditListActivity::class.java)
-            startActivity(prepareNewNoteIntent(intent))
-        }
+        navController?.navigate(id, bundle)
     }
 
     private fun prepareNewNoteIntent(intent: Intent): Intent {
@@ -329,231 +526,25 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             } ?: intent
     }
 
-    private var labelsMenuItems: List<MenuItem> = listOf()
-    private var labelsMoreMenuItem: MenuItem? = null
-    private var labels: List<Label> = listOf()
-
-    private fun setupMenu() {
-        binding.NavigationView.menu.apply {
-            add(0, R.id.Notes, 0, R.string.notes).setCheckable(true).setIcon(R.drawable.home)
-
-            addStaticLabelsMenuItems()
-
-            add(2, R.id.Deleted, CATEGORY_SYSTEM + 1, R.string.deleted)
-                .setCheckable(true)
-                .setIcon(R.drawable.delete)
-            add(2, R.id.Archived, CATEGORY_SYSTEM + 2, R.string.archived)
-                .setCheckable(true)
-                .setIcon(R.drawable.archive)
-            add(3, R.id.Reminders, CATEGORY_SYSTEM + 3, R.string.reminders)
-                .setCheckable(true)
-                .setIcon(R.drawable.notifications)
-            add(3, R.id.Settings, CATEGORY_SYSTEM + 4, R.string.settings)
-                .setCheckable(true)
-                .setIcon(R.drawable.settings)
-        }
-        repeatOnLifecycleScope {
-            launch {
-                mainActivityViewModel.labels.collect { labels ->
-                    this@MainActivity.labels = labels
-                    binding.NavigationView.menu.setupLabelsMenuItems(
-                        labels,
-                        mainActivityViewModel.preferences.maxLabels.value,
-                    )
-                }
-            }
-            launch {
-                mainActivityViewModel.preferences.labelsHidden.flow.collect { hiddenLabels ->
-                    hideLabelsInNavigation(
-                        hiddenLabels,
-                        mainActivityViewModel.preferences.maxLabels.value,
-                    )
-                }
-            }
-            launch {
-                mainActivityViewModel.preferences.maxLabels.flow.collect { maxLabels ->
-                    binding.NavigationView.menu.setupLabelsMenuItems(labels, maxLabels)
-                }
-            }
-        }
-    }
-
-    private fun Menu.addStaticLabelsMenuItems() {
-        add(1, R.id.Unlabeled, CATEGORY_CONTAINER + 1, R.string.unlabeled)
-            .setCheckable(true)
-            .setChecked(notallyFragmentModel.currentLabel == CURRENT_LABEL_NONE)
-            .setIcon(R.drawable.label_off)
-        add(1, R.id.Labels, CATEGORY_CONTAINER + 2, R.string.labels)
-            .setCheckable(true)
-            .setIcon(R.drawable.label_more)
-    }
-
-    private fun Menu.setupLabelsMenuItems(labels: List<Label>, maxLabelsToDisplay: Int) {
-        removeGroup(1)
-        addStaticLabelsMenuItems()
-        labelsMenuItems =
-            labels
-                .mapIndexed { index, label ->
-                    add(1, R.id.DisplayLabel, CATEGORY_CONTAINER + index + 3, label.value)
-                        .setCheckable(true)
-                        .setChecked(notallyFragmentModel.currentLabel == label.value)
-                        .setVisible(index < maxLabelsToDisplay)
-                        .setIcon(R.drawable.label)
-                        .setOnMenuItemClickListener {
-                            navigateToLabel(label.value)
-                            false
-                        }
-                }
-                .toList()
-
-        labelsMoreMenuItem =
-            if (labelsMenuItems.size > maxLabelsToDisplay) {
-                add(
-                        1,
-                        R.id.Labels,
-                        CATEGORY_CONTAINER + labelsMenuItems.size + 2,
-                        getString(R.string.more, labelsMenuItems.size - maxLabelsToDisplay),
-                    )
-                    .setCheckable(true)
-                    .setIcon(R.drawable.label)
-            } else null
-        configuration = AppBarConfiguration(binding.NavigationView.menu, binding.DrawerLayout)
-        setupActionBarWithNavController(navController, configuration)
-        hideLabelsInNavigation(
-            mainActivityViewModel.preferences.labelsHidden.value,
-            maxLabelsToDisplay,
-        )
-    }
-
     private fun navigateToLabel(label: String) {
         val bundle = Bundle().apply { putString(EXTRA_DISPLAYED_LABEL, label) }
-        navController.navigate(R.id.DisplayLabel, bundle)
+        navController?.navigate(R.id.DisplayLabel, bundle)
     }
 
-    private fun hideLabelsInNavigation(hiddenLabels: Set<String>, maxLabelsToDisplay: Int) {
-        var visibleLabels = 0
-        labelsMenuItems.forEach { menuItem ->
-            val visible =
-                !hiddenLabels.contains(menuItem.title) && visibleLabels < maxLabelsToDisplay
-            menuItem.setVisible(visible)
-            if (visible) {
-                visibleLabels++
-            }
-        }
-        labelsMoreMenuItem?.setTitle(getString(R.string.more, labels.size - visibleLabels))
-    }
-
-    private fun setupActionMode() {
-        binding.ActionMode.setNavigationOnClickListener {
-            notallyFragmentModel.actionMode.close(true)
-        }
-
-        val transition =
-            MaterialFade().apply {
-                secondaryAnimatorProvider = null
-                excludeTarget(binding.NavHostFragment, true)
-                excludeChildren(binding.NavHostFragment, true)
-                excludeTarget(binding.TakeNote, true)
-                excludeTarget(binding.MakeList, true)
-                excludeTarget(binding.NavigationView, true)
-            }
-
-        notallyFragmentModel.actionMode.enabled.collectIn(this) { enabled ->
-            TransitionManager.beginDelayedTransition(binding.RelativeLayout, transition)
-            if (enabled) {
-                binding.Toolbar.visibility = View.GONE
-                binding.ActionMode.visibility = View.VISIBLE
-                binding.DrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
-            } else {
-                binding.Toolbar.visibility = View.VISIBLE
-                binding.ActionMode.visibility = View.GONE
-                binding.DrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNDEFINED)
-            }
-            actionModeCancelCallback.isEnabled = enabled
-        }
-
-        val menu = binding.ActionMode.menu
-        val folderObserver = ModelFolderObserver(this, menu, notallyFragmentModel)
-        repeatOnLifecycleScope {
-            launch {
-                notallyFragmentModel.folder.collect { folder -> folderObserver.onChanged(folder) }
-            }
-        }
-        notallyFragmentModel.actionMode.loading.collectIn(this@MainActivity) { loading ->
-            menu.setGroupEnabled(Menu.NONE, !loading)
-        }
-    }
-
-    internal fun exportSelectedNotes(mimeType: ExportMimeType) {
-        notallyFragmentModel.selectedExportMimeType = mimeType
-        exportNotes(
-            notallyFragmentModel.actionMode.selectedNotes.values,
-            mimeType,
-            exportFileActivityResultLauncher,
-            exportNotesActivityResultLauncher,
-        )
-    }
-
-    private fun setupNavigation() {
-        val navHostFragment =
-            supportFragmentManager.findFragmentById(R.id.NavHostFragment) as NavHostFragment
-        navController = navHostFragment.navController
-        configuration = AppBarConfiguration(binding.NavigationView.menu, binding.DrawerLayout)
-        setupActionBarWithNavController(navController, configuration)
-
-        var fragmentIdToLoad: Int? = null
-        binding.NavigationView.setNavigationItemSelectedListener { item ->
-            fragmentIdToLoad = item.itemId
-            binding.DrawerLayout.closeDrawer(GravityCompat.START)
-            return@setNavigationItemSelectedListener true
-        }
-
-        binding.DrawerLayout.addDrawerListener(
-            object : DrawerLayout.SimpleDrawerListener() {
-
-                override fun onDrawerClosed(drawerView: View) {
-                    if (
-                        fragmentIdToLoad != null &&
-                            navController.currentDestination?.id != fragmentIdToLoad
-                    ) {
-                        navigateWithAnimation(
-                            requireNotNull(fragmentIdToLoad, { "fragmentIdToLoad is null" })
-                        )
-                    }
-                }
-            }
-        )
-
-        navController.addOnDestinationChangedListener { _, destination, bundle ->
-            fragmentIdToLoad = destination.id
-            when (fragmentIdToLoad) {
+    private fun setupNavigationListeners() {
+        navController?.addOnDestinationChangedListener { _, destination, bundle ->
+            currentDestinationIdFlow.value = destination.id
+            currentTitleFlow.value = destination.label?.toString() ?: getString(R.string.app_name)
+            when (destination.id) {
                 R.id.DisplayLabel ->
                     bundle?.getString(EXTRA_DISPLAYED_LABEL)?.let {
                         notallyFragmentModel.currentLabel = it
-                        binding.NavigationView.menu.children
-                            .find { menuItem -> menuItem.title == it }
-                            ?.let { menuItem -> menuItem.isChecked = true }
                     }
                 R.id.Unlabeled -> {
                     notallyFragmentModel.currentLabel = CURRENT_LABEL_NONE
-                    binding.NavigationView.setCheckedItem(destination.id)
                 }
                 else -> {
                     notallyFragmentModel.currentLabel = CURRENT_LABEL_EMPTY
-                    binding.NavigationView.setCheckedItem(destination.id)
-                }
-            }
-            when (destination.id) {
-                R.id.Notes,
-                R.id.DisplayLabel,
-                R.id.Unlabeled -> {
-                    binding.TakeNote.show()
-                    binding.MakeList.show()
-                }
-
-                else -> {
-                    binding.TakeNote.hide()
-                    binding.MakeList.hide()
                 }
             }
             isStartViewFragment = isStartViewFragment(destination.id, bundle)
@@ -576,9 +567,10 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 popExit = androidx.navigation.ui.R.anim.nav_default_pop_exit_anim
                 popEnter = androidx.navigation.ui.R.anim.nav_default_pop_enter_anim
             }
-            popUpTo(navController.graph.startDestinationId) { inclusive = false }
+            val startId = navController?.graph?.startDestinationId ?: R.id.Notes
+            popUpTo(startId) { inclusive = false }
         }
-        navController.navigate(id, null, options)
+        navController?.navigate(id, null, options)
     }
 
     private fun setupActivityResultLaunchers() {
@@ -600,16 +592,153 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             }
     }
 
+    internal fun exportSelectedNotes(mimeType: ExportMimeType) {
+        notallyFragmentModel.selectedExportMimeType = mimeType
+        exportNotes(
+            notallyFragmentModel.actionMode.selectedNotes.values,
+            mimeType,
+            exportFileActivityResultLauncher,
+            exportNotesActivityResultLauncher,
+        )
+    }
+
+    private fun displayExportFormatDialog() {
+        val formats = ExportMimeType.entries.map { it.name }.toTypedArray()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.export)
+            .setItems(formats) { _, which -> exportSelectedNotes(ExportMimeType.entries[which]) }
+            .setCancelButton()
+            .show()
+    }
+
+    private fun moveSelectedNotes(folderTo: Folder) {
+        if (
+            notallyFragmentModel.actionMode.isLoading() || notallyFragmentModel.actionMode.isEmpty()
+        ) {
+            return
+        }
+        try {
+            notallyFragmentModel.actionMode.setLoading(true)
+            val folderFrom = notallyFragmentModel.actionMode.getFirstNote().folder
+            val ids =
+                notallyFragmentModel.moveBaseNotes(folderTo) {
+                    notallyFragmentModel.actionMode.setLoading(false)
+                }
+            Snackbar.make(
+                    binding.root,
+                    getQuantityString(folderTo.movedToResId(), ids.size),
+                    Snackbar.LENGTH_SHORT,
+                )
+                .apply {
+                    setAction(R.string.undo) { notallyFragmentModel.moveBaseNotes(ids, folderFrom) }
+                }
+                .show()
+        } catch (_: Exception) {
+            notallyFragmentModel.actionMode.setLoading(false)
+        }
+    }
+
+    private fun deleteSelectedNotesForever() {
+        MaterialAlertDialogBuilder(this)
+            .setMessage(R.string.delete_selected_notes)
+            .setPositiveButton(R.string.delete) { _, _ ->
+                val removedNotes = notallyFragmentModel.actionMode.selectedNotes.values.toList()
+                lifecycleScope.launch {
+                    val deletedNotes = notallyFragmentModel.deleteSelectedBaseNotes()
+                    Snackbar.make(
+                            binding.root,
+                            getQuantityString(
+                                R.plurals.deleted_selected_notes,
+                                removedNotes.size,
+                            ),
+                            Snackbar.LENGTH_SHORT,
+                        )
+                        .apply {
+                            setAction(R.string.undo) {
+                                notallyFragmentModel.saveNotes(removedNotes)
+                            }
+                            addCallback(
+                                object : Snackbar.Callback() {
+                                    override fun onDismissed(
+                                        transientBottomBar: Snackbar?,
+                                        event: Int,
+                                    ) {
+                                        if (event != DISMISS_EVENT_ACTION) {
+                                            deleteAttachments(
+                                                deletedNotes,
+                                                notallyFragmentModel.progress,
+                                            )
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                        .show()
+                }
+            }
+            .setCancelButton()
+            .show()
+    }
+
+    private fun displaySelectLabelsDialog(labels: Array<String>, baseNotes: Collection<BaseNote>) {
+        val checkedPositions =
+            labels
+                .map { label ->
+                    if (baseNotes.all { it.labels.contains(label) }) {
+                        TriStateCheckBox.State.CHECKED
+                    } else if (baseNotes.any { it.labels.contains(label) }) {
+                        TriStateCheckBox.State.PARTIALLY_CHECKED
+                    } else {
+                        TriStateCheckBox.State.UNCHECKED
+                    }
+                }
+                .toTypedArray()
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.labels)
+            .setCancelButton()
+            .setMultiChoiceTriStateItems(this, labels, checkedPositions) { idx, state ->
+                checkedPositions[idx] = state
+            }
+            .setPositiveButton(R.string.save) { _, _ ->
+                val checkedLabels = checkedPositions.mapIndexedNotNull { index, checked ->
+                    if (checked == TriStateCheckBox.State.CHECKED) {
+                        labels[index]
+                    } else null
+                }
+                val uncheckedLabels = checkedPositions.mapIndexedNotNull { index, checked ->
+                    if (checked == TriStateCheckBox.State.UNCHECKED) {
+                        labels[index]
+                    } else null
+                }
+                val updatedBaseNotesLabels = baseNotes.map { baseNote ->
+                    val noteLabels = baseNote.labels.toMutableList()
+                    checkedLabels.forEach { checkedLabel ->
+                        if (!noteLabels.contains(checkedLabel)) {
+                            noteLabels.add(checkedLabel)
+                        }
+                    }
+                    uncheckedLabels.forEach { uncheckedLabel ->
+                        if (noteLabels.contains(uncheckedLabel)) {
+                            noteLabels.remove(uncheckedLabel)
+                        }
+                    }
+                    noteLabels
+                }
+                baseNotes.zip(updatedBaseNotesLabels).forEach { (baseNote, updatedLabels) ->
+                    notallyFragmentModel.updateBaseNoteLabels(updatedLabels, baseNote.id)
+                }
+                notallyFragmentModel.actionMode.close(true)
+            }
+            .show()
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Only show search icon if preference is not enabled and not in Reminders or Settings
-        // fragments
-        val currentDestinationId = navController.currentDestination?.id
+        val currentDestinationId = navController?.currentDestination?.id
         if (
             !preferences.alwaysShowSearchBar.value &&
                 !ACTIVITES_WITHOUT_SEARCH.contains(currentDestinationId)
         ) {
-
-            // If in Search fragment, show X icon instead of search icon
             val isInSearchFragment = currentDestinationId == R.id.Search
             val iconRes = if (isInSearchFragment) R.drawable.close else R.drawable.search
             val titleRes = if (isInSearchFragment) R.string.cancel else R.string.search
@@ -619,43 +748,30 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 .setIcon(iconRes)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         }
-
-        return true
+        return super.onCreateOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             ACTION_SEARCH -> {
-                val isInSearchFragment = navController.currentDestination?.id == R.id.Search
-
+                val isInSearchFragment = navController?.currentDestination?.id == R.id.Search
                 if (isInSearchFragment) {
-                    // If in Search fragment, navigate back to cancel search
                     notallyFragmentModel.keyword = ""
-                    navController.popBackStack()
+                    navController?.popBackStack()
                 } else {
-                    // Navigate to search fragment
-                    val currentFragment =
-                        supportFragmentManager
-                            .findFragmentById(R.id.NavHostFragment)
-                            ?.childFragmentManager
-                            ?.fragments
-                            ?.firstOrNull()
-
-                    if (currentFragment is NotesFragment) {
-                        navController.navigate(
-                            R.id.Search,
-                            Bundle().apply {
-                                putSerializable(
-                                    SearchFragment.EXTRA_INITIAL_FOLDER,
-                                    notallyFragmentModel.folder.value,
-                                )
-                                putSerializable(
-                                    SearchFragment.EXTRA_INITIAL_LABEL,
-                                    notallyFragmentModel.currentLabel,
-                                )
-                            },
-                        )
-                    }
+                    navController?.navigate(
+                        R.id.Search,
+                        Bundle().apply {
+                            putSerializable(
+                                SearchFragment.EXTRA_INITIAL_FOLDER,
+                                notallyFragmentModel.folder.value,
+                            )
+                            putSerializable(
+                                SearchFragment.EXTRA_INITIAL_LABEL,
+                                notallyFragmentModel.currentLabel,
+                            )
+                        },
+                    )
                 }
                 true
             }

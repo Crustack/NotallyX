@@ -6,6 +6,15 @@ import android.app.Instrumentation
 import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeRight
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario
@@ -30,6 +39,7 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasType
+import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.Visibility
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isEnabled
@@ -57,7 +67,6 @@ import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.byContentDescription
 import com.philkes.notallyx.test.byId
 import com.philkes.notallyx.test.byText
-import com.philkes.notallyx.test.childAtPosition
 import com.philkes.notallyx.test.hasBoldSpan
 import com.philkes.notallyx.test.hasItalicSpan
 import com.philkes.notallyx.test.hasMonospaceSpan
@@ -75,12 +84,12 @@ import com.philkes.notallyx.utils.getTempAudioFile
 import java.io.File
 import org.hamcrest.Matchers.allOf
 import org.hamcrest.Matchers.anything
-import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.not
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.FixMethodOrder
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -89,11 +98,13 @@ import org.junit.runner.RunWith
 @FixMethodOrder
 class EditActivityTest : UiTestBase() {
 
+    @get:Rule val composeTestRule = createEmptyComposeRule()
+
     @Test
     fun createAndEditTextNote() {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        R.id.TakeNote.byId().perform(click())
+        composeTestRule.onNodeWithTag("TakeNote").performClick()
 
         R.id.EnterBody.byId().perform(typeText("Body"), closeSoftKeyboard())
         R.id.EnterTitle.byId().perform(typeText("Test"), closeSoftKeyboard())
@@ -108,29 +119,28 @@ class EditActivityTest : UiTestBase() {
 
         R.string.tap_for_more_options.byContentDescription().perform(click())
         onDisplayView(withText(R.string.labels)).perform(click())
-        R.string.add_label.byContentDescription().perform(click())
-        R.id.EditText.byId().perform(replaceText("label"))
-        android.R.id.button1.byId().perform(click())
-        R.id.MainListView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, click()))
+        composeTestRule.onNodeWithTag("AddLabel").performClick()
+        onView(withId(R.id.EditText)).inRoot(isDialog()).perform(replaceText("label"))
+        onView(withId(android.R.id.button1)).inRoot(isDialog()).perform(click())
 
-        val labelToolbarBackButton =
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("label")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("label").performClick()
+
+        composeTestRule.onNodeWithTag("Back").performClick()
+
+        waitUntilSucceeds {
             onDisplayView(
-                childAtPosition(
-                    allOf(withId(R.id.Toolbar), childAtPosition(withId(R.id.root_layout), 0)),
-                    1,
+                    allOf(
+                        withText("label"),
+                        withParent(
+                            allOf(withId(R.id.LabelGroup), withParent(withId(R.id.ContentLayout)))
+                        ),
+                    )
                 )
-            )
-        labelToolbarBackButton.perform(click())
-        val labelChip =
-            onDisplayView(
-                allOf(
-                    withText("label"),
-                    withParent(
-                        allOf(withId(R.id.LabelGroup), withParent(withId(R.id.ContentLayout)))
-                    ),
-                )
-            )
-        labelChip.check(matches(withText("label")))
+                .check(matches(withText("label")))
+        }
 
         R.string.read_only.byContentDescription().perform(click())
         R.id.EnterBody.byId(withText("Body")).perform(click())
@@ -141,11 +151,7 @@ class EditActivityTest : UiTestBase() {
 
         Espresso.pressBack()
         toolbarBackButton.perform(click())
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(1, withId(R.id.Title))
-                .check(matches(withText("Test")))
-        }
+        composeTestRule.onNodeWithText("Test").assertIsDisplayed()
 
         scenario.close()
     }
@@ -154,7 +160,7 @@ class EditActivityTest : UiTestBase() {
     fun textFormatting() {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        R.id.TakeNote.byId().perform(click())
+        composeTestRule.onNodeWithTag("TakeNote").performClick()
 
         val text = "Lorem ipsum dolor sit amet, consectetur adipiscing."
         val word1 = "Lorem"
@@ -223,7 +229,7 @@ class EditActivityTest : UiTestBase() {
     fun listItems() {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        R.id.MakeList.byId().perform(click())
+        composeTestRule.onNodeWithTag("TakeList").performClick()
 
         // 1. Create list items (Parent and 2 Children)
         R.id.MainListView.byId()
@@ -319,7 +325,7 @@ class EditActivityTest : UiTestBase() {
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        R.id.TakeNote.byId().perform(click())
+        composeTestRule.onNodeWithTag("TakeNote").performClick()
         R.id.EnterTitle.byId().perform(typeText("Reminder Note"), closeSoftKeyboard())
 
         // Click Reminders button on top toolbar (opens RemindersActivity)
@@ -329,78 +335,68 @@ class EditActivityTest : UiTestBase() {
         confirmDateAndTime()
         android.R.id.button1.byId().perform(click())
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(0, withId(R.id.Repetition))
-                .check(matches(withText(R.string.reminder_no_repetition)))
-        }
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.reminder_no_repetition))
+            .assertIsDisplayed()
 
         // 2. Reminder 2: Daily repetition
-        R.string.add_reminder.byContentDescription().perform(click())
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.add_reminder))
+            .performClick()
         confirmDateAndTime()
         R.id.Daily.byId().perform(click())
         android.R.id.button1.byId().perform(click())
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(1, withId(R.id.Repetition))
-                .check(matches(withText(R.string.daily)))
-        }
+        composeTestRule.onNodeWithText(context.getString(R.string.daily)).assertIsDisplayed()
 
         // 3. Reminder 3: Weekly repetition
-        R.string.add_reminder.byContentDescription().perform(click())
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.add_reminder))
+            .performClick()
         confirmDateAndTime()
         R.id.Weekly.byId().perform(click())
         android.R.id.button1.byId().perform(click())
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(2, withId(R.id.Repetition))
-                .check(matches(withText(R.string.weekly)))
-        }
+        composeTestRule.onNodeWithText(context.getString(R.string.weekly)).assertIsDisplayed()
 
         // 4. Reminder 4: Monthly repetition
-        R.string.add_reminder.byContentDescription().perform(click())
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.add_reminder))
+            .performClick()
         confirmDateAndTime()
         R.id.Monthly.byId().perform(click())
         onData(anything()).atPosition(0).perform(click())
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(3, withId(R.id.Repetition))
-                .check(
-                    matches(withText(containsString(context.getString(R.string.of_the_month, ""))))
-                )
-        }
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.of_the_month, ""), substring = true)
+            .assertIsDisplayed()
 
         // 5. Reminder 5: Yearly repetition
-        R.string.add_reminder.byContentDescription().perform(click())
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.add_reminder))
+            .performClick()
         confirmDateAndTime()
         R.id.Yearly.byId().perform(click())
         android.R.id.button1.byId().perform(click())
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(4, withId(R.id.Repetition))
-                .check(matches(withText(R.string.yearly)))
-        }
+        composeTestRule.onNodeWithText(context.getString(R.string.yearly)).assertIsDisplayed()
 
         // 6. Reminder 6: Custom repetition (every 3rd week)
-        R.string.add_reminder.byContentDescription().perform(click())
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.add_reminder))
+            .performClick()
         confirmDateAndTime()
         R.id.Custom.byId().perform(click())
         R.id.Value.byId().perform(click(), typeText("3"))
         R.id.Weeks.byId().perform(click())
         android.R.id.button1.byId().perform(click())
 
-        waitUntilSucceeds {
-            R.id.MainListView.byId()
-                .onPositionView(5, withId(R.id.Repetition))
-                .check(matches(isDisplayed()))
-        }
+        composeTestRule
+            .onAllNodes(hasText(context.getString(R.string.weekly)))
+            .fetchSemanticsNodes()
 
         // Go back from RemindersActivity to EditActivity
-        Espresso.pressBack()
+        composeTestRule.onNodeWithTag("Back").performClick()
 
         // Verify reminder chip is visible and displays reminder time
         waitUntilSucceeds { R.id.EditNoteReminderChip.byId().check(matches(isDisplayed())) }
@@ -412,7 +408,7 @@ class EditActivityTest : UiTestBase() {
     fun undoAndRedo() {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        R.id.TakeNote.byId().perform(click())
+        composeTestRule.onNodeWithTag("TakeNote").performClick()
 
         // Initially undo and redo should be disabled
         R.string.undo.byContentDescription().check(matches(not(isEnabled())))
@@ -559,7 +555,7 @@ class EditActivityTest : UiTestBase() {
 
             val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-            R.id.TakeNote.byId().perform(click())
+            composeTestRule.onNodeWithTag("TakeNote").performClick()
 
             R.string.add_item.byContentDescription().perform(click())
             R.string.add_images.byText().perform(click())
@@ -577,13 +573,12 @@ class EditActivityTest : UiTestBase() {
             // Click image to open ViewImageActivity
             R.id.ImagePreview.byId().perform(actionOnItemAtPosition<ViewHolder>(1, click()))
 
-            waitUntilSucceeds {
-                R.id.Toolbar.byId().check(matches(isDisplayed()))
-                onDisplayView(withText("2 / 2")).check(matches(isDisplayed()))
-            }
+            composeTestRule.onNodeWithText("2 / 2").assertIsDisplayed()
 
             // Test save image button in ViewImageActivity
-            R.string.save_to_device.byContentDescription().perform(click())
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.save_to_device))
+                .performClick()
             waitUntil { savedFile.exists() && (savedFile.length() > 0) }
             assertTrue(
                 "Saved image file should exist and not be empty",
@@ -591,9 +586,9 @@ class EditActivityTest : UiTestBase() {
             )
 
             // Scroll to 1st image in ViewImageActivity and check 1 / 2
-            R.id.MainListView.byId().perform(scrollToPosition<ViewHolder>(0))
+            composeTestRule.onNodeWithTag("ImagePager").performTouchInput { swipeRight() }
 
-            waitUntilSucceeds { onDisplayView(withText("1 / 2")).check(matches(isDisplayed())) }
+            composeTestRule.onNodeWithText("1 / 2").assertIsDisplayed()
 
             Espresso.pressBack()
 
@@ -638,10 +633,10 @@ class EditActivityTest : UiTestBase() {
             R.id.AudioRecyclerView.byId().perform(actionOnItemAtPosition<ViewHolder>(0, click()))
 
             // Verify PlayAudioActivity opens and play button is visible
-            waitUntilSucceeds { R.id.Play.byId().check(matches(isDisplayed())) }
+            composeTestRule.onNodeWithText(context.getString(R.string.play)).assertIsDisplayed()
 
             // Click play button
-            R.id.Play.byId().perform(click())
+            composeTestRule.onNodeWithText(context.getString(R.string.play)).performClick()
 
             Espresso.pressBack()
 

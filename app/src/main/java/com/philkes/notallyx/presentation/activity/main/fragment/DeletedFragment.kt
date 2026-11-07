@@ -35,7 +35,7 @@ class DeletedFragment : NotesFragment() {
             .show()
     }
 
-    override fun getBackground() = R.drawable.delete
+    override fun getBackgroundResId() = R.drawable.delete
 
     override fun getFlow() = deletedViewModel.deletedNotes
 }

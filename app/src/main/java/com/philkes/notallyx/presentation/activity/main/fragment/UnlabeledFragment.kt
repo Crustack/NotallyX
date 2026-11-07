@@ -18,7 +18,7 @@ class UnlabeledFragment : NotesFragment() {
         model.setFolder(Folder.NOTES)
     }
 
-    override fun getBackground() = R.drawable.label_off
+    override fun getBackgroundResId() = R.drawable.label_off
 
     override fun getFlow(): Flow<List<Item>> {
         return unlabeledViewModel.unlabeledNotes

@@ -22,6 +22,7 @@ import com.philkes.notallyx.presentation.theme.NotallyXTheme
 fun FileAttachmentPreviewChip(
     fileName: String,
     modifier: Modifier = Modifier,
+    showIcon: Boolean = true,
     onClick: () -> Unit = {},
 ) {
     AssistChip(
@@ -29,16 +30,19 @@ fun FileAttachmentPreviewChip(
         label = {
             Text(
                 text = fileName.ifEmpty { stringResource(R.string.cant_load_file) },
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
             )
         },
-        leadingIcon = {
-            Icon(
-                painter = painterResource(id = R.drawable.text_file),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface,
-            )
-        },
+        leadingIcon =
+            if (showIcon) {
+                {
+                    Icon(
+                        painter = painterResource(id = R.drawable.text_file),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            } else null,
         modifier = modifier.padding(end = 6.dp),
     )
 }
