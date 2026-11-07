@@ -15,13 +15,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -103,9 +104,19 @@ internal interface EditChangeHandlers {
 
     fun onBodyTextChange(bodyText: String) {}
 
+    fun onItemTextChange(item: ListItem, text: String) {}
+
     fun onItemCheckedChange(item: ListItem, checked: Boolean) {}
 
     fun onItemDelete(item: ListItem) {}
+
+    fun onItemMove(fromIndex: Int, toIndex: Int) {}
+
+    fun onItemSwipeRight(item: ListItem) {}
+
+    fun onItemSwipeLeft(item: ListItem) {}
+
+    fun onItemMoveFinish(item: ListItem) {}
 }
 
 internal typealias EditNoteChangeHandlers = EditChangeHandlers
@@ -199,98 +210,65 @@ private fun ActionIconButtonPreview() {
 }
 
 @Composable
+private fun FileAttachmentPreviewChip(
+    fileName: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier =
+            modifier
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .clickable(onClick = onClick)
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = fileName,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
 private fun EditScreenImageSection(
     images: List<FileAttachment>,
     mediaRoot: File?,
     onImageClick: (FileAttachment) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-        val loadedBitmaps =
-            remember(images, mediaRoot) {
-                images.map { attachment ->
-                    val imageFile =
-                        if (mediaRoot != null) File(mediaRoot, attachment.localName) else null
-                    if (imageFile?.exists() == true) {
-                        try {
-                            android.graphics.BitmapFactory.decodeFile(imageFile.absolutePath)
-                                ?.asImageBitmap()
-                        } catch (_: Exception) {
-                            null
-                        }
+    Column(modifier = modifier.fillMaxWidth()) {
+        images.forEach { imageAttachment ->
+            val imageFile =
+                remember(imageAttachment, mediaRoot) {
+                    if (mediaRoot != null && imageAttachment.localName.isNotEmpty()) {
+                        File(mediaRoot, imageAttachment.localName)
                     } else null
                 }
-            }
-        val hasAnyBitmap = loadedBitmaps.any { it != null }
 
-        if (hasAnyBitmap) {
-            LazyRow(modifier = Modifier.fillMaxWidth()) {
-                items(
-                    images.zip(loadedBitmaps),
-                    key = { (attachment, _) -> attachment.localName },
-                ) { (attachment, bitmap) ->
-                    if (bitmap != null) {
-                        Image(
-                            bitmap = bitmap,
-                            contentDescription = attachment.localName,
-                            modifier =
-                                Modifier.height(200.dp).padding(end = 8.dp).clickable {
-                                    onImageClick(attachment)
-                                },
-                        )
-                    } else {
-                        ImagePreviewCard(
-                            modifier =
-                                Modifier.fillMaxWidth().clickable { onImageClick(attachment) }
-                        )
+            if (imageFile?.exists() == true) {
+                val bitmap =
+                    remember(imageFile) {
+                        try {
+                            android.graphics.BitmapFactory.decodeFile(imageFile.absolutePath)
+                        } catch (e: Exception) {
+                            null
+                        }
                     }
-                }
-            }
 
-            if (images.size > 1) {
-                AssistChip(
-                    onClick = { onImageClick(images.first()) },
-                    label = { Text("${images.size}") },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.add_images),
-                            contentDescription = null,
-                        )
-                    },
-                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
-                )
-            }
-        } else {
-            Column(
-                modifier =
-                    Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable {
-                        onImageClick(images.first())
-                    },
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                if (images.size > 1) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                    ) {
-                        AssistChip(
-                            onClick = { onImageClick(images.first()) },
-                            label = { Text("${images.size}") },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.add_images),
-                                    contentDescription = null,
-                                )
-                            },
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = imageAttachment.originalName,
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .height(200.dp)
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
+                                .clip(MaterialTheme.shapes.medium)
+                                .clickable { onImageClick(imageAttachment) },
+                    )
                 }
-                Text(
-                    text = stringResource(R.string.cant_load_image),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
         }
     }
@@ -329,15 +307,14 @@ internal fun EditScreen(
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     canUndo: Boolean = false,
     canRedo: Boolean = false,
+    lazyListState: LazyListState = rememberLazyListState(),
     isFormattingMenuVisible: Boolean = false,
     formattingState: TextFormattingState = TextFormattingState(),
     changeHandlers: EditChangeHandlers = object : EditChangeHandlers {},
     clickHandlers: EditClickHandlers = object : EditClickHandlers {},
     bottomLeftActions: @Composable RowScope.() -> Unit = {},
-    content: @Composable () -> Unit = {},
+    content: LazyListScope.() -> Unit = {},
 ) {
-    val scrollState = rememberScrollState()
-
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = backgroundColor,
@@ -461,76 +438,67 @@ internal fun EditScreen(
             }
         },
     ) { innerPadding ->
-        Column(
-            modifier =
-                Modifier.fillMaxSize()
-                    .padding(innerPadding)
-                    .verticalScroll(scrollState)
-                    .padding(bottom = 16.dp)
+        LazyColumn(
+            state = lazyListState,
+            modifier = Modifier.fillMaxSize().padding(innerPadding).padding(bottom = 16.dp),
         ) {
             // Image Preview
             if (noteState.images.isNotEmpty()) {
-                EditScreenImageSection(
-                    images = noteState.images,
-                    mediaRoot = noteState.mediaRoot,
-                    onImageClick = { clickHandlers.onImageClick(it) },
+                item {
+                    EditScreenImageSection(
+                        images = noteState.images,
+                        mediaRoot = noteState.mediaRoot,
+                        onImageClick = { clickHandlers.onImageClick(it) },
+                    )
+                }
+            }
+
+            // Title Field
+            item {
+                val titleDesc = stringResource(id = R.string.title)
+                BasicTextField(
+                    value = noteState.title,
+                    onValueChange = { changeHandlers.onTitleChange(it) },
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .padding(start = 24.dp, end = 24.dp, top = 4.dp, bottom = 2.dp)
+                            .semantics { contentDescription = titleDesc },
+                    textStyle =
+                        MaterialTheme.typography.headlineSmall.copy(
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    decorationBox = { innerTextField ->
+                        Box {
+                            if (noteState.title.isEmpty()) {
+                                Text(
+                                    text = stringResource(id = R.string.title),
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    color =
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                            alpha = 0.6f
+                                        ),
+                                )
+                            }
+                            innerTextField()
+                        }
+                    },
                 )
             }
 
-            val titleDesc = stringResource(id = R.string.title)
-            // Title Field
-            BasicTextField(
-                value = noteState.title,
-                onValueChange = { changeHandlers.onTitleChange(it) },
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, top = 4.dp, bottom = 2.dp)
-                        .semantics { contentDescription = titleDesc },
-                textStyle =
-                    MaterialTheme.typography.headlineSmall.copy(
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                decorationBox = { innerTextField ->
-                    Box {
-                        if (noteState.title.isEmpty()) {
-                            Text(
-                                text = stringResource(id = R.string.title),
-                                style = MaterialTheme.typography.headlineSmall,
-                                color =
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            )
-                        }
-                        innerTextField()
-                    }
-                },
-            )
+            item {
+                val prefixRes =
+                    if (preferences.notesSortBy == NotesSortBy.CREATION_DATE) R.string.creation_date
+                    else R.string.modified_date
+                val prefixText = stringResource(id = prefixRes)
 
-            // Date and Reminder Chip Row
-            val prefixRes =
-                if (preferences.notesSortBy == NotesSortBy.CREATION_DATE) R.string.creation_date
-                else R.string.modified_date
-            val prefixText = stringResource(id = prefixRes)
-
-            val targetTimestamp =
-                remember(
-                    preferences.notesSortBy,
-                    noteState.createdTimestamp,
-                    noteState.modifiedTimestamp,
-                ) {
+                val targetTimestamp =
                     when (preferences.notesSortBy) {
                         NotesSortBy.CREATION_DATE ->
                             noteState.createdTimestamp ?: noteState.modifiedTimestamp
                         else -> noteState.modifiedTimestamp ?: noteState.createdTimestamp
                     }
-                }
-            val formattedDateText =
-                remember(
-                    targetTimestamp,
-                    preferences.dateFormat,
-                    preferences.timeFormat,
-                    prefixText,
-                ) {
+                val formattedDateText =
                     if (
                         targetTimestamp != null &&
                             (preferences.dateFormat != DateFormat.NONE ||
@@ -541,74 +509,85 @@ internal fun EditScreen(
                                 .format(preferences.dateFormat, preferences.timeFormat)
                         if (formatted.isNotEmpty()) "$prefixText $formatted" else ""
                     } else ""
-                }
 
-            if (formattedDateText.isNotEmpty() || noteState.reminders.isNotEmpty()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (formattedDateText.isNotEmpty()) {
-                        Text(
-                            text = formattedDateText,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        )
-                    }
+                if (formattedDateText.isNotEmpty() || noteState.reminders.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (formattedDateText.isNotEmpty()) {
+                            Text(
+                                text = formattedDateText,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color =
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            )
+                        }
 
-                    if (noteState.reminders.isNotEmpty()) {
-                        Spacer(modifier = Modifier.weight(1f))
-                        ReminderChip(
-                            reminders = noteState.reminders,
-                            dateFormat = preferences.dateFormat,
-                            timeFormat = preferences.timeFormat,
-                            onClick = {
-                                clickHandlers.onReminderClick(noteState.reminders.first())
-                            },
-                        )
+                        if (noteState.reminders.isNotEmpty()) {
+                            Spacer(modifier = Modifier.weight(1f))
+                            ReminderChip(
+                                reminders = noteState.reminders,
+                                dateFormat = preferences.dateFormat,
+                                timeFormat = preferences.timeFormat,
+                                onClick = {
+                                    clickHandlers.onReminderClick(noteState.reminders.first())
+                                },
+                            )
+                        }
                     }
                 }
             }
 
             // Files Preview
             if (noteState.files.isNotEmpty()) {
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(noteState.files, key = { it.originalName }) { fileAttachment ->
-                        FileAttachmentPreviewChip(
-                            fileName = fileAttachment.originalName,
-                            onClick = { clickHandlers.onFileClick(fileAttachment) },
-                        )
+                item {
+                    LazyRow(
+                        modifier =
+                            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(noteState.files, key = { it.originalName }) { fileAttachment ->
+                            FileAttachmentPreviewChip(
+                                fileName = fileAttachment.originalName,
+                                onClick = { clickHandlers.onFileClick(fileAttachment) },
+                            )
+                        }
                     }
                 }
             }
 
             // Labels
             if (noteState.labels.isNotEmpty()) {
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(noteState.labels, key = { it }) { labelName ->
-                        LabelChip(text = labelName)
+                item {
+                    LazyRow(
+                        modifier =
+                            Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(noteState.labels, key = { it }) { labelName ->
+                            LabelChip(text = labelName)
+                        }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
-            HorizontalDivider(modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.height(4.dp))
+            item {
+                Spacer(modifier = Modifier.height(4.dp))
+                HorizontalDivider(modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(4.dp))
+            }
 
             content()
 
             // Audio Recordings Section
             if (noteState.audios.isNotEmpty()) {
-                EditScreenAudioSection(
-                    audios = noteState.audios,
-                    onAudioClick = { clickHandlers.onAudioClick(it) },
-                )
+                item {
+                    EditScreenAudioSection(
+                        audios = noteState.audios,
+                        onAudioClick = { clickHandlers.onAudioClick(it) },
+                    )
+                }
             }
         }
     }
@@ -648,33 +627,37 @@ internal fun EditNoteScreen(
         clickHandlers = clickHandlers,
         bottomLeftActions = bottomLeftActions,
         content = {
-            val bodyDesc = stringResource(id = R.string.note)
-            BasicTextField(
-                value = noteState.bodyText,
-                onValueChange = { changeHandlers.onBodyTextChange(it) },
-                modifier =
-                    Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp).semantics {
-                        contentDescription = bodyDesc
-                    },
-                textStyle =
-                    MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                decorationBox = { innerTextField ->
-                    Box {
-                        if (noteState.bodyText.isEmpty()) {
-                            Text(
-                                text = stringResource(id = R.string.note),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color =
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            )
+            item {
+                val bodyDesc = stringResource(id = R.string.note)
+                BasicTextField(
+                    value = noteState.bodyText,
+                    onValueChange = { changeHandlers.onBodyTextChange(it) },
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 8.dp)
+                            .semantics { contentDescription = bodyDesc },
+                    textStyle =
+                        MaterialTheme.typography.bodyLarge.copy(
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    decorationBox = { innerTextField ->
+                        Box {
+                            if (noteState.bodyText.isEmpty()) {
+                                Text(
+                                    text = stringResource(id = R.string.note),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color =
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                            alpha = 0.6f
+                                        ),
+                                )
+                            }
+                            innerTextField()
                         }
-                        innerTextField()
-                    }
-                },
-            )
+                    },
+                )
+            }
         },
     )
 }
@@ -690,6 +673,8 @@ internal fun EditListScreen(
     changeHandlers: EditChangeHandlers = object : EditChangeHandlers {},
     clickHandlers: EditClickHandlers = object : EditClickHandlers {},
 ) {
+    val lazyListState = rememberLazyListState()
+
     EditScreen(
         noteState = noteState.copy(type = Type.LIST),
         modifier = modifier,
@@ -697,49 +682,71 @@ internal fun EditListScreen(
         backgroundColor = backgroundColor,
         canUndo = canUndo,
         canRedo = canRedo,
+        lazyListState = lazyListState,
         changeHandlers = changeHandlers,
         clickHandlers = clickHandlers,
         bottomLeftActions = {},
         content = {
             // Checklist Unchecked Items
-            noteState.items.forEach { item ->
+            items(
+                items = noteState.items,
+                key = { it.id },
+            ) { item ->
                 ChecklistItemRow(
-                    text = item.body,
+                    value = item.body,
+                    onValueChange = { newText -> changeHandlers.onItemTextChange(item, newText) },
                     isChecked = item.checked,
+                    isChild = item.isChild,
                     onCheckedChange = { checked ->
                         changeHandlers.onItemCheckedChange(item, checked)
                     },
+                    onEnterKey = { clickHandlers.onAddItemClick() },
+                    onBackspaceOnEmpty = { changeHandlers.onItemDelete(item) },
                     onDelete = { changeHandlers.onItemDelete(item) },
+                    onSwipeRight = { changeHandlers.onItemSwipeRight(item) },
+                    onSwipeLeft = { changeHandlers.onItemSwipeLeft(item) },
                 )
             }
 
             // Add Item Button
-            Row(
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .clickable { clickHandlers.onAddItemClick() }
-                        .padding(horizontal = 20.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.add),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(end = 12.dp),
-                )
-                Text(
-                    text = stringResource(id = R.string.add_item),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            item {
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .clickable { clickHandlers.onAddItemClick() }
+                            .padding(horizontal = 20.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.add),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(end = 12.dp),
+                    )
+                    Text(
+                        text = stringResource(id = R.string.add_item),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
 
             // Checklist Checked Items
             if (noteState.checkedItems.isNotEmpty()) {
-                noteState.checkedItems.forEach { item ->
+                item {
+                    HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
+                }
+                items(
+                    items = noteState.checkedItems,
+                    key = { it.id },
+                ) { item ->
                     ChecklistItemRow(
-                        text = item.body,
+                        value = item.body,
+                        onValueChange = { newText ->
+                            changeHandlers.onItemTextChange(item, newText)
+                        },
                         isChecked = item.checked,
+                        isChild = item.isChild,
                         onCheckedChange = { checked ->
                             changeHandlers.onItemCheckedChange(item, checked)
                         },

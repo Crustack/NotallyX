@@ -1,61 +1,90 @@
 # Checklist Items & EditList Activity Compose Migration Analysis & Recommendations
 
 ## 1. Overview
-This document analyzes the Jetpack Compose migration state of `EditListActivity`, `EditListScreen`, and associated components (`ListManager`, `ListItemAdapter`, `ChecklistItemRow`) in NotallyX. It identifies incomplete migration steps, remaining legacy technical debt, and outlines a plan to complete the pure Jetpack Compose migration.
+This document analyzes the Jetpack Compose migration state of `EditListActivity`, `EditListScreen`, and associated components (`ListManager`, `ListItemAdapter`, `ChecklistItemRow`) in NotallyX. It identifies incomplete migration steps, remaining legacy technical debt, and outlines a comprehensive plan to complete the pure Jetpack Compose migration.
 
-## 2. Current Migration Status & Gaps
+## 2. Findings & Verification Analysis
 
-### What Was Attempted:
-- **UI Components**: `ChecklistItemRow` was introduced as a Composable replacement for `recycler_list_item.xml`. `EditListScreen` handles rendering the title, the list items (`noteState.items`), and the checked items (`noteState.checkedItems`).
-- **Host Integration**: `EditListActivity` was migrated to use `EditListScreen` via `RenderScreen()`.
+### Summary of Findings:
+All findings in the preliminary analysis have been verified as **valid and sound** against the codebase:
 
-### Incorrect or Incomplete Implementations:
-1. **Uneditable Checklist Items (Static Text)**: 
-   - `EditListScreen` passes `item.body` to the `text` parameter of `ChecklistItemRow` but does not pass an `editText`. `ChecklistItemRow` falls back to rendering a read-only `Text` Composable instead of an editable text field.
-   - **Gap:** Users cannot edit or type into checklist items. Compose's native `BasicTextField` (or similar) should be directly integrated to replace the reliance on Android `EditText`.
-2. **Missing Indentation (Child Items)**: 
-   - The `ChecklistItemRow` Composable has an `isChild` parameter for indentation, but `EditListScreen` does not pass `item.isChild` when iterating over items. 
-   - **Gap:** All hierarchical indentation is currently lost visually.
-3. **Scroll Performance & Lazy Rendering**: 
-   - `EditListScreen` uses a standard `Column` with a `forEach` loop to render checklist items. This `Column` sits inside `EditScreen`, which applies `Modifier.verticalScroll(scrollState)` to the entire screen. 
-   - **Gap:** For large lists, this eager rendering causes performance issues. Jetpack Compose mandates `LazyColumn` for dynamic lists. However, since the parent `EditScreen` is currently scrollable, a structural refactor is needed to replace the parent `verticalScroll` with a single `LazyColumn` that encapsulates the title, images, and checklist items.
-4. **Missing Interactions (Drag & Drop, Swipe, Keyboard Navigation)**:
-   - **Drag & Drop:** `ChecklistItemRow` exposes `onDragTouch`, but it's not wired in `EditListScreen`. Compose native drag-and-drop modifiers must be implemented.
-   - **Swipe to Indent:** The old `RecyclerView` implementation supported swipe gestures to change the `isChild` status. This is entirely missing in Compose.
-   - **Keyboard Navigation:** Hitting Enter to add a new item or Backspace to delete an empty item and focus the previous item is not handled in the Compose setup.
+1. **Uneditable Checklist Items (Static Text)**:
+   - **Verified**: `EditListScreen` in `EditScreen.kt` passes `text = item.body` without an `editText` argument to `ChecklistItemRow`. `ChecklistItemRow` only renders `Text(text = text)` when `editText` is null, making items completely uneditable.
+   - **Adjustment**: `ChecklistItemRow` must be updated to use Compose native `BasicTextField` with `value: String` and `onValueChange: (String) -> Unit`. `AndroidView(editText)` and static `Text` must be replaced with native Compose text editing.
 
-### Legacy Technical Debt:
-1. **Obsolete Adapters (`ListItemAdapter`, `CheckedListItemAdapter`)**:
-   - These are native Android View adapters built for `RecyclerView` and should be **completely dropped**. In Compose, the UI is driven declaratively by the state (e.g., `List<ListItem>`) passed into a `LazyColumn`.
-2. **Hack Initialization**:
-   - `EditListActivity` creates a dummy `RecyclerView` and dummy `NestedScrollView` simply to satisfy the constructor dependencies of `ListManager` and the adapters.
-3. **Coupling in `ListManager`**:
-   - `ListManager` contains highly valuable business logic (handling hierarchy, indentations, auto-sorting of checked items, history tracking, batch edits), but it is heavily coupled with `RecyclerView` (e.g., `recyclerView.findViewHolderForAdapterPosition` for focus management, adapter notifications).
+2. **Missing Indentation (Child Items)**:
+   - **Verified**: `ChecklistItemRow` contains an `isChild: Boolean` parameter that renders horizontal indent spacing (`Spacer(modifier = Modifier.width(20.dp))`), but `EditListScreen` does not pass `isChild = item.isChild`. Thus, item hierarchy is lost visually.
+   - **Adjustment**: Pass `isChild = item.isChild` in `EditListScreen` and handle hierarchy toggling via gestures/actions.
 
-## 3. Recommendations & Action Plan
+3. **Scroll Container & Lazy Rendering (`LazyColumn`)**:
+   - **Verified**: `EditListScreen` renders checklist items inside a standard `Column` with `forEach`, nested inside `EditScreen`'s top-level `Modifier.verticalScroll(scrollState)`.
+   - **Adjustment**: Refactor `EditScreen` / `EditListScreen` to use `LazyColumn`. Top-level elements (Title, Date/Reminders, Files, Labels, HorizontalDivider) become `item { }` blocks, checklist items become `items(noteState.items, key = { it.id })`, "Add Item" becomes `item { }`, checked items become `items(noteState.checkedItems, key = { it.id })`, and Audios become `item { }`.
 
-### Phase 1: Pure Domain State Management (Refactor `ListManager`)
-- **Action**: Keep `ListManager`'s business logic, but strip away all Android View and `RecyclerView` dependencies.
-- **Details**:
-  - Remove all references to `RecyclerView`, `ListItemAdapter`, `CheckedListItemAdapter`, `NestedScrollView`, and Android `View` focus management.
-  - Refactor `ListManager` into a pure Kotlin state processor (e.g., `ChecklistStateManager` or integrate into `NotallyModel`). It should take the current `List<ListItem>` and emit a new `List<ListItem>` state upon any action (add, delete, check, drag).
-  - Migrate focus requests from View coordinates to a Compose `FocusRequester` registry mapped to `ListItem.id`.
+4. **Missing Interactive List Behaviors (Focus, Keyboard, Drag & Drop, Gestures)**:
+   - **Verified**: Drag handle is present but `onDragTouch` is unhandled. Enter/Backspace keyboard actions (to split/add new items or delete empty items) and focus requests on newly created items are missing.
+   - **Adjustment**:
+     - **Keyboard Actions**: Intercept Enter key to insert a new item and focus it; intercept Backspace key on empty item to delete it and move focus to previous item.
+     - **Focus Management**: Use Compose `FocusRequester` mapped by item ID or index to request focus dynamically.
+     - **Drag & Drop / Reordering**: Implement Compose reorderable list / drag-and-drop handles for reordering items in `LazyColumn`.
 
-### Phase 2: Structural UI Migration to `LazyColumn`
-- **Action**: Refactor `EditScreen` to support `LazyListScope` instead of relying on a top-level `verticalScroll`.
-- **Details**:
-  - `EditScreen` should expose a way to render elements natively within a `LazyColumn`. Title, images, and chips should be defined as `item { }`, while the checklist items are rendered as `items(noteState.items, key = { it.id })`.
-  - Delete `ListItemAdapter.kt`, `CheckedListItemAdapter.kt`, `ListItemVH.kt`, and `ListItemDragCallback.kt`.
-  - Remove the dummy `RecyclerView` instantiation from `EditListActivity.kt`.
+5. **Legacy Technical Debt & View Adapter Cleanup**:
+   - **Verified**: `EditListActivity.kt` instantiates a `dummyRecyclerView` and `dummyScrollView` solely to initialize `ListManager`, `ListItemAdapter`, and `CheckedListItemAdapter`. `ListManager.kt` contains business logic but is heavily coupled to `RecyclerView` and adapter notifications.
+   - **Adjustment**:
+     - Decouple `ListManager` from `RecyclerView` and `RecyclerView.Adapter`. Make `ListManager` a pure Kotlin state manager for `MutableList<ListItem>` and `ChangeHistory`.
+     - Delete obsolete files: `ListItemAdapter.kt`, `CheckedListItemAdapter.kt`, `ListItemAdapterBase.kt`, `ListItemVH.kt`, `ListItemDragCallback.kt`, and `NestedScrollViewItemTouchHelper.kt`.
+     - Clean up `EditListActivity.kt` by removing dummy View instances.
+     - Update all unit tests in `app/src/test/kotlin/com/philkes/notallyx/recyclerview/listmanager/` to test `ListManager` directly without mocking `RecyclerView` or adapters.
 
-### Phase 3: Restore Interactions & Editing in Compose
-- **Action**: Implement native Compose text editing and gestures.
-- **Details**:
-  - **Editing**: Rewrite `ChecklistItemRow` to use `BasicTextField` instead of `Text`. Wire up `onValueChange` to trigger updates in the new `ListManager`.
-  - **Keyboard Actions**: Use `KeyboardActions` (on Done/Next) and `Modifier.onKeyEvent` to handle Enter (add new item) and Backspace (delete empty item and move focus up).
-  - **Hierarchy**: Ensure `isChild = item.isChild` is passed correctly to `ChecklistItemRow`. Implement a swipe gesture modifier (`Modifier.swipeable` or `AnchoredDraggable`) on `ChecklistItemRow` to toggle `isChild` status.
-  - **Drag and Drop**: Implement an item reordering gesture for the drag handle using `Modifier.draggable` combined with state swapping in the `ListManager`.
+---
+
+## 3. Comprehensive Action Plan
+
+### Phase 1: Decouple `ListManager` from Android Views & Adapters
+- **Files to Modify**:
+  - [ListManager.kt](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/java/com/philkes/notallyx/feature/editor/listitem/ListManager.kt)
+  - [Preference.kt](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/java/com/philkes/notallyx/core/preference/Preference.kt)
+  - [ListManagerTestBase.kt](file:///home/user/AndroidStudioProjects/NotallyX/app/src/test/kotlin/com/philkes/notallyx/recyclerview/listmanager/ListManagerTestBase.kt)
+  - [ListManagerAddDeleteTest.kt](file:///home/user/AndroidStudioProjects/NotallyX/app/src/test/kotlin/com/philkes/notallyx/recyclerview/listmanager/ListManagerAddDeleteTest.kt)
+  - [ListManagerCheckedTest.kt](file:///home/user/AndroidStudioProjects/NotallyX/app/src/test/kotlin/com/philkes/notallyx/recyclerview/listmanager/ListManagerCheckedTest.kt)
+  - [ListManagerIsChildTest.kt](file:///home/user/AndroidStudioProjects/NotallyX/app/src/test/kotlin/com/philkes/notallyx/recyclerview/listmanager/ListManagerIsChildTest.kt)
+  - [ListManagerMoveTest.kt](file:///home/user/AndroidStudioProjects/NotallyX/app/src/test/kotlin/com/philkes/notallyx/recyclerview/listmanager/ListManagerMoveTest.kt)
+  - [ListManagerWithChangeHistoryTest.kt](file:///home/user/AndroidStudioProjects/NotallyX/app/src/test/kotlin/com/philkes/notallyx/recyclerview/listmanager/ListManagerWithChangeHistoryTest.kt)
+- **Tasks**:
+  - Remove `RecyclerView`, `ListItemAdapter`, `CheckedListItemAdapter`, and View-based focus calls from `ListManager`.
+  - Maintain all core list manipulation logic (`add`, `delete`, `changeChecked`, `move`, `setIsChild`, `setText`, `ChangeHistory` undo/redo).
+  - Update unit tests to pass without `RecyclerView` or adapter mocks and verify with `./gradlew testDebugUnitTest`.
+
+### Phase 2: Native Compose Text Editing, Indentation & Keyboard Actions
+- **Files to Modify**:
+  - [ChecklistItemRow.kt](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/java/com/philkes/notallyx/feature/editor/screens/ChecklistItemRow.kt)
+  - [EditScreen.kt](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/java/com/philkes/notallyx/feature/editor/screens/EditScreen.kt)
+- **Tasks**:
+  - Update `ChecklistItemRow` to take `value: String`, `onValueChange: (String) -> Unit`, `isChild: Boolean`, `focusRequester: FocusRequester?`, and keyboard listeners.
+  - Implement native Compose `BasicTextField` with custom cursor brush, text style (with line-through for checked items), and keyboard actions (Enter for add item, Backspace for delete empty item).
+  - Pass `isChild = item.isChild` in `EditListScreen`.
+
+### Phase 3: Structural Refactor to `LazyColumn`
+- **Files to Modify**:
+  - [EditScreen.kt](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/java/com/philkes/notallyx/feature/editor/screens/EditScreen.kt)
+  - [EditListActivity.kt](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/java/com/philkes/notallyx/feature/editor/EditListActivity.kt)
+- **Tasks**:
+  - Refactor `EditScreen` / `EditListScreen` to use `LazyColumn` for high-performance rendering.
+  - Remove dummy `RecyclerView` and `NestedScrollView` from `EditListActivity`.
+
+### Phase 4: Delete Obsolete View Adapters & Final Verification
+- **Files to Delete**:
+  - `ListItemAdapter.kt`
+  - `CheckedListItemAdapter.kt`
+  - `ListItemAdapterBase.kt`
+  - `ListItemVH.kt`
+  - `ListItemDragCallback.kt`
+  - `NestedScrollViewItemTouchHelper.kt`
+- **Verification**:
+  - Run `./gradlew testDebugUnitTest` to ensure all unit tests pass.
+  - Run `./gradlew assembleDebug` to verify compilation.
+  - Run `./gradlew ktfmtCheck` to verify code formatting.
+
+---
 
 ## 4. Conclusion
-The current Compose migration for checklist items is a **read-only structural shell**. The legacy `RecyclerView` logic is bypassed rather than correctly translated to Compose idioms. 
-The immediate priority is to decouple `ListManager` from Views, drop the old adapters entirely, and rebuild the interactive list foundation using `LazyColumn`, `BasicTextField`, `FocusRequester`, and native Compose gesture modifiers.
+The findings in `.agents/plans/migrate-listitems-to-compose.md` are completely valid and sound. The detailed action plan above provides the exact roadmap for completing the pure Jetpack Compose migration cleanly and safely.

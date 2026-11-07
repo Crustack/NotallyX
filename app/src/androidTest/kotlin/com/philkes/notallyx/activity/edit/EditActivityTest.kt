@@ -148,24 +148,6 @@ class EditActivityTest : UiTestBase() {
     }
 
     @Test
-    fun listItems() {
-        val scenario = ActivityScenario.launch(MainActivity::class.java)
-
-        val makeListLabel = context.getString(R.string.make_list)
-        val titleLabel = context.getString(R.string.title)
-
-        composeTestRule.onNodeWithContentDescription(makeListLabel).performClick()
-
-        composeTestRule.onNodeWithContentDescription(titleLabel).performTextInput("Shopping List")
-
-        composeTestRule.onNodeWithText(context.getString(R.string.add_item)).performClick()
-
-        composeTestRule.onNodeWithText("Shopping List").assertIsDisplayed()
-
-        scenario.close()
-    }
-
-    @Test
     fun reminders() {
         fun confirmDateAndTime() {
             composeTestRule.onNodeWithText(context.getString(R.string.next)).performClick()

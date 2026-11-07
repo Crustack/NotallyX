@@ -1,24 +1,31 @@
 package com.philkes.notallyx.feature.editor.listitem.sorting
 
-import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SortedList
-import androidx.recyclerview.widget.SortedListAdapterCallback
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.feature.editor.listitem.containsId
 import com.philkes.notallyx.feature.editor.listitem.findParent
 
 /**
- * Sort algorithm that only sorts by [ListItem.order]. A children is always below it's parent and
- * above parents with a lower order.
+ * Sort algorithm that only sorts by [ListItem.order]. A child is always below its parent and above
+ * parents with a lower order.
  */
-open class ListItemParentSortCallback(adapter: RecyclerView.Adapter<*>?) :
-    SortedListAdapterCallback<ListItem>(adapter) {
+open class ListItemParentSortCallback : SortedList.Callback<ListItem>() {
 
     protected var items: SortedList<ListItem>? = null
 
     internal fun setItems(items: SortedList<ListItem>) {
         this.items = items
     }
+
+    override fun onInserted(position: Int, count: Int) {}
+
+    override fun onRemoved(position: Int, count: Int) {}
+
+    override fun onMoved(fromPosition: Int, toPosition: Int) {}
+
+    override fun onChanged(position: Int, count: Int) {}
+
+    override fun onChanged(position: Int, count: Int, payload: Any?) {}
 
     override fun compare(item1: ListItem?, item2: ListItem?): Int {
         return when {
@@ -51,6 +58,7 @@ open class ListItemParentSortCallback(adapter: RecyclerView.Adapter<*>?) :
                     else -> compare(parent1, item2)
                 }
             }
+
             else -> {
                 return compareItems(item1, item2)
             }
@@ -60,12 +68,12 @@ open class ListItemParentSortCallback(adapter: RecyclerView.Adapter<*>?) :
     protected open fun compareItems(item1: ListItem, item2: ListItem): Int {
         val orderCmp = item1.order!!.compareTo(item2.order!!)
         if (orderCmp == 0 && item1.isChildOf(item2)) {
-            return -1 // happens when a parent with children is moved up, the children is
-            // moved first
+            return -1 // happens when a parent with children is moved up, the children is moved
+            // first
         }
         if (orderCmp == 0 && item2.isChildOf(item1)) {
-            return 1 // happens when a parent with children is moved down, the children is
-            // moved first
+            return 1 // happens when a parent with children is moved down, the children is moved
+            // first
         }
         return orderCmp
     }

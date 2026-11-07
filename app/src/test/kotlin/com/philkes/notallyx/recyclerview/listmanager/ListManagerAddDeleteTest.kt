@@ -95,7 +95,7 @@ class ListManagerAddDeleteTest : ListManagerTestBase() {
     @Test
     fun `delete first item from list unforced does not delete`() {
         setSorting(ListItemSort.NO_AUTO_SORT)
-        val deleted = listManager.delete(position = 0, force = false, allowFocusChange = false)
+        val deleted = listManager.delete(position = 0, force = false)
 
         assertFalse(deleted)
         items.assertSize(6)

@@ -13,13 +13,13 @@ class ListManagerWithChangeHistoryTest : ListManagerTestBase() {
     @Test
     fun `undo and redo moves`() {
         setSorting(ListItemSort.NO_AUTO_SORT)
-        listItemDragCallback.simulateDrag(0, 4, 1)
-        listItemDragCallback.simulateDrag(2, 3, 1)
-        listItemDragCallback.simulateDrag(4, 1, 1)
-        listItemDragCallback.simulateDrag(0, 5, 1)
-        listItemDragCallback.simulateDrag(5, 0, 1)
-        listItemDragCallback.simulateDrag(3, 4, 1)
-        listItemDragCallback.simulateDrag(1, 5, 1)
+        listManager.simulateDrag(0, 4, 1)
+        listManager.simulateDrag(2, 3, 1)
+        listManager.simulateDrag(4, 1, 1)
+        listManager.simulateDrag(0, 5, 1)
+        listManager.simulateDrag(5, 0, 1)
+        listManager.simulateDrag(3, 4, 1)
+        listManager.simulateDrag(1, 5, 1)
         val bodiesAfterMove = items.map { it.body }.toTypedArray()
 
         while (changeHistory.canUndo.value) {
@@ -277,5 +277,25 @@ class ListManagerWithChangeHistoryTest : ListManagerTestBase() {
         itemsChecked!!.assertOrder(*checkedBodiesAfterAdd)
         "Parent6".assertChildren("Child4")
         //        "Parent".assertChildren()
+    }
+
+    @Test
+    fun `undo and redo changeText`() {
+        setSorting(ListItemSort.NO_AUTO_SORT)
+        listManager.changeText(0, "Updated A")
+        listManager.changeText(2, "Updated C")
+        items.assertOrder("Updated A", "B", "Updated C", "D", "E", "F")
+
+        changeHistory.undo()
+        items.assertOrder("Updated A", "B", "C", "D", "E", "F")
+
+        changeHistory.undo()
+        items.assertOrder("A", "B", "C", "D", "E", "F")
+
+        changeHistory.redo()
+        items.assertOrder("Updated A", "B", "C", "D", "E", "F")
+
+        changeHistory.redo()
+        items.assertOrder("Updated A", "B", "Updated C", "D", "E", "F")
     }
 }

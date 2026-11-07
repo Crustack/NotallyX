@@ -1,9 +1,6 @@
 package com.philkes.notallyx.feature.editor.listitem
 
 import android.util.Log
-import android.view.View
-import android.view.inputmethod.InputMethodManager
-import androidx.recyclerview.widget.RecyclerView
 import com.philkes.notallyx.core.common.extensions.lastIndex
 import com.philkes.notallyx.core.common.extensions.uniqueCurrentMillis
 import com.philkes.notallyx.core.preference.NotallyXPreferences
@@ -35,74 +32,62 @@ data class ListState(
 )
 
 /**
- * Should be used for all changes to the items list. Notifies the [RecyclerView.Adapter] and pushes
- * according changes to the [ChangeHistory]
+ * Should be used for all changes to the items list. Manages list state and pushes according changes
+ * to the [ChangeHistory].
  */
 class ListManager(
-    private val recyclerView: RecyclerView,
-    private val changeHistory: ChangeHistory,
+    val items: MutableList<ListItem> = mutableListOf(),
+    var itemsChecked: SortedItemsList? = null,
+    private val changeHistory: ChangeHistory = ChangeHistory(),
     private val preferences: NotallyXPreferences,
-    private val inputMethodManager: InputMethodManager?,
-    private val endSearch: (() -> Unit)?,
-    val refreshSearch: ((refocusView: View?) -> Unit)?,
-    val onItemSizeChanged: ((items: Int) -> Unit)?,
+    private val endSearch: (() -> Unit)? = null,
+    val onItemSizeChanged: ((items: Int) -> Unit)? = null,
 ) {
-    lateinit var adapter: ListItemAdapter
-    var checkedAdapter: CheckedListItemAdapter? = null
     private var nextItemId: Int = 0
-    private val items: MutableList<ListItem>
-        get() = adapter.items
-
-    private var itemsChecked: SortedItemsList? = null
     private var batchChangeBeforeState: ListState? = null
 
+    init {
+        updateNextItemId()
+    }
+
+    fun updateNextItemId() {
+        val maxUncheckedId = this.items.maxOfOrNull { it.id } ?: -1
+        val maxCheckedId = this.itemsChecked?.toMutableList()?.maxOfOrNull { it.id } ?: -1
+        nextItemId =
+            maxOf(
+                0,
+                maxUncheckedId + 1,
+                maxCheckedId + 1,
+                this.items.size + (this.itemsChecked?.size() ?: 0),
+            )
+    }
+
     fun init(
-        adapter: ListItemAdapter,
+        items: List<ListItem>,
         itemsChecked: SortedItemsList? = null,
-        adapterChecked: CheckedListItemAdapter? = null,
     ) {
-        this.adapter = adapter
+        this.items.clear()
+        this.items.addAll(items)
         this.itemsChecked = itemsChecked
-        this.checkedAdapter = adapterChecked
-        nextItemId = this.items.size + (this.itemsChecked?.size() ?: 0)
+        updateNextItemId()
         Log.d(TAG, "initList:\n${this.items.toReadableString()}")
         this.itemsChecked?.let { Log.d(TAG, "itemsChecked:\n${it.toReadableString()}") }
     }
 
-    internal fun getState(selectedPos: Int? = null): ListState {
-        val (pos, cursorPos) = recyclerView.getFocusedPositionAndCursor()
+    fun getState(selectedPos: Int? = null, cursorPos: Int? = null): ListState {
         return ListState(
             items.cloneList(),
             itemsChecked?.toMutableList()?.cloneList(),
-            selectedPos ?: pos,
+            selectedPos,
             cursorPos,
         )
     }
 
     internal fun setState(state: ListState) {
-        adapter.submitList(state.items) {
-            state.focusedItemPos?.let { itemPos -> focusItem(itemPos, state.cursorPos) }
-        }
-        this.itemsChecked?.setItems(state.checkedItems!!)
-    }
-
-    private fun focusItem(itemPos: Int, cursorPos: Int?) {
-        // Focus item's EditText and set cursor position
-        recyclerView.post {
-            if (itemPos in 0..items.size) {
-                recyclerView.smoothScrollToPosition(itemPos)
-                (recyclerView.findViewHolderForAdapterPosition(itemPos) as? ListItemVH?)?.let {
-                    viewHolder ->
-                    inputMethodManager?.let { inputManager ->
-                        val maxCursorPos = viewHolder.binding.EditText.length()
-                        viewHolder.focusEditText(
-                            selectionStart = cursorPos?.coerceIn(0, maxCursorPos) ?: maxCursorPos,
-                            inputMethodManager = inputManager,
-                        )
-                    }
-                }
-            }
-        }
+        items.clear()
+        items.addAll(state.items)
+        state.checkedItems?.let { itemsChecked?.setItems(it) }
+        updateNextItemId()
     }
 
     fun add(
@@ -130,25 +115,17 @@ class ListManager(
                 findParent(items[position])?.first
             } else null
 
-        val (insertPos, count) = items.addWithChildren(item)
+        val (insertPos, _) = items.addWithChildren(item)
         if (item.isChild) {
             items.addToParent(insertPos)
         } else if (parentPos != null) {
             val childrenBelow = items.removeChildrenBelowPositionFromParent(parentPos, insertPos)
             item.children.addAll(childrenBelow)
         }
-        adapter.notifyItemRangeInserted(insertPos, count)
-        items.notifyPreviousFirstItem(insertPos, count)
         if (pushChange) {
             changeHistory.push(ListAddChange(stateBefore, getState(selectedPos = insertPos), this))
         }
 
-        recyclerView.post {
-            val viewHolder = recyclerView.findViewHolderForAdapterPosition(insertPos) as ListItemVH?
-            if (!item.checked && viewHolder != null) {
-                inputMethodManager?.let { viewHolder.focusEditText(inputMethodManager = it) }
-            }
-        }
         onItemSizeChanged?.invoke(items.size + (itemsChecked?.size() ?: 0))
     }
 
@@ -156,22 +133,15 @@ class ListManager(
      * Deletes item and its children at given position.
      *
      * @param force if false, deletion can be rejected, e.g. if trying to delete the first item
-     * @param childrenToDelete can be used when a [ListAddChange] is undone to pass the item at the
-     *   state before the insertion
-     * @param allowFocusChange if true the UI will focus the last valid ListItem's EditText
-     * @return the removed [ListItem] or null if deletion was rejected
+     * @return true if deletion was successful
      */
     fun delete(
         position: Int = items.lastIndex,
         inCheckedList: Boolean = false,
         force: Boolean = true,
         pushChange: Boolean = true,
-        allowFocusChange: Boolean = true,
     ): Boolean {
-        // TODO
-        //        endSearch?.invoke()
         val stateBefore = getState()
-        val items = this.items.toMutableList()
         var result = false
         if (position.isValidPosition(forCheckedList = inCheckedList)) {
             return false
@@ -188,14 +158,6 @@ class ListManager(
                 items.removeWithChildren(item)
             }
             result = true
-            adapter.submitList(items)
-        }
-        if (!force && allowFocusChange) {
-            if (position > 0) {
-                this.moveFocusToNext(position - 2)
-            } else if (items.size > 1) {
-                this.moveFocusToNext(position)
-            }
         }
         if (pushChange && result) {
             changeHistory.push(ListDeleteChange(stateBefore, getState(), this))
@@ -239,7 +201,8 @@ class ListManager(
             item.order = insertOrder + index
         }
         val (insertIdx, count) = list.addWithChildren(movedItem)
-        adapter.submitList(list)
+        items.clear()
+        items.addAll(list)
         return Pair(insertIdx, count)
     }
 
@@ -254,44 +217,37 @@ class ListManager(
         val item = items[positionTo]
         val itemBelow = items.getOrNull(positionTo + count)
         val forceIsChild = itemBelow?.isChild == true && !item.isChild
-        val positionFrom = stateBefore.items.indexOfFirst { it.id == item.id }
-        var isChildChanged = false
         if (positionTo == 0) {
             item.isChild = false
-            items.notifyPreviousFirstItem(0, count)
-            isChildChanged = true
         } else if (forceIsChild) {
             item.isChild = true
-            isChildChanged = true
-        }
-        if (positionFrom == 0) {
-            adapter.notifyItemChanged(0)
-            isChildChanged = true
         }
 
         if (item.isChild) {
             items.refreshParent(positionTo)?.updateParentChecked()
         }
         parentBefore?.updateParentChecked()
-        if (isChildChanged) {
-            adapter.notifyItemChanged(positionTo)
-        }
         if (pushChange) {
             changeHistory.push(ListMoveChange(stateBefore, getState(), this))
         }
     }
 
     fun changeText(position: Int, value: EditTextState, pushChange: Boolean = true) {
+        changeText(position, value.getEditableText().toString(), pushChange = pushChange)
+    }
+
+    fun changeText(
+        position: Int,
+        text: String,
+        inCheckedList: Boolean = false,
+        pushChange: Boolean = true,
+    ) {
         val stateBefore = getState()
-        //        if(!pushChange) {
         endSearch?.invoke()
-        //        }
-        val item = items[position]
-        item.body = value.getEditableText().toString()
+        val item = getItem(position, inCheckedList)
+        item.body = text
         if (pushChange) {
             changeHistory.push(ListEditTextChange(stateBefore, getState(), this))
-            // TODO: fix focus change
-            // refreshSearch?.invoke(editText)
         }
     }
 
@@ -307,7 +263,7 @@ class ListManager(
             return
         }
         if (item.isChild) {
-            changeCheckedChild(position, item, checked, inCheckedList)
+            changeCheckedChild(item, checked, inCheckedList)
         } else {
             changeCheckedParent(item, checked, changeChildren = true)
         }
@@ -355,21 +311,10 @@ class ListManager(
         }
     }
 
-    fun moveFocusToNext(position: Int) {
-        val viewHolder = recyclerView.findViewHolderForAdapterPosition(position + 1) as ListItemVH?
-        if (viewHolder != null) {
-            if (viewHolder.binding.CheckBox.isChecked) {
-                moveFocusToNext(position + 1)
-            } else viewHolder.binding.EditText.apply { focusAndSelect(getTextClone().length, -1) }
-        } else add(pushChange = false)
-    }
-
     fun deleteCheckedItems(pushChange: Boolean = true) {
         endSearch?.invoke()
         val stateBefore = getState()
-        val itemsUpdated = items.cloneList()
-        itemsUpdated.deleteCheckedItems()
-        adapter.submitList(itemsUpdated)
+        items.deleteCheckedItems()
         itemsChecked?.deleteCheckedItems()
         if (pushChange) {
             changeHistory.push(DeleteCheckedChange(stateBefore, getState(), this))
@@ -394,20 +339,8 @@ class ListManager(
         }
     }
 
-    internal fun getItem(position: Int, fromCheckedList: Boolean = false): ListItem {
+    fun getItem(position: Int, fromCheckedList: Boolean = false): ListItem {
         return if (fromCheckedList) itemsChecked!![position] else items[position]
-    }
-
-    private fun RecyclerView.getFocusedPositionAndCursor(): Pair<Int?, Int?> {
-        return focusedChild?.let { view ->
-            val position = getChildAdapterPosition(view)
-            if (position == RecyclerView.NO_POSITION) {
-                return Pair(null, null)
-            }
-            val viewHolder = recyclerView.findViewHolderForAdapterPosition(position)
-            val cursorPos = (viewHolder as? ListItemVH)?.binding?.EditText?.selectionStart
-            return Pair(position, cursorPos)
-        } ?: Pair(null, null)
     }
 
     internal fun defaultNewItem(position: Int) =
@@ -429,29 +362,21 @@ class ListManager(
         items: MutableList<ListItem> = this@ListManager.items,
     ) {
         if (checked) {
-            // A parent from unchecked is checked
             if (preferences.autoSortByCheckedEnabled) {
                 checkWithAutoSort(parent, items)
             } else {
                 parent.check(true, checkChildren = changeChildren)
-                if (items == this@ListManager.items) {
-                    adapter.notifyListItemChanged(parent.id)
-                }
             }
         } else {
             if (preferences.autoSortByCheckedEnabled) {
                 uncheckWithAutoSort(parent, uncheckChildren = changeChildren)
             } else {
                 parent.check(false, checkChildren = changeChildren)
-                if (items == this@ListManager.items) {
-                    adapter.notifyListItemChanged(parent.id)
-                }
             }
         }
     }
 
     private fun changeCheckedChild(
-        position: Int,
         child: ListItem,
         checked: Boolean,
         inCheckedList: Boolean,
@@ -459,7 +384,6 @@ class ListManager(
         if (checked) {
             child.checked = true
             child.checkedTimestamp = uniqueCurrentMillis()
-            adapter.notifyItemChanged(position)
             val (_, parent) = items.findParent(child)!!
             parent.updateParentChecked()
         } else {
@@ -468,7 +392,6 @@ class ListManager(
             } else {
                 child.checked = false
                 child.checkedTimestamp = null
-                adapter.notifyItemChanged(position)
                 checkParent(child, false)
             }
         }
@@ -478,13 +401,9 @@ class ListManager(
         parent: ListItem,
         items: MutableList<ListItem> = this@ListManager.items,
     ) {
-        val (pos, count) = items.removeWithChildren(parent)
-        if (items == this@ListManager.items) {
-            adapter.notifyItemRangeRemoved(pos, count)
-            items.notifyPreviousFirstItem(pos, 0)
-        }
+        items.removeWithChildren(parent)
         parent.check(true)
-        itemsChecked!!.addWithChildren(parent)
+        itemsChecked?.addWithChildren(parent)
     }
 
     private fun uncheckWithAutoSort(
@@ -497,19 +416,11 @@ class ListManager(
             itemsChecked!!.removeWithChildren(parent)
             parent.findChild(item.id)!!.checked = false
             parent.checked = false
-            val (insertPos, count) = items.addWithChildren(parent)
-            if (items == this@ListManager.items) {
-                adapter.notifyItemRangeInserted(insertPos, count)
-                items.notifyPreviousFirstItem(insertPos, count)
-            }
+            items.addWithChildren(parent)
         } else {
             itemsChecked!!.removeWithChildren(item)
             item.check(false, uncheckChildren)
-            val (insertPos, count) = items.addWithChildren(item)
-            if (items == this@ListManager.items) {
-                adapter.notifyItemRangeInserted(insertPos, count)
-                items.notifyPreviousFirstItem(insertPos, count)
-            }
+            items.addWithChildren(item)
         }
     }
 
@@ -528,11 +439,10 @@ class ListManager(
     }
 
     private fun checkParent(item: ListItem, checked: Boolean) {
-        val (parentPos, parent) = items.findParent(item)!!
+        val (_, parent) = items.findParent(item)!!
         if (parent.checked != checked) {
             parent.checked = checked
             parent.checkedTimestamp = if (checked) uniqueCurrentMillis() else null
-            adapter.notifyItemChanged(parentPos)
         }
     }
 
@@ -542,7 +452,6 @@ class ListManager(
         }
     }
 
-    /** Adds [valueToAdd] to all [ListItem.order] that are higher than [threshold] */
     private fun shiftItemOrdersHigher(
         threshold: Int,
         valueToAdd: Int,
@@ -552,7 +461,6 @@ class ListManager(
         itemsChecked?.shiftItemOrdersHigher(threshold, valueToAdd)
     }
 
-    /** Adds [valueToAdd] to all [ListItem.order] that are in [orderRange] */
     private fun shiftItemOrders(
         orderRange: IntRange,
         valueToAdd: Int,
@@ -560,13 +468,6 @@ class ListManager(
     ) {
         items.shiftItemOrders(orderRange, valueToAdd)
         itemsChecked?.shiftItemOrders(orderRange, valueToAdd)
-    }
-
-    private fun MutableList<ListItem>.notifyPreviousFirstItem(position: Int, count: Int) {
-        if (position == 0 && size > count) {
-            // To trigger enabling isChild swiping for the item that was previously at pos 0
-            adapter.notifyItemChanged(count)
-        }
     }
 
     private fun Int.isValidPosition(forCheckedList: Boolean = false): Boolean {

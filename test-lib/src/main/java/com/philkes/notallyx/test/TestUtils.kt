@@ -24,7 +24,7 @@ import com.philkes.notallyx.data.model.RepetitionTimeUnit
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.toColorString
 import com.philkes.notallyx.feature.editor.history.changes.ListIsChildChange
-import com.philkes.notallyx.feature.editor.listitem.ListItemDragCallback
+import com.philkes.notallyx.feature.editor.listitem.ListManager
 import com.philkes.notallyx.feature.editor.listitem.toReadableString
 import io.mockk.every
 import io.mockk.mockkStatic
@@ -81,26 +81,37 @@ fun mockAndroidLog() {
     every { Log.e(any(), any()) } returns 0
 }
 
-fun ListItemDragCallback.simulateDrag(positionFrom: Int, positionTo: Int, itemCount: Int) {
-    this.reset()
+fun ListManager.simulateDrag(positionFrom: Int, positionTo: Int, itemCount: Int, pushChange: Boolean = true) {
+    val stateBefore = getState(selectedPos = positionFrom)
+    val item = getItem(positionFrom)
+    val parentBefore = if (item.isChild) findParent(item)?.second else null
+
     var from = positionFrom
+    var currentPosTo = -1
+    var currentItemCount = itemCount
     if (positionFrom < positionTo) {
         for (i in positionFrom until positionTo) {
             val to = i + 1 + itemCount - 1
-            val moved = this.move(from, to)
-            if (moved) {
+            val (posTo, count) = move(from, to)
+            if (posTo != -1) {
                 from = i + 1
+                currentPosTo = posTo
+                currentItemCount = count
             }
         }
     } else {
         for (i in positionFrom downTo positionTo + 1) {
-            val moved = this.move(from, i - 1)
-            if (moved) {
+            val (posTo, count) = move(from, i - 1)
+            if (posTo != -1) {
                 from = i - 1
+                currentPosTo = posTo
+                currentItemCount = count
             }
         }
     }
-    this.onDragEnd()
+    if (currentPosTo != -1) {
+        finishMove(currentPosTo, currentItemCount, parentBefore, stateBefore, pushChange)
+    }
 }
 
 fun SortedList<ListItem>.find(vararg bodies: String): List<ListItem> {
