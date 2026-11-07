@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
@@ -34,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getCurrentImagesDirectory
+import com.philkes.notallyx.core.common.extensions.isPreview
 import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.core.ui.components.BaseNoteCard
@@ -55,7 +58,7 @@ internal fun NotesGridScreen(
     items: List<Item>,
     modifier: Modifier = Modifier,
     isGrid: Boolean = false,
-    imageRoot: File? = LocalContext.current.getCurrentImagesDirectory(),
+    imageRoot: File? = if (isPreview()) null else LocalContext.current.getCurrentImagesDirectory(),
     searchKeyword: String = "",
     onSearchKeywordChange: ((String) -> Unit)? = null,
     showSearchBar: Boolean = false,
@@ -132,33 +135,47 @@ internal fun NotesGridScreen(
                 )
             } else if (isGrid) {
                 LazyVerticalStaggeredGrid(
-                    columns = StaggeredGridCells.Fixed(2),
+                    columns = StaggeredGridCells.Adaptive(minSize = 180.dp),
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(4.dp),
                 ) {
-                    items.forEachIndexed { index, item ->
+                    itemsIndexed(
+                        items = items,
+                        key = { index, item ->
+                            when (item) {
+                                is Header -> "header_${item.label}_$index"
+                                is BaseNote -> item.id
+                            }
+                        },
+                        span = { _, item ->
+                            if (item is Header) {
+                                StaggeredGridItemSpan.FullLine
+                            } else {
+                                StaggeredGridItemSpan.SingleLane
+                            }
+                        },
+                        contentType = { _, item ->
+                            when (item) {
+                                is Header -> "header"
+                                is BaseNote -> "note"
+                            }
+                        },
+                    ) { index, item ->
                         when (item) {
                             is Header -> {
-                                item(
-                                    span = StaggeredGridItemSpan.FullLine,
-                                    key = "header_${item.label}_$index",
-                                ) {
-                                    SectionHeaderItem(title = item.label)
-                                }
+                                SectionHeaderItem(title = item.label)
                             }
                             is BaseNote -> {
-                                item(key = item.id) {
-                                    val isSelected = selectedNoteIds.contains(item.id)
-                                    BaseNoteCard(
-                                        baseNote = item,
-                                        config = displayConfig,
-                                        imageRoot = imageRoot,
-                                        isSelected = isSelected,
-                                        onClick = { onNoteClick(item, index) },
-                                        onLongClick = { onNoteLongClick(item, index, items) },
-                                        onReminderClick = { onReminderClick(item, index) },
-                                    )
-                                }
+                                val isSelected = selectedNoteIds.contains(item.id)
+                                BaseNoteCard(
+                                    baseNote = item,
+                                    config = displayConfig,
+                                    imageRoot = imageRoot,
+                                    isSelected = isSelected,
+                                    onClick = { onNoteClick(item, index) },
+                                    onLongClick = { onNoteLongClick(item, index, items) },
+                                    onReminderClick = { onReminderClick(item, index) },
+                                )
                             }
                         }
                     }
@@ -168,38 +185,46 @@ internal fun NotesGridScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
                 ) {
-                    items.forEachIndexed { index, item ->
+                    itemsIndexed(
+                        items = items,
+                        key = { index, item ->
+                            when (item) {
+                                is Header -> "header_${item.label}_$index"
+                                is BaseNote -> item.id
+                            }
+                        },
+                        contentType = { _, item ->
+                            when (item) {
+                                is Header -> "header"
+                                is BaseNote -> "note"
+                            }
+                        },
+                    ) { index, item ->
                         when (item) {
                             is Header -> {
-                                item(key = "header_${item.label}_$index") {
-                                    SectionHeaderItem(title = item.label)
-                                }
+                                SectionHeaderItem(title = item.label)
                             }
                             is BaseNote -> {
-                                item(key = item.id) {
-                                    val isSelected = selectedNoteIds.contains(item.id)
-                                    if (selectedFilterOption != null) {
-                                        ReminderRow(
-                                            title =
-                                                item.title.ifEmpty {
-                                                    stringResource(R.string.note)
-                                                },
-                                            nextNotificationText = "",
-                                            remindersCountText = item.reminders.size.toString(),
-                                            onClick = { onReminderClick(item, index) },
-                                            onOpenNote = { onNoteClick(item, index) },
-                                        )
-                                    } else {
-                                        BaseNoteCard(
-                                            baseNote = item,
-                                            config = displayConfig,
-                                            imageRoot = imageRoot,
-                                            isSelected = isSelected,
-                                            onClick = { onNoteClick(item, index) },
-                                            onLongClick = { onNoteLongClick(item, index, items) },
-                                            onReminderClick = { onReminderClick(item, index) },
-                                        )
-                                    }
+                                val isSelected = selectedNoteIds.contains(item.id)
+                                if (selectedFilterOption != null) {
+                                    ReminderRow(
+                                        title =
+                                            item.title.ifEmpty { stringResource(R.string.note) },
+                                        nextNotificationText = "",
+                                        remindersCountText = item.reminders.size.toString(),
+                                        onClick = { onReminderClick(item, index) },
+                                        onOpenNote = { onNoteClick(item, index) },
+                                    )
+                                } else {
+                                    BaseNoteCard(
+                                        baseNote = item,
+                                        config = displayConfig,
+                                        imageRoot = imageRoot,
+                                        isSelected = isSelected,
+                                        onClick = { onNoteClick(item, index) },
+                                        onLongClick = { onNoteLongClick(item, index, items) },
+                                        onReminderClick = { onReminderClick(item, index) },
+                                    )
                                 }
                             }
                         }

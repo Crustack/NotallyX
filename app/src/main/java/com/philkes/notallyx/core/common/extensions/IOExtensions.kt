@@ -72,7 +72,8 @@ private fun Context.getPrivateAudioDirectory(): File {
 }
 
 private fun Context.isDataInPublicEnabled(): Boolean {
-    return NotallyXPreferences.getInstance(this).dataInPublicFolder.value
+    return runCatching { NotallyXPreferences.getInstance(this).dataInPublicFolder.value }
+        .getOrDefault(false)
 }
 
 fun Context.getCurrentImagesDirectory(): File {

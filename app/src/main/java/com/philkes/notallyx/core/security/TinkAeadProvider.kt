@@ -27,12 +27,18 @@ object TinkAeadProvider {
             builder.build().keysetHandle.getPrimitive(RegistryConfiguration.get(), Aead::class.java)
         } catch (_: Exception) {
             // Fallback for tests or environments where Android Keystore master key is unavailable
-            AndroidKeysetManager.Builder()
-                .withSharedPref(context, KEYSET_NAME, PREFS_FILE)
-                .withKeyTemplate(KeyTemplate.createFrom(PredefinedAeadParameters.AES256_GCM))
-                .build()
-                .keysetHandle
-                .getPrimitive(RegistryConfiguration.get(), Aead::class.java)
+            try {
+                AndroidKeysetManager.Builder()
+                    .withSharedPref(context, KEYSET_NAME, PREFS_FILE)
+                    .withKeyTemplate(KeyTemplate.createFrom(PredefinedAeadParameters.AES256_GCM))
+                    .build()
+                    .keysetHandle
+                    .getPrimitive(RegistryConfiguration.get(), Aead::class.java)
+            } catch (_: Exception) {
+                // Fallback for LayoutLib / Compose preview environments where
+                // SharedPrefKeysetWriter fails
+                createInMemoryAead()
+            }
         }
     }
 
