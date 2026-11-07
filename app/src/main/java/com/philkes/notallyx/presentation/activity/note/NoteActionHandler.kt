@@ -7,8 +7,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
+import android.text.Spanned
 import android.text.style.URLSpan
-import android.text.style.UnderlineSpan
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -31,7 +31,6 @@ import com.philkes.notallyx.presentation.activity.note.PickNoteActivity.Companio
 import com.philkes.notallyx.presentation.activity.note.PickNoteActivity.Companion.EXTRA_PICKED_NOTE_TYPE
 import com.philkes.notallyx.presentation.activity.note.SelectLabelsActivity.Companion.EXTRA_SELECTED_LABELS
 import com.philkes.notallyx.presentation.activity.note.reminders.RemindersActivity
-import com.philkes.notallyx.presentation.bindLabels
 import com.philkes.notallyx.presentation.checkNotificationPermission
 import com.philkes.notallyx.presentation.isLightColor
 import com.philkes.notallyx.presentation.setCancelButton
@@ -41,11 +40,15 @@ import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
 import com.philkes.notallyx.presentation.viewmodel.edit.EditActivityViewModel
 import com.philkes.notallyx.presentation.viewmodel.preference.EditAction
 import com.philkes.notallyx.utils.PinnedNotificationManager
+import com.philkes.notallyx.utils.SUBFOLDER_FILES
 import com.philkes.notallyx.utils.backup.exportNote
 import com.philkes.notallyx.utils.cancelPinAndReminders
+import com.philkes.notallyx.utils.getUriForFile
 import com.philkes.notallyx.utils.openNote
+import com.philkes.notallyx.utils.resolveAttachmentFile
 import com.philkes.notallyx.utils.shareNote
 import com.philkes.notallyx.utils.showColorSelectDialog
+import com.philkes.notallyx.utils.viewFile
 import com.philkes.notallyx.utils.wrapWithChooser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -112,15 +115,13 @@ class NoteActionHandler(
             activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                 result ->
                 if (result.resultCode == AppCompatActivity.RESULT_OK) {
-                    val list = result.data?.getStringArrayListExtra(EXTRA_SELECTED_LABELS)
+                    val list =
+                        result.data?.getStringArrayListExtra(
+                            SelectLabelsActivity.EXTRA_SELECTED_LABELS
+                        )
                     if (list != null && list != notallyModel.labels) {
                         notallyModel.setLabels(list)
-                        activity.binding.LabelGroup.bindLabels(
-                            notallyModel.labels,
-                            notallyModel.textSize,
-                            paddingTop = true,
-                            activity.colorInt,
-                        )
+                        activity.updateLabels(list)
                         activity.resetIdleTimer()
                     }
                 }
@@ -166,7 +167,7 @@ class NoteActionHandler(
                         notallyModel.exportNoteToFile(
                             uri,
                             notallyModel.getBaseNote(),
-                            activity.binding.root,
+                            activity.findViewById(android.R.id.content),
                         )
                     }
                 }
@@ -176,25 +177,20 @@ class NoteActionHandler(
                 result ->
                 if (result.resultCode == RESULT_OK) {
                     try {
-                        val (title, url, emptyTitle) =
+                        val (title, url, _) =
                             requireNotNull(
                                     result.data,
                                     { "result.data is null for pickNoteNewActivityResultLauncher" },
                                 )
                                 .getPickedNoteData()
-                        if (emptyTitle) {
-                            activity.binding.EnterBody.showAddLinkDialog(
-                                activity,
-                                presetDisplayText = title,
-                                presetUrl = url,
-                                isNewUnnamedLink = true,
-                            )
-                        } else {
-                            activity.binding.EnterBody.addSpans(
-                                title,
-                                listOf(UnderlineSpan(), URLSpan(url)),
-                            )
-                        }
+                        val start = notallyModel.body.length
+                        notallyModel.body.append(title)
+                        notallyModel.body.setSpan(
+                            URLSpan(url),
+                            start,
+                            notallyModel.body.length,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                        )
                     } catch (_: IllegalArgumentException) {}
                 }
             }
@@ -203,7 +199,7 @@ class NoteActionHandler(
                 result ->
                 if (result.resultCode == RESULT_OK) {
                     try {
-                        val (title, url, emptyTitle) =
+                        val (title, url, _) =
                             requireNotNull(
                                     result.data,
                                     {
@@ -212,11 +208,15 @@ class NoteActionHandler(
                                 )
                                 .getPickedNoteData()
                         val newSpan = URLSpan(url)
-                        activity.binding.EnterBody.updateSpan(selectedSpan, newSpan, title)
-                        if (emptyTitle) {
-                            activity.binding.EnterBody.showEditDialog(
+                        val spanStart = notallyModel.body.getSpanStart(selectedSpan)
+                        val spanEnd = notallyModel.body.getSpanEnd(selectedSpan)
+                        if (spanStart != -1 && spanEnd != -1) {
+                            notallyModel.body.removeSpan(selectedSpan)
+                            notallyModel.body.setSpan(
                                 newSpan,
-                                isNewUnnamedLink = true,
+                                spanStart,
+                                spanEnd,
+                                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
                             )
                         }
                     } catch (_: IllegalArgumentException) {}
@@ -288,7 +288,10 @@ class NoteActionHandler(
 
     private fun changeLabels() {
         val intent = Intent(activity, SelectLabelsActivity::class.java)
-        intent.putStringArrayListExtra(EditActivity.EXTRA_SELECTED_LABELS, notallyModel.labels)
+        intent.putStringArrayListExtra(
+            SelectLabelsActivity.EXTRA_SELECTED_LABELS,
+            notallyModel.labels,
+        )
         selectLabelsActivityResultLauncher.launch(intent)
     }
 
@@ -471,6 +474,34 @@ class NoteActionHandler(
     fun updateNoteLink(span: URLSpan) {
         selectedSpan = span
         linkNote(pickNoteUpdateActivityResultLauncher)
+    }
+
+    fun viewImage(image: FileAttachment) {
+        val position = notallyModel.images.value.indexOf(image)
+        val intent =
+            Intent(activity, ViewImageActivity::class.java).apply {
+                putExtra(EditActivity.EXTRA_SELECTED_BASE_NOTE, notallyModel.id)
+                putExtra(ViewImageActivity.EXTRA_POSITION, if (position != -1) position else 0)
+            }
+        viewImagesActivityResultLauncher.launch(intent)
+    }
+
+    fun viewFile(fileAttachment: FileAttachment) {
+        val file =
+            activity.application.resolveAttachmentFile(SUBFOLDER_FILES, fileAttachment.localName)
+        if (file != null && file.exists()) {
+            val uri = activity.getUriForFile(file)
+            activity.viewFile(uri, fileAttachment.mimeType)
+        }
+    }
+
+    fun playAudio(audio: Audio) {
+        val intent =
+            Intent(activity, PlayAudioActivity::class.java).apply {
+                putExtra(EditActivity.EXTRA_SELECTED_BASE_NOTE, notallyModel.id)
+                putExtra(PlayAudioActivity.EXTRA_AUDIO, audio)
+            }
+        playAudioActivityResultLauncher.launch(intent)
     }
 
     private fun linkNote(activityResultLauncher: ActivityResultLauncher<Intent>) {

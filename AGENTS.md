@@ -254,3 +254,16 @@ class NoteHelperTest {
    - Catch specific exceptions rather than swallowing generic `Throwable`.
    - Provide user feedback using `showToast`, `showSnackbar`, or error dialogs.
    - For background jobs, update progress observers (`Progress.ProgressUpdate`, `MigrationProgress`, etc.).
+
+---
+
+## Agent skills
+
+### Issue tracker
+
+Local markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context layout (`GLOSSARY.md` + `docs/adr/`). See `docs/agents/domain.md`.
+

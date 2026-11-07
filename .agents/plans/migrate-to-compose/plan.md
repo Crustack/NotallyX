@@ -245,8 +245,8 @@ Convert legacy Android RemoteViews widgets to **AndroidX Glance**:
 - [x] Migrate `MainActivity` to `MainScreen.kt` (`activity_main.xml`).
 
 ### Phase 7: Note Editor Screens
-- [ ] Implement `TextFormattingBar.kt` (`bottom_text_formatting_menu.xml`).
-- [ ] Migrate `EditActivity`, `EditNoteActivity`, `EditListActivity` to Compose (`activity_edit.xml`).
+- [x] Implement `TextFormattingBar.kt` (`bottom_text_formatting_menu.xml`).
+- [x] Migrate `EditActivity`, `EditNoteActivity`, `EditListActivity` to Compose (`activity_edit.xml`).
 
 ### Phase 8: Bottom Sheets & Dialogs
 - [ ] Migrate `ActionBottomSheet` & actions to `ActionModalBottomSheet.kt` (`bottom_sheet_action.xml`).

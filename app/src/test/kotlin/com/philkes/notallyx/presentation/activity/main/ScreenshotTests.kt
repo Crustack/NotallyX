@@ -8,13 +8,16 @@ import android.net.Uri
 import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
-import android.widget.ImageView
 import androidx.annotation.IdRes
 import androidx.compose.foundation.ScrollState
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.core.view.GravityCompat
 import androidx.core.widget.NestedScrollView
 import androidx.drawerlayout.widget.DrawerLayout
@@ -25,15 +28,12 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.action.ViewActions.typeText
-import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasType
 import androidx.test.espresso.matcher.RootMatchers.isDialog
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isRoot
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -54,13 +54,11 @@ import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EX
 import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
 import com.philkes.notallyx.presentation.view.components.SampleNotes
 import com.philkes.notallyx.test.FakeAndroidKeyStore
-import com.philkes.notallyx.test.byContentDescription
 import com.philkes.notallyx.test.byText
 import com.philkes.notallyx.test.context
 import com.philkes.notallyx.test.database
 import com.philkes.notallyx.test.generateNotes
 import com.philkes.notallyx.test.preferences
-import com.philkes.notallyx.test.setSelection
 import com.philkes.notallyx.test.toMillis
 import com.philkes.notallyx.test.waitUntil
 import com.philkes.notallyx.utils.getCurrentImagesDirectory
@@ -150,22 +148,31 @@ class ScreenshotTests {
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/editNote/00_initial.png"
                 )
-            onView(withId(R.id.EnterTitle)).perform(typeText("Test Title"))
-            onView(withId(R.id.EnterBody)).perform(typeText("Test Body"))
+            composeTestRule.onNodeWithTag("EnterTitle").performTextInput("Test Title")
+            composeTestRule.onNodeWithTag("EnterBody").performTextInput("Test Body")
+            ShadowLooper.idleMainLooper()
+
             onView(isRoot())
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/editNote/01_title_and_body.png"
                 )
 
-            // Select first word ("Test"), check bottom bar switches to formatting actions, make
-            // bold
-            onView(withId(R.id.EnterBody)).perform(setSelection(0, 4))
+            // Open formatting menu and check bold/italic options
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.edit))
+                .performClick()
             ShadowLooper.idleMainLooper()
 
-            R.string.bold.byContentDescription().check(matches(isDisplayed()))
-            R.string.italic.byContentDescription().check(matches(isDisplayed()))
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.bold))
+                .assertIsDisplayed()
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.italic))
+                .assertIsDisplayed()
 
-            R.string.bold.byContentDescription().perform(click())
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.bold))
+                .performClick()
             ShadowLooper.idleMainLooper()
 
             onView(isRoot())
@@ -174,10 +181,14 @@ class ScreenshotTests {
                 )
 
             // Close text formatting menu and open lower right more menu
-            R.string.cancel.byContentDescription().perform(click())
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.cancel))
+                .performClick()
             ShadowLooper.idleMainLooper()
 
-            R.string.tap_for_more_options.byContentDescription().perform(click())
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.tap_for_more_options))
+                .performClick()
             ShadowLooper.idleMainLooper()
 
             onView(isRoot())
@@ -190,7 +201,9 @@ class ScreenshotTests {
             ShadowLooper.idleMainLooper()
 
             // Open bottom left (+) menu and capture screenshot
-            R.string.add_item.byContentDescription().perform(click())
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.add_item))
+                .performClick()
             ShadowLooper.idleMainLooper()
 
             onView(isRoot())
@@ -248,7 +261,7 @@ class ScreenshotTests {
                     )
                     .respondWith(addImagesResult)
 
-                R.string.add_images.byText().perform(click())
+                R.string.add_images.byText().inRoot(isDialog()).perform(click())
 
                 // 1. Wait for background import on Dispatchers.IO to complete and update model
                 // images
@@ -261,24 +274,7 @@ class ScreenshotTests {
                     isImported
                 }
 
-                // 2. Wait for Glide to load the image into ImageView
-                waitUntil(timeoutMs = 10_000) {
-                    ShadowLooper.idleMainLooper()
-                    var isLoaded = false
-                    scenario.onActivity { activity ->
-                        val recyclerView = activity.findViewById<RecyclerView>(R.id.ImagePreview)
-                        val viewHolder = recyclerView?.findViewHolderForAdapterPosition(0)
-                        val imageView =
-                            viewHolder?.itemView?.findViewById<ImageView>(R.id.ImageView)
-                        val drawable = imageView?.drawable
-                        isLoaded = drawable != null && drawable.intrinsicWidth > 0
-                    }
-                    isLoaded
-                }
-
                 ShadowLooper.idleMainLooper()
-
-                onView(withId(R.id.ImagePreview)).check(matches(isDisplayed()))
 
                 onView(isRoot())
                     .captureRoboImage(

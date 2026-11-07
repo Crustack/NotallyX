@@ -24,6 +24,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
@@ -677,13 +678,7 @@ fun UiTestBase.initFakeBiometric(): FakeBiometricAuthenticator {
 fun ComposeTestRule.checkAndUpdateNoteTitle(textToMatch: String, textToAdd: String) {
     waitUntil(10_000) { onAllNodes(hasText(textToMatch)).fetchSemanticsNodes().isNotEmpty() }
     onNodeWithText(textToMatch).performClick()
-    R.id.EnterTitle.byId()
-        .perform(
-            click(),
-            moveCursorToEnd(),
-            typeTextIntoFocusedView(textToAdd),
-            closeSoftKeyboard(),
-        )
+    onNodeWithTag("EnterTitle").performTextInput(textToAdd)
     Espresso.pressBack()
     waitUntil(10_000) {
         onAllNodes(hasText(textToMatch + textToAdd)).fetchSemanticsNodes().isNotEmpty()

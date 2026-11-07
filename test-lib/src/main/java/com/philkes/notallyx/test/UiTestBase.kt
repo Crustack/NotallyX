@@ -29,16 +29,7 @@ abstract class UiTestBase : KoinComponent {
         get() = get()
 
     val toolbarBackButton: ViewInteraction
-        get() =
-            onDisplayView(
-                childAtPosition(
-                    allOf(
-                        withId(R.id.Toolbar),
-                        childAtPosition(withId(R.id.main_content_layout), 0),
-                    ),
-                    0,
-                )
-            )
+        get() = R.string.back.byContentDescription()
 
     @Before
     fun setup() {

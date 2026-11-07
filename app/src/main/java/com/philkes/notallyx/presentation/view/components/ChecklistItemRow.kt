@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +42,12 @@ fun ChecklistItemRow(
         Checkbox(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
+            colors =
+                CheckboxDefaults.colors(
+                    checkedColor = MaterialTheme.colorScheme.onSurface,
+                    uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    checkmarkColor = MaterialTheme.colorScheme.surface,
+                ),
         )
         Text(
             text = text,
@@ -70,7 +77,7 @@ private fun ChecklistItemRowPreview() {
     NotallyXTheme {
         ChecklistItemRow(
             text = "Buy groceries",
-            isChecked = false,
+            isChecked = true,
             onCheckedChange = {},
         )
     }

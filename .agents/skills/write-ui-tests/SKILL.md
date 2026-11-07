@@ -80,6 +80,14 @@ class FeatureComposeTest : TestCase(
 | **Hybrid (Views + Compose)** | Kaspresso Kakao `Screen` + `ComposeScreen` | Combined Screen Objects |
 | **System/OS Interactions** | UiAutomator (`UiDevice`) | Only when Espresso/Compose APIs cannot interact (e.g. system permissions, notifications) |
 
+### 3. Strict UI Interaction Rule (NO Direct Activity / ViewModel State Mutation)
+
+> [!CAUTION]
+> **Never mutate Activity state or ViewModel properties directly in UI tests.**
+> UI tests (instrumented tests in `app/src/androidTest/` and screenshot tests in `app/src/test/`) must interact with the user interface purely through user inputs—such as typing text into text fields with `.performTextInput(...)` / `.perform(typeText(...))`, clicking buttons with `.performClick()` / `.click()`, or scrolling—or through Page Objects (`ComposeScreen` / Kakao `Screen`).
+>
+> Direct state mutation (e.g., `activity.titleState.value = "..."`, `activity.notallyModel.title = "..."`) is strictly forbidden in UI tests because it bypasses IME/keyboard input events, recomposition pipelines, and UI event listeners, producing invalid UI test results.
+
 ---
 
 ## Jetpack Compose UI Testing Best Practices
@@ -460,6 +468,7 @@ class EditNoteHybridTest : TestCase(
 - [ ] Added `kaspressoBuilder = Kaspresso.Builder.withComposeSupport()` for Compose-enabled tests.
 - [ ] Structured UI elements using the Page Object pattern (`ComposeScreen` for Compose, `Screen` for Views).
 - [ ] Preferred explicit `Modifier.testTag(...)` or semantic properties (`hasText`, `hasContentDescription`) over fragile layout node hierarchies.
+- [ ] Interacted with the UI purely through UI gestures and text inputs (e.g. `performTextInput`, `performClick`) without directly mutating Activity or ViewModel state properties.
 - [ ] Wrapped database/preference seeding in `runBlocking { ... }` prior to `createAndroidComposeRule` or `ActivityScenario.launch(...)`.
 - [ ] Placed any new reusable custom ViewActions, Matchers, or Compose test helpers in `UiUtils.kt`.
 - [ ] Grouped test execution steps inside `step("Step description") { ... }` for clear logging and failure analysis.
