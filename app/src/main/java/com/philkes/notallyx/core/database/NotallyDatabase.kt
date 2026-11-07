@@ -41,8 +41,14 @@ abstract class NotallyDatabase : RoomDatabase() {
 
     abstract fun getBaseNoteDao(): BaseNoteDao
 
-    fun checkpoint() {
-        getBaseNoteDao().query(SimpleSQLiteQuery("pragma wal_checkpoint(FULL)"))
+    fun checkpoint(): Boolean {
+        return try {
+            val result =
+                getBaseNoteDao().query(SimpleSQLiteQuery("pragma wal_checkpoint(TRUNCATE)"))
+            result == 0
+        } catch (_: Exception) {
+            false
+        }
     }
 
     fun ping() = getBaseNoteDao().query(SimpleSQLiteQuery("SELECT 1")) == 1
@@ -134,6 +140,12 @@ abstract class NotallyDatabase : RoomDatabase() {
                     if (database.isOpen) {
                         database.close()
                     }
+                }
+                testInstance?.let { database ->
+                    if (database.isOpen) {
+                        database.close()
+                    }
+                    testInstance = null
                 }
             }
         }

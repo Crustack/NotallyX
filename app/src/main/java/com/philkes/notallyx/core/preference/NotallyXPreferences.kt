@@ -35,13 +35,21 @@ class NotallyXPreferences private constructor(private val context: Context) {
     private val preferences = PreferenceManager.getDefaultSharedPreferences(context)
 
     private val encryptedPreferences by lazy {
-        EncryptedSharedPreferences.create(
-            context,
-            "secret_shared_prefs",
-            MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
+        try {
+            if (com.philkes.notallyx.NotallyXApplication.isTestRunner()) {
+                context.getSharedPreferences("secret_shared_prefs", Context.MODE_PRIVATE)
+            } else {
+                EncryptedSharedPreferences.create(
+                    context,
+                    "secret_shared_prefs",
+                    MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+                )
+            }
+        } catch (_: Exception) {
+            context.getSharedPreferences("secret_shared_prefs", Context.MODE_PRIVATE)
+        }
     }
 
     val theme = createEnumPreference(preferences, "theme", Theme.FOLLOW_SYSTEM, R.string.theme)

@@ -212,7 +212,10 @@ fun DocumentFile.listZipFiles(prefix: String): List<DocumentFile> {
                 file.name?.endsWith(".zip", ignoreCase = true) == true &&
                 file.name?.startsWith(prefix, ignoreCase = true) == true
         }
-    return zipFiles.sortedByDescending { it.lastModified() }
+    return zipFiles.sortedWith(
+        compareByDescending<DocumentFile> { it.name.orEmpty() }
+            .thenByDescending { it.lastModified() }
+    )
 }
 
 typealias DocumentFolder = DocumentFile

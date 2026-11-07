@@ -65,6 +65,7 @@ suspend fun ContextWrapper.exportAsZip(
 ): NotesAndAttachments {
     backupProgress?.value = BackupProgress(indeterminate = true)
     val tempFile = createTempFile("export", "tmp", cacheDir)
+    var databaseCopyFile: File? = null
     try {
         val isEncrypted = isBackupPasswordSet(password)
         val zipFile = ZipFile(tempFile, if (isEncrypted) password.toCharArray() else null)
@@ -80,6 +81,7 @@ suspend fun ContextWrapper.exportAsZip(
             }
 
         val (databaseOriginal, databaseCopy) = copyDatabase()
+        databaseCopyFile = databaseCopy
         zipFile.addFile(databaseCopy, zipParameters.copy(DATABASE_NAME))
 
         val totalNotes = databaseOriginal.getBaseNoteDao().count()
@@ -170,13 +172,6 @@ suspend fun ContextWrapper.exportAsZip(
         if (sourceMd5 == null || targetMd5 == null || !targetMd5.contentEquals(sourceMd5)) {
             log(TAG, stackTrace = "Exported zipFile '$fileUri' has wrong MD5 hash!")
             if (retryOnFail) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    try {
-                        contentResolver.delete(fileUri, null)
-                    } catch (e: Exception) {
-                        log(TAG, msg = "Deleting $fileUri failed", throwable = e)
-                    }
-                }
                 zipFile.file.delete()
                 log(TAG, stackTrace = "Retrying to export ZIP to $fileUri...")
                 return exportAsZip(fileUri, compress, password, backupProgress, false)
@@ -187,15 +182,6 @@ suspend fun ContextWrapper.exportAsZip(
             }
         }
         zipFile.file.delete()
-        try {
-            databaseCopy.delete()
-        } catch (e: Exception) {
-            log(
-                TAG,
-                msg = "Failed to delete db copy file: '${databaseCopy.absolutePath}'",
-                throwable = e,
-            )
-        }
         backupProgress?.value = BackupProgress(inProgress = false)
         // Post skipped attachments notification if any were missing
         if (missingAttachments.isNotEmpty()) {
@@ -204,8 +190,18 @@ suspend fun ContextWrapper.exportAsZip(
         return Pair(totalNotes, totalAttachments)
     } finally {
         tempFile.delete()
+        try {
+            databaseCopyFile?.delete()
+        } catch (e: Exception) {
+            log(
+                TAG,
+                msg = "Failed to delete db copy file: '${databaseCopyFile?.absolutePath}'",
+                throwable = e,
+            )
+        }
     }
 }
+
 
 suspend fun ContextWrapper.copyDatabase(
     decrypt: Boolean = true,
@@ -228,7 +224,12 @@ suspend fun ContextWrapper.copyDatabase(
         Pair(database, decryptedFile)
     } else {
         val dbFile = withContext(Dispatchers.IO) { createTempFile(DATABASE_NAME, suffix, cacheDir) }
-        databaseFile.copyToLarge(dbFile, overwrite = true)
+        if (databaseFile.exists()) {
+            databaseFile.copyToLarge(dbFile, overwrite = true)
+        } else {
+            dbFile.delete()
+            database.openHelper.writableDatabase.execSQL("VACUUM INTO '${dbFile.absolutePath}'")
+        }
         Pair(database, dbFile)
     }
 }

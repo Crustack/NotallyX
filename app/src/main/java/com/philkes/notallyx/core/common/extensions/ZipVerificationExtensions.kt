@@ -24,6 +24,40 @@ fun ZipFile.verify(databaseFile: File) {
     } else {
         verifyCrc(databaseFile)
     }
+    verifySqliteIntegrity(databaseFile)
+}
+
+private fun verifySqliteIntegrity(databaseFile: File) {
+    try {
+        android.database.sqlite.SQLiteDatabase.openDatabase(
+                databaseFile.path,
+                null,
+                android.database.sqlite.SQLiteDatabase.OPEN_READONLY,
+            )
+            .use { db ->
+                val cursor = db.rawQuery("PRAGMA integrity_check", null)
+                cursor.use {
+                    if (!it.moveToFirst()) {
+                        throw ZipVerificationException(
+                            "SQLite integrity_check returned empty result on '${databaseFile.path}'"
+                        )
+                    }
+                    val result = it.getString(0)
+                    if (!result.equals("ok", ignoreCase = true)) {
+                        throw ZipVerificationException(
+                            "SQLite database corrupted in '${databaseFile.path}': $result"
+                        )
+                    }
+                }
+            }
+    } catch (e: ZipVerificationException) {
+        throw e
+    } catch (e: Throwable) {
+        throw ZipVerificationException(
+            "SQLite database in '${databaseFile.path}' is invalid or corrupted",
+            e,
+        )
+    }
 }
 
 private fun ZipFile.verifyCrc(databaseFile: File) {
@@ -40,11 +74,19 @@ private fun ZipFile.verifyCrc(databaseFile: File) {
 
     for (fileHeader in fileHeaders) {
         // Directories have no CRC
-        if (fileHeader.isDirectory || fileHeader == dbEntry) continue
+        if (fileHeader.isDirectory) continue
         // Get expected CRC from ZIP metadata
         val expected = fileHeader.crc
-        // Compute actual CRC
-        val actual = calculateCrc(this.getInputStream(fileHeader)).value
+        // Compute actual CRC by reading the uncompressed stream
+        val actual =
+            try {
+                calculateCrc(this.getInputStream(fileHeader)).value
+            } catch (e: Exception) {
+                throw ZipVerificationException(
+                    "ZipFile '${file}' corrupted when reading '${fileHeader.fileName}'",
+                    e,
+                )
+            }
         if (expected != actual) {
             throw ZipVerificationException(
                 "ZipFile '${file}' contains mismatched CRC for '${fileHeader.fileName}'!"
