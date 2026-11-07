@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.result.Progress
 import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
@@ -19,6 +20,8 @@ import com.philkes.notallyx.core.ui.dialog.ProgressDialog
 import com.philkes.notallyx.core.ui.dialog.TextInputDialog
 import com.philkes.notallyx.core.ui.dialog.color.ColorPickerDialog
 import com.philkes.notallyx.data.model.Folder
+import com.philkes.notallyx.data.model.NoteViewMode
+import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.feature.editor.EditorBottomSheetState
 import com.philkes.notallyx.feature.editor.EditorDialogState
 import com.philkes.notallyx.feature.editor.NoteActionHandler
@@ -35,9 +38,21 @@ import com.philkes.notallyx.feature.editor.bottomsheet.MoreNoteBottomSheet
 fun EditorDialogs(model: NoteModel) {
     val activeDialog by model.activeDialog.collectAsStateWithLifecycle()
     val addingFilesProgress by model.addingFiles.collectAsStateWithLifecycle()
+    EditorDialogs(
+        activeDialog = activeDialog,
+        onDismissRequest = { model.activeDialog.value = null },
+        addingFilesProgress = addingFilesProgress,
+    )
+}
 
+@Composable
+fun EditorDialogs(
+    activeDialog: EditorDialogState?,
+    onDismissRequest: () -> Unit,
+    addingFilesProgress: Progress? = null,
+) {
     if (addingFilesProgress?.inProgress == true) {
-        val progress = addingFilesProgress!!
+        val progress = addingFilesProgress
         val msg =
             when {
                 progress.indeterminate -> stringResource(R.string.calculating)
@@ -62,18 +77,18 @@ fun EditorDialogs(model: NoteModel) {
                 currentColor = dialogState.currentColor,
                 colors = dialogState.colors,
                 defaultColor = dialogState.defaultColor,
-                onDismissRequest = { model.activeDialog.value = null },
+                onDismissRequest = onDismissRequest,
                 onColorSelected = { selectedColor ->
                     dialogState.onColorSelected(selectedColor)
-                    model.activeDialog.value = null
+                    onDismissRequest()
                 },
                 onColorChanged = { oldColor, newColor ->
                     dialogState.onColorChanged?.invoke(oldColor, newColor)
-                    model.activeDialog.value = null
+                    onDismissRequest()
                 },
                 onColorDeleted = { colorToDelete, newColor ->
                     dialogState.onColorDeleted?.invoke(colorToDelete, newColor)
-                    model.activeDialog.value = null
+                    onDismissRequest()
                 },
                 onSetDefaultColor = { newDefault ->
                     dialogState.onSetDefaultColor?.invoke(newDefault)
@@ -85,10 +100,10 @@ fun EditorDialogs(model: NoteModel) {
                 message = stringResource(R.string.delete_note_forever),
                 positiveButtonText = stringResource(R.string.delete),
                 negativeButtonText = stringResource(R.string.cancel),
-                onDismissRequest = { model.activeDialog.value = null },
+                onDismissRequest = onDismissRequest,
                 onConfirm = {
                     dialogState.onConfirm()
-                    model.activeDialog.value = null
+                    onDismissRequest()
                 },
             )
         }
@@ -97,10 +112,10 @@ fun EditorDialogs(model: NoteModel) {
                 message = stringResource(R.string.please_grant_notally_audio),
                 positiveButtonText = stringResource(R.string.continue_),
                 negativeButtonText = stringResource(R.string.cancel),
-                onDismissRequest = { model.activeDialog.value = null },
+                onDismissRequest = onDismissRequest,
                 onConfirm = {
                     dialogState.onConfirm()
-                    model.activeDialog.value = null
+                    onDismissRequest()
                 },
             )
         }
@@ -109,10 +124,10 @@ fun EditorDialogs(model: NoteModel) {
                 message = stringResource(dialogState.messageResId),
                 positiveButtonText = stringResource(R.string.continue_),
                 negativeButtonText = stringResource(R.string.cancel),
-                onDismissRequest = { model.activeDialog.value = null },
+                onDismissRequest = onDismissRequest,
                 onConfirm = {
                     dialogState.onConfirm()
-                    model.activeDialog.value = null
+                    onDismissRequest()
                 },
             )
         }
@@ -121,10 +136,10 @@ fun EditorDialogs(model: NoteModel) {
                 message = stringResource(dialogState.msgResId),
                 positiveButtonText = stringResource(R.string.settings),
                 negativeButtonText = stringResource(R.string.cancel),
-                onDismissRequest = { model.activeDialog.value = null },
+                onDismissRequest = onDismissRequest,
                 onConfirm = {
                     dialogState.onConfirm()
-                    model.activeDialog.value = null
+                    onDismissRequest()
                 },
             )
         }
@@ -132,14 +147,14 @@ fun EditorDialogs(model: NoteModel) {
             ListDialog(
                 title = stringResource(R.string.cant_load_file),
                 items = dialogState.errors.map { "${it.name}: ${it.description}" },
-                onDismissRequest = { model.activeDialog.value = null },
+                onDismissRequest = onDismissRequest,
             )
         }
         is EditorDialogState.Error -> {
             ErrorDialog(
                 title = stringResource(dialogState.titleResId),
                 message = dialogState.message,
-                onDismissRequest = { model.activeDialog.value = null },
+                onDismissRequest = onDismissRequest,
             )
         }
         is EditorDialogState.EditLink -> {
@@ -150,11 +165,11 @@ fun EditorDialogs(model: NoteModel) {
                     hint = stringResource(R.string.display_text),
                     onDismissRequest = {
                         dialogState.onDismiss()
-                        model.activeDialog.value = null
+                        onDismissRequest()
                     },
                     onConfirm = { displayTextAfter ->
                         dialogState.onConfirm(dialogState.urlBefore, displayTextAfter)
-                        model.activeDialog.value = null
+                        onDismissRequest()
                     },
                 )
             } else {
@@ -166,11 +181,11 @@ fun EditorDialogs(model: NoteModel) {
                     hint2 = stringResource(R.string.link),
                     onDismissRequest = {
                         dialogState.onDismiss()
-                        model.activeDialog.value = null
+                        onDismissRequest()
                     },
                     onConfirm = { displayTextAfter, urlAfter ->
                         dialogState.onConfirm(urlAfter, displayTextAfter)
-                        model.activeDialog.value = null
+                        onDismissRequest()
                     },
                 )
             }
@@ -183,7 +198,7 @@ fun EditorDialogs(model: NoteModel) {
                 onOpen = dialogState.onOpen,
                 onEdit = dialogState.onEdit,
                 onRemove = dialogState.onRemove,
-                onDismissRequest = { model.activeDialog.value = null },
+                onDismissRequest = onDismissRequest,
             )
         }
         null -> {}
@@ -198,85 +213,103 @@ fun EditorBottomSheets(
     backgroundColor: Color? = null,
 ) {
     val activeBottomSheet by model.activeBottomSheet.collectAsStateWithLifecycle()
+    val viewMode by model.viewMode.collectAsStateWithLifecycle()
 
+    EditorBottomSheets(
+        activeBottomSheet = activeBottomSheet,
+        onDismissRequest = { sheetToDismiss ->
+            if (model.activeBottomSheet.value == sheetToDismiss) {
+                model.activeBottomSheet.value = null
+            }
+        },
+        actionHandler = actionHandler,
+        pinned = model.pinned,
+        viewMode = viewMode,
+        folder = model.folder,
+        type = model.type,
+        isPinnedToStatus = model.isPinnedToStatus,
+        backgroundColor = backgroundColor,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditorBottomSheets(
+    activeBottomSheet: EditorBottomSheetState?,
+    onDismissRequest: (EditorBottomSheetState) -> Unit,
+    actionHandler: NoteActionHandler,
+    pinned: Boolean = false,
+    viewMode: NoteViewMode = NoteViewMode.EDIT,
+    folder: Folder = Folder.NOTES,
+    type: Type = Type.NOTE,
+    isPinnedToStatus: Boolean = false,
+    backgroundColor: Color? = null,
+) {
     when (val sheetState = activeBottomSheet) {
         is EditorBottomSheetState.MoreNote -> {
             MoreNoteBottomSheet(
-                model = model,
                 actionHandler = actionHandler,
+                pinned = pinned,
+                viewMode = viewMode,
+                folder = folder,
+                type = type,
+                isPinnedToStatus = isPinnedToStatus,
                 topActions = sheetState.topActions,
                 bottomAction = sheetState.bottomAction,
                 backgroundColor = backgroundColor,
-                onDismissRequest = {
-                    if (model.activeBottomSheet.value == sheetState) {
-                        model.activeBottomSheet.value = null
-                    }
-                },
+                onDismissRequest = { onDismissRequest(sheetState) },
             )
         }
         is EditorBottomSheetState.MoreList -> {
             MoreListBottomSheet(
-                model = model,
                 actionHandler = actionHandler,
+                pinned = pinned,
+                viewMode = viewMode,
+                folder = folder,
+                type = type,
+                isPinnedToStatus = isPinnedToStatus,
                 topActions = sheetState.topActions,
                 bottomAction = sheetState.bottomAction,
                 backgroundColor = backgroundColor,
-                onDismissRequest = {
-                    if (model.activeBottomSheet.value == sheetState) {
-                        model.activeBottomSheet.value = null
-                    }
-                },
+                onDismissRequest = { onDismissRequest(sheetState) },
             )
         }
         is EditorBottomSheetState.AddNote -> {
             AddNoteBottomSheet(
                 actionHandler = actionHandler,
                 backgroundColor = backgroundColor,
-                onDismissRequest = {
-                    if (model.activeBottomSheet.value == sheetState) {
-                        model.activeBottomSheet.value = null
-                    }
-                },
+                onDismissRequest = { onDismissRequest(sheetState) },
             )
         }
         is EditorBottomSheetState.Add -> {
             AddBottomSheet(
                 actionHandler = actionHandler,
                 backgroundColor = backgroundColor,
-                onDismissRequest = {
-                    if (model.activeBottomSheet.value == sheetState) {
-                        model.activeBottomSheet.value = null
-                    }
-                },
+                onDismissRequest = { onDismissRequest(sheetState) },
             )
         }
         is EditorBottomSheetState.Export -> {
             ExportBottomSheet(
                 backgroundColor = backgroundColor,
                 onExport = sheetState.onExport,
-                onDismissRequest = {
-                    if (model.activeBottomSheet.value == sheetState) {
-                        model.activeBottomSheet.value = null
-                    }
-                },
+                onDismissRequest = { onDismissRequest(sheetState) },
             )
         }
         is EditorBottomSheetState.ActionSelection -> {
             ActionSelectionBottomSheet(
                 actions = sheetState.actions,
-                model = model,
                 oldAction = sheetState.oldAction,
                 title = sheetState.title,
                 onReset = sheetState.onReset,
                 backgroundColor = backgroundColor,
-                onDismissRequest = {
-                    if (model.activeBottomSheet.value == sheetState) {
-                        model.activeBottomSheet.value = null
-                    }
-                },
+                pinned = pinned,
+                viewMode = viewMode,
+                folder = folder,
+                type = type,
+                onDismissRequest = { onDismissRequest(sheetState) },
                 onActionSelected = { selectedAction ->
                     sheetState.onActionSelected(selectedAction)
-                    model.activeBottomSheet.value = null
+                    onDismissRequest(sheetState)
                 },
             )
         }
@@ -286,11 +319,7 @@ fun EditorBottomSheets(
                 title = sheetState.title,
                 onReset = sheetState.onReset,
                 backgroundColor = backgroundColor,
-                onDismissRequest = {
-                    if (model.activeBottomSheet.value == sheetState) {
-                        model.activeBottomSheet.value = null
-                    }
-                },
+                onDismissRequest = { onDismissRequest(sheetState) },
             )
         }
         null -> {}

@@ -125,6 +125,7 @@ class EditTextPlainViewModel(
     private fun init(fileUriString: String?) {
         viewModelScope.launch {
             type = Type.NOTE
+            changeHistory.reset()
             setState(0L, createInDb = false)
 
             val uri = fileUriString?.toUri()

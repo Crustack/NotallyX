@@ -297,7 +297,16 @@ class EditListViewModel(
             is EditListAction.ReminderClicked -> handleAction(EditAction.REMINDERS)
             is EditListAction.BackClicked -> handleBack()
             is EditListAction.DismissDialog -> activeDialog.value = null
-            is EditListAction.DismissBottomSheet -> activeBottomSheet.value = null
+            is EditListAction.DismissBottomSheet -> {
+                if (action.sheet == null || activeBottomSheet.value == action.sheet) {
+                    activeBottomSheet.value = null
+                }
+            }
+            is EditListAction.PinToStatus -> pinToStatus()
+            is EditListAction.RecordAudio -> recordAudio()
+            is EditListAction.AddImages -> addImages()
+            is EditListAction.AttachFiles -> attachFiles()
+            is EditListAction.AddNoteLink -> addNoteLink()
 
             // Results
             is EditListAction.LabelsSelected -> {
@@ -449,6 +458,7 @@ class EditListViewModel(
             isInitialized = true
             _isLoading.value = true
             type = Type.LIST
+            changeHistory.reset()
             setState(key.noteId ?: 0L)
             _noteId.value = id
             if (isNewNote) {
@@ -505,6 +515,14 @@ class EditListViewModel(
     }
 
     fun handleBack() {
+        if (activeBottomSheet.value != null) {
+            activeBottomSheet.value = null
+            return
+        }
+        if (activeDialog.value != null) {
+            activeDialog.value = null
+            return
+        }
         viewModelScope.launch {
             updateModel()
             if (isEmpty()) {
@@ -517,6 +535,7 @@ class EditListViewModel(
             isInitialized = false
             id = 0L
             _noteId.value = 0L
+            changeHistory.reset()
             emitSideEffect(EditListSideEffect.NavigateBack)
         }
     }

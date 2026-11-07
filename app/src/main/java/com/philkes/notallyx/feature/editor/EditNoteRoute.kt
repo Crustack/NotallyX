@@ -48,7 +48,9 @@ fun EditNoteRoute(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    BackHandler { viewModel.onAction(EditNoteAction.BackClicked) }
+    BackHandler(enabled = uiState.activeBottomSheet == null && uiState.activeDialog == null) {
+        viewModel.onAction(EditNoteAction.BackClicked)
+    }
 
     LaunchedEffect(key) { viewModel.onAction(EditNoteAction.Init(key)) }
 
@@ -230,7 +232,5 @@ fun EditNoteRoute(
         state = uiState,
         onAction = viewModel::onAction,
         modifier = modifier,
-        noteModel = viewModel,
-        actionHandler = viewModel,
     )
 }

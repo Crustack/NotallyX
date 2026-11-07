@@ -21,6 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -54,10 +56,25 @@ fun `06_Widgets`() {
 /** Home screen mockup displaying the widget for screenshot 5 */
 @Composable
 private fun WidgetHomeScreenMockup() {
+    // Pixel / Stock Android style abstract wallpaper gradient
+    val wallpaperBrush =
+        Brush.linearGradient(
+            colors =
+                listOf(
+                    Color(0xFF28363F), // Deep slate / charcoal
+                    Color(0xFF384A54),
+                    Color(0xFF4C5E67), // Soft teal-slate
+                    Color(0xFF6B5E55), // Warm neutral accent
+                    Color(0xFF252D32), // Deep bottom shade
+                ),
+            start = Offset(0f, 0f),
+            end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        )
+
     Box(
         modifier =
             Modifier.fillMaxSize()
-                .background(Color(0xFF0F0F19))
+                .background(wallpaperBrush)
                 .padding(horizontal = 20.dp, vertical = 24.dp)
     ) {
         Column(
@@ -75,7 +92,7 @@ private fun WidgetHomeScreenMockup() {
             Text(
                 text = "Thursday, Oct 24 • 21°C",
                 fontSize = 14.sp,
-                color = Color.White.copy(alpha = 0.8f),
+                color = Color.White.copy(alpha = 0.85f),
                 modifier = Modifier.padding(top = 4.dp, bottom = 32.dp),
             )
 
@@ -84,7 +101,11 @@ private fun WidgetHomeScreenMockup() {
             Box(
                 modifier =
                     Modifier.fillMaxWidth()
-                        .shadow(12.dp, RoundedCornerShape(24.dp))
+                        .shadow(
+                            16.dp,
+                            RoundedCornerShape(24.dp),
+                            ambientColor = Color.Black.copy(alpha = 0.4f),
+                        )
                         .background(Color(0xFFF5E2DC), RoundedCornerShape(24.dp))
                         .padding(20.dp)
             ) {

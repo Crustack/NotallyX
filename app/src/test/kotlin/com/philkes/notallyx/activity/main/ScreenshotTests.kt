@@ -282,10 +282,11 @@ class ScreenshotTests {
                 // images
                 composeTestRule.waitUntil(10_000) {
                     ShadowLooper.idleMainLooper()
-                    composeTestRule
-                        .onAllNodes(hasText("/2", substring = true))
-                        .fetchSemanticsNodes()
-                        .isNotEmpty()
+                    val nodes =
+                        composeTestRule
+                            .onAllNodes(hasText("/2", substring = true))
+                            .fetchSemanticsNodes()
+                    nodes.isNotEmpty()
                 }
 
                 ShadowLooper.idleMainLooper()

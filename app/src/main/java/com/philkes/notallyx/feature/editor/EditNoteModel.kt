@@ -122,7 +122,19 @@ sealed interface EditNoteAction {
 
     data object DismissDialog : EditNoteAction
 
-    data object DismissBottomSheet : EditNoteAction
+    data class DismissBottomSheet(val sheet: EditorBottomSheetState? = null) : EditNoteAction
+
+    data object PinToStatus : EditNoteAction
+
+    data object RecordAudio : EditNoteAction
+
+    data object AddImages : EditNoteAction
+
+    data object AttachFiles : EditNoteAction
+
+    data object AddNoteLink : EditNoteAction
+
+    data class UpdateNoteLink(val range: TextRange) : EditNoteAction
 
     // Results from Navigation 3 / Activity Launchers
     data class LabelsSelected(val selectedLabels: List<String>) : EditNoteAction

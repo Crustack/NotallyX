@@ -108,7 +108,17 @@ sealed interface EditListAction {
 
     data object DismissDialog : EditListAction
 
-    data object DismissBottomSheet : EditListAction
+    data class DismissBottomSheet(val sheet: EditorBottomSheetState? = null) : EditListAction
+
+    data object PinToStatus : EditListAction
+
+    data object RecordAudio : EditListAction
+
+    data object AddImages : EditListAction
+
+    data object AttachFiles : EditListAction
+
+    data object AddNoteLink : EditListAction
 
     // Results from Navigation 3 / Activity Launchers
     data class LabelsSelected(val selectedLabels: List<String>) : EditListAction

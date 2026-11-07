@@ -293,7 +293,17 @@ class EditNoteViewModel(
             is EditNoteAction.ReminderClicked -> handleAction(EditAction.REMINDERS)
             is EditNoteAction.BackClicked -> handleBack()
             is EditNoteAction.DismissDialog -> activeDialog.value = null
-            is EditNoteAction.DismissBottomSheet -> activeBottomSheet.value = null
+            is EditNoteAction.DismissBottomSheet -> {
+                if (action.sheet == null || activeBottomSheet.value == action.sheet) {
+                    activeBottomSheet.value = null
+                }
+            }
+            is EditNoteAction.PinToStatus -> pinToStatus()
+            is EditNoteAction.RecordAudio -> recordAudio()
+            is EditNoteAction.AddImages -> addImages()
+            is EditNoteAction.AttachFiles -> attachFiles()
+            is EditNoteAction.AddNoteLink -> addNoteLink()
+            is EditNoteAction.UpdateNoteLink -> updateNoteLink(action.range)
 
             // Results
             is EditNoteAction.LabelsSelected -> {
@@ -447,6 +457,7 @@ class EditNoteViewModel(
             isInitialized = true
             _isLoading.value = true
             type = Type.NOTE
+            changeHistory.reset()
             setState(key.noteId ?: 0L)
             _noteId.value = id
             if (isNewNote) {
@@ -505,6 +516,14 @@ class EditNoteViewModel(
     }
 
     fun handleBack() {
+        if (activeBottomSheet.value != null) {
+            activeBottomSheet.value = null
+            return
+        }
+        if (activeDialog.value != null) {
+            activeDialog.value = null
+            return
+        }
         viewModelScope.launch {
             updateModel()
             if (isEmpty()) {
@@ -517,6 +536,7 @@ class EditNoteViewModel(
             isInitialized = false
             id = 0L
             _noteId.value = 0L
+            changeHistory.reset()
             emitSideEffect(EditNoteSideEffect.NavigateBack)
         }
     }

@@ -803,8 +803,6 @@ fun EditNoteScreen(
     state: EditNoteUiState,
     onAction: (EditNoteAction) -> Unit,
     modifier: Modifier = Modifier,
-    noteModel: NoteModel? = null,
-    actionHandler: NoteActionHandler? = null,
 ) {
     val context = LocalContext.current
     val noteState =
@@ -946,11 +944,65 @@ fun EditNoteScreen(
             }
         }
 
+    val actionHandler =
+        remember(onAction) {
+            object : NoteActionHandler {
+                override fun pinToStatus() {
+                    onAction(EditNoteAction.PinToStatus)
+                }
+
+                override fun recordAudio() {
+                    onAction(EditNoteAction.RecordAudio)
+                }
+
+                override fun startRecordAudioActivity() {
+                    onAction(EditNoteAction.RecordAudio)
+                }
+
+                override fun addImages() {
+                    onAction(EditNoteAction.AddImages)
+                }
+
+                override fun attachFiles() {
+                    onAction(EditNoteAction.AttachFiles)
+                }
+
+                override fun addNoteLink() {
+                    onAction(EditNoteAction.AddNoteLink)
+                }
+
+                override fun updateNoteLink(range: TextRange) {
+                    onAction(EditNoteAction.UpdateNoteLink(range))
+                }
+
+                override fun viewImage(image: FileAttachment) {
+                    onAction(EditNoteAction.ImageClicked(image))
+                }
+
+                override fun viewFile(fileAttachment: FileAttachment) {
+                    onAction(EditNoteAction.FileClicked(fileAttachment))
+                }
+
+                override fun playAudio(audio: Audio) {
+                    onAction(EditNoteAction.AudioClicked(audio))
+                }
+
+                override fun handleAction(action: EditAction) {
+                    onAction(EditNoteAction.ActionClicked(action))
+                }
+
+                override fun handleListAction(
+                    action: com.philkes.notallyx.core.preference.EditListAction
+                ) {}
+            }
+        }
+
     val backgroundColor = Color(context.extractColor(state.color))
 
-    Box(modifier = modifier) {
+    Box(modifier = modifier.fillMaxSize()) {
         EditNoteScreen(
             noteState = noteState,
+            modifier = Modifier.fillMaxSize(),
             preferences = state.preferences,
             searchState = state.searchState,
             backgroundColor = backgroundColor,
@@ -962,18 +1014,38 @@ fun EditNoteScreen(
             clickHandlers = clickHandlers,
         )
 
-        if (noteModel != null) {
-            EditorDialogs(noteModel)
-            if (actionHandler != null) {
-                EditorBottomSheets(
-                    model = noteModel,
-                    actionHandler = actionHandler,
-                    backgroundColor =
-                        if (state.color != BaseNote.COLOR_DEFAULT) backgroundColor else null,
-                )
-            }
-        }
+        EditorDialogs(
+            activeDialog = state.activeDialog,
+            onDismissRequest = { onAction(EditNoteAction.DismissDialog) },
+        )
+
+        EditorBottomSheets(
+            activeBottomSheet = state.activeBottomSheet,
+            onDismissRequest = { sheet -> onAction(EditNoteAction.DismissBottomSheet(sheet)) },
+            actionHandler = actionHandler,
+            pinned = state.pinned,
+            viewMode = state.viewMode,
+            folder = state.folder,
+            type = state.type,
+            isPinnedToStatus = state.isPinnedToStatus,
+            backgroundColor = if (state.color != BaseNote.COLOR_DEFAULT) backgroundColor else null,
+        )
     }
+}
+
+@Deprecated(
+    "Use stateless EditNoteScreen(state, onAction, modifier) without NoteModel or NoteActionHandler",
+    ReplaceWith("EditNoteScreen(state, onAction, modifier)"),
+)
+@Composable
+fun EditNoteScreen(
+    state: EditNoteUiState,
+    onAction: (EditNoteAction) -> Unit,
+    modifier: Modifier = Modifier,
+    noteModel: NoteModel? = null,
+    actionHandler: NoteActionHandler? = null,
+) {
+    EditNoteScreen(state = state, onAction = onAction, modifier = modifier)
 }
 
 @Composable
@@ -1205,8 +1277,6 @@ fun EditListScreen(
     state: EditListUiState,
     onAction: (EditListAction) -> Unit,
     modifier: Modifier = Modifier,
-    noteModel: NoteModel? = null,
-    actionHandler: NoteActionHandler? = null,
 ) {
     val context = LocalContext.current
     val noteState =
@@ -1333,11 +1403,65 @@ fun EditListScreen(
             }
         }
 
+    val actionHandler =
+        remember(onAction) {
+            object : NoteActionHandler {
+                override fun pinToStatus() {
+                    onAction(EditListAction.PinToStatus)
+                }
+
+                override fun recordAudio() {
+                    onAction(EditListAction.RecordAudio)
+                }
+
+                override fun startRecordAudioActivity() {
+                    onAction(EditListAction.RecordAudio)
+                }
+
+                override fun addImages() {
+                    onAction(EditListAction.AddImages)
+                }
+
+                override fun attachFiles() {
+                    onAction(EditListAction.AttachFiles)
+                }
+
+                override fun addNoteLink() {
+                    onAction(EditListAction.AddNoteLink)
+                }
+
+                override fun updateNoteLink(range: TextRange) {}
+
+                override fun viewImage(image: FileAttachment) {
+                    onAction(EditListAction.ImageClicked(image))
+                }
+
+                override fun viewFile(fileAttachment: FileAttachment) {
+                    onAction(EditListAction.FileClicked(fileAttachment))
+                }
+
+                override fun playAudio(audio: Audio) {
+                    onAction(EditListAction.AudioClicked(audio))
+                }
+
+                override fun handleAction(action: EditAction) {
+                    onAction(EditListAction.ActionClicked(action))
+                }
+
+                override fun handleListAction(
+                    action: com.philkes.notallyx.core.preference.EditListAction
+                ) {
+                    onAction(EditListAction.ListActionClicked(action))
+                }
+            }
+        }
+
     val backgroundColor = Color(context.extractColor(state.color))
 
-    Box(modifier = modifier) {
+    Box(modifier = modifier.fillMaxSize()) {
         EditListScreen(
             noteState = noteState,
+            modifier = Modifier.fillMaxSize(),
             preferences = state.preferences,
             searchState = state.searchState,
             backgroundColor = backgroundColor,
@@ -1348,18 +1472,38 @@ fun EditListScreen(
             focusFirstItem = state.focusFirstItem,
         )
 
-        if (noteModel != null) {
-            EditorDialogs(noteModel)
-            if (actionHandler != null) {
-                EditorBottomSheets(
-                    model = noteModel,
-                    actionHandler = actionHandler,
-                    backgroundColor =
-                        if (state.color != BaseNote.COLOR_DEFAULT) backgroundColor else null,
-                )
-            }
-        }
+        EditorDialogs(
+            activeDialog = state.activeDialog,
+            onDismissRequest = { onAction(EditListAction.DismissDialog) },
+        )
+
+        EditorBottomSheets(
+            activeBottomSheet = state.activeBottomSheet,
+            onDismissRequest = { sheet -> onAction(EditListAction.DismissBottomSheet(sheet)) },
+            actionHandler = actionHandler,
+            pinned = state.pinned,
+            viewMode = state.viewMode,
+            folder = state.folder,
+            type = state.type,
+            isPinnedToStatus = state.isPinnedToStatus,
+            backgroundColor = if (state.color != BaseNote.COLOR_DEFAULT) backgroundColor else null,
+        )
     }
+}
+
+@Deprecated(
+    "Use stateless EditListScreen(state, onAction, modifier) without NoteModel or NoteActionHandler",
+    ReplaceWith("EditListScreen(state, onAction, modifier)"),
+)
+@Composable
+fun EditListScreen(
+    state: EditListUiState,
+    onAction: (EditListAction) -> Unit,
+    modifier: Modifier = Modifier,
+    noteModel: NoteModel? = null,
+    actionHandler: NoteActionHandler? = null,
+) {
+    EditListScreen(state = state, onAction = onAction, modifier = modifier)
 }
 
 @Preview(showBackground = true)
@@ -1368,8 +1512,8 @@ fun EditListScreen(
 private fun EditNoteScreenPreview() {
     NotallyXTheme {
         EditNoteScreen(
-            noteState =
-                EditNoteState(
+            state =
+                EditNoteUiState(
                     title = "Project Planning Note",
                     bodyValue =
                         TextFieldValue(
@@ -1422,22 +1566,20 @@ private fun EditNoteScreenPreview() {
                         ),
                     pinned = true,
                     type = Type.NOTE,
+                    color = com.philkes.notallyx.data.model.Color.CORAL.toColorString(),
+                    canUndo = true,
+                    canRedo = false,
+                    preferences =
+                        EditNotePreferences(
+                            notesSortBy = NotesSortBy.MODIFIED_DATE,
+                            dateFormat = DateFormat.DD_MM_YY_GER,
+                            timeFormat = TimeFormat.AM_PM,
+                            topActions =
+                                listOf(EditAction.SEARCH, EditAction.REMINDERS, EditAction.PIN),
+                            bottomAction = EditAction.TOGGLE_VIEW_MODE,
+                        ),
                 ),
-            preferences =
-                EditNotePreferences(
-                    notesSortBy = NotesSortBy.MODIFIED_DATE,
-                    dateFormat = DateFormat.DD_MM_YY_GER,
-                    timeFormat = TimeFormat.AM_PM,
-                    topActions = listOf(EditAction.SEARCH, EditAction.REMINDERS, EditAction.PIN),
-                    bottomAction = EditAction.TOGGLE_VIEW_MODE,
-                ),
-            backgroundColor =
-                Color(
-                    LocalContext.current.extractColor(
-                        com.philkes.notallyx.data.model.Color.CORAL.toColorString()
-                    )
-                ),
-            canUndo = true,
+            onAction = {},
         )
     }
 }
@@ -1448,8 +1590,8 @@ private fun EditNoteScreenPreview() {
 private fun EditListColoredScreenPreview() {
     NotallyXTheme {
         EditListScreen(
-            noteState =
-                EditNoteState(
+            state =
+                EditListUiState(
                     title = "Weekly Grocery List",
                     createdTimestamp = System.currentTimeMillis() - 86400000L,
                     modifiedTimestamp = System.currentTimeMillis(),
@@ -1533,23 +1675,20 @@ private fun EditListColoredScreenPreview() {
                             )
                         ),
                     type = Type.LIST,
+                    color = com.philkes.notallyx.data.model.Color.CORAL.toColorString(),
+                    canUndo = true,
+                    canRedo = true,
+                    preferences =
+                        EditNotePreferences(
+                            notesSortBy = NotesSortBy.MODIFIED_DATE,
+                            dateFormat = DateFormat.DD_MM_YY_GER,
+                            timeFormat = TimeFormat.AM_PM,
+                            topActions =
+                                listOf(EditAction.SEARCH, EditAction.REMINDERS, EditAction.PIN),
+                            bottomAction = EditAction.TOGGLE_VIEW_MODE,
+                        ),
                 ),
-            preferences =
-                EditNotePreferences(
-                    notesSortBy = NotesSortBy.MODIFIED_DATE,
-                    dateFormat = DateFormat.DD_MM_YY_GER,
-                    timeFormat = TimeFormat.AM_PM,
-                    topActions = listOf(EditAction.SEARCH, EditAction.REMINDERS, EditAction.PIN),
-                    bottomAction = EditAction.TOGGLE_VIEW_MODE,
-                ),
-            canUndo = true,
-            canRedo = true,
-            backgroundColor =
-                Color(
-                    LocalContext.current.extractColor(
-                        com.philkes.notallyx.data.model.Color.CORAL.toColorString()
-                    )
-                ),
+            onAction = {},
         )
     }
 }
