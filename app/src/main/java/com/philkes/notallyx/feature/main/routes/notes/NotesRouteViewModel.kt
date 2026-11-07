@@ -143,6 +143,11 @@ class NotesRouteViewModel(app: Application, preferences: NotallyXPreferences) :
         viewModelScope.launch(Dispatchers.IO) { dao.updateColor(ids, color) }
     }
 
+    fun changeColor(oldColor: String, newColor: String) {
+        val dao = baseNoteDao ?: return
+        viewModelScope.launch(Dispatchers.IO) { dao.updateColor(oldColor, newColor) }
+    }
+
     fun updateBaseNotesLabels(notesLabels: List<Pair<Long, List<String>>>) {
         val dao = baseNoteDao ?: return
         actionMode.close(true)

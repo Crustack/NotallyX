@@ -12,6 +12,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
@@ -2232,5 +2233,389 @@ class EditActivityTest : UiTestBase() {
         composeTestRule.onNodeWithText(idleTitle).assertIsDisplayed()
 
         scenario.close()
+    }
+
+    @Test
+    fun changeNoteColor() {
+        val note1 = createBaseNote(title = "Color Test Note 1", body = "Body 1")
+        val note2 =
+            createBaseNote(
+                title = "Color Test Note 2",
+                body = "Body 2",
+                color = Color.CORAL.toColorString(),
+            )
+        var note2Id = 0L
+        runBlocking {
+            database.clearAllTables()
+            database.getBaseNoteDao().insert(note1)
+            note2Id = database.getBaseNoteDao().insert(note2)
+        }
+
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        try {
+            val moreOptionsLabel = context.getString(R.string.tap_for_more_options)
+            val changeColorLabel = context.getString(R.string.change_color)
+            val saveLabel = context.getString(R.string.save)
+            val backLabel = context.getString(R.string.back)
+            val deleteLabel = context.getString(R.string.delete)
+            val makeDefaultLabel = context.getString(R.string.make_default)
+            val defaultTextLabel = context.getString(R.string.text_default)
+            val takeNoteLabel = context.getString(R.string.take_note)
+            val titleLabel = context.getString(R.string.title)
+            val bodyLabel = context.getString(R.string.note)
+
+            // Open Note 1 (which starts with COLOR_DEFAULT)
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Color Test Note 1"))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("Color Test Note 1").performClick()
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(moreOptionsLabel))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+
+            // =========================================================================
+            // 1. Highlight current color in Change Color dialog
+            // =========================================================================
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(changeColorLabel).performClick()
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(BaseNote.COLOR_DEFAULT))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+            // Current color is COLOR_DEFAULT -> should be selected/highlighted
+            composeTestRule.onNodeWithContentDescription(BaseNote.COLOR_DEFAULT).assertIsSelected()
+
+            // =========================================================================
+            // 2. Click on a color changes note color immediately and dismisses dialog
+            // =========================================================================
+            // Color.CORAL is in the dialog because Note 2 uses it
+            composeTestRule.onNodeWithContentDescription(Color.CORAL.toColorString()).performClick()
+
+            // Dialog should be dismissed automatically without needing Save
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(changeColorLabel))
+                    .fetchSemanticsNodes(false)
+                    .isEmpty()
+            }
+
+            var currentEditActivity: EditActivity? = null
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                val resumedActivities =
+                    ActivityLifecycleMonitorRegistry.getInstance()
+                        .getActivitiesInStage(Stage.RESUMED)
+                currentEditActivity =
+                    resumedActivities.filterIsInstance<EditActivity>().firstOrNull()
+            }
+            assertEquals(Color.CORAL.toColorString(), currentEditActivity?.notallyModel?.color)
+            assertEquals(
+                context.extractColor(Color.CORAL.toColorString()),
+                currentEditActivity?.colorInt,
+            )
+
+            // Verify that opening Change Color dialog again now highlights CORAL
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(changeColorLabel).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(Color.CORAL.toColorString()))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+            composeTestRule
+                .onNodeWithContentDescription(Color.CORAL.toColorString())
+                .assertIsSelected()
+
+            // Switch back to COLOR_DEFAULT by clicking it
+            composeTestRule.onNodeWithContentDescription(BaseNote.COLOR_DEFAULT).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(changeColorLabel))
+                    .fetchSemanticsNodes(false)
+                    .isEmpty()
+            }
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                val resumedActivities =
+                    ActivityLifecycleMonitorRegistry.getInstance()
+                        .getActivitiesInStage(Stage.RESUMED)
+                currentEditActivity =
+                    resumedActivities.filterIsInstance<EditActivity>().firstOrNull()
+            }
+            assertEquals(BaseNote.COLOR_DEFAULT, currentEditActivity?.notallyModel?.color)
+
+            // =========================================================================
+            // 3. Create color button shows color picker dialog to create new color
+            // =========================================================================
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(changeColorLabel).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(BaseNote.COLOR_NEW))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+
+            // Click create color button
+            composeTestRule.onNodeWithContentDescription(BaseNote.COLOR_NEW).performClick()
+
+            // Dialog title "New Color" should appear
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.new_color)))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.new_color))
+                .assertIsDisplayed()
+
+            // Pick SAND from presets and save
+            composeTestRule.onNodeWithContentDescription(Color.SAND.toColorString()).performClick()
+            composeTestRule.onNodeWithText(saveLabel).performClick()
+
+            // Dialog dismissed, note now has SAND
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.new_color)))
+                    .fetchSemanticsNodes(false)
+                    .isEmpty()
+            }
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                val resumedActivities =
+                    ActivityLifecycleMonitorRegistry.getInstance()
+                        .getActivitiesInStage(Stage.RESUMED)
+                currentEditActivity =
+                    resumedActivities.filterIsInstance<EditActivity>().firstOrNull()
+            }
+            assertEquals(Color.SAND.toColorString(), currentEditActivity?.notallyModel?.color)
+
+            // =========================================================================
+            // 4. Long click a color:
+            //    - Opens Edit Color dialog
+            //    - Button to make it default for new notes
+            //    - Change the color (updates all notes with old color)
+            //    - Button to delete it (with choosing replacement color so notes get new color)
+            // =========================================================================
+
+            // 4A. Make it default for new notes
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(changeColorLabel).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(Color.SAND.toColorString()))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+
+            // Long click SAND
+            composeTestRule
+                .onNodeWithContentDescription(Color.SAND.toColorString())
+                .performTouchInput { longClick() }
+
+            // Edit Color dialog opens
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.edit_color)))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.edit_color))
+                .assertIsDisplayed()
+
+            // Click "Make default"
+            composeTestRule.onNodeWithText(makeDefaultLabel).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(defaultTextLabel))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+            assertEquals(Color.SAND.toColorString(), preferences.defaultNoteColor.value)
+
+            // Close Edit dialog via Back
+            composeTestRule.onNodeWithText(backLabel).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(changeColorLabel))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+            // Close Change Color dialog via Cancel
+            composeTestRule.onNodeWithText(context.getString(R.string.cancel)).performClick()
+
+            // 4A.1 Verify that the newly selected default color (SAND) is really used for new notes
+            // Navigate back from Note 1 to MainActivity
+            composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(takeNoteLabel))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+
+            // Create a new note from MainActivity
+            composeTestRule.onNodeWithContentDescription(takeNoteLabel).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(bodyLabel))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+
+            // Assert new note's model color is the new default color (SAND)
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                val resumedActivities =
+                    ActivityLifecycleMonitorRegistry.getInstance()
+                        .getActivitiesInStage(Stage.RESUMED)
+                currentEditActivity =
+                    resumedActivities.filterIsInstance<EditActivity>().firstOrNull()
+            }
+            assertEquals(Color.SAND.toColorString(), currentEditActivity?.notallyModel?.color)
+            assertEquals(
+                context.extractColor(Color.SAND.toColorString()),
+                currentEditActivity?.colorInt,
+            )
+
+            // Verify Change Color dialog on the new note highlights SAND as selected
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(changeColorLabel).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(Color.SAND.toColorString()))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+            composeTestRule
+                .onNodeWithContentDescription(Color.SAND.toColorString())
+                .assertIsSelected()
+            composeTestRule.onNodeWithText(context.getString(R.string.cancel)).performClick()
+
+            // Save the new note by entering title/body and pressing back
+            val newDefaultNoteTitle = "New Default Color Note"
+            composeTestRule
+                .onNodeWithContentDescription(titleLabel)
+                .performTextInput(newDefaultNoteTitle)
+            composeTestRule
+                .onNodeWithContentDescription(bodyLabel)
+                .performTextInput("Checking that default color SAND was used")
+            composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+
+            // Wait until returning to MainActivity
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(newDefaultNoteTitle))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+
+            // Verify in Room database that the new note was persisted with color SAND
+            waitUntil(10_000) {
+                val savedNote = runBlocking {
+                    database.getBaseNoteDao().getAllNotes().firstOrNull {
+                        it.title == newDefaultNoteTitle
+                    }
+                }
+                savedNote?.color == Color.SAND.toColorString()
+            }
+
+            // Reopen Note 1 to continue with 4B and 4C
+            composeTestRule.onNodeWithText("Color Test Note 1").performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(moreOptionsLabel))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+
+            // 4B. Change color (edit color and save)
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(changeColorLabel).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(Color.CORAL.toColorString()))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+
+            // Long click CORAL (which Note 2 has)
+            composeTestRule
+                .onNodeWithContentDescription(Color.CORAL.toColorString())
+                .performTouchInput { longClick() }
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.edit_color)))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+
+            // Select MINT as the new color for CORAL
+            composeTestRule.onNodeWithContentDescription(Color.MINT.toColorString()).performClick()
+            composeTestRule.onNodeWithText(saveLabel).performClick()
+
+            // Verify that in the database, Note 2 (which had CORAL) was updated to MINT!
+            waitUntil(10_000) {
+                val updatedNote2 = runBlocking { database.getBaseNoteDao().get(note2Id) }
+                updatedNote2?.color == Color.MINT.toColorString()
+            }
+
+            // 4C. Delete a color (pick another color so notes get the new chosen color)
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(changeColorLabel).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(Color.MINT.toColorString()))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+
+            // Long click MINT
+            composeTestRule
+                .onNodeWithContentDescription(Color.MINT.toColorString())
+                .performTouchInput { longClick() }
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.edit_color)))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+
+            // Click Delete button
+            composeTestRule.onNodeWithContentDescription(deleteLabel).performClick()
+
+            // Delete Color replacement dialog opens
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.delete_color_message)))
+                    .fetchSemanticsNodes(false)
+                    .isNotEmpty()
+            }
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.delete_color_message))
+                .assertIsDisplayed()
+
+            // Choose COLOR_DEFAULT as replacement
+            composeTestRule.onNodeWithContentDescription(BaseNote.COLOR_DEFAULT).performClick()
+
+            // Dialogs dismiss, and in database Note 2 should now have COLOR_DEFAULT
+            waitUntil(10_000) {
+                val updatedNote2 = runBlocking { database.getBaseNoteDao().get(note2Id) }
+                updatedNote2?.color == BaseNote.COLOR_DEFAULT
+            }
+        } finally {
+            preferences.defaultNoteColor.save(BaseNote.COLOR_DEFAULT)
+            scenario.close()
+        }
     }
 }

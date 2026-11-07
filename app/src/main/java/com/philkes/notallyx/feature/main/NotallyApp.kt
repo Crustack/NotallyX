@@ -18,12 +18,12 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.shareNote
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
-import com.philkes.notallyx.core.ui.dialog.ColorPickerDialog
 import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.dialog.ErrorDialog
 import com.philkes.notallyx.core.ui.dialog.ListDialog
 import com.philkes.notallyx.core.ui.dialog.ProgressDialog
 import com.philkes.notallyx.core.ui.dialog.TriStateMultiChoiceDialog
+import com.philkes.notallyx.core.ui.dialog.color.ColorPickerDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
@@ -254,18 +254,24 @@ fun NotallyApp(
                             mainActivityViewModel.showColorPicker(
                                 colors = colors,
                                 currentColor = currentColor,
+                                defaultColor = preferences.defaultNoteColor.value,
                                 onColorSelected = { selectedColor ->
-                                    if (selectedColor == BaseNote.COLOR_NEW) {
-                                        mainActivityViewModel.showColorPicker(
-                                            colors = colors + preferences.defaultNoteColor.value,
-                                            currentColor = null,
-                                            onColorSelected = { color ->
-                                                notallyRouteModel.colorBaseNote(color)
-                                            },
-                                        )
-                                    } else {
-                                        notallyRouteModel.colorBaseNote(selectedColor)
+                                    notallyRouteModel.colorBaseNote(selectedColor)
+                                },
+                                onColorChanged = { oldColor, newColor ->
+                                    notallyRouteModel.changeColor(oldColor, newColor)
+                                    if (preferences.defaultNoteColor.value == oldColor) {
+                                        preferences.defaultNoteColor.save(newColor)
                                     }
+                                },
+                                onColorDeleted = { colorToDelete, newColor ->
+                                    notallyRouteModel.changeColor(colorToDelete, newColor)
+                                    if (preferences.defaultNoteColor.value == colorToDelete) {
+                                        preferences.defaultNoteColor.save(BaseNote.COLOR_DEFAULT)
+                                    }
+                                },
+                                onSetDefaultColor = { newDefault ->
+                                    preferences.defaultNoteColor.save(newDefault)
                                 },
                             )
                         }
@@ -463,10 +469,23 @@ private fun NotallyAppDialogs(
         is MainActiveDialog.ColorPicker -> {
             ColorPickerDialog(
                 currentColor = activeDialog.currentColor ?: BaseNote.COLOR_DEFAULT,
+                colors = activeDialog.colors,
+                defaultColor = activeDialog.defaultColor,
                 onDismissRequest = onDismissDialog,
                 onColorSelected = { color ->
                     onDismissDialog()
                     activeDialog.onColorSelected(color)
+                },
+                onColorChanged = { oldColor, newColor ->
+                    onDismissDialog()
+                    activeDialog.onColorChanged?.invoke(oldColor, newColor)
+                },
+                onColorDeleted = { colorToDelete, newColor ->
+                    onDismissDialog()
+                    activeDialog.onColorDeleted?.invoke(colorToDelete, newColor)
+                },
+                onSetDefaultColor = { newDefault ->
+                    activeDialog.onSetDefaultColor?.invoke(newDefault)
                 },
             )
         }

@@ -66,7 +66,11 @@ sealed interface EditorDialogState {
     data class ColorPicker(
         val currentColor: String,
         val colors: Set<String>,
+        val defaultColor: String = BaseNote.COLOR_DEFAULT,
         val onColorSelected: (selectedColor: String) -> Unit,
+        val onColorChanged: ((oldColor: String, newColor: String) -> Unit)? = null,
+        val onColorDeleted: ((colorToDelete: String, newColor: String) -> Unit)? = null,
+        val onSetDefaultColor: ((String) -> Unit)? = null,
     ) : EditorDialogState
 
     data class DeleteForeverConfirm(val onConfirm: () -> Unit) : EditorDialogState
