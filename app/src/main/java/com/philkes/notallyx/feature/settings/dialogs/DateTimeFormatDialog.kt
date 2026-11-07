@@ -132,7 +132,7 @@ internal fun DateTimeFormatDialog(
     )
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun DateTimeFormatDialogPreview() {
     NotallyXTheme {

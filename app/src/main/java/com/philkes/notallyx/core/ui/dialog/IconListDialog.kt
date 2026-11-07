@@ -78,7 +78,7 @@ internal fun IconListDialog(
     )
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun IconListDialogPreview() {
     NotallyXTheme {

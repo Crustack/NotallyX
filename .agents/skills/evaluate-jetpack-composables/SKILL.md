@@ -73,7 +73,7 @@ fun NoteCard(
 
 ### 2. Compose Previews Completeness
 
-* **Preview Definition**: Every UI `@Composable` MUST have at least one `@Preview` function defined in the same file or a dedicated preview file.
+* **Preview Definition**: Every UI `@Composable` MUST have at least one `@Preview(showBackground = true)` function defined in the same file or a dedicated preview file. For composables showing `AlertDialog` or similar, set `showSystemUi = true` in the `@Preview` annotation.
 * **Parameter Utilization**: The `@Preview` function MUST pass mock or sample values for **every required parameter** expected by the Composable function.
 * **Event Handlers**: Event callbacks and click listeners (e.g., `onClick: () -> Unit`) can be passed empty lambdas `{}` or logging callbacks in previews.
 * **Theme & Context**: Previews should be wrapped in the application's Material Theme (e.g. `NotallyXTheme { ... }`) to ensure accurate rendering.

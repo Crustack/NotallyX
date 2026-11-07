@@ -1,7 +1,5 @@
 package com.philkes.notallyx.core.ui.extensions
 
-import android.app.Dialog
-import android.view.Window
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.platform.ComposeView
 import com.philkes.notallyx.core.preference.NotallyXPreferences
@@ -19,12 +17,7 @@ fun AppCompatActivity.showColorSelectDialog(
 ) {
     val preferences = NotallyXPreferences.getInstance(this)
     val composeView = ComposeView(this)
-    val dialog =
-        Dialog(this).apply {
-            requestWindowFeature(Window.FEATURE_NO_TITLE)
-            window?.setBackgroundDrawableResource(android.R.color.transparent)
-            setContentView(composeView)
-        }
+    val dialog = createComposeDialog(this, composeView)
 
     composeView.setContent {
         NotallyXTheme(theme = preferences.theme.value) {
@@ -59,12 +52,7 @@ private fun AppCompatActivity.showEditColorDialog(
 ) {
     val preferences = NotallyXPreferences.getInstance(this)
     val composeView = ComposeView(this)
-    val dialog =
-        Dialog(this).apply {
-            requestWindowFeature(Window.FEATURE_NO_TITLE)
-            window?.setBackgroundDrawableResource(android.R.color.transparent)
-            setContentView(composeView)
-        }
+    val dialog = createComposeDialog(this, composeView)
 
     composeView.setContent {
         NotallyXTheme(theme = preferences.theme.value) {
@@ -95,12 +83,7 @@ private fun AppCompatActivity.showDeleteColorDialog(
 ) {
     val preferences = NotallyXPreferences.getInstance(this)
     val composeView = ComposeView(this)
-    val dialog =
-        Dialog(this).apply {
-            requestWindowFeature(Window.FEATURE_NO_TITLE)
-            window?.setBackgroundDrawableResource(android.R.color.transparent)
-            setContentView(composeView)
-        }
+    val dialog = createComposeDialog(this, composeView)
 
     composeView.setContent {
         NotallyXTheme(theme = preferences.theme.value) {

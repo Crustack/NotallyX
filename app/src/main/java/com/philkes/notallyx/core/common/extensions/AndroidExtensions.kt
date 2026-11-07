@@ -20,7 +20,6 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.util.Log
-import android.view.Window
 import android.webkit.MimeTypeMap
 import androidx.annotation.ColorInt
 import androidx.annotation.RequiresApi
@@ -36,6 +35,7 @@ import com.philkes.notallyx.BuildConfig
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.dialog.ErrorDialog
+import com.philkes.notallyx.core.ui.extensions.createComposeDialog
 import com.philkes.notallyx.core.ui.extensions.getQuantityString
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
@@ -200,12 +200,7 @@ fun Fragment.showErrorDialog(
     neutralButtonClickListener: DialogInterface.OnClickListener? = null,
 ) {
     val composeView = ComposeView(requireContext())
-    val dialog =
-        Dialog(requireContext()).apply {
-            requestWindowFeature(Window.FEATURE_NO_TITLE)
-            window?.setBackgroundDrawableResource(android.R.color.transparent)
-            setContentView(composeView)
-        }
+    val dialog = createComposeDialog(requireContext(), composeView, viewLifecycleOwner)
     val preferences =
         NotallyXPreferences.getInstance(
             requireActivity() as? ContextWrapper ?: ContextWrapper(requireActivity())
@@ -258,12 +253,7 @@ fun Activity.showErrorDialog(
     neutralButtonClickListener: DialogInterface.OnClickListener? = null,
 ): Dialog? {
     val composeView = ComposeView(this)
-    val dialog =
-        Dialog(this).apply {
-            requestWindowFeature(Window.FEATURE_NO_TITLE)
-            window?.setBackgroundDrawableResource(android.R.color.transparent)
-            setContentView(composeView)
-        }
+    val dialog = createComposeDialog(this, composeView)
     val preferences =
         NotallyXPreferences.getInstance(this as? ContextWrapper ?: ContextWrapper(this))
 

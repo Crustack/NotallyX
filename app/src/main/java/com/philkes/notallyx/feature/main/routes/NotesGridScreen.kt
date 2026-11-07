@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.components.BaseNoteCard
 import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
+import com.philkes.notallyx.core.ui.components.SampleNotes
 import com.philkes.notallyx.core.ui.components.SectionHeaderItem
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.BaseNote
@@ -39,7 +40,7 @@ import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Header
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.feature.reminder.FilterOptions
-import com.philkes.notallyx.feature.reminder.NoteReminderRow
+import com.philkes.notallyx.feature.reminder.ReminderRow
 import java.io.File
 
 /** Composable replacing fragment_notes.xml layout. */
@@ -184,7 +185,7 @@ internal fun NotesGridScreen(
                                 item(key = item.id) {
                                     val isSelected = selectedNoteIds.contains(item.id)
                                     if (selectedFilterOption != null) {
-                                        NoteReminderRow(
+                                        ReminderRow(
                                             title =
                                                 item.title.ifEmpty {
                                                     stringResource(R.string.note)
@@ -220,8 +221,19 @@ internal fun NotesGridScreen(
 private fun NotesGridScreenPreview() {
     NotallyXTheme {
         NotesGridScreen(
-            items = emptyList(),
+            items = SampleNotes.ALL,
             isGrid = true,
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun NotesListScreenPreview() {
+    NotallyXTheme {
+        NotesGridScreen(
+            items = SampleNotes.ALL,
+            isGrid = false,
         )
     }
 }

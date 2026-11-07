@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -70,7 +71,8 @@ internal fun TriStateChoiceItemRow(
             modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
-                .padding(horizontal = 24.dp, vertical = 4.dp),
+                .padding(horizontal = 24.dp, vertical = 4.dp)
+                .testTag("TriStateChoiceItemRow"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TriStateCheckbox(

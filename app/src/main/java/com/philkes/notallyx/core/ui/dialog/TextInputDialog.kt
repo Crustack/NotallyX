@@ -141,7 +141,7 @@ fun DualTextInputDialog(
     )
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun TextInputDialogPreview() {
     NotallyXTheme {
@@ -154,7 +154,7 @@ private fun TextInputDialogPreview() {
     }
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun DualTextInputDialogPreview() {
     NotallyXTheme {

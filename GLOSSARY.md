@@ -8,3 +8,7 @@ The toolbar composable (`TextFormattingBar.kt`) replacing `bottom_text_formattin
 
 ## Navigation 3 Destinations
 The set of type-safe `NavKey` definitions (`NotallyNavKey`) and corresponding Composable screens (`NavDisplay`) managing top-level screen transitions (Notes, Labels, Deleted, Archived, Reminders, Settings, Search, DisplayLabel, Unlabeled) without Android Fragments or XML navigation graphs.
+
+## Reminder Date & Time Pickers
+The Compose dialog components (`DatePickerDialog` and custom `TimePickerDialog` wrapping M3 `TimePicker`) integrated into `RemindersScreen` via `ReminderDialogState`, replacing legacy `DialogFragment` wrappers (`DatePickerFragment` and `TimePickerFragment`).
+

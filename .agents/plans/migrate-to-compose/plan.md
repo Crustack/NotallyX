@@ -78,7 +78,7 @@ Begin with isolated sub-views, chips, and list item ViewHolders. Each component 
 | **Recycler Toggle** | [`recycler_toggle.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/layout/recycler_toggle.xml) | `ToggleVH` | `ToggleOptionItem.kt` |
 | **Color Circle** | [`recycler_color.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/layout/recycler_color.xml) | `ColorVH` | `ColorSwatchItem.kt` |
 | **Label Chips in List** | [`recycler_label.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/layout/recycler_label.xml), [`recycler_selectable_label.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/layout/recycler_selectable_label.xml) | `LabelAdapter`, `SelectableLabelAdapter` | `LabelItemRow.kt` |
-| **Reminder Chips** | [`recycler_reminder.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/layout/recycler_reminder.xml), [`recycler_note_reminder.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/layout/recycler_note_reminder.xml) | `ReminderVH` | `ReminderChipItem.kt` |
+| **Reminder Chips** | [`recycler_reminder.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/layout/recycler_reminder.xml), [`recycler_note_reminder.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/layout/recycler_note_reminder.xml) | `ReminderVH` | `ReminderRows.kt` |
 | **Preview Chips** | [`recycler_preview_file.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/layout/recycler_preview_file.xml), [`recycler_preview_image.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/layout/recycler_preview_image.xml) | `PreviewFileVH`, `PreviewImageVH` | `FileAttachmentPreviewChip.kt` |
 | **Checklist Item** | [`recycler_list_item.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/layout/recycler_list_item.xml) | `ListItemVH` | `ChecklistItemRow.kt` |
 | **Base Note Card** | [`recycler_base_note.xml`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/res/layout/recycler_base_note.xml) | `BaseNoteVH` | `BaseNoteCard.kt` |
@@ -217,7 +217,7 @@ Convert legacy Android RemoteViews widgets to **AndroidX Glance**:
 - [x] Implement `ToggleOptionItem.kt` (`recycler_toggle.xml`).
 - [x] Implement `ColorSwatchItem.kt` (`recycler_color.xml`).
 - [x] Implement `LabelItemRow.kt` (`recycler_label.xml`, `recycler_selectable_label.xml`).
-- [x] Implement `ReminderChipItem.kt` (`recycler_reminder.xml`, `recycler_note_reminder.xml`).
+- [x] Implement `ReminderRows.kt` (`recycler_reminder.xml`, `recycler_note_reminder.xml`).
 - [x] Implement `FileAttachmentPreviewChip.kt` (`recycler_preview_file.xml`, `recycler_preview_image.xml`).
 - [x] Implement `ChecklistItemRow.kt` (`recycler_list_item.xml`).
 - [x] Implement `BaseNoteCard.kt` (`recycler_base_note.xml`).

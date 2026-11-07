@@ -430,13 +430,13 @@ Each Composable is evaluated against the 7 core categories of `evaluate-jetpack-
 
 ### 37. `feature/reminder/ReminderChipItem.kt`
 
-#### `ReminderChipItem`
-- **File**: [`ReminderChipItem.kt`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/java/com/philkes/notallyx/feature/reminder/ReminderChipItem.kt#L25)
+#### `NoteReminderRow`
+- **File**: [`ReminderRows.kt`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/java/com/philkes/notallyx/feature/reminder/ReminderChipItem.kt#L25)
 - **Status**: ✅ Fully Compliant
 - **Required Changes**: None
 
-#### `NoteReminderRow`
-- **File**: [`ReminderChipItem.kt`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/java/com/philkes/notallyx/feature/reminder/ReminderChipItem.kt#L88)
+#### `ReminderRow`
+- **File**: [`ReminderRows.kt`](file:///home/user/AndroidStudioProjects/NotallyX/app/src/main/java/com/philkes/notallyx/feature/reminder/ReminderChipItem.kt#L88)
 - **Status**: ✅ Fully Compliant
 - **Required Changes**: None
 

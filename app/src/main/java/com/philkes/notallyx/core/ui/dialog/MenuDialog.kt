@@ -1,5 +1,3 @@
-package com.philkes.notallyx.core.ui.dialog
-
 import android.content.Context
 import android.view.ViewGroup.LayoutParams
 import android.widget.LinearLayout

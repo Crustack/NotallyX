@@ -2,8 +2,10 @@ package com.philkes.notallyx.core.common.extensions
 
 import android.util.Patterns
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.time.Duration
 
 fun CharSequence.truncate(limit: Int): CharSequence {
     return if (length > limit) {
@@ -148,3 +150,16 @@ fun uniqueCurrentMillis(): Long {
 typealias Seconds = Long
 
 fun Seconds.toMillis() = this * 1000
+
+/**
+ * Adds a Kotlin Duration to a java.util.Date. Fully compatible with API 24+ without requiring Java
+ * 8 time APIs or desugaring.
+ */
+operator fun Date.plus(duration: Duration): Date {
+    return Date(this.time + duration.inWholeMilliseconds)
+}
+
+/** Subtracts a Kotlin Duration from a java.util.Date. */
+operator fun Date.minus(duration: Duration): Date {
+    return Date(this.time - duration.inWholeMilliseconds)
+}

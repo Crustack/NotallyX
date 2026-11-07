@@ -52,7 +52,7 @@ internal fun ProgressDialog(
     )
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun ProgressDialogPreview() {
     NotallyXTheme {

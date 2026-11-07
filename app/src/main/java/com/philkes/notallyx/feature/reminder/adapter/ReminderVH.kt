@@ -10,7 +10,7 @@ import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.extensions.toRepetitionText
-import com.philkes.notallyx.feature.reminder.ReminderChipItem
+import com.philkes.notallyx.feature.reminder.NoteReminderRow
 
 class ReminderVH(
     private val composeView: ComposeView,
@@ -25,7 +25,7 @@ class ReminderVH(
 
         composeView.setContent {
             NotallyXTheme {
-                ReminderChipItem(
+                NoteReminderRow(
                     dateTimeText = dateTimeText,
                     repetitionText = repetitionText,
                     onEdit = { listener.edit(value) },
