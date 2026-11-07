@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -37,6 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.toColorInt
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getCurrentImagesDirectory
 import com.philkes.notallyx.core.common.extensions.isPreview
@@ -48,6 +52,8 @@ import com.philkes.notallyx.core.preference.displayBodySize
 import com.philkes.notallyx.core.preference.displaySmallerSize
 import com.philkes.notallyx.core.preference.displayTitleSize
 import com.philkes.notallyx.core.ui.extensions.format
+import com.philkes.notallyx.core.ui.theme.MdThemeOnBackgroundDark
+import com.philkes.notallyx.core.ui.theme.MdThemeOnBackgroundLight
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
@@ -94,6 +100,7 @@ internal fun BaseNoteCard(
     onReminderClick: (() -> Unit)? = null,
 ) {
     val backgroundColor = parseNoteColor(baseNote.color)
+    val contentColor = contentColorFor(backgroundColor)
     val isDefaultColor = baseNote.color == BaseNote.COLOR_DEFAULT
     val stroke =
         if (isSelected) {
@@ -101,14 +108,17 @@ internal fun BaseNoteCard(
         } else if (isDefaultColor) {
             BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         } else null
-
     Card(
         modifier =
             modifier
                 .fillMaxWidth()
                 .padding(horizontal = 4.dp, vertical = 4.dp)
                 .combinedClickable(onClick = onClick, onLongClick = onLongClick),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = backgroundColor,
+                contentColor = contentColor,
+            ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = stroke,
     ) {
@@ -116,11 +126,19 @@ internal fun BaseNoteCard(
             // Image Preview
             if (baseNote.images.isNotEmpty() && !config.hideImages) {
                 val imageFile =
-                    if (imageRoot != null) File(imageRoot, baseNote.images[0].localName) else null
+                    if (imageRoot != null)
+                        File(
+                            imageRoot,
+                            baseNote.images[0].localName,
+                        )
+                    else null
                 ImagePreview(imageFile, baseNote)
             }
 
-            Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
                 // Title
                 val titleText =
                     if (baseNote.title.isNotEmpty()) {
@@ -134,7 +152,7 @@ internal fun BaseNoteCard(
                         text = titleText,
                         fontSize = config.textSize.displayTitleSize.sp,
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = LocalContentColor.current,
                         maxLines = config.maxTitleLines,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -145,8 +163,10 @@ internal fun BaseNoteCard(
                     when (config.sortBy) {
                         NotesSortBy.CREATION_DATE ->
                             Pair(baseNote.timestamp, R.string.creation_date)
+
                         NotesSortBy.MODIFIED_DATE ->
                             Pair(baseNote.modifiedTimestamp, R.string.modified_date)
+
                         else -> Pair(null, null)
                     }
 
@@ -157,9 +177,6 @@ internal fun BaseNoteCard(
                 val hasReminder = baseNote.reminders.isNotEmpty()
 
                 if (hasDate || hasReminder) {
-                    if (titleText.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(2.dp))
-                    }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth(),
@@ -172,8 +189,7 @@ internal fun BaseNoteCard(
                                 text = "$prefixText $formattedDate".trim(),
                                 fontSize = config.textSize.displayBodySize.sp,
                                 style = MaterialTheme.typography.labelSmall,
-                                color =
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                color = LocalContentColor.current.copy(alpha = 0.7f),
                             )
                         }
 
@@ -226,7 +242,7 @@ internal fun BaseNoteCard(
                             text = baseNote.body,
                             fontSize = config.textSize.displayBodySize.sp,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = LocalContentColor.current,
                             maxLines = if (config.maxLines >= 1) config.maxLines else 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -261,7 +277,7 @@ internal fun BaseNoteCard(
                                                     else R.drawable.checkbox_outline_16
                                             ),
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        tint = LocalContentColor.current,
                                         modifier = Modifier.size(16.dp),
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -269,7 +285,7 @@ internal fun BaseNoteCard(
                                         text = item.body,
                                         fontSize = config.textSize.displayBodySize.sp,
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = LocalContentColor.current,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
@@ -280,7 +296,7 @@ internal fun BaseNoteCard(
                                     text = "+${initializedItems.size - displayedItems.size}",
                                     fontSize = config.textSize.displaySmallerSize.sp,
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = LocalContentColor.current,
                                     modifier = Modifier.padding(top = 2.dp),
                                 )
                             }
@@ -291,11 +307,15 @@ internal fun BaseNoteCard(
                 // Labels
                 if (!config.hideLabels && baseNote.labels.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(6.dp))
-                    FlowRow(modifier = Modifier.fillMaxWidth()) {
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
                         baseNote.labels.forEach { label ->
                             LabelChip(
                                 text = label,
-                                textColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textColor = LocalContentColor.current,
                             )
                         }
                     }
@@ -353,7 +373,7 @@ private fun ImagePreview(
             Text(
                 text = stringResource(R.string.cant_load_image),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = LocalContentColor.current,
             )
         }
     }
@@ -368,14 +388,28 @@ private fun BaseNote.getEmptyMessage() =
     }
 
 @Composable
+private fun contentColorFor(backgroundColor: Color): Color =
+    if (backgroundColor.luminance() > 0.5f) {
+        MdThemeOnBackgroundLight
+    } else {
+        MdThemeOnBackgroundDark
+    }
+
+@Composable
 private fun parseNoteColor(colorHex: String): Color {
     if (colorHex == BaseNote.COLOR_DEFAULT) {
         return MaterialTheme.colorScheme.surface
     }
     return try {
-        Color(android.graphics.Color.parseColor(colorHex))
+        val cleanHex = colorHex.removePrefix("#")
+        val hex = cleanHex.toLong(16)
+        if (cleanHex.length <= 6) Color(0xFF000000 or hex) else Color(hex)
     } catch (_: Exception) {
-        MaterialTheme.colorScheme.surface
+        try {
+            Color(colorHex.toColorInt())
+        } catch (_: Exception) {
+            MaterialTheme.colorScheme.surface
+        }
     }
 }
 
@@ -558,15 +592,25 @@ private fun ListNotePreview() {
 }
 
 @Preview(showBackground = true, name = "Rich Text Note With Everything")
+@Preview(name = "Dark Mode", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun RichTextNotePreview() {
     NotallyXTheme { BaseNoteCard(baseNote = SampleNotes.RICH_TEXT_NOTE) }
 }
 
 @Preview(showBackground = true, name = "Generated List Note")
+@Preview(name = "Dark Mode", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun GeneratedListNotePreview() {
     NotallyXTheme { BaseNoteCard(baseNote = SampleNotes.GENERATED_LIST_NOTE) }
+}
+
+@Preview(showBackground = true, name = "Dark List Note")
+@Composable
+private fun DarkListNotePreview() {
+    NotallyXTheme {
+        BaseNoteCard(baseNote = SampleNotes.GENERATED_LIST_NOTE.copy(color = "#111111"))
+    }
 }
 
 @Preview(showBackground = true, name = "Lorem Ipsum Note")
