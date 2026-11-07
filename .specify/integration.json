@@ -1,0 +1,15 @@
+{
+  "version": "1.2.5",
+  "integration_state_schema": 1,
+  "installed_integrations": [
+    "agy"
+  ],
+  "integration_settings": {
+    "agy": {
+      "script": "py",
+      "invoke_separator": "-"
+    }
+  },
+  "integration": "agy",
+  "default_integration": "agy"
+}
