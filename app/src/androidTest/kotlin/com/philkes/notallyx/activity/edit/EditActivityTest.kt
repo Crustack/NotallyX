@@ -47,6 +47,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
+import androidx.test.uiautomator.UiDevice
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getCurrentAudioDirectory
 import com.philkes.notallyx.core.common.extensions.getTempAudioFile
@@ -62,6 +63,7 @@ import com.philkes.notallyx.feature.migration.ExportMimeType
 import com.philkes.notallyx.feature.reminder.PinnedNotificationManager
 import com.philkes.notallyx.navigation.NotallyNavKey
 import com.philkes.notallyx.test.UiTestBase
+import com.philkes.notallyx.test.appendText
 import com.philkes.notallyx.test.assertSubtextHasLink
 import com.philkes.notallyx.test.assertSubtextHasNoFormatting
 import com.philkes.notallyx.test.assertSubtextHasStrikethrough
@@ -1868,6 +1870,192 @@ class EditActivityTest : UiTestBase() {
         waitUntil { scenario.state == androidx.lifecycle.Lifecycle.State.DESTROYED }
 
         context.getTempAudioFile().delete()
+        scenario.close()
+    }
+
+    @Test
+    fun autoSaveAndUnsavedChanges() {
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        val takeNoteLabel = context.getString(R.string.take_note)
+        val titleLabel = context.getString(R.string.title)
+        val bodyLabel = context.getString(R.string.note)
+        val backLabel = context.getString(R.string.back)
+
+        // =========================================================================
+        // Scenario 1: Auto-save on Home press (backgrounding the app)
+        // =========================================================================
+        composeTestRule.onNodeWithContentDescription(takeNoteLabel).performClick()
+
+        val homeTitle = "AutoSave Home Note"
+        val homeBody = "Persisted when home is pressed without clicking save"
+        composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput(homeBody)
+        composeTestRule.onNodeWithContentDescription(titleLabel).performTextInput(homeTitle)
+
+        // Background the app via Home press
+        device.pressHome()
+
+        // Wait until note is auto-saved to Room database
+        composeTestRule.waitUntil(10_000) {
+            runBlocking { database.getBaseNoteDao().getAllNotes().any { it.title == homeTitle } }
+        }
+        val savedHomeNote = runBlocking {
+            database.getBaseNoteDao().getAllNotes().first { it.title == homeTitle }
+        }
+        assertEquals(homeTitle, savedHomeNote.title)
+        assertEquals(homeBody, savedHomeNote.body)
+
+        // Bring app back to foreground
+        val launchIntent =
+            context.packageManager.getLaunchIntentForPackage(context.packageName)!!.apply {
+                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        context.startActivity(launchIntent)
+
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(homeTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(homeTitle).assertIsDisplayed()
+
+        // =========================================================================
+        // Scenario 2: Auto-save on Back press (New note)
+        // =========================================================================
+        composeTestRule.onNodeWithContentDescription(takeNoteLabel).performClick()
+
+        val backTitle = "AutoSave Back Note"
+        val backBody = "Persisted on back press without clicking save"
+        composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput(backBody)
+        composeTestRule.onNodeWithContentDescription(titleLabel).performTextInput(backTitle)
+
+        // Navigate back via toolbar back button
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+
+        // Wait until returning to MainActivity
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(takeNoteLabel))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        // Verify returning to MainActivity and note is visible
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(backTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(backTitle).assertIsDisplayed()
+
+        // Verify in Room database
+        composeTestRule.waitUntil(10_000) {
+            runBlocking { database.getBaseNoteDao().getAllNotes().any { it.title == backTitle } }
+        }
+        val savedBackNote = runBlocking {
+            database.getBaseNoteDao().getAllNotes().first { it.title == backTitle }
+        }
+        assertEquals(backTitle, savedBackNote.title)
+        assertEquals(backBody, savedBackNote.body)
+
+        // =========================================================================
+        // Scenario 3: Auto-save on Back press (Editing existing note)
+        // =========================================================================
+        // Click on the existing note card to reopen in editor
+        composeTestRule.onNodeWithText(backTitle).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(backBody)).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // Modify title and body
+        composeTestRule.onNodeWithContentDescription(titleLabel).appendText(" Updated")
+        composeTestRule.onNodeWithContentDescription(bodyLabel).appendText(" More content")
+
+        // Exit via toolbar back button
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+
+        // Wait until returning to MainActivity
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(takeNoteLabel))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        val updatedTitle = "$backTitle Updated"
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(updatedTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(updatedTitle).assertIsDisplayed()
+
+        // Verify updated note in database
+        composeTestRule.waitUntil(10_000) {
+            runBlocking {
+                database.getBaseNoteDao().getAllNotes().any {
+                    it.id == savedBackNote.id && it.title == updatedTitle
+                }
+            }
+        }
+        val reloadedNote = runBlocking {
+            database.getBaseNoteDao().getAllNotes().first { it.id == savedBackNote.id }
+        }
+        assertEquals(updatedTitle, reloadedNote.title)
+        assertTrue(reloadedNote.body.contains("More content"))
+
+        // =========================================================================
+        // Scenario 4: Discard empty note on back press (no phantom notes saved)
+        // =========================================================================
+        val noteCountBefore = runBlocking { database.getBaseNoteDao().getAllNotes().size }
+
+        composeTestRule.onNodeWithContentDescription(takeNoteLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(titleLabel))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        // Leave fields blank and press back
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(takeNoteLabel))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        val allNotesAfter = runBlocking { database.getBaseNoteDao().getAllNotes() }
+        assertEquals(noteCountBefore, allNotesAfter.size)
+        assertTrue(allNotesAfter.none { it.title.isEmpty() && it.body.isEmpty() })
+
+        // =========================================================================
+        // Scenario 5: Auto-save timer (idle timer) saves changes while remaining on editor screen
+        // =========================================================================
+        preferences.autoSaveAfterIdleTime.save(1) // 1 second idle timeout
+
+        composeTestRule.onNodeWithContentDescription(takeNoteLabel).performClick()
+
+        val idleTitle = "AutoSave Idle Timer Note"
+        val idleBody = "Persisted automatically via idle timer before leaving editor"
+        composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput(idleBody)
+        composeTestRule.onNodeWithContentDescription(titleLabel).performTextInput(idleTitle)
+
+        // Wait without pressing back or home - idle timer should auto-save to Room DB
+        composeTestRule.waitUntil(10_000) {
+            runBlocking { database.getBaseNoteDao().getAllNotes().any { it.title == idleTitle } }
+        }
+
+        val savedIdleNote = runBlocking {
+            database.getBaseNoteDao().getAllNotes().first { it.title == idleTitle }
+        }
+        assertEquals(idleTitle, savedIdleNote.title)
+        assertEquals(idleBody, savedIdleNote.body)
+
+        // Now exit back to MainActivity
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(idleTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(idleTitle).assertIsDisplayed()
+
         scenario.close()
     }
 }

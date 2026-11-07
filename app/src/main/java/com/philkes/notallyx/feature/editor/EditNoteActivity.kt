@@ -159,6 +159,7 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                     override fun onTitleChange(title: String) {
                         titleState.value = title
                         notallyModel.title = title
+                        resetIdleTimer()
                     }
 
                     override fun onBodyValueChange(bodyValue: TextFieldValue) {
@@ -168,6 +169,7 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                             if (isSearchActiveState.value) {
                                 updateSearchResults(searchQueryState.value)
                             }
+                            resetIdleTimer()
                         }
                         if (bodyValue.selection.min != bodyValue.selection.max) {
                             isFormattingMenuVisible.value = true

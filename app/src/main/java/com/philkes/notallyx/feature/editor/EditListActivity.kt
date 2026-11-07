@@ -182,6 +182,7 @@ class EditListActivity : EditActivity(Type.LIST) {
                     override fun onTitleChange(title: String) {
                         titleState.value = title
                         notallyModel.title = title
+                        resetIdleTimer()
                     }
 
                     override fun onSearchQueryChange(query: String) {
