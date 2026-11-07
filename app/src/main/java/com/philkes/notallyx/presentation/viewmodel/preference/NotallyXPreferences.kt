@@ -18,6 +18,19 @@ import com.philkes.notallyx.utils.toCamelCase
 import org.json.JSONArray
 import org.json.JSONObject
 
+const val TEXT_SIZE_DEFAULT = 16f
+const val TEXT_SIZE_MIN = 12f
+const val TEXT_SIZE_MAX = 32f
+
+const val NUMBER_PREF_DISABLED = -1
+
+const val MAX_TITLE_LINES_MIN = 1
+const val MAX_TITLE_LINES_MAX = 10
+
+const val MAX_LABELS_IN_NAVIGATION_MAX = 200
+
+const val MAX_ITEMS_MAX = 10
+
 class NotallyXPreferences private constructor(private val context: ContextWrapper) {
 
     private val preferences = PreferenceManager.getDefaultSharedPreferences(context)
@@ -38,13 +51,20 @@ class NotallyXPreferences private constructor(private val context: ContextWrappe
         FloatPreference(
             "textSizeNoteEditor",
             preferences,
-            16f,
-            12f,
-            32f,
+            TEXT_SIZE_DEFAULT,
+            TEXT_SIZE_MIN,
+            TEXT_SIZE_MAX,
             R.string.text_size_note_editor,
         )
     val textSizeOverview =
-        FloatPreference("textSizeOverview", preferences, 16f, 12f, 32f, R.string.text_size_overview)
+        FloatPreference(
+            "textSizeOverview",
+            preferences,
+            TEXT_SIZE_DEFAULT,
+            TEXT_SIZE_MIN,
+            TEXT_SIZE_MAX,
+            R.string.text_size_overview,
+        )
     val dateFormatOverview =
         createEnumPreference(
             preferences,
@@ -100,7 +120,7 @@ class NotallyXPreferences private constructor(private val context: ContextWrappe
             preferences,
             4,
             0,
-            10,
+            MAX_ITEMS_MAX,
             R.string.max_items_to_display,
         )
     val maxLines =
@@ -109,7 +129,7 @@ class NotallyXPreferences private constructor(private val context: ContextWrappe
             preferences,
             8,
             0,
-            10,
+            MAX_ITEMS_MAX,
             R.string.max_lines_to_display,
         )
     val maxTitle =
@@ -117,8 +137,8 @@ class NotallyXPreferences private constructor(private val context: ContextWrappe
             "maxLinesToDisplayInTitle",
             preferences,
             1,
-            1,
-            10,
+            MAX_TITLE_LINES_MIN,
+            MAX_TITLE_LINES_MAX,
             R.string.max_lines_to_display_title,
         )
     val labelsHidden = StringSetPreference("labelsHiddenInNavigation", preferences, setOf())
@@ -149,7 +169,7 @@ class NotallyXPreferences private constructor(private val context: ContextWrappe
             preferences,
             5,
             0,
-            200,
+            MAX_LABELS_IN_NAVIGATION_MAX,
             R.string.max_labels_to_display,
         )
 
@@ -175,7 +195,7 @@ class NotallyXPreferences private constructor(private val context: ContextWrappe
             preferences,
             0,
             0,
-            3650,
+            Integer.MAX_VALUE,
             R.string.auto_remove_deleted_notes,
         )
 
