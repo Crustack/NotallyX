@@ -16,8 +16,9 @@ Customize how NotallyX looks and displays content:
 - **View**: Toggle between Grid view and List view for your notes list.
 - **Theme**: Choose between System default, Light, Dark, or Pure Dark (AMOLED) mode.
 - **Date & Time Formats**: Customize date/time display formats separately for the Overview screen and inside Note views.
-- **Text Size**: Adjust font sizes for notes and the overview list.
+- **Text Size**: Adjust font sizes independently for the Note Editor (`Text size (Note Editor)`) and the overview list (`Text size (Overview)`).
 - **Show Search Bar in Top Bar**: Display a persistent search bar in the top app bar for quicker access.
+- **Always Show Search Bar Expanded**: Keep the search input field expanded at all times.
 
 ## Behavior Settings
 
@@ -45,18 +46,17 @@ Set after how many days notes in the `Deleted` folder (Bin/Trash) are automatica
 
 Adjust how much information is previewed for each note in the overview:
 
-- **Max Title**: Set maximum lines/characters for titles in the overview.
+- **Max Title**: Set maximum lines for titles in the overview.
 - **Max Items**: Set maximum items shown in task list previews.
 - **Max Lines**: Set maximum body text lines displayed in note cards.
-- **Max Labels**: Limit the number of label chips displayed on note cards.
+- **Max Labels in Navigation**: Limit the number of labels shown in the navigation drawer before collapsing under "Show more".
 - **Hide Labels / Images in Overview**: Optionally hide labels or image attachments in the main overview for a cleaner view.
 
 ## Security & Privacy Settings
 
 Protect your notes and app data:
 
-- **Biometric / PIN Lock**: Require biometric authentication (fingerprint, face) or device PIN whenever opening NotallyX.
-- **Database Encryption (Experimental)**: Optionally encrypt the database file on disk via biometric credentials (using SQLCipher). *Note: This is an optional experimental feature and should be used with caution.*
+- **Biometric / PIN Lock**: Require biometric authentication (fingerprint, face) or device PIN whenever opening NotallyX. When enabling this lock, you can optionally enable experimental database encryption via biometric credentials (using SQLCipher). Disabling the lock will also decrypt the database.
 - **Backup Password**: Set a password to encrypt exported backups using AES encryption.
 - **Secure Flag**: Prevent screenshots, screen recordings, and hide app content previews in the Android recent apps switcher.
 
@@ -70,6 +70,7 @@ Keep your notes safe with automatic and manual backup options:
 - **Backup on Exit**: Automatically create a backup whenever you edit and exit a note.
 - **Periodic Backups**: Schedule automatic background backups at regular day intervals and specify the maximum number of backup files to keep.
 - **Export & Import Backup**: Manually export or restore your notes and attachments.
+- **Import Notes from Other App**: Import notes from Google Keep, Evernote, Quillpad, Markdown, Plain Text, or JSON files (see [Import from Other Apps](./features/import-other-apps.mdx)).
 
 For more details, see [💾 Backups](./features/backups.mdx).
 
@@ -89,14 +90,25 @@ NotallyX provides customizable widgets for your home screen:
 3. Find and select "NotallyX"
 4. Configure the widget settings (choose list view, individual note, or specific label)
 
-## Exporting and Importing Settings
+## Exporting, Importing, and Resetting Settings
 
-To use the same app configuration across multiple devices:
+To use the same app configuration across multiple devices or manage settings:
 
-1. Open the app settings
-2. Scroll to the **Settings** section
-3. Tap **Export settings** to save your current configuration to a JSON file
-4. On another device, tap **Import settings** to apply the configuration
+1. Open the app settings.
+2. Scroll to the **Settings** section.
+3. Tap **Export settings** to save your current configuration to a JSON file (note: encrypted settings such as backup password and biometric keys are excluded for security).
+4. On another device, tap **Import settings** to apply the configuration.
+5. Tap **Reset settings** if you wish to reset all settings to their default values.
+6. Tap **Clear Data** if you want to wipe all local data and notes.
+
+## About Section
+
+The About section at the bottom of Settings allows you to:
+- **Send Feedback** and **Rate this app**.
+- **Make a Donation** to support NotallyX development.
+- **View Log File** and **View Crash Logs** for troubleshooting.
+- Access the online **Documentation** and **Source Code** repository.
+- View the installed **App version**.
 
 ## Store Data in Public Folder
 

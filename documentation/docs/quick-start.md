@@ -14,10 +14,12 @@ This guide will help you get up and running with NotallyX quickly. We'll cover t
 1. Tap the **✏️** button on the lower right
 2. Write your note content
 3. Use the formatting toolbar to apply:
-   - **Bold**: Tap the B icon
-   - **Italic**: Tap the I icon
-   - **Strikethrough**: Tap the S icon
-   - **Monospace**: Tap the M icon
+   - **Bold**: Tap the **B** icon
+   - **Italic**: Tap the **I** icon
+   - **Strikethrough**: Tap the **S** strikethrough icon
+   - **Monospace**: Tap the code (`</>`) icon
+   - **Link**: Tap the link icon
+   - **Clear Formatting**: Tap the clear formatting icon
 4. Enter a title for your note (optional)
 5. Tap the back arrow to save and return to the notes list
 
@@ -34,8 +36,7 @@ For more details see ✏️ [Rich Text Formatting](features/rich-text.mdx)
 4. Tap Enter to add a new item
 5. Check the checkbox to mark an item as complete
 6. To create a subtask:
-   - Swipe right on an item (swipe left to undo)
-   - Or long press on an item and tap "Make subtask"
+   - Swipe right on an item to make it a subtask (swipe left to undo)
 7. Tap the back arrow to save and return to the notes list
 
 For more details see ✅ [Task Lists and Subtasks](features/task-lists.mdx)

@@ -19,9 +19,10 @@ To set up the app lock:
 
 1. Open the app settings
 2. Navigate to **Security**
-3. Enable **Lock app with device biometric or PIN**
+3. Tap **Lock app with device biometric or PIN**
 4. If you haven't set up device security, you will be prompted to do so (at least a PIN or screen lock is required)
-5. Whenever your device or app is locked, NotallyX will require authentication before granting access to your notes
+5. You can optionally check **Encrypt Database via Biometric** in the prompt dialog to encrypt the database on disk using SQLCipher
+6. Once enabled, NotallyX will require authentication whenever opening the app or returning to it from background/recent apps. When you disable the lock, the database is automatically decrypted.
 
 :::caution Experimental Database Encryption
 By default, enabling the app lock protects the user interface with authentication, but does not encrypt the underlying database file on disk.
@@ -36,7 +37,7 @@ You can set a password to encrypt your exported backup files:
 1. Open Settings > **Security**
 2. Tap **Backup password**
 3. Enter and confirm your desired encryption password
-4. Future exported backups will be encrypted with AES using this password
+4. Future exported backups will be encrypted with AES-256 using this password
 5. When restoring from a password-protected backup, you will be prompted to enter the password
 
 ## Secure Flag (Hide Screen Content)
