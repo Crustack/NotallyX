@@ -14,6 +14,7 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.extensions.extractColor
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
+import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.feature.editor.EditTextPlainAction
 import com.philkes.notallyx.feature.editor.EditTextPlainDialogState
 import com.philkes.notallyx.feature.editor.EditTextPlainUiState
@@ -32,10 +33,17 @@ fun EditTextPlainScreen(
             bodyValue = state.bodyValue,
         )
 
+    val backgroundColor =
+        if (state.color == BaseNote.COLOR_DEFAULT) {
+            androidx.compose.material3.MaterialTheme.colorScheme.surface
+        } else {
+            Color(context.extractColor(state.color))
+        }
+
     EditNoteScreen(
         noteState = noteState,
         searchState = state.searchState,
-        backgroundColor = Color(context.extractColor(state.color)),
+        backgroundColor = backgroundColor,
         canUndo = state.canUndo,
         canRedo = state.canRedo,
         changeHandlers =

@@ -12,6 +12,8 @@ import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.feature.labels.LabelData
 import com.philkes.notallyx.feature.labels.LabelsScreen
+import com.philkes.notallyx.feature.labels.SelectLabelsScreen
+import com.philkes.notallyx.feature.labels.SelectLabelsUiState
 import com.philkes.notallyx.feature.main.MainDrawerContent
 import com.philkes.notallyx.navigation.NotallyNavKey
 
@@ -187,6 +189,62 @@ fun MainDrawerContent_WithLongLabels_Dark() {
             labels = DRAWER_LABELS,
             onNavigationItemClick = {},
             onCloseDrawer = {},
+        )
+    }
+}
+
+// ==================== SelectLabelsScreen Previews ====================
+
+@Preview(showBackground = true)
+@PreviewTest
+@Composable
+fun SelectLabelsScreen_Light() {
+    NotallyXTheme(theme = Theme.LIGHT) {
+        SelectLabelsScreen(
+            state =
+                SelectLabelsUiState(
+                    labels =
+                        listOf(
+                            Label("Personal", 0),
+                            Label("Work", 1),
+                            Label("Very Long Label Name That Might Wrap In Selection Screen", 2),
+                        ),
+                    selectedLabels = setOf("Work"),
+                ),
+            onAction = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@PreviewTest
+@Composable
+fun SelectLabelsScreen_Dark() {
+    NotallyXTheme(theme = Theme.DARK) {
+        SelectLabelsScreen(
+            state =
+                SelectLabelsUiState(
+                    labels =
+                        listOf(
+                            Label("Personal", 0),
+                            Label("Work", 1),
+                            Label("Very Long Label Name That Might Wrap In Selection Screen", 2),
+                        ),
+                    selectedLabels = setOf("Work"),
+                ),
+            onAction = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@PreviewTest
+@Composable
+fun SelectLabelsScreen_Empty_Light() {
+    NotallyXTheme(theme = Theme.LIGHT) {
+        SelectLabelsScreen(
+            state = SelectLabelsUiState(labels = emptyList()),
+            onAction = {},
         )
     }
 }

@@ -54,6 +54,7 @@ import com.philkes.notallyx.core.common.extensions.getUriForFile
 import com.philkes.notallyx.core.common.extensions.putNavKey
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Color
+import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.toColorString
 import com.philkes.notallyx.feature.main.MainActivity
@@ -146,6 +147,7 @@ class EditRouteTest : UiTestBase() {
 
     @Test
     fun textFormatting() {
+        runBlocking { database.clearAllTables() }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
         val takeNoteLabel = context.getString(R.string.take_note)
@@ -157,14 +159,18 @@ class EditRouteTest : UiTestBase() {
         val bodyNode = composeTestRule.onNodeWithContentDescription(bodyLabel)
 
         bodyNode.performTextInput(text)
+        Espresso.closeSoftKeyboard()
+        composeTestRule.waitForIdle()
 
         // Open formatting bar
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.edit))
             .performClick()
+        composeTestRule.waitForIdle()
 
         // Select and format "Lorem" as bold
         bodyNode.performTextInputSelection(TextRange(0, 5))
+        composeTestRule.waitForIdle()
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.bold))
             .performClick()
@@ -172,6 +178,7 @@ class EditRouteTest : UiTestBase() {
 
         // Select and format "ipsum" as italic
         bodyNode.performTextInputSelection(TextRange(6, 11))
+        composeTestRule.waitForIdle()
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.italic))
             .performClick()
@@ -179,6 +186,7 @@ class EditRouteTest : UiTestBase() {
 
         // Select and format "dolor" as strikethrough
         bodyNode.performTextInputSelection(TextRange(12, 17))
+        composeTestRule.waitForIdle()
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.strikethrough))
             .performClick()
@@ -186,6 +194,7 @@ class EditRouteTest : UiTestBase() {
 
         // Select and format "sit" as monospace
         bodyNode.performTextInputSelection(TextRange(18, 21))
+        composeTestRule.waitForIdle()
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.monospace))
             .performClick()
@@ -193,6 +202,7 @@ class EditRouteTest : UiTestBase() {
 
         // Select and format "amet" as link
         bodyNode.performTextInputSelection(TextRange(22, 26))
+        composeTestRule.waitForIdle()
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.link))
             .performClick()
@@ -201,6 +211,8 @@ class EditRouteTest : UiTestBase() {
         composeTestRule
             .onAllNodes(hasSetTextAction() and hasAnyAncestor(isComposeDialog()))[1]
             .performTextInput(linkUrl)
+        Espresso.closeSoftKeyboard()
+        composeTestRule.waitForIdle()
         composeTestRule
             .onNode(hasText(context.getString(R.string.save)) and hasAnyAncestor(isComposeDialog()))
             .performClick()
@@ -208,6 +220,7 @@ class EditRouteTest : UiTestBase() {
 
         // Select "consectetur", format as bold and then clear formatting
         bodyNode.performTextInputSelection(TextRange(28, 39))
+        composeTestRule.waitForIdle()
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.bold))
             .performClick()
@@ -228,6 +241,7 @@ class EditRouteTest : UiTestBase() {
 
         // Click on the text that has the link to open options dialog
         bodyNode.performClickOnSubtext("amet")
+        composeTestRule.waitForIdle()
 
         // In options dialog, click "Edit Link"
         composeTestRule
@@ -235,6 +249,7 @@ class EditRouteTest : UiTestBase() {
                 hasText(context.getString(R.string.edit_link)) and hasAnyAncestor(isComposeDialog())
             )
             .performClick()
+        composeTestRule.waitForIdle()
 
         // Edit link and display text
         val updatedText = "amet updated"
@@ -245,9 +260,12 @@ class EditRouteTest : UiTestBase() {
         composeTestRule
             .onAllNodes(hasSetTextAction() and hasAnyAncestor(isComposeDialog()))[1]
             .performTextReplacement(updatedUrl)
+        Espresso.closeSoftKeyboard()
+        composeTestRule.waitForIdle()
         composeTestRule
             .onNode(hasText(context.getString(R.string.save)) and hasAnyAncestor(isComposeDialog()))
             .performClick()
+        composeTestRule.waitForIdle()
 
         // Assert text changed and link is updated
         bodyNode
@@ -2665,5 +2683,201 @@ class EditRouteTest : UiTestBase() {
             .performClick()
 
         scenario.close()
+    }
+
+    @Test
+    fun selectAndAddLabelsForNote() {
+        val existingLabel = "Work"
+        val newLabel = "Urgent"
+        runBlocking { database.getLabelDao().insert(Label(existingLabel, 0)) }
+
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        val takeNoteLabel = context.getString(R.string.take_note)
+        val titleLabel = context.getString(R.string.title)
+        val bodyLabel = context.getString(R.string.note)
+        val saveLabel = context.getString(R.string.save)
+        val addLabel = context.getString(R.string.add_label)
+        val backLabel = context.getString(R.string.back)
+        val noteTitle = "Note With Assigned Labels"
+
+        // 1. Create a note
+        composeTestRule.onNodeWithContentDescription(takeNoteLabel).performClick()
+        composeTestRule.onNodeWithContentDescription(titleLabel).performTextInput(noteTitle)
+        composeTestRule
+            .onNodeWithContentDescription(bodyLabel)
+            .performTextInput("Testing label selection")
+
+        // 2. Open overflow menu / More options
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.tap_for_more_options))
+            .performClick()
+
+        // 3. Click "Labels"
+        val labelNodes = composeTestRule.onAllNodes(hasText(context.getString(R.string.labels)))
+        labelNodes[labelNodes.fetchSemanticsNodes().size - 1].performClick()
+
+        // 4. In SelectLabelsScreen: verify existing label is displayed and toggle its checkbox
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(existingLabel)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onAllNodes(hasText(existingLabel))[0].performClick()
+
+        // 5. Click the "+" Add button in TopAppBar to add a new label
+        composeTestRule.onNodeWithContentDescription(addLabel).performClick()
+
+        // 6. Enter new label name and click Save in dialog
+        composeTestRule.waitUntil(5_000) {
+            composeTestRule
+                .onAllNodes(hasSetTextAction() and hasAnyAncestor(isComposeDialog()))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule
+            .onNode(hasSetTextAction() and hasAnyAncestor(isComposeDialog()))
+            .performTextInput(newLabel)
+        composeTestRule
+            .onNode(hasText(saveLabel) and hasAnyAncestor(isComposeDialog()))
+            .performClick()
+
+        // 7. Verify new label appears in list
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(newLabel)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onAllNodes(hasText(newLabel))[0].assertIsDisplayed()
+
+        // 8. Navigate back to note editor
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+
+        // 9. Verify in editor that both label chips are displayed
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(existingLabel)).fetchSemanticsNodes().isNotEmpty() &&
+                composeTestRule.onAllNodes(hasText(newLabel)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onAllNodes(hasText(existingLabel))[0].assertIsDisplayed()
+        composeTestRule.onAllNodes(hasText(newLabel))[0].assertIsDisplayed()
+
+        // 10. Navigate back to MainActivity
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+
+        // 11. Assert note in MainActivity is displayed with both labels
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(noteTitle).assertIsDisplayed()
+
+        // 12. Verify persisted in database
+        runBlocking {
+            val notes = database.getBaseNoteDao().getAll()
+            val savedNote = notes.firstOrNull { it.title == noteTitle }
+            assertTrue("Note should be saved in database", savedNote != null)
+            assertTrue(
+                "Saved note should have '$existingLabel'",
+                savedNote!!.labels.contains(existingLabel),
+            )
+            assertTrue(
+                "Saved note should have '$newLabel'",
+                savedNote.labels.contains(newLabel),
+            )
+
+            val allLabels = database.getLabelDao().getArrayOfAll()
+            assertTrue(
+                "Label '$newLabel' should be persisted in LabelDao",
+                allLabels.contains(newLabel),
+            )
+        }
+
+        scenario.close()
+    }
+
+    @Test
+    fun openGenericFileAttachment() {
+        val testFile =
+            File(context.cacheDir, "sample_doc.txt").apply {
+                writeText("Sample file attachment content")
+            }
+        val fileUri = context.getUriForFile(testFile)
+
+        Intents.init()
+        try {
+            val attachFileResultIntent = Intent().apply { data = fileUri }
+            val attachFileResult =
+                Instrumentation.ActivityResult(Activity.RESULT_OK, attachFileResultIntent)
+
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(
+                            Intent.EXTRA_INTENT,
+                            allOf(hasAction(Intent.ACTION_GET_CONTENT), hasType("*/*")),
+                        ),
+                    )
+                )
+                .respondWith(attachFileResult)
+
+            val openFileResult = Instrumentation.ActivityResult(Activity.RESULT_OK, null)
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(Intent.EXTRA_INTENT, hasAction(Intent.ACTION_VIEW)),
+                    )
+                )
+                .respondWith(openFileResult)
+
+            val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+            val takeNoteLabel = context.getString(R.string.take_note)
+            val titleLabel = context.getString(R.string.title)
+            val bodyLabel = context.getString(R.string.note)
+            val backLabel = context.getString(R.string.back)
+
+            // 1. Create a new note
+            composeTestRule.onNodeWithContentDescription(takeNoteLabel).performClick()
+            composeTestRule
+                .onNodeWithContentDescription(titleLabel)
+                .performTextInput("File Attachment Note")
+            composeTestRule
+                .onNodeWithContentDescription(bodyLabel)
+                .performTextInput("File Attachment Body")
+
+            // 2. Open Add Item bottom sheet and attach file
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.add_item))
+                .performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.attach_file)).performClick()
+
+            // 3. Wait for attachment to appear in editor
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("sample_doc.txt", substring = true))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("sample_doc.txt", substring = true).assertIsDisplayed()
+
+            // 4. Tap file attachment chip to trigger ACTION_VIEW
+            composeTestRule.onNodeWithText("sample_doc.txt", substring = true).performClick()
+
+            // 5. Verify ACTION_VIEW intent with URI was launched via chooser
+            intended(
+                allOf(
+                    hasAction(Intent.ACTION_CHOOSER),
+                    hasExtra(
+                        Intent.EXTRA_INTENT,
+                        allOf(
+                            hasAction(Intent.ACTION_VIEW),
+                            hasType("text/plain"),
+                        ),
+                    ),
+                )
+            )
+
+            // 6. Clean up
+            composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+            scenario.close()
+        } finally {
+            Intents.release()
+            testFile.delete()
+        }
     }
 }

@@ -23,21 +23,28 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasType
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.philkes.notallyx.NotallyXApplication
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.extensions.MIME_TYPE_ZIP
 import com.philkes.notallyx.core.common.extensions.getExternalBackupsDirectory
 import com.philkes.notallyx.core.common.extensions.getExternalMediaDirectory
 import com.philkes.notallyx.core.common.extensions.getUriForFile
 import com.philkes.notallyx.core.common.extensions.listZipFiles
+import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.PeriodicBackup
 import com.philkes.notallyx.core.preference.Theme
+import com.philkes.notallyx.core.preference.TimeFormat
+import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.feature.editor.refreshStatusBarPin
@@ -63,6 +70,7 @@ import com.philkes.notallyx.test.waitUntil
 import com.philkes.notallyx.test.waitUntilSettingsValue
 import java.io.File
 import java.util.Date
+import java.util.zip.ZipFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -1204,5 +1212,147 @@ class SettingsRouteTest : UiTestBase() {
             composeTestRule.onAllNodes(hasText("Crypto Note")).fetchSemanticsNodes().isNotEmpty()
         }
         composeTestRule.onNodeWithText("Crypto Note").assertIsDisplayed()
+    }
+
+    @Test
+    fun exportBackupViaSaf() {
+        val noteTitle = "Backup Note Title"
+        runBlocking {
+            database
+                .getBaseNoteDao()
+                .insert(createBaseNote(title = noteTitle, body = "Backup Note Body"))
+        }
+
+        Intents.init()
+        val exportFile =
+            File(context.cacheDir, "manual_backup_saf_test.zip").apply { if (exists()) delete() }
+
+        try {
+            val exportUri = context.getUriForFile(exportFile)
+            val exportResult =
+                Instrumentation.ActivityResult(
+                    Activity.RESULT_OK,
+                    Intent().apply {
+                        data = exportUri
+                        addFlags(
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                        )
+                    },
+                )
+
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(
+                            `is`(Intent.EXTRA_INTENT),
+                            hasAction(Intent.ACTION_CREATE_DOCUMENT),
+                        ),
+                    )
+                )
+                .respondWith(exportResult)
+
+            composeTestRule.navigateTo(NotallyNavKey.Settings)
+
+            // Scroll to and click "Export backup"
+            val exportBackupText = context.getString(R.string.export_backup)
+            composeTestRule.onNodeWithText(exportBackupText).performScrollTo().performClick()
+
+            // Verify ACTION_CREATE_DOCUMENT intent launched via chooser with ZIP mime type
+            intended(
+                allOf(
+                    hasAction(Intent.ACTION_CHOOSER),
+                    hasExtra(
+                        `is`(Intent.EXTRA_INTENT),
+                        allOf(
+                            hasAction(Intent.ACTION_CREATE_DOCUMENT),
+                            hasType(MIME_TYPE_ZIP),
+                        ),
+                    ),
+                )
+            )
+
+            // Wait until ZIP backup is written to disk
+            waitUntil(15_000) { exportFile.exists() && exportFile.length() > 0 }
+            assertTrue("Backup zip file should exist", exportFile.exists())
+            assertTrue("Backup zip file should not be empty", exportFile.length() > 0)
+
+            // Verify ZIP contents contain database file
+            ZipFile(exportFile).use { zip ->
+                val entryNames = zip.entries().asSequence().map { it.name }.toList()
+                assertTrue(
+                    "Backup zip should contain database file",
+                    entryNames.any { it.contains(NotallyDatabase.DATABASE_NAME) },
+                )
+            }
+        } finally {
+            Intents.release()
+            exportFile.delete()
+        }
+    }
+
+    @Test
+    fun changeDateTimeFormat() {
+        val testTimestamp = 1700000000000L // Wed Nov 15 2023
+        val noteTitle = "Format Test Note"
+        runBlocking {
+            database
+                .getBaseNoteDao()
+                .insert(
+                    createBaseNote(
+                        title = noteTitle,
+                        body = "Testing timestamp formats",
+                        timestamp = testTimestamp,
+                        modifiedTimestamp = testTimestamp,
+                    )
+                )
+        }
+
+        composeTestRule.navigateTo(NotallyNavKey.Settings)
+
+        // 1. Open DateTimeFormatDialog for overview
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.date_format_overview))
+            .performScrollTo()
+            .performClick()
+
+        // 2. Select Date format: click Date dropdown anchor
+        composeTestRule
+            .onNode(hasText(context.getString(R.string.date)) and hasAnyAncestor(isComposeDialog()))
+            .performClick()
+
+        val targetDateFormat = DateFormat.SHORT_ISO
+        composeTestRule.onNodeWithText(targetDateFormat.getText(context)).performClick()
+
+        // 3. Select Time format: click Time dropdown anchor
+        composeTestRule
+            .onNode(hasText(context.getString(R.string.time)) and hasAnyAncestor(isComposeDialog()))
+            .performClick()
+
+        val targetTimeFormat = TimeFormat.TWENTY_FOUR_H
+        composeTestRule.onNodeWithText(targetTimeFormat.getText(context)).performClick()
+
+        // 4. Save dialog
+        composeTestRule
+            .onNode(hasText(context.getString(R.string.save)) and hasAnyAncestor(isComposeDialog()))
+            .performClick()
+
+        // 5. Verify preferences updated
+        assertEquals(targetDateFormat, preferences.dateFormatOverview.value)
+        assertEquals(targetTimeFormat, preferences.timeFormatOverview.value)
+
+        // 6. Navigate to Notes overview and verify timestamp format on note card
+        composeTestRule.navigateTo(NotallyNavKey.Notes)
+
+        val expectedTimestampString = Date(testTimestamp).format(targetDateFormat, targetTimeFormat)
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText(expectedTimestampString, substring = true))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule
+            .onNodeWithText(expectedTimestampString, substring = true)
+            .assertIsDisplayed()
     }
 }

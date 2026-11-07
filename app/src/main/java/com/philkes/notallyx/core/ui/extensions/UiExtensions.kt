@@ -235,7 +235,12 @@ fun Context.restartApplication(
 @ColorInt
 fun Context.extractColor(color: String): Int {
     return when (color) {
-        BaseNote.COLOR_DEFAULT -> getColorFromAttr(R.attr.colorSurface)
+        BaseNote.COLOR_DEFAULT ->
+            try {
+                getColorFromAttr(R.attr.colorSurface)
+            } catch (_: Exception) {
+                Color.WHITE
+            }
         else -> Color.parseColor(color)
     }
 }

@@ -532,7 +532,13 @@ object SampleNotes {
                 ),
             audios = listOf(Audio("audio1.aac", 60000L, 1767355200000L)),
             reminders =
-                listOf(Reminder(id = 1L, dateTime = Date().plus(2.hours), repetition = null)),
+                listOf(
+                    Reminder(
+                        id = 1L,
+                        dateTime = Date(date.plus(2.hours).toEpochMilliseconds()),
+                        repetition = null,
+                    )
+                ),
             viewMode = NoteViewMode.EDIT,
             isPinnedToStatus = false,
         )
