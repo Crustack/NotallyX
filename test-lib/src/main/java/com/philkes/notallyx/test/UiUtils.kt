@@ -1,5 +1,7 @@
 package com.philkes.notallyx.test
 
+import com.philkes.notallyx.navigation.NotallyNavKey
+
 import android.graphics.Point
 import android.graphics.Typeface
 import android.os.SystemClock
@@ -14,17 +16,17 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.widget.EditText
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyDescendant
-import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -445,20 +447,24 @@ fun createBaseNote(
 
 fun onDisplayView(viewMatcher: Matcher<View>) = onView(allOf(viewMatcher, isDisplayed()))
 
-fun navigateTo(fragmentId: Int) {
+fun navigateTo(navKey: NotallyNavKey) {
+    val stringResId =
+        when (navKey) {
+            is NotallyNavKey.Notes -> R.string.notes
+            is NotallyNavKey.Unlabeled -> R.string.unlabeled
+            is NotallyNavKey.Labels -> R.string.labels
+            is NotallyNavKey.Deleted -> R.string.deleted
+            is NotallyNavKey.Archived -> R.string.archived
+            is NotallyNavKey.Reminders -> R.string.reminders
+            is NotallyNavKey.Settings -> R.string.settings
+            else -> error("Unsupported navKey: $navKey")
+        }
+    navigateTo(stringResId)
+}
+
+fun navigateTo(stringResId: Int) {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
     val appName = context.getString(R.string.app_name)
-    val stringResId =
-        when (fragmentId) {
-            R.id.Notes -> R.string.notes
-            R.id.Unlabeled -> R.string.unlabeled
-            R.id.Labels -> R.string.labels
-            R.id.Deleted -> R.string.deleted
-            R.id.Archived -> R.string.archived
-            R.id.Reminders -> R.string.reminders
-            R.id.Settings -> R.string.settings
-            else -> error("Unknown fragmentId: $fragmentId")
-        }
     val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
     val menuButton = device.findObject(By.desc(appName))
     if (menuButton != null) {
@@ -475,20 +481,24 @@ fun navigateTo(fragmentId: Int) {
     }
 }
 
-fun ComposeTestRule.navigateTo(fragmentId: Int) {
-    val context = InstrumentationRegistry.getInstrumentation().targetContext
+fun ComposeTestRule.navigateTo(navKey: NotallyNavKey) {
     val stringResId =
-        when (fragmentId) {
-            R.id.Notes -> R.string.notes
-            R.id.Unlabeled -> R.string.unlabeled
-            R.id.Labels -> R.string.labels
-            R.id.Deleted -> R.string.deleted
-            R.id.Archived -> R.string.archived
-            R.id.Reminders -> R.string.reminders
-            R.id.Settings -> R.string.settings
-            else -> error("Unknown fragmentId: $fragmentId")
+        when (navKey) {
+            is NotallyNavKey.Notes -> R.string.notes
+            is NotallyNavKey.Unlabeled -> R.string.unlabeled
+            is NotallyNavKey.Labels -> R.string.labels
+            is NotallyNavKey.Deleted -> R.string.deleted
+            is NotallyNavKey.Archived -> R.string.archived
+            is NotallyNavKey.Reminders -> R.string.reminders
+            is NotallyNavKey.Settings -> R.string.settings
+            else -> error("Unsupported navKey: $navKey")
         }
-    onNodeWithTag("NavigationDrawerButton").performClick()
+    navigateTo(stringResId)
+}
+
+fun ComposeTestRule.navigateTo(stringResId: Int) {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    onNodeWithContentDescription(context.getString(R.string.app_name)).performClick()
     onNodeWithText(context.getString(stringResId)).performClick()
 }
 
@@ -681,10 +691,11 @@ fun UiTestBase.initFakeBiometric(): FakeBiometricAuthenticator {
 }
 
 fun ComposeTestRule.checkAndUpdateNoteTitle(textToMatch: String, textToAdd: String) {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
     waitUntil(10_000) { onAllNodes(hasText(textToMatch)).fetchSemanticsNodes().isNotEmpty() }
     onNodeWithText(textToMatch).performClick()
-    onNodeWithTag("EnterTitle").appendText(textToAdd)
-    onNodeWithTag("BackButton").performClick()
+    onNodeWithContentDescription(context.getString(R.string.title)).appendText(textToAdd)
+    onNodeWithContentDescription(context.getString(R.string.back)).performClick()
     waitUntil(10_000) {
         onAllNodes(hasText(textToMatch + textToAdd)).fetchSemanticsNodes().isNotEmpty()
     }
@@ -699,13 +710,14 @@ fun SemanticsNodeInteraction.appendText(textToAppend: String) {
 }
 
 fun ComposeTestRule.waitUntilSettingsValue(
-    tag: String,
+    titleResId: Int,
     valueResId: Int,
     timeoutMs: Long = 15_000L,
 ) {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
+    val titleText = context.getString(titleResId)
     val expectedText = context.getString(valueResId)
-    val matcher = hasTestTag(tag) and hasAnyDescendant(hasText(expectedText))
+    val matcher = hasText(titleText) and hasAnyDescendant(hasText(expectedText))
     val endTime = System.currentTimeMillis() + timeoutMs
     while (System.currentTimeMillis() < endTime) {
         try {
@@ -721,30 +733,48 @@ fun ComposeTestRule.waitUntilSettingsValue(
     onNode(matcher, useUnmergedTree = true).performScrollTo().assertIsDisplayed()
 }
 
+private val radioButtonMatcher = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
+
 fun ComposeTestRule.enableBiometricLock(encryptDb: Boolean = false) {
-    onNodeWithTag("BiometricLock").performScrollTo().performClick()
-    R.string.enabled.byText().perform(click())
-    R.string.continue_.byText().perform(scrollTo(), click())
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    onNodeWithText(context.getString(R.string.biometric_lock)).performScrollTo().performClick()
+    onNode(hasText(context.getString(R.string.enabled)) and radioButtonMatcher).performClick()
+    onNodeWithText(context.getString(R.string.save)).performClick()
+
+    val continueText = context.getString(R.string.continue_)
+    waitUntil(10_000) { onAllNodes(hasText(continueText)).fetchSemanticsNodes().isNotEmpty() }
+    onNodeWithText(continueText).performClick()
+
     if (encryptDb) {
-        R.string.encrypt_database_via_biometric.byText().perform(click())
+        val encryptText = context.getString(R.string.encrypt_database_via_biometric)
+        waitUntil(10_000) { onAllNodes(hasText(encryptText)).fetchSemanticsNodes().isNotEmpty() }
+        onNodeWithText(encryptText).performClick()
     }
-    R.string.continue_.byText().perform(scrollTo(), click())
+    onNodeWithText(context.getString(R.string.save)).performClick()
+
     val expectedValueResId =
         if (encryptDb) R.string.biometric_lock_enabled_with_encryption else R.string.enabled
-    waitUntilSettingsValue("BiometricLock", expectedValueResId)
+    waitUntilSettingsValue(R.string.biometric_lock, expectedValueResId)
 }
 
 fun ComposeTestRule.disableBiometricLock() {
-    onNodeWithTag("BiometricLock").performScrollTo().performClick()
-    R.string.disabled.byText().perform(click())
-    R.string.continue_.byText().perform(scrollTo(), click())
-    waitUntilSettingsValue("BiometricLock", R.string.disabled)
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    onNodeWithText(context.getString(R.string.biometric_lock)).performScrollTo().performClick()
+    onNode(hasText(context.getString(R.string.disabled)) and radioButtonMatcher).performClick()
+    onNodeWithText(context.getString(R.string.save)).performClick()
+
+    val continueText = context.getString(R.string.continue_)
+    waitUntil(10_000) { onAllNodes(hasText(continueText)).fetchSemanticsNodes().isNotEmpty() }
+    onNodeWithText(continueText).performClick()
+
+    waitUntilSettingsValue(R.string.biometric_lock, R.string.disabled)
 }
 
 fun ComposeTestRule.enableDataInPublic(context: android.content.Context) {
-    onNodeWithTag("DataInPublicFolder").performScrollTo().performClick()
-    R.string.enabled.byText().perform(click())
-    waitUntilSettingsValue("DataInPublicFolder", R.string.enabled)
+    onNodeWithText(context.getString(R.string.data_in_public)).performScrollTo().performClick()
+    onNode(hasText(context.getString(R.string.enabled)) and radioButtonMatcher).performClick()
+    onNodeWithText(context.getString(R.string.save)).performClick()
+    waitUntilSettingsValue(R.string.data_in_public, R.string.enabled)
     val contextWrapper = android.content.ContextWrapper(context)
     waitUntil(15_000L) {
         NotallyDatabase.getCurrentDatabaseFile(contextWrapper) ==
@@ -753,9 +783,10 @@ fun ComposeTestRule.enableDataInPublic(context: android.content.Context) {
 }
 
 fun ComposeTestRule.disableDataInPublic(context: android.content.Context) {
-    onNodeWithTag("DataInPublicFolder").performScrollTo().performClick()
-    R.string.disabled.byText().perform(click())
-    waitUntilSettingsValue("DataInPublicFolder", R.string.disabled)
+    onNodeWithText(context.getString(R.string.data_in_public)).performScrollTo().performClick()
+    onNode(hasText(context.getString(R.string.disabled)) and radioButtonMatcher).performClick()
+    onNodeWithText(context.getString(R.string.save)).performClick()
+    waitUntilSettingsValue(R.string.data_in_public, R.string.disabled)
     val contextWrapper = android.content.ContextWrapper(context)
     waitUntil(15_000L) {
         NotallyDatabase.getCurrentDatabaseFile(contextWrapper) ==

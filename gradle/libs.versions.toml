@@ -25,7 +25,7 @@ activityCompose = "1.13.0"
 lifecycleRuntimeCompose = "2.11.0"
 
 # Libraries
-navigation = "2.10.2"
+nav3Core = "1.2.0"
 room = "2.8.5"
 preference = "1.2.1"
 securityCrypto = "1.1.0"
@@ -51,7 +51,6 @@ zstd = "1.5.7-6"
 commonsConfiguration = "2.15.1"
 
 # Test
-kaspresso = "1.6.1"
 espresso = "3.7.0"
 androidxTest = "1.7.0"
 uiautomator = "2.4.0"
@@ -74,8 +73,8 @@ appcompat = "1.6.1"
 
 [libraries]
 # AndroidX
-androidx-navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigation" }
-androidx-navigation-ui = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigation" }
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
+androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }
 androidx-preference = { group = "androidx.preference", name = "preference-ktx", version.ref = "preference" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
@@ -96,7 +95,6 @@ androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleRuntimeCompose" }
-androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
 
 # Third-party
 customactivityoncrash = { group = "cat.ereza", name = "customactivityoncrash", version.ref = "customactivityoncrash" }
@@ -118,8 +116,6 @@ commonmark-gfm-strikethrough = { group = "org.commonmark", name = "commonmark-ex
 commons-configuration = { group = "org.apache.commons", name = "commons-configuration2", version.ref = "commonsConfiguration" }
 
 # Test
-kaspresso-core = { group = "com.kaspersky.android-components", name = "kaspresso", version.ref = "kaspresso" }
-kaspresso-compose-support = { group = "com.kaspersky.android-components", name = "kaspresso-compose-support", version.ref = "kaspresso" }
 androidx-test-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
 androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
 androidx-test-espresso-contrib = { group = "androidx.test.espresso", name = "espresso-contrib", version.ref = "espresso" }
@@ -148,6 +144,7 @@ zstd-jni-test = { group = "com.github.luben", name = "zstd-jni", version.ref = "
 koin-bom = { group = "io.insert-koin", name = "koin-bom", version.ref = "koin" }
 koin-core = { group = "io.insert-koin", name = "koin-core" }
 koin-android = { group = "io.insert-koin", name = "koin-android" }
+koin-androidx-compose = { group = "io.insert-koin", name = "koin-androidx-compose" }
 koin-androidx-workmanager = { group = "io.insert-koin", name = "koin-androidx-workmanager" }
 koin-test = { group = "io.insert-koin", name = "koin-test" }
 koin-test-junit4 = { group = "io.insert-koin", name = "koin-test-junit4" }
@@ -163,8 +160,6 @@ compose = [
     "androidx-activity-compose",
     "androidx-lifecycle-runtime-compose"
 ]
-# Navigation
-navigation = ["androidx-navigation-fragment", "androidx-navigation-ui"]
 # Room
 room = ["androidx-room-ktx", "androidx-room-runtime"]
 # CommonMark

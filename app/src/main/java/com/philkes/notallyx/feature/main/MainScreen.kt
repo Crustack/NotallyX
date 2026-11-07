@@ -32,17 +32,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
+import com.philkes.notallyx.navigation.NotallyNavKey
 import kotlinx.coroutines.launch
 
 internal interface ActionModeListener {
@@ -75,10 +73,10 @@ internal interface ActionModeListener {
 
 @Composable
 private fun MainDrawerContent(
-    selectedDestinationId: Int,
+    selectedNavKey: NotallyNavKey,
     title: String,
     labels: List<Label>,
-    onNavigationItemClick: (Int, String?) -> Unit,
+    onNavigationItemClick: (NotallyNavKey) -> Unit,
     onCloseDrawer: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -89,7 +87,7 @@ private fun MainDrawerContent(
 
         NavigationDrawerItem(
             label = { Text(text = stringResource(R.string.notes)) },
-            selected = selectedDestinationId == R.id.Notes,
+            selected = selectedNavKey is NotallyNavKey.Notes,
             icon = {
                 Icon(
                     painter = painterResource(id = R.drawable.home),
@@ -98,14 +96,14 @@ private fun MainDrawerContent(
             },
             onClick = {
                 onCloseDrawer()
-                onNavigationItemClick(R.id.Notes, null)
+                onNavigationItemClick(NotallyNavKey.Notes)
             },
             modifier = Modifier.padding(horizontal = 12.dp),
         )
 
         NavigationDrawerItem(
             label = { Text(text = stringResource(R.string.unlabeled)) },
-            selected = selectedDestinationId == R.id.Unlabeled,
+            selected = selectedNavKey is NotallyNavKey.Unlabeled,
             icon = {
                 Icon(
                     painter = painterResource(id = R.drawable.label_off),
@@ -114,14 +112,14 @@ private fun MainDrawerContent(
             },
             onClick = {
                 onCloseDrawer()
-                onNavigationItemClick(R.id.Unlabeled, null)
+                onNavigationItemClick(NotallyNavKey.Unlabeled)
             },
             modifier = Modifier.padding(horizontal = 12.dp),
         )
 
         NavigationDrawerItem(
             label = { Text(text = stringResource(R.string.labels)) },
-            selected = selectedDestinationId == R.id.Labels,
+            selected = selectedNavKey is NotallyNavKey.Labels,
             icon = {
                 Icon(
                     painter = painterResource(id = R.drawable.label_more),
@@ -130,7 +128,7 @@ private fun MainDrawerContent(
             },
             onClick = {
                 onCloseDrawer()
-                onNavigationItemClick(R.id.Labels, null)
+                onNavigationItemClick(NotallyNavKey.Labels)
             },
             modifier = Modifier.padding(horizontal = 12.dp),
         )
@@ -138,7 +136,9 @@ private fun MainDrawerContent(
         labels.forEach { label ->
             NavigationDrawerItem(
                 label = { Text(text = label.value) },
-                selected = selectedDestinationId == R.id.DisplayLabel && title == label.value,
+                selected =
+                    selectedNavKey is NotallyNavKey.DisplayLabel &&
+                        selectedNavKey.label == label.value,
                 icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.label),
@@ -147,7 +147,7 @@ private fun MainDrawerContent(
                 },
                 onClick = {
                     onCloseDrawer()
-                    onNavigationItemClick(R.id.DisplayLabel, label.value)
+                    onNavigationItemClick(NotallyNavKey.DisplayLabel(label.value))
                 },
                 modifier = Modifier.padding(horizontal = 12.dp),
             )
@@ -157,7 +157,7 @@ private fun MainDrawerContent(
 
         NavigationDrawerItem(
             label = { Text(text = stringResource(R.string.deleted)) },
-            selected = selectedDestinationId == R.id.Deleted,
+            selected = selectedNavKey is NotallyNavKey.Deleted,
             icon = {
                 Icon(
                     painter = painterResource(id = R.drawable.delete),
@@ -166,14 +166,14 @@ private fun MainDrawerContent(
             },
             onClick = {
                 onCloseDrawer()
-                onNavigationItemClick(R.id.Deleted, null)
+                onNavigationItemClick(NotallyNavKey.Deleted)
             },
             modifier = Modifier.padding(horizontal = 12.dp),
         )
 
         NavigationDrawerItem(
             label = { Text(text = stringResource(R.string.archived)) },
-            selected = selectedDestinationId == R.id.Archived,
+            selected = selectedNavKey is NotallyNavKey.Archived,
             icon = {
                 Icon(
                     painter = painterResource(id = R.drawable.archive),
@@ -182,14 +182,14 @@ private fun MainDrawerContent(
             },
             onClick = {
                 onCloseDrawer()
-                onNavigationItemClick(R.id.Archived, null)
+                onNavigationItemClick(NotallyNavKey.Archived)
             },
             modifier = Modifier.padding(horizontal = 12.dp),
         )
 
         NavigationDrawerItem(
             label = { Text(text = stringResource(R.string.reminders)) },
-            selected = selectedDestinationId == R.id.Reminders,
+            selected = selectedNavKey is NotallyNavKey.Reminders,
             icon = {
                 Icon(
                     painter = painterResource(id = R.drawable.notifications),
@@ -198,14 +198,14 @@ private fun MainDrawerContent(
             },
             onClick = {
                 onCloseDrawer()
-                onNavigationItemClick(R.id.Reminders, null)
+                onNavigationItemClick(NotallyNavKey.Reminders)
             },
             modifier = Modifier.padding(horizontal = 12.dp),
         )
 
         NavigationDrawerItem(
             label = { Text(text = stringResource(R.string.settings)) },
-            selected = selectedDestinationId == R.id.Settings,
+            selected = selectedNavKey is NotallyNavKey.Settings,
             icon = {
                 Icon(
                     painter = painterResource(id = R.drawable.settings),
@@ -214,7 +214,7 @@ private fun MainDrawerContent(
             },
             onClick = {
                 onCloseDrawer()
-                onNavigationItemClick(R.id.Settings, null)
+                onNavigationItemClick(NotallyNavKey.Settings)
             },
             modifier = Modifier.padding(horizontal = 12.dp),
         )
@@ -228,7 +228,7 @@ internal fun MainScreen(
     title: String,
     modifier: Modifier = Modifier,
     labels: List<Label> = emptyList(),
-    selectedDestinationId: Int = R.id.Notes,
+    selectedNavKey: NotallyNavKey = NotallyNavKey.Notes,
     actionModeEnabled: Boolean = false,
     selectedCount: Int = 0,
     currentFolder: Folder = Folder.NOTES,
@@ -238,7 +238,7 @@ internal fun MainScreen(
     showSearchOption: Boolean = true,
     isInSearchMode: Boolean = false,
     drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
-    onNavigationItemClick: (Int, String?) -> Unit = { _, _ -> },
+    onNavigationItemClick: (NotallyNavKey) -> Unit = {},
     onTakeNoteClick: () -> Unit = {},
     onMakeListClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
@@ -252,7 +252,7 @@ internal fun MainScreen(
         drawerState = drawerState,
         drawerContent = {
             MainDrawerContent(
-                selectedDestinationId = selectedDestinationId,
+                selectedNavKey = selectedNavKey,
                 title = title,
                 labels = labels,
                 onNavigationItemClick = onNavigationItemClick,
@@ -262,7 +262,6 @@ internal fun MainScreen(
         modifier = modifier.fillMaxSize(),
     ) {
         Scaffold(
-            modifier = Modifier.semantics { testTagsAsResourceId = true },
             topBar = {
                 if (actionModeEnabled) {
                     TopAppBar(
@@ -295,8 +294,7 @@ internal fun MainScreen(
                                         if (drawerState.isClosed) drawerState.open()
                                         else drawerState.close()
                                     }
-                                },
-                                modifier = Modifier.testTag("NavigationDrawerButton"),
+                                }
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.menu),
@@ -306,10 +304,7 @@ internal fun MainScreen(
                         },
                         actions = {
                             if (onAddClick != null) {
-                                IconButton(
-                                    onClick = onAddClick,
-                                    modifier = Modifier.testTag("AddActionButton"),
-                                ) {
+                                IconButton(onClick = onAddClick) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.add),
                                         contentDescription = stringResource(R.string.add_label),
@@ -317,10 +312,7 @@ internal fun MainScreen(
                                 }
                             }
                             if (showSearchOption) {
-                                IconButton(
-                                    onClick = onSearchClick,
-                                    modifier = Modifier.testTag("SearchActionButton"),
-                                ) {
+                                IconButton(onClick = onSearchClick) {
                                     Icon(
                                         painter =
                                             painterResource(
@@ -347,7 +339,7 @@ internal fun MainScreen(
                             onClick = onMakeListClick,
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.padding(bottom = 16.dp).testTag("TakeList"),
+                            modifier = Modifier.padding(bottom = 16.dp),
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.checkbox),
@@ -358,7 +350,6 @@ internal fun MainScreen(
                             onClick = onTakeNoteClick,
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.testTag("TakeNote"),
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.edit),

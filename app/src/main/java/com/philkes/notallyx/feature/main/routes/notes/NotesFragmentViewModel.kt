@@ -1,4 +1,4 @@
-package com.philkes.notallyx.feature.main.tab
+package com.philkes.notallyx.feature.main.routes.notes
 
 import android.app.Activity
 import android.app.Application
@@ -40,6 +40,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -336,6 +337,67 @@ class NotesFragmentViewModel(app: Application, preferences: NotallyXPreferences)
 
     fun exportSelectedNoteToFile(fileUri: Uri, snackbarView: View) {
         exportNoteToFile(fileUri, actionMode.selectedNotes.values.first(), snackbarView)
+    }
+
+    fun selectAll() {
+        val dao = baseNoteDao ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            val currentNotes: List<BaseNote> =
+                when {
+                    keywordFlow.value.isNotEmpty() ->
+                        searchResults?.results?.value?.filterIsInstance<BaseNote>() ?: emptyList()
+                    currentLabel == CURRENT_LABEL_NONE -> dao.getWithoutLabel(Folder.NOTES).first()
+                    !currentLabel.isNullOrEmpty() -> dao.getByLabel(currentLabel!!).first()
+                    else -> dao.getByFolder(folder.value).first()
+                }
+            withContext(Dispatchers.Main) { actionMode.add(currentNotes) }
+        }
+    }
+
+    fun togglePinSelectedNotes() {
+        val baseNotes = actionMode.selectedNotes.values
+        val allPinned = baseNotes.isNotEmpty() && baseNotes.all { it.pinned }
+        pinBaseNotes(!allPinned)
+    }
+
+    fun onLabelsClick(
+        onNavigateToLabels: () -> Unit,
+        onShowDialog: (Array<String>, Collection<BaseNote>) -> Unit,
+    ) {
+        val baseNotes = actionMode.selectedNotes.values
+        viewModelScope.launch {
+            val labels = getAllLabels()
+            if (labels.isNotEmpty()) {
+                onShowDialog(labels, baseNotes)
+            } else {
+                actionMode.close(true)
+                onNavigateToLabels()
+            }
+        }
+    }
+
+    fun onChangeColorClick(onShowDialog: (colors: Set<String>, currentColor: String?) -> Unit) {
+        val dao = baseNoteDao ?: return
+        viewModelScope.launch {
+            val colors = withContext(Dispatchers.IO) { dao.getAllColors().toSet() }
+            val currentColor =
+                actionMode.selectedNotes.values
+                    .map { it.color }
+                    .distinct()
+                    .takeIf { it.size == 1 }
+                    ?.firstOrNull()
+            onShowDialog(colors, currentColor)
+        }
+    }
+
+    fun onPinToStatusClick(activity: Activity, onRequestPermission: () -> Unit) {
+        val baseNotes = actionMode.selectedNotes.values
+        val anyNotPinned = baseNotes.any { !it.isPinnedToStatus }
+        if (anyNotPinned) {
+            onRequestPermission()
+        } else {
+            pinBaseNotesToStatusBar(activity, false)
+        }
     }
 
     private fun View.showFileSnackbar(msg: String, fileUri: Uri, mimeType: ExportMimeType) {

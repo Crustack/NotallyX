@@ -34,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -56,7 +55,6 @@ internal fun StepperPreferenceRow(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     labelFormatter: ((Int) -> String)? = null,
-    testTag: String? = null,
     onValueChange: (Int) -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
@@ -69,7 +67,6 @@ internal fun StepperPreferenceRow(
     val minusInteractionSource = remember { MutableInteractionSource() }
     val plusInteractionSource = remember { MutableInteractionSource() }
 
-    val tagModifier = if (testTag != null) Modifier.testTag(testTag) else Modifier
     val cornerRadius = 8.dp
     val strokeWidth = 1.dp
     val outlineColor = MaterialTheme.colorScheme.outline
@@ -86,7 +83,7 @@ internal fun StepperPreferenceRow(
     val buttonPlusColor = if (plusEnabled) primaryColor else primaryColor.copy(alpha = 0.38f)
     val iconPlusColor = if (plusEnabled) onPrimaryColor else onPrimaryColor.copy(alpha = 0.38f)
 
-    Column(modifier = modifier.wrapContentWidth().then(tagModifier).padding(16.dp)) {
+    Column(modifier = modifier.wrapContentWidth().padding(16.dp)) {
         Text(
             text = title,
             style = MaterialTheme.typography.bodyLarge,

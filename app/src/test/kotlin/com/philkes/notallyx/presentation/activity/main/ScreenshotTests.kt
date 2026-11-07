@@ -10,18 +10,15 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.annotation.IdRes
 import androidx.compose.foundation.ScrollState
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import androidx.core.view.GravityCompat
 import androidx.core.widget.NestedScrollView
-import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.security.crypto.EncryptedSharedPreferences
@@ -60,9 +57,8 @@ import com.philkes.notallyx.data.model.extensions.*
 import com.philkes.notallyx.feature.editor.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
 import com.philkes.notallyx.feature.editor.EditNoteActivity
 import com.philkes.notallyx.feature.main.MainActivity
-import com.philkes.notallyx.feature.main.MainActivity.Companion.EXTRA_FRAGMENT_TO_OPEN
 import com.philkes.notallyx.feature.migration.imports.google.GoogleKeepImporterTest.Companion.createBaseNote
-import com.philkes.notallyx.feature.settings.SettingsFragment
+import com.philkes.notallyx.navigation.NotallyNavKey
 import com.philkes.notallyx.test.FakeAndroidKeyStore
 import com.philkes.notallyx.test.context
 import com.philkes.notallyx.test.database
@@ -166,8 +162,12 @@ class ScreenshotTests {
                 .captureRoboImage(
                     "${ScreenshotTests::class.java.simpleName}/editNote/00_initial.png"
                 )
-            composeTestRule.onNodeWithTag("EnterTitle").performTextInput("Test Title")
-            composeTestRule.onNodeWithTag("EnterBody").performTextInput("Test Body")
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.title))
+                .performTextInput("Test Title")
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.note))
+                .performTextInput("Test Body")
             ShadowLooper.idleMainLooper()
 
             onView(isRoot())
@@ -308,10 +308,7 @@ class ScreenshotTests {
 
     @Test
     fun settings() = runTest {
-        val intent =
-            Intent(context, MainActivity::class.java).apply {
-                putExtra(EXTRA_FRAGMENT_TO_OPEN, R.id.Settings)
-            }
+        val intent = Intent(context, MainActivity::class.java).putNavKey(NotallyNavKey.Settings)
         ActivityScenario.launch<MainActivity>(intent).use { scenario ->
             onView(isRoot())
                 .captureRoboImage(
@@ -326,15 +323,10 @@ class ScreenshotTests {
                 )
 
             // 1. Click Date Time Format Note View setting and capture dialog screenshot
-            scenario.onActivity { activity ->
-                val navHost =
-                    (activity as? androidx.appcompat.app.AppCompatActivity)
-                        ?.supportFragmentManager
-                        ?.findFragmentById(R.id.NavHostFragment)
-                val settingsFragment =
-                    navHost?.childFragmentManager?.fragments?.firstOrNull() as? SettingsFragment
-                settingsFragment?.showDateTimeFormatNoteViewDialog()
-            }
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.date_format_note_view), substring = true)
+                .performScrollTo()
+                .performClick()
             ShadowLooper.idleMainLooper()
             onView(isRoot())
                 .inRoot(isDialog())
@@ -347,14 +339,7 @@ class ScreenshotTests {
             // 2. Scroll to top and touch down on Text Size slider to capture screenshot while
             // dragging
             scenario.onActivity { activity ->
-                val navHost =
-                    (activity as? androidx.appcompat.app.AppCompatActivity)
-                        ?.supportFragmentManager
-                        ?.findFragmentById(R.id.NavHostFragment)
-                val settingsFragment =
-                    navHost?.childFragmentManager?.fragments?.firstOrNull() as? SettingsFragment
-                runBlocking { settingsFragment?.scrollState?.scrollTo(0) }
-                val composeView = settingsFragment?.view as? ComposeView
+                val composeView = activity.findViewById<View>(android.R.id.content)
                 if (composeView != null) {
                     val x = composeView.width / 2f
                     val y = 380f // Position of TextSize slider in top section
@@ -377,13 +362,7 @@ class ScreenshotTests {
                     "${ScreenshotTests::class.java.simpleName}/settings/${"%02d".format(scrollCount + 1)}_slider_dragging.png"
                 )
             scenario.onActivity { activity ->
-                val navHost =
-                    (activity as? androidx.appcompat.app.AppCompatActivity)
-                        ?.supportFragmentManager
-                        ?.findFragmentById(R.id.NavHostFragment)
-                val settingsFragment =
-                    navHost?.childFragmentManager?.fragments?.firstOrNull() as? SettingsFragment
-                val composeView = settingsFragment?.view as? ComposeView
+                val composeView = activity.findViewById<View>(android.R.id.content)
                 if (composeView != null) {
                     val x = composeView.width / 2f
                     val y = 380f
@@ -410,15 +389,11 @@ class ScreenshotTests {
             database.getLabelDao().apply { insert((1..5).map { Label("Label$it", it) }) }
             preferences.labelsHidden.save(setOf("Label1", "Label4"))
         }
-        val intent =
-            Intent(context, MainActivity::class.java).apply {
-                putExtra(EXTRA_FRAGMENT_TO_OPEN, R.id.Labels)
-            }
+        val intent = Intent(context, MainActivity::class.java).putNavKey(NotallyNavKey.Labels)
         ActivityScenario.launch<MainActivity>(intent).use { scenario ->
-            scenario.onActivity { activity ->
-                val drawerLayout = activity.findViewById<DrawerLayout>(R.id.DrawerLayout)
-                drawerLayout?.openDrawer(GravityCompat.START, false)
-            }
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.app_name))
+                .performClick()
             ShadowLooper.idleMainLooper()
             onView(isRoot())
                 .captureRoboImage(
@@ -436,7 +411,7 @@ class ScreenshotTests {
     //        }
     //        val intent =
     //            Intent(context, MainActivity::class.java).apply {
-    //                putExtra(EXTRA_FRAGMENT_TO_OPEN, R.id.Labels)
+    //                putExtra(EXTRA_DESTINATION_TO_OPEN, NotallyNavKey.Labels.toString())
     //            }
     //        ActivityScenario.launch<MainActivity>(intent).use { scenario ->
     //            onView(isRoot())
@@ -571,10 +546,7 @@ class ScreenshotTests {
                     )
                 )
         }
-        val intent =
-            Intent(context, MainActivity::class.java).apply {
-                putExtra(EXTRA_FRAGMENT_TO_OPEN, R.id.Reminders)
-            }
+        val intent = Intent(context, MainActivity::class.java).putNavKey(NotallyNavKey.Reminders)
         ActivityScenario.launch<MainActivity>(intent).use {
             ShadowLooper.idleMainLooper()
             onView(isRoot())
@@ -608,15 +580,15 @@ class ScreenshotTests {
                 SampleNotes.GENERATED_LIST_NOTE,
             )
 
-        val insertedIds = withContext(Dispatchers.IO) { database.getBaseNoteDao().insert(notes) }
+        withContext(Dispatchers.IO) { database.getBaseNoteDao().insert(notes) }
 
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             ShadowLooper.idleMainLooper()
 
             composeTestRule.waitUntil(10_000) {
-                insertedIds.all { noteId ->
+                notes.all { note ->
                     composeTestRule
-                        .onAllNodes(hasTestTag("NoteCard_$noteId"))
+                        .onAllNodes(hasText(note.title))
                         .fetchSemanticsNodes()
                         .isNotEmpty()
                 }
@@ -629,11 +601,10 @@ class ScreenshotTests {
                 )
 
             // 2. Capture each individual note card
-            insertedIds.forEachIndexed { index, noteId ->
-                val cardTag = "NoteCard_$noteId"
+            notes.forEachIndexed { index, note ->
                 val noteIndex = "%02d".format(index + 1)
                 composeTestRule
-                    .onNodeWithTag(cardTag)
+                    .onNode(hasText(note.title))
                     .captureRoboImage(
                         "${ScreenshotTests::class.java.simpleName}/notesOverview/${noteIndex}_card_$noteIndex.png"
                     )
@@ -662,15 +633,6 @@ class ScreenshotTests {
 
         // Measure view dimensions on the main thread
         onActivity { activity ->
-            val navHost =
-                (activity as? androidx.appcompat.app.AppCompatActivity)
-                    ?.supportFragmentManager
-                    ?.findFragmentById(R.id.NavHostFragment)
-            val activeFragment = navHost?.childFragmentManager?.fragments?.firstOrNull()
-            if (activeFragment is SettingsFragment) {
-                composeScrollState = activeFragment.scrollState
-            }
-
             val scrollView =
                 activity.findViewById<View>(scrollViewId)
                     ?: activity.findViewById<View>(android.R.id.content)

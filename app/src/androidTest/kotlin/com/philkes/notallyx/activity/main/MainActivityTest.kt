@@ -7,7 +7,6 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -15,11 +14,6 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.action.ViewActions.scrollTo
-import androidx.test.espresso.matcher.RootMatchers.isDialog
-import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.NotallyXApplication
@@ -100,10 +94,10 @@ class MainActivityTest : UiTestBase() {
             .performClick()
 
         // 6. click the "label" twice to give both notes the "label" Label
-        composeTestRule.onNodeWithTag("TriStateItem_label").performClick()
-        composeTestRule.onNodeWithTag("TriStateItem_label").performClick()
+        composeTestRule.onNodeWithText("label").performClick()
+        composeTestRule.onNodeWithText("label").performClick()
 
-        onView(withId(android.R.id.button1)).inRoot(isDialog()).perform(scrollTo(), click())
+        composeTestRule.onNodeWithText(context.getString(R.string.save)).performClick()
 
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("label")).fetchSemanticsNodes().size >= 2
@@ -247,11 +241,14 @@ class MainActivityTest : UiTestBase() {
 
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
+        val searchLabel = context.getString(R.string.search)
+        val cancelLabel = context.getString(R.string.cancel)
+
         // 2. Open Search fragment
-        composeTestRule.onNodeWithTag("SearchActionButton").performClick()
+        composeTestRule.onNodeWithContentDescription(searchLabel).performClick()
 
         // 3. Type search keyword matching "Grocery"
-        composeTestRule.onNodeWithTag("EnterSearchKeyword").performTextInput("Grocery")
+        composeTestRule.onNodeWithText(searchLabel).performTextInput("Grocery")
 
         // 4. Verify default "Notes" folder chip only shows normal notes
         composeTestRule.waitUntil(10_000) {
@@ -264,7 +261,7 @@ class MainActivityTest : UiTestBase() {
         composeTestRule.onNodeWithText("Deleted Note").assertDoesNotExist()
 
         // 5. Switch filter to "Archived" folder chip
-        composeTestRule.onNodeWithTag("ArchivedFilterChip").performClick()
+        composeTestRule.onNodeWithText(context.getString(R.string.archived)).performClick()
         composeTestRule.waitUntil(10_000) {
             composeTestRule
                 .onAllNodes(hasText("Archived Note"))
@@ -277,7 +274,7 @@ class MainActivityTest : UiTestBase() {
         composeTestRule.onNodeWithText("Deleted Note").assertDoesNotExist()
 
         // 6. Switch filter to "Deleted" folder chip
-        composeTestRule.onNodeWithTag("DeletedFilterChip").performClick()
+        composeTestRule.onNodeWithText(context.getString(R.string.deleted)).performClick()
         composeTestRule.waitUntil(10_000) {
             composeTestRule
                 .onAllNodes(hasText("Deleted Note"))
@@ -290,7 +287,7 @@ class MainActivityTest : UiTestBase() {
         composeTestRule.onNodeWithText("Archived Note").assertDoesNotExist()
 
         // 7. Switch filter back to "Notes" folder chip
-        composeTestRule.onNodeWithTag("NotesFilterChip").performClick()
+        composeTestRule.onNodeWithText(context.getString(R.string.notes)).performClick()
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("Normal Note")).fetchSemanticsNodes().isNotEmpty() &&
                 composeTestRule.onAllNodes(hasText("Deleted Note")).fetchSemanticsNodes().isEmpty()
@@ -298,9 +295,7 @@ class MainActivityTest : UiTestBase() {
         composeTestRule.onNodeWithText("Normal Note").assertIsDisplayed()
 
         // 8. Search for keyword with no matches
-        composeTestRule
-            .onNodeWithTag("EnterSearchKeyword")
-            .performTextReplacement("NonExistentKeyword")
+        composeTestRule.onNodeWithText(searchLabel).performTextReplacement("NonExistentKeyword")
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("Normal Note")).fetchSemanticsNodes().isEmpty()
         }
@@ -309,7 +304,7 @@ class MainActivityTest : UiTestBase() {
         composeTestRule.onNodeWithText("Deleted Note").assertDoesNotExist()
 
         // 9. Cancel search to return to main notes list
-        composeTestRule.onNodeWithTag("SearchActionButton").performClick()
+        composeTestRule.onNodeWithContentDescription(cancelLabel).performClick()
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("Work Meeting")).fetchSemanticsNodes().isNotEmpty()
         }

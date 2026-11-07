@@ -12,18 +12,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.error.*
-import com.philkes.notallyx.core.common.extensions.*
-import com.philkes.notallyx.core.common.result.*
-import com.philkes.notallyx.core.database.*
-import com.philkes.notallyx.core.preference.*
-import com.philkes.notallyx.core.security.*
-import com.philkes.notallyx.core.ui.components.*
-import com.philkes.notallyx.core.ui.dialog.*
-import com.philkes.notallyx.core.ui.extensions.*
-import com.philkes.notallyx.core.ui.views.*
-import com.philkes.notallyx.data.model.extensions.*
 import com.philkes.notallyx.feature.main.MainActivity
+import com.philkes.notallyx.navigation.NotallyNavKey
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.navigateTo
@@ -61,7 +51,7 @@ class ArchivedFragmentTest : UiTestBase() {
         composeTestRule.onNodeWithText("Test").assertDoesNotExist()
 
         // 5. Navigate to Archived folder
-        composeTestRule.navigateTo(R.id.Archived)
+        composeTestRule.navigateTo(NotallyNavKey.Archived)
 
         // 6. Verify "Test" note is displayed in Archived list
         composeTestRule.waitUntil(5_000) {
@@ -81,7 +71,7 @@ class ArchivedFragmentTest : UiTestBase() {
         composeTestRule.onNodeWithText("Test").assertDoesNotExist()
 
         // 10. Navigate back to Notes folder
-        composeTestRule.navigateTo(R.id.Notes)
+        composeTestRule.navigateTo(NotallyNavKey.Notes)
 
         // 11. Verify "Test" note is displayed in Notes list
         composeTestRule.waitUntil(5_000) {

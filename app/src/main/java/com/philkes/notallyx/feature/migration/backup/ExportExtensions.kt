@@ -15,6 +15,7 @@ import android.os.Build
 import android.print.PdfPrintListener
 import android.print.printPdf
 import android.provider.OpenableColumns
+import android.service.autofill.Validators.or
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.app.NotificationCompat
@@ -50,6 +51,7 @@ import com.philkes.notallyx.core.common.extensions.keepOnlyNewest
 import com.philkes.notallyx.core.common.extensions.listZipFiles
 import com.philkes.notallyx.core.common.extensions.log
 import com.philkes.notallyx.core.common.extensions.md5Hash
+import com.philkes.notallyx.core.common.extensions.putNavKey
 import com.philkes.notallyx.core.common.extensions.resolveAttachmentFile
 import com.philkes.notallyx.core.common.extensions.verify
 import com.philkes.notallyx.core.common.extensions.wrapWithChooser
@@ -73,7 +75,8 @@ import com.philkes.notallyx.feature.editor.BackupFile
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.migration.ExportMimeType
 import com.philkes.notallyx.feature.migration.progress.BackupProgress
-import com.philkes.notallyx.feature.settings.SettingsFragment
+import com.philkes.notallyx.feature.settings.SettingsViewModel
+import com.philkes.notallyx.navigation.NotallyNavKey
 import java.io.File
 import java.io.File.createTempFile
 import java.io.FileInputStream
@@ -1145,9 +1148,8 @@ private fun ContextWrapper.tryPostErrorNotification(e: Throwable) {
                         PendingIntent.getActivity(
                             this,
                             0,
-                            Intent(this, MainActivity::class.java).apply {
-                                putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, R.id.Settings)
-                            },
+                            Intent(this, MainActivity::class.java)
+                                .putNavKey(NotallyNavKey.Settings),
                             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                         ),
                     )
@@ -1184,8 +1186,8 @@ private fun ContextWrapper.tryPostErrorNotification(e: Throwable) {
                         this,
                         0,
                         Intent(this, MainActivity::class.java).apply {
-                            putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, R.id.Settings)
-                            putExtra(SettingsFragment.EXTRA_SHOW_IMPORT_BACKUPS_FOLDER, true)
+                            putNavKey(NotallyNavKey.Settings)
+                            putExtra(SettingsViewModel.EXTRA_SHOW_IMPORT_BACKUPS_FOLDER, true)
                         },
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                     ),

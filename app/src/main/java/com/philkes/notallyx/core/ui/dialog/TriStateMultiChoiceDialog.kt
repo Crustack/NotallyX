@@ -6,7 +6,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.tooling.preview.Preview
@@ -43,8 +42,7 @@ internal fun TriStateMultiChoiceDialog(
                 onClick = {
                     onConfirm(states)
                     onDismissRequest()
-                },
-                modifier = Modifier.testTag("button1"),
+                }
             ) {
                 Text(positiveButtonText)
             }

@@ -1,12 +1,14 @@
 package com.philkes.notallyx.feature.reminder
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -14,26 +16,38 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.TimeFormat
+import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
-import com.philkes.notallyx.core.ui.dialog.SelectionItem
-import com.philkes.notallyx.core.ui.dialog.SingleSelectionDialog
+import com.philkes.notallyx.core.ui.extensions.createItemsFromNotes
 import com.philkes.notallyx.core.ui.extensions.format
-import com.philkes.notallyx.core.ui.theme.NotallyXTheme
+import com.philkes.notallyx.data.model.BaseNote
+import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.Reminder
-import com.philkes.notallyx.data.model.extensions.toRepetitionText
+import com.philkes.notallyx.data.model.extensions.hasAnyUpcomingNotifications
+import com.philkes.notallyx.feature.main.routes.NotesGridScreen
+import com.philkes.notallyx.feature.main.sorting.compareLastNotification
+import com.philkes.notallyx.feature.main.sorting.compareNextNotification
 import java.util.Calendar
+
+enum class FilterOptions {
+    UPCOMING,
+    ELAPSED,
+    ALL,
+}
 
 internal sealed interface ReminderDialogState {
     data class Repetition(
@@ -64,7 +78,57 @@ internal sealed interface ReminderDialogState {
     ) : ReminderDialogState
 }
 
-/** Composable replacing activity_reminders.xml layout. */
+@Composable
+fun RemindersScreen(
+    notes: List<BaseNote>,
+    selectedNoteIds: Set<Long>,
+    isGrid: Boolean,
+    displayConfig: NoteCardDisplayConfig,
+    onNoteClick: (BaseNote, Int) -> Unit,
+    onNoteLongClick: (BaseNote, Int) -> Unit,
+    onReminderClick: (BaseNote, Int) -> Unit,
+    initialFilterMode: FilterOptions = FilterOptions.UPCOMING,
+) {
+    val context = LocalContext.current
+    var filterMode by remember { mutableStateOf(initialFilterMode) }
+    var currentItems by remember { mutableStateOf<List<Item>>(emptyList()) }
+
+    LaunchedEffect(notes, filterMode) {
+        val filtered =
+            when (filterMode) {
+                FilterOptions.ALL ->
+                    notes.sortedWith { n1, n2 ->
+                        val sort =
+                            n1.compareNextNotification(n2).takeIf { it != 0 }
+                                ?: n1.compareLastNotification(n2)
+                        -1 * sort
+                    }
+                FilterOptions.UPCOMING ->
+                    notes
+                        .filter { it.reminders.hasAnyUpcomingNotifications() }
+                        .sortedWith { n1, n2 -> n1.compareNextNotification(n2) }
+                FilterOptions.ELAPSED ->
+                    notes
+                        .filter { !it.reminders.hasAnyUpcomingNotifications() }
+                        .sortedWith { n1, n2 -> -1 * n1.compareLastNotification(n2) }
+            }
+        currentItems = context.createItemsFromNotes(filtered)
+    }
+
+    NotesGridScreen(
+        items = currentItems,
+        isGrid = isGrid,
+        selectedNoteIds = selectedNoteIds,
+        displayConfig = displayConfig,
+        backgroundResId = R.drawable.notifications,
+        selectedFilterOption = filterMode,
+        onFilterOptionSelected = { filterMode = it },
+        onNoteClick = onNoteClick,
+        onNoteLongClick = onNoteLongClick,
+        onReminderClick = onReminderClick,
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun RemindersScreen(
@@ -83,148 +147,81 @@ internal fun RemindersScreen(
     onCustomRepetitionSelected: (Reminder?, Calendar, Int, TimeUnit) -> Unit = { _, _, _, _ -> },
     onConfirmDeleteReminder: (Reminder) -> Unit = {},
 ) {
-    val context = LocalContext.current
-
     Scaffold(
-        modifier = modifier.fillMaxSize().semantics { testTagsAsResourceId = true },
         topBar = {
             TopAppBar(
-                title = { Text(text = stringResource(R.string.edit_reminders)) },
+                title = { Text(text = stringResource(R.string.reminders)) },
                 navigationIcon = {
-                    IconButton(
-                        onClick = onBackClick,
-                        modifier = Modifier.testTag("Back"),
-                    ) {
+                    IconButton(onClick = onBackClick) {
                         Icon(
                             painter = painterResource(id = R.drawable.close),
-                            contentDescription = stringResource(R.string.back),
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onAddReminderClick) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.add),
-                            contentDescription = stringResource(R.string.add_reminder),
+                            contentDescription = stringResource(R.string.cancel),
                         )
                     }
                 },
             )
         },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onAddReminderClick,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.add),
+                    contentDescription = stringResource(R.string.add_reminder),
+                )
+            }
+        },
+        modifier = modifier.fillMaxSize(),
     ) { innerPadding ->
         Box(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
             contentAlignment = Alignment.Center,
         ) {
             if (reminders.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.empty_reminders),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                Image(
+                    painter = painterResource(id = R.drawable.notifications),
+                    contentDescription = null,
+                    modifier = Modifier.size(120.dp),
                 )
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(reminders, key = { it.id }) { reminder ->
-                        val dateTimeText =
-                            reminder.dateTime.format(
-                                dateFormat,
-                                timeFormat,
-                                ensureFullFormat = true,
-                            )
-                        val repetitionText = reminder.toRepetitionText(context)
-                        ReminderChipItem(
-                            dateTimeText = dateTimeText,
-                            repetitionText = repetitionText,
-                            onEdit = { onEditReminder(reminder) },
-                            onDelete = { onDeleteReminder(reminder) },
+                    items(reminders) { reminder ->
+                        NoteReminderRow(
+                            title = reminder.dateTime.format(dateFormat, timeFormat),
+                            nextNotificationText = "",
+                            remindersCountText = "",
+                            onClick = { onEditReminder(reminder) },
                         )
-                        HorizontalDivider()
                     }
                 }
             }
-        }
-    }
 
-    when (dialogState) {
-        is ReminderDialogState.Repetition -> {
-            ReminderRepetitionDialog(
-                initialOption = dialogState.initialOption,
-                onDismissRequest = onDismissDialog,
-                onOptionSelected = { selected ->
-                    onRepetitionOptionSelected(
-                        dialogState.reminder,
-                        dialogState.calendar,
-                        selected,
+            when (dialogState) {
+                is ReminderDialogState.ConfirmDelete -> {
+                    ConfirmDialog(
+                        message = stringResource(R.string.delete),
+                        positiveButtonText = stringResource(R.string.delete),
+                        onDismissRequest = onDismissDialog,
+                        onConfirm = { onConfirmDeleteReminder(dialogState.reminder) },
                     )
-                },
-            )
+                }
+                is ReminderDialogState.Repetition -> {
+                    ReminderRepetitionDialog(
+                        initialOption = dialogState.initialOption,
+                        onDismissRequest = onDismissDialog,
+                        onOptionSelected = { option ->
+                            onRepetitionOptionSelected(
+                                dialogState.reminder,
+                                dialogState.calendar,
+                                option,
+                            )
+                        },
+                    )
+                }
+                else -> {}
+            }
         }
-        is ReminderDialogState.MonthlyAdvanced -> {
-            val items =
-                dialogState.options.mapIndexed { index, option -> SelectionItem(index, option) }
-            SingleSelectionDialog(
-                title = stringResource(R.string.monthly),
-                items = items,
-                selectedItem = dialogState.selectedIndex,
-                onDismissRequest = {
-                    onRepetitionOptionSelected(
-                        dialogState.reminder,
-                        dialogState.calendar,
-                        RepetitionOption.CUSTOM,
-                    )
-                },
-                onConfirm = { which ->
-                    onMonthlyAdvancedSelected(
-                        dialogState.reminder,
-                        dialogState.calendar,
-                        which,
-                        dialogState.dayOfWeek,
-                    )
-                },
-            )
-        }
-        is ReminderDialogState.CustomRepetition -> {
-            CustomRepetitionDialog(
-                initialValue = dialogState.initialValue,
-                initialTimeUnit = dialogState.initialUnit,
-                onDismissRequest = {
-                    onRepetitionOptionSelected(
-                        dialogState.reminder,
-                        dialogState.calendar,
-                        RepetitionOption.CUSTOM,
-                    )
-                },
-                onConfirm = { valInt, unitEnum ->
-                    onCustomRepetitionSelected(
-                        dialogState.reminder,
-                        dialogState.calendar,
-                        valInt,
-                        unitEnum,
-                    )
-                },
-            )
-        }
-        is ReminderDialogState.ConfirmDelete -> {
-            ConfirmDialog(
-                title = stringResource(R.string.delete_reminder_question),
-                message = "${dialogState.formattedDateTime}\n${dialogState.repetitionText}",
-                positiveButtonText = stringResource(R.string.delete),
-                onDismissRequest = onDismissDialog,
-                onConfirm = { onConfirmDeleteReminder(dialogState.reminder) },
-            )
-        }
-        null -> {}
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun RemindersScreenPreview() {
-    NotallyXTheme {
-        RemindersScreen(
-            reminders = emptyList(),
-            dateFormat = DateFormat.FULL,
-            timeFormat = TimeFormat.AM_PM,
-        )
     }
 }

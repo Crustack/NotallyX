@@ -17,7 +17,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -51,11 +50,10 @@ internal fun IconListDialog(
                         modifier =
                             Modifier.fillMaxWidth()
                                 .clickable {
-                                    onItemClick(index)
                                     onDismissRequest()
+                                    onItemClick(index)
                                 }
-                                .padding(vertical = 12.dp, horizontal = 8.dp)
-                                .testTag("IconListItem_$index"),
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
@@ -75,12 +73,7 @@ internal fun IconListDialog(
             }
         },
         confirmButton = {
-            TextButton(
-                onClick = onDismissRequest,
-                modifier = Modifier.testTag("button1"),
-            ) {
-                Text(stringResource(R.string.cancel))
-            }
+            TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
         },
     )
 }

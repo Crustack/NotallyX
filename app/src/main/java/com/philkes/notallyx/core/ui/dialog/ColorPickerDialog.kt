@@ -26,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color as ComposeColor
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -90,7 +89,6 @@ internal fun ColorPickerDialog(
                                         shape = CircleShape,
                                     )
                                     .semantics { contentDescription = colorString }
-                                    .testTag("CardView")
                                     .clickable { selectedColor = colorString },
                             contentAlignment = Alignment.Center,
                         ) {
@@ -116,7 +114,6 @@ internal fun ColorPickerDialog(
                                     shape = CircleShape,
                                 )
                                 .semantics { contentDescription = BaseNote.COLOR_NEW }
-                                .testTag("CardView")
                                 .clickable { selectedColor = BaseNote.COLOR_NEW },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -135,8 +132,7 @@ internal fun ColorPickerDialog(
                 onClick = {
                     onColorSelected(selectedColor)
                     onDismissRequest()
-                },
-                modifier = Modifier.testTag("button1"),
+                }
             ) {
                 Text(stringResource(R.string.save))
             }

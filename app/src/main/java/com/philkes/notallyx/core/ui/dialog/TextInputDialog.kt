@@ -16,7 +16,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -66,7 +65,7 @@ internal fun TextInputDialog(
                     keyboardOptions =
                         if (isPassword) KeyboardOptions(keyboardType = KeyboardType.Password)
                         else KeyboardOptions.Default,
-                    modifier = Modifier.fillMaxWidth().testTag("EditText"),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         },
@@ -74,7 +73,6 @@ internal fun TextInputDialog(
             TextButton(
                 onClick = { onConfirm(text.trim()) },
                 enabled = text.trim().isNotEmpty(),
-                modifier = Modifier.testTag("button1"),
             ) {
                 Text(positiveButtonText)
             }
@@ -119,7 +117,7 @@ fun DualTextInputDialog(
                     onValueChange = { text1 = it },
                     label = hint1?.let { { Text(it) } },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth().testTag("InputText1"),
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
@@ -127,7 +125,7 @@ fun DualTextInputDialog(
                     onValueChange = { text2 = it },
                     label = hint2?.let { { Text(it) } },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth().testTag("InputText2"),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         },
@@ -135,7 +133,6 @@ fun DualTextInputDialog(
             TextButton(
                 onClick = { onConfirm(text1.trim(), text2.trim()) },
                 enabled = text1.trim().isNotEmpty(),
-                modifier = Modifier.testTag("button1"),
             ) {
                 Text(positiveButtonText)
             }

@@ -6,7 +6,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.philkes.notallyx.R
@@ -32,10 +31,9 @@ internal fun ConfirmDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    onConfirm()
                     onDismissRequest()
-                },
-                modifier = Modifier.testTag("button1"),
+                    onConfirm()
+                }
             ) {
                 Text(positiveButtonText)
             }
@@ -45,8 +43,8 @@ internal fun ConfirmDialog(
                 Row {
                     TextButton(
                         onClick = {
-                            onNeutralButtonClick()
                             onDismissRequest()
+                            onNeutralButtonClick()
                         }
                     ) {
                         Text(neutralButtonText)

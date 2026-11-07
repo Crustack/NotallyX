@@ -18,7 +18,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -53,7 +52,6 @@ internal fun EncryptDatabaseDialog(
                     Checkbox(
                         checked = checkEncrypt,
                         onCheckedChange = { checkEncrypt = it },
-                        modifier = Modifier.testTag("CheckEncryptDatabase"),
                     )
                     Text(
                         text = stringResource(R.string.encrypt_database_via_biometric),
@@ -66,10 +64,9 @@ internal fun EncryptDatabaseDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    onContinue(checkEncrypt)
                     onDismissRequest()
-                },
-                modifier = Modifier.testTag("button1"),
+                    onContinue(checkEncrypt)
+                }
             ) {
                 Text(stringResource(R.string.continue_))
             }

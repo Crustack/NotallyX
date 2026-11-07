@@ -22,7 +22,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -75,8 +74,7 @@ internal fun ReminderRepetitionDialog(
                                     onClick = { selectedOption = option },
                                     role = Role.RadioButton,
                                 )
-                                .padding(horizontal = 8.dp)
-                                .testTag(option.name),
+                                .padding(horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(
@@ -93,10 +91,7 @@ internal fun ReminderRepetitionDialog(
             }
         },
         confirmButton = {
-            TextButton(
-                onClick = { onOptionSelected(selectedOption) },
-                modifier = Modifier.testTag("button1"),
-            ) {
+            TextButton(onClick = { onOptionSelected(selectedOption) }) {
                 Text(stringResource(R.string.save))
             }
         },
@@ -139,7 +134,7 @@ internal fun CustomRepetitionDialog(
                     label = { Text(stringResource(R.string.repetition_value_hint)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth().testTag("Value"),
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -162,17 +157,7 @@ internal fun CustomRepetitionDialog(
                                         onClick = { selectedUnit = unit },
                                         role = Role.RadioButton,
                                     )
-                                    .padding(horizontal = 8.dp)
-                                    .testTag(
-                                        when (unit) {
-                                            TimeUnit.MINUTES -> "Minutes"
-                                            TimeUnit.HOURS -> "Hours"
-                                            TimeUnit.DAYS -> "Days"
-                                            TimeUnit.WEEKS -> "Weeks"
-                                            TimeUnit.MONTHS -> "Months"
-                                            TimeUnit.YEARS -> "Years"
-                                        }
-                                    ),
+                                    .padding(horizontal = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             RadioButton(
@@ -196,7 +181,6 @@ internal fun CustomRepetitionDialog(
                     onConfirm(parsedVal, selectedUnit)
                 },
                 enabled = valueText.toIntOrNull() != null && valueText.toInt() > 0,
-                modifier = Modifier.testTag("button1"),
             ) {
                 Text(stringResource(R.string.save))
             }

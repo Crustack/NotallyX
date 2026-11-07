@@ -40,9 +40,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
@@ -204,13 +205,7 @@ private fun EditScreenImageSection(
     onImageClick: (FileAttachment) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .testTag("ImagePreview")
-    ) {
+    Box(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
         val loadedBitmaps =
             remember(images, mediaRoot) {
                 images.map { attachment ->
@@ -350,10 +345,7 @@ internal fun EditScreen(
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    IconButton(
-                        onClick = { clickHandlers.onBackClick() },
-                        modifier = Modifier.testTag("BackButton"),
-                    ) {
+                    IconButton(onClick = { clickHandlers.onBackClick() }) {
                         Icon(
                             painter = painterResource(id = R.drawable.arrow_back),
                             contentDescription = stringResource(id = R.string.back),
@@ -485,6 +477,7 @@ internal fun EditScreen(
                 )
             }
 
+            val titleDesc = stringResource(id = R.string.title)
             // Title Field
             BasicTextField(
                 value = noteState.title,
@@ -492,7 +485,7 @@ internal fun EditScreen(
                 modifier =
                     Modifier.fillMaxWidth()
                         .padding(start = 24.dp, end = 24.dp, top = 4.dp, bottom = 2.dp)
-                        .testTag("EnterTitle"),
+                        .semantics { contentDescription = titleDesc },
                 textStyle =
                     MaterialTheme.typography.headlineSmall.copy(
                         color = MaterialTheme.colorScheme.onSurface
@@ -633,6 +626,14 @@ internal fun EditNoteScreen(
     formattingState: TextFormattingState = TextFormattingState(),
     changeHandlers: EditChangeHandlers = object : EditChangeHandlers {},
     clickHandlers: EditClickHandlers = object : EditClickHandlers {},
+    bottomLeftActions: @Composable RowScope.() -> Unit = {
+        IconButton(onClick = { clickHandlers.onFormatClick() }) {
+            Icon(
+                painter = painterResource(id = R.drawable.text_format),
+                contentDescription = stringResource(id = R.string.edit),
+            )
+        }
+    },
 ) {
     EditScreen(
         noteState = noteState,
@@ -645,22 +646,16 @@ internal fun EditNoteScreen(
         formattingState = formattingState,
         changeHandlers = changeHandlers,
         clickHandlers = clickHandlers,
-        bottomLeftActions = {
-            IconButton(onClick = { clickHandlers.onFormatClick() }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.text_format),
-                    contentDescription = stringResource(id = R.string.edit),
-                )
-            }
-        },
+        bottomLeftActions = bottomLeftActions,
         content = {
+            val bodyDesc = stringResource(id = R.string.note)
             BasicTextField(
                 value = noteState.bodyText,
                 onValueChange = { changeHandlers.onBodyTextChange(it) },
                 modifier =
-                    Modifier.fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 8.dp)
-                        .testTag("EnterBody"),
+                    Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp).semantics {
+                        contentDescription = bodyDesc
+                    },
                 textStyle =
                     MaterialTheme.typography.bodyLarge.copy(
                         color = MaterialTheme.colorScheme.onSurface

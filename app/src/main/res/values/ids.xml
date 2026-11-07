@@ -45,9 +45,7 @@
     <item name="SourceCode" type="id" />
     <item name="VersionText" type="id" />
     <item name="NestedScrollView" type="id" />
-    <item name="NavHostFragment" type="id" />
-    <item name="DrawerLayout" type="id" />
-    <item name="NavigationView" type="id" />
+    <item name="LabelText" type="id" />
     <item name="elapsed" type="id" />
     <item name="upcoming" type="id" />
     <item name="all" type="id" />

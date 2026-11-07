@@ -20,7 +20,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -39,7 +38,6 @@ internal fun SeekBarPreferenceRow(
     enabled: Boolean = true,
     showPreviewText: Boolean = false,
     showValueBadge: Boolean = false,
-    testTag: String? = null,
     onValueChange: (Float) -> Unit = {},
     onValueChangeFinished: (() -> Unit)? = null,
 ) {
@@ -49,14 +47,10 @@ internal fun SeekBarPreferenceRow(
     val isInteracting = isPressed || isDragged || showValueBadge
 
     val steps = ((valueRange.endInclusive - valueRange.start).toInt() - 1).coerceAtLeast(0)
-    val tagModifier = if (testTag != null) Modifier.testTag(testTag) else Modifier
 
     Column(
         modifier =
-            modifier
-                .fillMaxWidth()
-                .then(tagModifier)
-                .padding(start = 4.dp, top = 16.dp, end = 4.dp, bottom = 4.dp)
+            modifier.fillMaxWidth().padding(start = 4.dp, top = 16.dp, end = 4.dp, bottom = 4.dp)
     ) {
         Text(
             text = title,

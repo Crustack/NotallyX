@@ -11,7 +11,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -40,8 +39,8 @@ internal fun ListDialog(
                         modifier =
                             Modifier.fillMaxWidth()
                                 .clickable(enabled = onItemClick != null) {
-                                    onItemClick?.invoke(index)
                                     onDismissRequest()
+                                    onItemClick?.invoke(index)
                                 }
                                 .padding(vertical = 12.dp, horizontal = 8.dp),
                     )
@@ -50,12 +49,7 @@ internal fun ListDialog(
         },
         confirmButton = {
             if (positiveButtonText != null) {
-                TextButton(
-                    onClick = onDismissRequest,
-                    modifier = Modifier.testTag("button1"),
-                ) {
-                    Text(positiveButtonText)
-                }
+                TextButton(onClick = onDismissRequest) { Text(positiveButtonText) }
             }
         },
     )

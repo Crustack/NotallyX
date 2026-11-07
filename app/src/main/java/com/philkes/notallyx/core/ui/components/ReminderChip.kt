@@ -14,8 +14,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -56,13 +58,15 @@ internal fun ReminderChip(
     val hasRepetition = remember(reminders) { reminders.haveAnyRepetition() }
     val isElapsed = mostRecentNotificationDate < now
 
+    val remindersLabel = stringResource(id = R.string.reminders)
+
     Surface(
         onClick = onClick ?: {},
         enabled = onClick != null,
         shape = CircleShape,
         color =
             MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isElapsed) 0.5f else 1.0f),
-        modifier = modifier.testTag("ReminderChip"),
+        modifier = modifier.semantics { contentDescription = remindersLabel },
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
