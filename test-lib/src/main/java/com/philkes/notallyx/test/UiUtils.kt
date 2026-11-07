@@ -1,17 +1,15 @@
 package com.philkes.notallyx.test
 
-import com.philkes.notallyx.navigation.NotallyNavKey
-
 import android.graphics.Point
 import android.graphics.Typeface
 import android.os.SystemClock
 import android.text.Spanned
-import android.view.MotionEvent
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.TypefaceSpan
 import android.text.style.URLSpan
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -23,10 +21,9 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
-import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyChild
-import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -36,9 +33,17 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextInputSelection
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.UrlAnnotation
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.recyclerview.widget.RecyclerView
-import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.NoMatchingRootException
 import androidx.test.espresso.Root
@@ -47,7 +52,6 @@ import androidx.test.espresso.ViewAction
 import androidx.test.espresso.ViewInteraction
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
-import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.BoundedMatcher
@@ -87,6 +91,7 @@ import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
+import com.philkes.notallyx.navigation.NotallyNavKey
 import junit.framework.TestCase.assertTrue
 import org.hamcrest.Description
 import org.hamcrest.Matcher
@@ -1102,4 +1107,160 @@ fun waitUntilNoDialogShown(timeoutMs: Long = 5000, pollIntervalMs: Long = 100) {
     }
 
     throw AssertionError("Timed out after ${timeoutMs}ms waiting for dialog window to dismiss.")
+}
+
+
+private fun SpanStyle.hasFormatting(): Boolean {
+    return (fontWeight != null && fontWeight!!.weight >= FontWeight.Bold.weight) ||
+            fontStyle == FontStyle.Italic ||
+            textDecoration?.contains(TextDecoration.LineThrough) == true ||
+            fontFamily == FontFamily.Monospace ||
+            fontFamily?.toString()?.contains("monospace", ignoreCase = true) == true
+}
+
+/**
+ * Helper to inspect the AnnotatedString from EditableText or Text semantics.
+ */
+private fun SemanticsNodeInteraction.assertSubstringStyle(
+    description: String,
+    substring: String,
+    requireFormatting: Boolean = true,
+    predicate: (SpanStyle) -> Boolean
+): SemanticsNodeInteraction {
+    return assert(
+        SemanticsMatcher("has substring '$substring' with $description") { node ->
+            val annotatedString: AnnotatedString =
+                node.config.getOrNull(SemanticsProperties.EditableText)
+                    ?: node.config.getOrNull(SemanticsProperties.Text)?.firstOrNull()
+                    ?: return@SemanticsMatcher false
+
+            val text = annotatedString.text
+            val substringLength = substring.length
+            if (substringLength == 0) return@SemanticsMatcher false
+
+            val startIndices = mutableListOf<Int>()
+            var index = text.indexOf(substring)
+            while (index != -1) {
+                startIndices.add(index)
+                index = text.indexOf(substring, index + 1)
+            }
+            if (startIndices.isEmpty()) return@SemanticsMatcher false
+
+            startIndices.any { startIndex ->
+                val endIndex = startIndex + substringLength
+                (startIndex until endIndex).all { charIndex ->
+                    if (requireFormatting) {
+                        annotatedString.spanStyles.any { range ->
+                            range.start <= charIndex && range.end > charIndex && predicate(range.item)
+                        }
+                    } else {
+                        annotatedString.spanStyles.none { range ->
+                            range.start <= charIndex && range.end > charIndex && predicate(range.item)
+                        }
+                    }
+                }
+            }
+        }
+    )
+}
+
+// 1. Bold Assertion
+fun SemanticsNodeInteraction.assertSubtextIsBold(
+    substring: String,
+    expectedWeight: FontWeight = FontWeight.Bold
+): SemanticsNodeInteraction = assertSubstringStyle("bold weight ($expectedWeight)", substring) {
+    it.fontWeight == expectedWeight || (it.fontWeight != null && it.fontWeight!!.weight >= expectedWeight.weight)
+}
+
+// 2. Italic Assertion
+fun SemanticsNodeInteraction.assertSubtextIsItalic(
+    substring: String
+): SemanticsNodeInteraction = assertSubstringStyle("italic style", substring) {
+    it.fontStyle == FontStyle.Italic
+}
+
+// 3. Strikethrough Assertion
+fun SemanticsNodeInteraction.assertSubtextHasStrikethrough(
+    substring: String
+): SemanticsNodeInteraction = assertSubstringStyle("strikethrough decoration", substring) {
+    it.textDecoration?.contains(TextDecoration.LineThrough) == true
+}
+
+// 4. Monospace Assertion
+fun SemanticsNodeInteraction.assertSubtextIsMonospace(
+    substring: String
+): SemanticsNodeInteraction = assertSubstringStyle("monospace font family", substring) {
+    it.fontFamily == FontFamily.Monospace ||
+            it.fontFamily?.toString()?.contains("monospace", ignoreCase = true) == true
+}
+
+// 5. Unformatted / Plain Text Assertion
+fun SemanticsNodeInteraction.assertSubtextHasNoFormatting(
+    substring: String
+): SemanticsNodeInteraction {
+    return assertSubstringStyle("no formatting", substring, requireFormatting = false) {
+        it.hasFormatting()
+    }
+}
+
+@OptIn(ExperimentalTextApi::class)
+private fun AnnotatedString.hasLinkAtIndex(charIndex: Int, expectedUrl: String? = null): Boolean {
+    val stringAnnotations = getStringAnnotations(start = charIndex, end = charIndex + 1)
+    val hasStringAnnotation = stringAnnotations.any { annotation ->
+        val matchesUrl = expectedUrl == null || annotation.item == expectedUrl
+        matchesUrl && (annotation.tag.equals("URL", ignoreCase = true) || annotation.tag.equals("link", ignoreCase = true) || expectedUrl != null)
+    }
+    if (hasStringAnnotation) return true
+
+    @Suppress("DEPRECATION")
+    val urlAnnotations = getUrlAnnotations(start = charIndex, end = charIndex + 1)
+    val hasUrlAnnotation = urlAnnotations.any { annotation ->
+        expectedUrl == null || annotation.item.url == expectedUrl
+    }
+    if (hasUrlAnnotation) return true
+
+    val linkAnnotations = getLinkAnnotations(start = charIndex, end = charIndex + 1)
+    val hasLinkAnnotation = linkAnnotations.any { annotation ->
+        val linkUrl = (annotation.item as? LinkAnnotation.Url)?.url
+        linkUrl != null && (expectedUrl == null || linkUrl == expectedUrl)
+    }
+    if (hasLinkAnnotation) return true
+
+    return false
+}
+
+// 6. Link Assertion
+@OptIn(ExperimentalTextApi::class)
+fun SemanticsNodeInteraction.assertSubtextHasLink(
+    substring: String,
+    url: String? = null
+): SemanticsNodeInteraction {
+    val description = if (url != null) "link to '$url'" else "a link"
+    return assert(
+        SemanticsMatcher("has substring '$substring' with $description") { node ->
+            val annotatedString: AnnotatedString =
+                node.config.getOrNull(SemanticsProperties.EditableText)
+                    ?: node.config.getOrNull(SemanticsProperties.Text)?.firstOrNull()
+                    ?: return@SemanticsMatcher false
+
+            val text = annotatedString.text
+            val substringLength = substring.length
+            if (substringLength == 0) return@SemanticsMatcher false
+
+            val startIndices = mutableListOf<Int>()
+            var index = text.indexOf(substring)
+            while (index != -1) {
+                startIndices.add(index)
+                index = text.indexOf(substring, index + 1)
+            }
+            if (startIndices.isEmpty()) return@SemanticsMatcher false
+
+            startIndices.any { startIndex ->
+                val endIndex = startIndex + substringLength
+                (startIndex until endIndex).all { charIndex ->
+                    annotatedString.hasLinkAtIndex(charIndex, url)
+                }
+            }
+        }
+    )
 }

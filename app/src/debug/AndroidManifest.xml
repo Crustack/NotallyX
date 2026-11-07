@@ -7,5 +7,6 @@
             android:name=".core.common.error.ErrorActivity"
             android:process="${applicationId}"
             tools:replace="android:process" />
+        <activity android:name="androidx.activity.ComponentActivity" />
     </application>
 </manifest>
