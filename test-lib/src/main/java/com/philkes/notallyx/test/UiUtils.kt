@@ -17,12 +17,14 @@ import android.view.accessibility.AccessibilityEvent
 import android.widget.EditText
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasAnyChild
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -30,6 +32,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextInputSelection
 import androidx.compose.ui.test.performTouchInput
@@ -37,6 +40,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.UrlAnnotation
 import androidx.compose.ui.text.font.FontFamily
@@ -1263,4 +1267,19 @@ fun SemanticsNodeInteraction.assertSubtextHasLink(
             }
         }
     )
+}
+
+fun SemanticsNodeInteraction.performClickOnSubtext(substring: String): SemanticsNodeInteraction {
+    val textLayoutResults = mutableListOf<TextLayoutResult>()
+    performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(textLayoutResults) }
+    val layout =
+        textLayoutResults.firstOrNull() ?: error("Failed to retrieve TextLayoutResult for node")
+    val annotatedString: AnnotatedString =
+        fetchSemanticsNode().config.getOrNull(SemanticsProperties.EditableText)
+            ?: fetchSemanticsNode().config.getOrNull(SemanticsProperties.Text)?.firstOrNull()
+            ?: error("Node has no text")
+    val index = annotatedString.text.indexOf(substring)
+    require(index != -1) { "Substring '$substring' not found in '${annotatedString.text}'" }
+    val boundingBox = layout.getBoundingBox(index)
+    return performTouchInput { click(boundingBox.center) }
 }
