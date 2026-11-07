@@ -1,15 +1,10 @@
 @file:OptIn(ExperimentalRoborazziApi::class)
 
-import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
 import io.github.crustack.auto.translation.plugin.config.FastlaneTranslationConfig
 import io.github.crustack.auto.translation.plugin.config.StringsXmlTranslationConfig
 import io.github.crustack.auto.translation.plugin.task.AutoTranslateTask
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
-import org.apache.commons.configuration2.PropertiesConfiguration
-import org.apache.commons.configuration2.io.FileHandler
 
 plugins {
     alias(libs.plugins.android.application)
@@ -24,6 +19,11 @@ plugins {
     alias(libs.plugins.koin.compiler)
     alias(libs.plugins.android.compose.screenshot)
     kotlin("plugin.compose") version libs.versions.kotlin
+    // See build-logic module
+    id("notallyx.android.packaging")
+    id("notallyx.android.screenshots")
+    id("notallyx.android.localization")
+    id("notallyx.developer.tools")
 }
 
 android {
@@ -108,6 +108,7 @@ android {
         }
         create("beta") {
             initWith(getByName("release"))
+            matchingFallbacks += listOf("release")
             applicationIdSuffix = ".beta"
             versionNameSuffix = "-BETA"
             resValue("string", "app_name", "NotallyX BETA")
@@ -157,84 +158,6 @@ android {
 
 screenshotTests {
     imageDifferenceThreshold = 0.00025f // 0.025%
-}
-
-androidComponents {
-    onVariants { variant ->
-        val versionName = project.findProperty("app.versionName").toString()
-        variant.outputs.forEach { output -> output.outputFileName.set("NotallyX-$versionName.apk") }
-
-        val variantName = variant.name
-        val variantCapitalized = variantName.replaceFirstChar { it.uppercase() }
-        val buildTypeName = variant.buildType ?: variantName
-
-        if (buildTypeName == "release" || buildTypeName == "beta") {
-            fun copyMapping(suffix: String) {
-                val mappingFile =
-                    layout.buildDirectory
-                        .file("outputs/mapping/$buildTypeName/mapping.txt")
-                        .get()
-                        .asFile
-                if (mappingFile.exists()) {
-                    val target =
-                        File(project.projectDir, "obfuscation/mapping-$buildTypeName-$suffix.txt")
-                    target.parentFile.mkdirs()
-                    mappingFile.copyTo(target, overwrite = true)
-                    println("Copied mapping to: ${target.absolutePath}")
-                }
-            }
-
-            tasks
-                .matching { it.name == "assemble$variantCapitalized" }
-                .configureEach { doLast { copyMapping("apk") } }
-
-            tasks
-                .matching { it.name == "bundle$variantCapitalized" }
-                .configureEach { doLast { copyMapping("bundle") } }
-
-            if (buildTypeName == "release") {
-                tasks
-                    .matching { it.name == "bundle$variantCapitalized" }
-                    .configureEach {
-                        doLast {
-                            val nativeLibsDir =
-                                layout.buildDirectory
-                                    .file(
-                                        "intermediates/merged_native_libs/$buildTypeName/merge${variantCapitalized}NativeLibs/out/lib"
-                                    )
-                                    .get()
-                                    .asFile
-
-                            if (!nativeLibsDir.exists()) {
-                                println("No native debug symbols found in $nativeLibsDir")
-                                return@doLast
-                            }
-                            val outputZip =
-                                File(
-                                    project.projectDir,
-                                    "obfuscation/$buildTypeName-debug-symbols.zip",
-                                )
-                            outputZip.parentFile.mkdirs()
-                            ZipOutputStream(outputZip.outputStream()).use { zipOut ->
-                                nativeLibsDir.walkTopDown().forEach { file ->
-                                    if (file.isFile) {
-                                        val relativePath =
-                                            nativeLibsDir
-                                                .toPath()
-                                                .relativize(file.toPath())
-                                                .toString()
-                                        zipOut.putNextEntry(ZipEntry(relativePath))
-                                        file.inputStream().use { it.copyTo(zipOut) }
-                                        zipOut.closeEntry()
-                                    }
-                                }
-                            }
-                            println("Native debug symbols zipped to: ${outputZip.absolutePath}")
-                        }
-                    }
-            }
-        }
-    }
 }
 
 ksp {
@@ -302,298 +225,12 @@ firebaseTestLab {
     }
 }
 
-//
-// tasks.named<Task>("assembleDebugAndroidTest") {
-//    doLast {
-//        logger.lifecycle("Task ${name} finished assembling!")
-//    }
-// }
-
-// Access internal AGP tasks with their explicit type
-// tasks.named<PackageAndroidArtifact>("packageDebugAndroidTest") {
-//    doLast {
-//        // Strongly typed access to task properties
-//        val apkFolder = outputDirectory.get().asFile
-//        logger.lifecycle("Packaging APKs into: ${apkFolder.absolutePath}")
-//    }
-// }
-
 tasks.register<KtfmtFormatTask>("ktfmtPrecommit") {
     source = project.fileTree(rootDir)
     include("**/*.kt")
 }
 
-tasks.register<Copy>("installLocalGitHooks") {
-    val scriptsDir = File(rootProject.rootDir, ".scripts/")
-    val hooksDir = File(rootProject.rootDir, ".git/hooks")
-    from(scriptsDir) { include("pre-commit", "pre-commit.bat") }
-    into(hooksDir)
-    inputs.files(file("${scriptsDir}/pre-commit"), file("${scriptsDir}/pre-commit.bat"))
-    outputs.dir(hooksDir)
-    filePermissions { unix(509) }
-    // If this throws permission denied:
-    // chmod +rwx ./.git/hooks/pre-commit*
-}
-
-private data class ParsedScreenshot(
-    val file: File,
-    val baseName: String,
-    val locale: String,
-)
-
-private fun parseScreenshots(sourceDir: File): List<ParsedScreenshot> {
-    if (!sourceDir.exists()) return emptyList()
-    val screenshotRegex =
-        Regex("""^(.+)_([a-zA-Z]{2,3}(?:[-_][a-zA-Z0-9]{2,4})?)(?:_[a-fA-F0-9]+_\d+)?\.png$""")
-
-    return sourceDir
-        .walkTopDown()
-        .filter { it.isFile && it.extension == "png" }
-        .mapNotNull { file ->
-            val match = screenshotRegex.matchEntire(file.name)
-            if (match != null) {
-                ParsedScreenshot(
-                    file = file,
-                    baseName = match.groupValues[1],
-                    locale = match.groupValues[2],
-                )
-            } else {
-                println("Skipped file not matching pattern: ${file.name}")
-                null
-            }
-        }
-        .toList()
-}
-
-tasks.register("copyScreenshotsToFastlane") {
-    group = "documentation"
-    description = "Copies screenshotTest images to fastlane metadata phoneScreenshots by locale."
-
-    dependsOn.add(tasks.named("updateDebugScreenshotTest"))
-    val sourceDir = layout.projectDirectory.dir("src/screenshotTestDebug").asFile
-    val fastlaneDir = rootProject.layout.projectDirectory.dir("fastlane/metadata/android").asFile
-
-    inputs.dir(sourceDir)
-    outputs.dir(fastlaneDir)
-
-    doLast {
-        val screenshots = parseScreenshots(sourceDir)
-        var copiedCount = 0
-        screenshots.forEach { screenshot ->
-            val fastlaneTargetDir =
-                File(fastlaneDir, "${screenshot.locale}/images/phoneScreenshots")
-            fastlaneTargetDir.mkdirs()
-            val fastlaneTargetFile = File(fastlaneTargetDir, "${screenshot.baseName}.png")
-
-            screenshot.file.copyTo(fastlaneTargetFile, overwrite = true)
-            println(
-                "Copied ${screenshot.file.name} -> ${fastlaneTargetFile.relativeTo(rootProject.rootDir)}"
-            )
-            copiedCount++
-        }
-        println("Successfully copied $copiedCount screenshots to fastlane metadata.")
-    }
-}
-
-tasks.register("copyScreenshotsToDocumentation") {
-    group = "documentation"
-    description = "Copies screenshotTest images to Docusaurus documentation phoneScreenshots."
-
-    dependsOn.add(tasks.named("updateDebugScreenshotTest"))
-    val sourceDir = layout.projectDirectory.dir("src/screenshotTestDebug").asFile
-    val docusaurusDir =
-        rootProject.layout.projectDirectory.dir("documentation/static/img/phoneScreenshots").asFile
-
-    inputs.dir(sourceDir)
-    outputs.dir(docusaurusDir)
-
-    doLast {
-        val screenshots = parseScreenshots(sourceDir)
-        var copiedCount = 0
-        screenshots
-            .filter { it.locale == "en-US" || it.locale == "en" }
-            .forEach { screenshot ->
-                docusaurusDir.mkdirs()
-                val docusaurusTargetFile = File(docusaurusDir, "${screenshot.baseName}.png")
-
-                screenshot.file.copyTo(docusaurusTargetFile, overwrite = true)
-                println(
-                    "Copied ${screenshot.file.name} -> ${docusaurusTargetFile.relativeTo(rootProject.rootDir)}"
-                )
-                copiedCount++
-            }
-        println("Successfully copied $copiedCount screenshots to docusaurus.")
-    }
-}
-
-val defaultRegionMap =
-    mapOf(
-        "en" to "en-US",
-        "de" to "de-DE",
-        "ru" to "ru-RU",
-        "fr" to "fr-FR",
-        "es" to "es-ES",
-        "it" to "it-IT",
-        "ja" to "ja-JP",
-        "pl" to "pl-PL",
-        "tr" to "tr-TR",
-        "nl" to "nl-NL",
-        "da" to "da-DK",
-        "cs" to "cs-CZ",
-        "el" to "el-GR",
-        "hu" to "hu-HU",
-        "sv" to "sv-SE",
-        "nb" to "no-NO",
-        "ro" to "ro-RO",
-        "sk" to "sk-SK",
-        "sl" to "sl-SI",
-        "uk" to "uk-UA",
-        "vi" to "vi-VN",
-        "id" to "id-ID",
-        "ar" to "ar-SA",
-        "ca" to "ca-ES",
-        "tl" to "fil-PH",
-        "my" to "my-MM",
-    )
-
-val generateLocalesPreview =
-    tasks.register("generateLocalesPreview") {
-        group = "build"
-        description =
-            "Generates AppStorePreview multi-preview annotation for all locales in res/values-*/strings.xml"
-
-        val resDir = file("src/main/res")
-        val outputDir = layout.buildDirectory.dir("generated/source/localesPreview/kotlin")
-
-        inputs.dir(resDir).withPathSensitivity(PathSensitivity.RELATIVE)
-        outputs.dir(outputDir)
-
-        doLast {
-            val localeDirs =
-                resDir
-                    .listFiles { f ->
-                        f.isDirectory &&
-                            f.name.startsWith("values-") &&
-                            !f.name.startsWith("values-v") &&
-                            f.name != "values-night" &&
-                            File(f, "strings.xml").exists()
-                    }
-                    ?.sortedBy { it.name } ?: emptyList()
-
-            val locales = mutableListOf("en" to "en-US", "de" to "de-DE")
-            // TODO: check which locales should really be included
-            //            localeDirs.forEach { dir ->
-            //                val rawTag = dir.name.removePrefix("values-")
-            //                val tag = rawTag.replace("-r", "-")
-            //                val name = defaultRegionMap[rawTag] ?: defaultRegionMap[tag] ?: tag
-            //                locales.add(tag to name)
-            //            }
-
-            val annotations =
-                locales.joinToString("\n") { (code, label) ->
-                    """@Preview(name = "$label", locale = "$code", showBackground = true)"""
-                }
-
-            val outputFile =
-                outputDir
-                    .get()
-                    .asFile
-                    .resolve("com/philkes/notallyx/misc/appstore/AppStorePreview.kt")
-            outputFile.parentFile.mkdirs()
-
-            val generatedContent =
-                """
-package com.philkes.notallyx.misc.appstore
-
-import androidx.compose.ui.tooling.preview.Preview
-
-/**
- * Multi-preview annotation for generating app store screenshots across multiple locales.
- * Auto-generated during build from res/values-* folders by the generateLocalesPreview task.
- */
-@Retention(AnnotationRetention.BINARY)
-@Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.FUNCTION)
-$annotations
-annotation class AppStorePreview
-
-typealias LocalesPreview = AppStorePreview
-"""
-                    .trimStart()
-
-            if (!outputFile.exists() || outputFile.readText() != generatedContent) {
-                outputFile.writeText(generatedContent)
-                logger.lifecycle(
-                    "Generated AppStorePreview with ${locales.size} locales at: ${outputFile.absolutePath}"
-                )
-            }
-        }
-    }
-
-tasks.preBuild.dependsOn(
-    tasks.named("installLocalGitHooks"),
-    tasks.exportTranslationsToExcel,
-    generateLocalesPreview,
-)
-
-tasks.register("generateChangelogs") {
-    doLast {
-        val githubToken = providers.gradleProperty("CHANGELOG_GITHUB_TOKEN").orNull
-
-        val command =
-            mutableListOf(
-                "bash",
-                rootProject.file("generate-changelogs.sh").absolutePath,
-                "v${project.findProperty("app.lastVersionName")}",
-                rootProject.file("CHANGELOG.md").absolutePath,
-            )
-        if (!githubToken.isNullOrEmpty()) {
-            command.add(githubToken)
-        } else {
-            println(
-                "CHANGELOG_GITHUB_TOKEN not found, which limits the allowed amount of Github API calls"
-            )
-        }
-
-        // Execute and stream directly to the terminal console
-        val process =
-            ProcessBuilder(command)
-                .directory(rootProject.rootDir)
-                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-                .redirectError(ProcessBuilder.Redirect.INHERIT)
-                .start()
-
-        val exitCode = process.waitFor()
-        if (exitCode != 0) {
-            throw GradleException("Changelog generation script failed with exit code $exitCode")
-        }
-
-        // Update gradle.properties
-        val config = PropertiesConfiguration()
-        val fileHandler =
-            FileHandler(config).apply {
-                file = rootProject.file("gradle.properties")
-                load()
-            }
-        val currentVersionName = config.getProperty("app.versionName")?.toString() ?: ""
-        config.setProperty("app.lastVersionName", currentVersionName)
-        fileHandler.save()
-        println("Updated app.lastVersionName to $currentVersionName")
-    }
-}
-
-afterEvaluate {
-    tasks.named("bundleRelease").configure { dependsOn(tasks.named("testReleaseUnitTest")) }
-    tasks.named("assembleRelease").configure {
-        dependsOn(tasks.named("testReleaseUnitTest"))
-        finalizedBy(tasks.named("generateChangelogs"))
-    }
-    tasks.named("generateChangelogs").configure {
-        finalizedBy(
-            tasks.named("copyScreenshotsToFastlane"),
-            tasks.named("copyScreenshotsToDocumentation"),
-        )
-    }
-}
+tasks.named("preBuild").configure { dependsOn(tasks.named("exportTranslationsToExcel")) }
 
 roborazzi {
     // Directory for reference images
@@ -633,8 +270,8 @@ dependencies {
     implementation(libs.bundles.compose)
     implementation(libs.compose.colorpicker)
     implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.preview)
     debugImplementation(libs.androidx.glance.appwidgetPreview)
-    debugImplementation(libs.androidx.glance.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation("androidx.compose.material:material-icons-extended:1.7.8")
 
