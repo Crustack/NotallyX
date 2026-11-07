@@ -21,12 +21,14 @@ internal fun TriStateMultiChoiceDialog(
     initialStates: Array<ToggleableState>,
     onDismissRequest: () -> Unit,
     onConfirm: (states: Array<ToggleableState>) -> Unit,
+    modifier: Modifier = Modifier,
     positiveButtonText: String = stringResource(R.string.save),
     negativeButtonText: String = stringResource(R.string.cancel),
 ) {
     val states = remember { initialStates.clone() }
 
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(text = title) },
         text = {

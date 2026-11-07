@@ -68,7 +68,7 @@ internal fun PickNoteScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(4.dp),
                 ) {
-                    itemsIndexed(notes) { _, note ->
+                    itemsIndexed(notes, key = { _, note -> note.id }) { _, note ->
                         BaseNoteCard(
                             baseNote = note,
                             onClick = { onNoteClick(note) },
@@ -80,7 +80,7 @@ internal fun PickNoteScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
                 ) {
-                    itemsIndexed(notes) { _, note ->
+                    itemsIndexed(notes, key = { _, note -> note.id }) { _, note ->
                         BaseNoteCard(
                             baseNote = note,
                             onClick = { onNoteClick(note) },

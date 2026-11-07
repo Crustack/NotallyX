@@ -36,6 +36,17 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
+internal data class PlayAudioActions(
+    val onPlayPauseClick: () -> Unit = {},
+    val onSeek: (Long) -> Unit = {},
+    val onBackClick: () -> Unit = {},
+    val onShareClick: () -> Unit = {},
+    val onSaveClick: () -> Unit = {},
+    val onDeleteClick: () -> Unit = {},
+    val onDismissDeleteConfirm: () -> Unit = {},
+    val onConfirmDelete: () -> Unit = {},
+)
+
 /** Composable replacing activity_play_audio.xml layout. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,14 +58,7 @@ internal fun PlayAudioScreen(
     isPlaying: Boolean = false,
     errorMessage: String? = null,
     showDeleteConfirmDialog: Boolean = false,
-    onPlayPauseClick: () -> Unit = {},
-    onSeek: (Long) -> Unit = {},
-    onBackClick: () -> Unit = {},
-    onShareClick: () -> Unit = {},
-    onSaveClick: () -> Unit = {},
-    onDeleteClick: () -> Unit = {},
-    onDismissDeleteConfirm: () -> Unit = {},
-    onConfirmDelete: () -> Unit = {},
+    actions: PlayAudioActions = PlayAudioActions(),
 ) {
     var isSeeking by remember { mutableStateOf(false) }
     var sliderPosition by remember { mutableFloatStateOf(currentPosition.toFloat()) }
@@ -73,7 +77,7 @@ internal fun PlayAudioScreen(
             TopAppBar(
                 title = { Text(text = titleText) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = actions.onBackClick) {
                         Icon(
                             painter = painterResource(id = R.drawable.close),
                             contentDescription = stringResource(R.string.back),
@@ -81,19 +85,19 @@ internal fun PlayAudioScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onShareClick) {
+                    IconButton(onClick = actions.onShareClick) {
                         Icon(
                             painter = painterResource(id = R.drawable.share),
                             contentDescription = stringResource(R.string.share),
                         )
                     }
-                    IconButton(onClick = onSaveClick) {
+                    IconButton(onClick = actions.onSaveClick) {
                         Icon(
                             painter = painterResource(id = R.drawable.save),
                             contentDescription = stringResource(R.string.save_to_device),
                         )
                     }
-                    IconButton(onClick = onDeleteClick) {
+                    IconButton(onClick = actions.onDeleteClick) {
                         Icon(
                             painter = painterResource(id = R.drawable.delete),
                             contentDescription = stringResource(R.string.delete),
@@ -131,7 +135,7 @@ internal fun PlayAudioScreen(
                             },
                             onValueChangeFinished = {
                                 isSeeking = false
-                                onSeek(sliderPosition.toLong())
+                                actions.onSeek(sliderPosition.toLong())
                             },
                             valueRange = 0f..maxDuration,
                             modifier = Modifier.fillMaxWidth(),
@@ -156,7 +160,7 @@ internal fun PlayAudioScreen(
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
-                        onClick = onPlayPauseClick,
+                        onClick = actions.onPlayPauseClick,
                         modifier = Modifier.padding(bottom = 32.dp),
                     ) {
                         Text(
@@ -172,8 +176,8 @@ internal fun PlayAudioScreen(
         ConfirmDialog(
             message = stringResource(R.string.delete_audio_recording_forever),
             positiveButtonText = stringResource(R.string.delete),
-            onDismissRequest = onDismissDeleteConfirm,
-            onConfirm = onConfirmDelete,
+            onDismissRequest = actions.onDismissDeleteConfirm,
+            onConfirm = actions.onConfirmDelete,
         )
     }
 }

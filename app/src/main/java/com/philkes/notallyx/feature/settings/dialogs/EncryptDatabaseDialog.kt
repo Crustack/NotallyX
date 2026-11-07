@@ -29,10 +29,12 @@ import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 internal fun EncryptDatabaseDialog(
     onDismissRequest: () -> Unit,
     onContinue: (encryptDatabase: Boolean) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var checkEncrypt by remember { mutableStateOf(false) }
 
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(text = stringResource(R.string.biometric_lock)) },
         text = {

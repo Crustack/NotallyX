@@ -29,18 +29,22 @@ data class TextFormattingState(
     val isLink: Boolean = false,
 )
 
+data class TextFormattingBarActions(
+    val onBoldClick: () -> Unit = {},
+    val onItalicClick: () -> Unit = {},
+    val onStrikethroughClick: () -> Unit = {},
+    val onMonospaceClick: () -> Unit = {},
+    val onLinkClick: () -> Unit = {},
+    val onClearFormattingClick: () -> Unit = {},
+    val onCloseClick: () -> Unit = {},
+)
+
 @Composable
 fun TextFormattingBar(
     formattingState: TextFormattingState,
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
-    onBoldClick: () -> Unit = {},
-    onItalicClick: () -> Unit = {},
-    onStrikethroughClick: () -> Unit = {},
-    onMonospaceClick: () -> Unit = {},
-    onLinkClick: () -> Unit = {},
-    onClearFormattingClick: () -> Unit = {},
-    onCloseClick: () -> Unit = {},
+    actions: TextFormattingBarActions = TextFormattingBarActions(),
 ) {
     val scrollState = rememberScrollState()
 
@@ -59,7 +63,7 @@ fun TextFormattingBar(
             ) {
                 IconToggleButton(
                     checked = formattingState.isLink,
-                    onCheckedChange = { onLinkClick() },
+                    onCheckedChange = { actions.onLinkClick() },
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.link),
@@ -72,7 +76,7 @@ fun TextFormattingBar(
 
                 IconToggleButton(
                     checked = formattingState.isBold,
-                    onCheckedChange = { onBoldClick() },
+                    onCheckedChange = { actions.onBoldClick() },
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.format_bold),
@@ -85,7 +89,7 @@ fun TextFormattingBar(
 
                 IconToggleButton(
                     checked = formattingState.isItalic,
-                    onCheckedChange = { onItalicClick() },
+                    onCheckedChange = { actions.onItalicClick() },
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.format_italic),
@@ -98,7 +102,7 @@ fun TextFormattingBar(
 
                 IconToggleButton(
                     checked = formattingState.isStrikethrough,
-                    onCheckedChange = { onStrikethroughClick() },
+                    onCheckedChange = { actions.onStrikethroughClick() },
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.format_strikethrough),
@@ -111,7 +115,7 @@ fun TextFormattingBar(
 
                 IconToggleButton(
                     checked = formattingState.isMonospace,
-                    onCheckedChange = { onMonospaceClick() },
+                    onCheckedChange = { actions.onMonospaceClick() },
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.code),
@@ -122,7 +126,7 @@ fun TextFormattingBar(
                     )
                 }
 
-                IconButton(onClick = onClearFormattingClick) {
+                IconButton(onClick = actions.onClearFormattingClick) {
                     Icon(
                         painter = painterResource(id = R.drawable.format_clear),
                         contentDescription = stringResource(id = R.string.clear_formatting),
@@ -130,7 +134,7 @@ fun TextFormattingBar(
                 }
             }
 
-            IconButton(onClick = onCloseClick) {
+            IconButton(onClick = actions.onCloseClick) {
                 Icon(
                     painter = painterResource(id = R.drawable.close),
                     contentDescription = stringResource(id = R.string.cancel),

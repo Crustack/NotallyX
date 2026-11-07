@@ -18,20 +18,24 @@ import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.dialog.TextInputDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
+internal data class LabelsScreenActions(
+    val onLabelClick: (LabelData) -> Unit = {},
+    val onEditClick: (LabelData) -> Unit = {},
+    val onDeleteClick: (LabelData) -> Unit = {},
+    val onToggleVisibilityClick: (LabelData) -> Unit = {},
+    val onDismissDialog: () -> Unit = {},
+    val onConfirmAddLabel: (String) -> Unit = {},
+    val onConfirmEditLabel: (oldLabel: String, newLabel: String) -> Unit = { _, _ -> },
+    val onConfirmDeleteLabel: (String) -> Unit = {},
+)
+
 /** Composable replacing fragment_notes.xml layout for LabelsFragment. */
 @Composable
 internal fun LabelsScreen(
     labels: List<LabelData>,
     modifier: Modifier = Modifier,
     dialogState: LabelDialogState? = null,
-    onLabelClick: (LabelData) -> Unit = {},
-    onEditClick: (LabelData) -> Unit = {},
-    onDeleteClick: (LabelData) -> Unit = {},
-    onToggleVisibilityClick: (LabelData) -> Unit = {},
-    onDismissDialog: () -> Unit = {},
-    onConfirmAddLabel: (String) -> Unit = {},
-    onConfirmEditLabel: (oldLabel: String, newLabel: String) -> Unit = { _, _ -> },
-    onConfirmDeleteLabel: (String) -> Unit = {},
+    actions: LabelsScreenActions = LabelsScreenActions(),
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
@@ -49,10 +53,10 @@ internal fun LabelsScreen(
                     LabelItemRow(
                         label = label.value,
                         isVisibleInNavigation = label.visibleInNavigation,
-                        onClick = { onLabelClick(label) },
-                        onEdit = { onEditClick(label) },
-                        onDelete = { onDeleteClick(label) },
-                        onToggleVisibility = { onToggleVisibilityClick(label) },
+                        onClick = { actions.onLabelClick(label) },
+                        onEdit = { actions.onEditClick(label) },
+                        onDelete = { actions.onDeleteClick(label) },
+                        onToggleVisibility = { actions.onToggleVisibilityClick(label) },
                     )
                 }
             }
@@ -64,10 +68,10 @@ internal fun LabelsScreen(
             TextInputDialog(
                 title = stringResource(R.string.add_label),
                 initialValue = "",
-                onDismissRequest = onDismissDialog,
+                onDismissRequest = actions.onDismissDialog,
                 onConfirm = { value ->
                     if (value.isNotEmpty()) {
-                        onConfirmAddLabel(value)
+                        actions.onConfirmAddLabel(value)
                     }
                 },
             )
@@ -76,10 +80,10 @@ internal fun LabelsScreen(
             TextInputDialog(
                 title = stringResource(R.string.edit_label),
                 initialValue = state.label,
-                onDismissRequest = onDismissDialog,
+                onDismissRequest = actions.onDismissDialog,
                 onConfirm = { value ->
                     if (value.isNotEmpty()) {
-                        onConfirmEditLabel(state.label, value)
+                        actions.onConfirmEditLabel(state.label, value)
                     }
                 },
             )
@@ -89,8 +93,8 @@ internal fun LabelsScreen(
                 title = stringResource(R.string.delete_label),
                 message = stringResource(R.string.your_notes_associated),
                 positiveButtonText = stringResource(R.string.delete),
-                onDismissRequest = onDismissDialog,
-                onConfirm = { onConfirmDeleteLabel(state.label) },
+                onDismissRequest = actions.onDismissDialog,
+                onConfirm = { actions.onConfirmDeleteLabel(state.label) },
             )
         }
         null -> {}

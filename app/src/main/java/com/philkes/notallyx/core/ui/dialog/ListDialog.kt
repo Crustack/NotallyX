@@ -22,15 +22,17 @@ internal fun ListDialog(
     title: String,
     items: List<String>,
     onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
     onItemClick: ((index: Int) -> Unit)? = null,
     positiveButtonText: String? = stringResource(android.R.string.ok),
 ) {
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(text = title) },
         text = {
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                itemsIndexed(items) { index, item ->
+                itemsIndexed(items, key = { index, item -> "${index}_$item" }) { index, item ->
                     Text(
                         text = item,
                         style = MaterialTheme.typography.bodyMedium,

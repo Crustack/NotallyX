@@ -27,8 +27,10 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
 internal enum class RepetitionOption(val labelResId: Int) {
     NONE(R.string.none),
@@ -50,6 +52,7 @@ internal enum class TimeUnit {
 
 @Composable
 internal fun ReminderRepetitionDialog(
+    modifier: Modifier = Modifier,
     initialOption: RepetitionOption = RepetitionOption.NONE,
     onDismissRequest: () -> Unit,
     onOptionSelected: (RepetitionOption) -> Unit,
@@ -57,6 +60,7 @@ internal fun ReminderRepetitionDialog(
     var selectedOption by remember { mutableStateOf(initialOption) }
 
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(text = stringResource(R.string.repetition)) },
         text = {
@@ -107,6 +111,7 @@ internal fun ReminderRepetitionDialog(
 
 @Composable
 internal fun CustomRepetitionDialog(
+    modifier: Modifier = Modifier,
     initialValue: String = "1",
     initialTimeUnit: TimeUnit = TimeUnit.WEEKS,
     onDismissRequest: () -> Unit,
@@ -126,6 +131,7 @@ internal fun CustomRepetitionDialog(
         )
 
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(text = stringResource(R.string.custom)) },
         text = {
@@ -203,4 +209,29 @@ internal fun CustomRepetitionDialog(
             TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
         },
     )
+}
+
+@Preview
+@Composable
+private fun ReminderRepetitionDialogPreview() {
+    NotallyXTheme {
+        ReminderRepetitionDialog(
+            initialOption = RepetitionOption.DAILY,
+            onDismissRequest = {},
+            onOptionSelected = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun CustomRepetitionDialogPreview() {
+    NotallyXTheme {
+        CustomRepetitionDialog(
+            initialValue = "2",
+            initialTimeUnit = TimeUnit.WEEKS,
+            onDismissRequest = {},
+            onConfirm = { _, _ -> },
+        )
+    }
 }

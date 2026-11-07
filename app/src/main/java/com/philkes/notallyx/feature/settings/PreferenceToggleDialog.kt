@@ -24,21 +24,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.dialog.SelectionItem
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
 @Composable
 internal fun PreferenceBooleanDialog(
     title: String,
-    message: String? = null,
     initialValue: Boolean,
+    modifier: Modifier = Modifier,
+    message: String? = null,
     onDismissRequest: () -> Unit,
     onConfirm: (Boolean) -> Unit,
 ) {
     var selectedValue by remember { mutableStateOf(initialValue) }
 
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(text = title) },
         text = {
@@ -101,11 +105,12 @@ internal fun PreferenceBooleanDialog(
 @Composable
 internal fun <T> PreferenceEnumWithToggleDialog(
     title: String,
-    hint: String? = null,
     items: List<SelectionItem<T>>,
     selectedItem: T,
     toggleLabel: String,
     initialToggleValue: Boolean,
+    modifier: Modifier = Modifier,
+    hint: String? = null,
     onDismissRequest: () -> Unit,
     onConfirm: (selectedItem: T, toggleValue: Boolean) -> Unit,
 ) {
@@ -113,6 +118,7 @@ internal fun <T> PreferenceEnumWithToggleDialog(
     var toggleState by remember { mutableStateOf(initialToggleValue) }
 
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(text = title) },
         text = {
@@ -186,4 +192,39 @@ internal fun <T> PreferenceEnumWithToggleDialog(
             TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
         },
     )
+}
+
+@Preview
+@Composable
+private fun PreferenceBooleanDialogPreview() {
+    NotallyXTheme {
+        PreferenceBooleanDialog(
+            title = "Always show search bar",
+            message = "When enabled, search bar will always be visible",
+            initialValue = true,
+            onDismissRequest = {},
+            onConfirm = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun PreferenceEnumWithToggleDialogPreview() {
+    NotallyXTheme {
+        PreferenceEnumWithToggleDialog(
+            title = "Theme",
+            items =
+                listOf(
+                    SelectionItem("LIGHT", "Light"),
+                    SelectionItem("DARK", "Dark"),
+                    SelectionItem("SYSTEM", "Follow System"),
+                ),
+            selectedItem = "SYSTEM",
+            toggleLabel = "Use dynamic colors",
+            initialToggleValue = true,
+            onDismissRequest = {},
+            onConfirm = { _, _ -> },
+        )
+    }
 }

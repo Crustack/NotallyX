@@ -173,6 +173,17 @@ private fun RecordingTimer(
 
 @Preview(showBackground = true)
 @Composable
+private fun RecordingTimerPreview() {
+    NotallyXTheme {
+        RecordingTimer(
+            status = Status.RECORDING,
+            baseTime = SystemClock.elapsedRealtime() - 5000L,
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
 private fun RecordAudioScreenPreview() {
     NotallyXTheme {
         RecordAudioScreen(

@@ -264,73 +264,135 @@ internal fun Context.createFromPreferences(preferences: NotallyXPreferences): Se
     }
 }
 
-/** Composable replacing fragment_settings.xml layout. */
-@OptIn(ExperimentalComposeUiApi::class)
+data class SettingsActions(
+    val onDismissDialog: () -> Unit = {},
+    val onNotesViewClick: () -> Unit = {},
+    val onThemeClick: () -> Unit = {},
+    val onDateFormatOverviewClick: () -> Unit = {},
+    val onDateFormatNoteViewClick: () -> Unit = {},
+    val onTextSizeNoteEditorChange: (Float) -> Unit = {},
+    val onTextSizeOverviewChange: (Float) -> Unit = {},
+    val onAlwaysShowSearchBarClick: () -> Unit = {},
+    val onNotesSortOrderClick: () -> Unit = {},
+    val onCheckedListItemSortingClick: () -> Unit = {},
+    val onStartViewClick: () -> Unit = {},
+    val onDefaultListNoteViewModeClick: () -> Unit = {},
+    val onAutoSaveAfterIdleChange: (Int) -> Unit = {},
+    val onAutoRemoveDeletedNotesChange: (Int) -> Unit = {},
+    val onMaxTitleChange: (Int) -> Unit = {},
+    val onMaxItemsChange: (Int) -> Unit = {},
+    val onMaxLinesChange: (Int) -> Unit = {},
+    val onMaxLabelsChange: (Int) -> Unit = {},
+    val onLabelTagsHiddenClick: () -> Unit = {},
+    val onImagesHiddenClick: () -> Unit = {},
+    val onImportBackupClick: () -> Unit = {},
+    val onImportOtherClick: () -> Unit = {},
+    val onExportBackupClick: () -> Unit = {},
+    val onBackupsFolderClick: () -> Unit = {},
+    val onBackupOnSaveClick: () -> Unit = {},
+    val onPeriodicBackupsClick: () -> Unit = {},
+    val onPeriodicBackupsPeriodInDaysChange: (Int) -> Unit = {},
+    val onPeriodicBackupsMaxChange: (Int) -> Unit = {},
+    val onBiometricLockClick: () -> Unit = {},
+    val onBackupPasswordClick: () -> Unit = {},
+    val onSecureFlagClick: () -> Unit = {},
+    val onImportSettingsClick: () -> Unit = {},
+    val onExportSettingsClick: () -> Unit = {},
+    val onResetSettingsClick: () -> Unit = {},
+    val onDataInPublicFolderClick: () -> Unit = {},
+    val onClearDataClick: () -> Unit = {},
+    val onSendFeedbackClick: () -> Unit = {},
+    val onRateClick: () -> Unit = {},
+    val onDonateClick: () -> Unit = {},
+    val onViewLogsClick: () -> Unit = {},
+    val onViewCrashesClick: () -> Unit = {},
+    val onDocumentationClick: () -> Unit = {},
+    val onSourceCodeClick: () -> Unit = {},
+)
+
+private fun formatDateTime(
+    context: Context,
+    dateFormat: DateFormat,
+    timeFormat: TimeFormat,
+): String {
+    val dateText = if (dateFormat == DateFormat.NONE) "" else dateFormat.getText(context)
+    val timeText = if (timeFormat == TimeFormat.NONE) "" else timeFormat.getText(context)
+    return when {
+        dateFormat == DateFormat.NONE && timeFormat == TimeFormat.NONE ->
+            dateFormat.getText(context)
+        dateFormat == DateFormat.NONE -> timeText
+        timeFormat == TimeFormat.NONE -> dateText
+        else -> "$dateText $timeText"
+    }
+}
+
 @Composable
-internal fun SettingsScreen(
+private fun SettingsAppearanceSection(
     state: SettingsUiState,
+    actions: SettingsActions,
     modifier: Modifier = Modifier,
-    scrollState: ScrollState = rememberScrollState(),
-    dialogState: SettingsDialogState? = null,
-    importProgress: Progress? = null,
-    onDismissDialog: () -> Unit = {},
-    onNotesViewClick: () -> Unit = {},
-    onThemeClick: () -> Unit = {},
-    onDateFormatOverviewClick: () -> Unit = {},
-    onDateFormatNoteViewClick: () -> Unit = {},
-    onTextSizeNoteEditorChange: (Float) -> Unit = {},
-    onTextSizeOverviewChange: (Float) -> Unit = {},
-    onAlwaysShowSearchBarClick: () -> Unit = {},
-    onNotesSortOrderClick: () -> Unit = {},
-    onCheckedListItemSortingClick: () -> Unit = {},
-    onStartViewClick: () -> Unit = {},
-    onDefaultListNoteViewModeClick: () -> Unit = {},
-    onAutoSaveAfterIdleChange: (Int) -> Unit = {},
-    onAutoRemoveDeletedNotesChange: (Int) -> Unit = {},
-    onMaxTitleChange: (Int) -> Unit = {},
-    onMaxItemsChange: (Int) -> Unit = {},
-    onMaxLinesChange: (Int) -> Unit = {},
-    onMaxLabelsChange: (Int) -> Unit = {},
-    onLabelTagsHiddenClick: () -> Unit = {},
-    onImagesHiddenClick: () -> Unit = {},
-    onImportBackupClick: () -> Unit = {},
-    onImportOtherClick: () -> Unit = {},
-    onExportBackupClick: () -> Unit = {},
-    onBackupsFolderClick: () -> Unit = {},
-    onBackupOnSaveClick: () -> Unit = {},
-    onPeriodicBackupsClick: () -> Unit = {},
-    onPeriodicBackupsPeriodInDaysChange: (Int) -> Unit = {},
-    onPeriodicBackupsMaxChange: (Int) -> Unit = {},
-    onBiometricLockClick: () -> Unit = {},
-    onBackupPasswordClick: () -> Unit = {},
-    onSecureFlagClick: () -> Unit = {},
-    onImportSettingsClick: () -> Unit = {},
-    onExportSettingsClick: () -> Unit = {},
-    onResetSettingsClick: () -> Unit = {},
-    onDataInPublicFolderClick: () -> Unit = {},
-    onClearDataClick: () -> Unit = {},
-    onSendFeedbackClick: () -> Unit = {},
-    onRateClick: () -> Unit = {},
-    onDonateClick: () -> Unit = {},
-    onViewLogsClick: () -> Unit = {},
-    onViewCrashesClick: () -> Unit = {},
-    onDocumentationClick: () -> Unit = {},
-    onSourceCodeClick: () -> Unit = {},
 ) {
     val context = LocalContext.current
-
-    fun formatDateTime(dateFormat: DateFormat, timeFormat: TimeFormat): String {
-        val dateText = if (dateFormat == DateFormat.NONE) "" else dateFormat.getText(context)
-        val timeText = if (timeFormat == TimeFormat.NONE) "" else timeFormat.getText(context)
-        return when {
-            dateFormat == DateFormat.NONE && timeFormat == TimeFormat.NONE ->
-                dateFormat.getText(context)
-            dateFormat == DateFormat.NONE -> timeText
-            timeFormat == TimeFormat.NONE -> dateText
-            else -> "$dateText $timeText"
-        }
+    Column(modifier = modifier) {
+        SectionHeaderItem(title = stringResource(id = R.string.appearance))
+        PreferenceRow(
+            title = stringResource(id = R.string.view),
+            value = state.notesView.getText(context),
+            testTag = "View",
+            onClick = actions.onNotesViewClick,
+        )
+        PreferenceRow(
+            title = stringResource(id = R.string.theme),
+            value = state.theme.getText(context),
+            testTag = "Theme",
+            onClick = actions.onThemeClick,
+        )
+        PreferenceRow(
+            title = stringResource(id = R.string.date_format_overview),
+            value = formatDateTime(context, state.dateFormatOverview, state.timeFormatOverview),
+            testTag = "DateFormatOverview",
+            onClick = actions.onDateFormatOverviewClick,
+        )
+        PreferenceRow(
+            title = stringResource(id = R.string.date_format_note_view),
+            value = formatDateTime(context, state.dateFormatNoteView, state.timeFormatNoteView),
+            testTag = "DateFormatNoteView",
+            onClick = actions.onDateFormatNoteViewClick,
+        )
+        SeekBarPreferenceRow(
+            title = stringResource(id = R.string.text_size_note_editor),
+            value = state.textSizeNoteEditor,
+            valueRange = TEXT_SIZE_MIN..TEXT_SIZE_MAX,
+            showPreviewText = true,
+            testTag = "TextSize",
+            onValueChange = actions.onTextSizeNoteEditorChange,
+        )
+        SeekBarPreferenceRow(
+            title = stringResource(id = R.string.text_size_overview),
+            value = state.textSizeOverview,
+            valueRange = TEXT_SIZE_MIN..TEXT_SIZE_MAX,
+            showPreviewText = true,
+            testTag = "TextSizeOverview",
+            onValueChange = actions.onTextSizeOverviewChange,
+        )
+        PreferenceRow(
+            title = stringResource(id = R.string.always_show_search_bar),
+            value =
+                if (state.alwaysShowSearchBar) stringResource(id = R.string.enabled)
+                else stringResource(id = R.string.disabled),
+            testTag = "ShowSearchInTopBar",
+            onClick = actions.onAlwaysShowSearchBarClick,
+        )
     }
+}
 
+@Composable
+private fun SettingsBehaviourSection(
+    state: SettingsUiState,
+    actions: SettingsActions,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
     val notesText = "${stringResource(R.string.notes)} (${stringResource(R.string.text_default)})"
     val unlabeledText = stringResource(R.string.unlabeled)
     val startViewValueText =
@@ -339,7 +401,117 @@ internal fun SettingsScreen(
             START_VIEW_UNLABELED -> unlabeledText
             else -> state.startView
         }
+    val offText = stringResource(id = R.string.off)
 
+    Column(modifier = modifier) {
+        SectionHeaderItem(title = stringResource(id = R.string.behaviour))
+        PreferenceRow(
+            title = stringResource(id = R.string.notes_sorted_by),
+            value = state.notesSort.getText(context),
+            testTag = "NotesSortOrder",
+            onClick = actions.onNotesSortOrderClick,
+        )
+        PreferenceRow(
+            title = stringResource(id = R.string.list_item_auto_sort),
+            value = state.listItemSorting.getText(context),
+            testTag = "CheckedListItemSorting",
+            onClick = actions.onCheckedListItemSortingClick,
+        )
+        PreferenceRow(
+            title = stringResource(id = R.string.start_view),
+            value = startViewValueText,
+            testTag = "StartView",
+            onClick = actions.onStartViewClick,
+        )
+        PreferenceRow(
+            title = stringResource(id = R.string.default_list_note_view_mode),
+            value = state.defaultListNoteViewMode.getText(context),
+            testTag = "DefaultListNoteViewMode",
+            onClick = actions.onDefaultListNoteViewModeClick,
+        )
+        StepperPreferenceRow(
+            title = stringResource(id = R.string.auto_save_after_idle_time),
+            value = state.autoSaveAfterIdleTime,
+            valueRange = NUMBER_PREF_DISABLED..Integer.MAX_VALUE,
+            labelFormatter = { v -> if (v == -1) offText else "${v}s" },
+            testTag = "AutoSaveAfterIdle",
+            onValueChange = actions.onAutoSaveAfterIdleChange,
+        )
+        StepperPreferenceRow(
+            title = stringResource(id = R.string.auto_remove_deleted_notes),
+            value = state.autoRemoveDeletedNotesAfterDays,
+            valueRange = 0..Integer.MAX_VALUE,
+            labelFormatter = { v ->
+                if (v == 0) offText else "$v ${context.getQuantityStringPlain(R.plurals.days, v)}"
+            },
+            testTag = "AutoEmptyBin",
+            onValueChange = actions.onAutoRemoveDeletedNotesChange,
+        )
+    }
+}
+
+@Composable
+private fun SettingsContentDensitySection(
+    state: SettingsUiState,
+    actions: SettingsActions,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        SectionHeaderItem(title = stringResource(id = R.string.content_density))
+        SeekBarPreferenceRow(
+            title = stringResource(id = R.string.max_lines_to_display_title),
+            value = state.maxTitle.toFloat(),
+            valueRange = MAX_TITLE_LINES_MIN.toFloat()..MAX_TITLE_LINES_MAX.toFloat(),
+            testTag = "MaxTitle",
+            onValueChange = { actions.onMaxTitleChange(it.roundToInt()) },
+        )
+        SeekBarPreferenceRow(
+            title = stringResource(id = R.string.max_items_to_display),
+            value = state.maxItems.toFloat(),
+            valueRange = 0f..MAX_ITEMS_MAX.toFloat(),
+            testTag = "MaxItems",
+            onValueChange = { actions.onMaxItemsChange(it.roundToInt()) },
+        )
+        SeekBarPreferenceRow(
+            title = stringResource(id = R.string.max_lines_to_display),
+            value = state.maxLines.toFloat(),
+            valueRange = 0f..MAX_ITEMS_MAX.toFloat(),
+            testTag = "MaxLines",
+            onValueChange = { actions.onMaxLinesChange(it.roundToInt()) },
+        )
+        StepperPreferenceRow(
+            title = stringResource(id = R.string.max_labels_to_display),
+            value = state.maxLabels,
+            valueRange = 0..MAX_LABELS_IN_NAVIGATION_MAX,
+            testTag = "MaxLabels",
+            onValueChange = actions.onMaxLabelsChange,
+        )
+        PreferenceRow(
+            title = stringResource(id = R.string.labels_hidden_in_overview_title),
+            value =
+                if (state.labelTagsHiddenInOverview) stringResource(id = R.string.enabled)
+                else stringResource(id = R.string.disabled),
+            testTag = "LabelsHiddenInOverview",
+            onClick = actions.onLabelTagsHiddenClick,
+        )
+        PreferenceRow(
+            title = stringResource(id = R.string.images_hidden_in_overview_title),
+            value =
+                if (state.imagesHiddenInOverview) stringResource(id = R.string.enabled)
+                else stringResource(id = R.string.disabled),
+            testTag = "ImagesHiddenInOverview",
+            onClick = actions.onImagesHiddenClick,
+        )
+    }
+}
+
+@Composable
+private fun SettingsBackupSection(
+    state: SettingsUiState,
+    actions: SettingsActions,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
     val backupsFolderText =
         if (state.backupsFolder == EMPTY_PATH) {
             stringResource(id = R.string.tap_to_set_up)
@@ -352,190 +524,25 @@ internal fun SettingsScreen(
                 stringResource(id = R.string.cant_find_folder)
             }
         }
-
-    val biometricLockText =
-        if (state.biometricLock == BiometricLock.ENABLED && state.biometricLockEncryptsDb) {
-            stringResource(id = R.string.biometric_lock_enabled_with_encryption)
-        } else {
-            state.biometricLock.getText(context)
-        }
-
     val periodicBackupsEnabled =
         state.periodicBackups.periodInDays > 0 && state.backupsFolder != EMPTY_PATH
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .semantics { testTagsAsResourceId = true }
-                .verticalScroll(scrollState)
-    ) {
-        // Section: Appearance
-        SectionHeaderItem(title = stringResource(id = R.string.appearance))
-        PreferenceRow(
-            title = stringResource(id = R.string.view),
-            value = state.notesView.getText(context),
-            testTag = "View",
-            onClick = onNotesViewClick,
-        )
-        PreferenceRow(
-            title = stringResource(id = R.string.theme),
-            value = state.theme.getText(context),
-            testTag = "Theme",
-            onClick = onThemeClick,
-        )
-        PreferenceRow(
-            title = stringResource(id = R.string.date_format_overview),
-            value = formatDateTime(state.dateFormatOverview, state.timeFormatOverview),
-            testTag = "DateFormatOverview",
-            onClick = onDateFormatOverviewClick,
-        )
-        PreferenceRow(
-            title = stringResource(id = R.string.date_format_note_view),
-            value = formatDateTime(state.dateFormatNoteView, state.timeFormatNoteView),
-            testTag = "DateFormatNoteView",
-            onClick = onDateFormatNoteViewClick,
-        )
-        SeekBarPreferenceRow(
-            title = stringResource(id = R.string.text_size_note_editor),
-            value = state.textSizeNoteEditor,
-            valueRange = TEXT_SIZE_MIN..TEXT_SIZE_MAX,
-            showPreviewText = true,
-            testTag = "TextSize",
-            onValueChange = onTextSizeNoteEditorChange,
-        )
-        SeekBarPreferenceRow(
-            title = stringResource(id = R.string.text_size_overview),
-            value = state.textSizeOverview,
-            valueRange = TEXT_SIZE_MIN..TEXT_SIZE_MAX,
-            showPreviewText = true,
-            testTag = "TextSizeOverview",
-            onValueChange = onTextSizeOverviewChange,
-        )
-        PreferenceRow(
-            title = stringResource(id = R.string.always_show_search_bar),
-            value =
-                if (state.alwaysShowSearchBar) stringResource(id = R.string.enabled)
-                else stringResource(id = R.string.disabled),
-            testTag = "ShowSearchInTopBar",
-            onClick = onAlwaysShowSearchBarClick,
-        )
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-        // Section: Behaviour
-        SectionHeaderItem(title = stringResource(id = R.string.behaviour))
-        PreferenceRow(
-            title = stringResource(id = R.string.notes_sorted_by),
-            value = state.notesSort.getText(context),
-            testTag = "NotesSortOrder",
-            onClick = onNotesSortOrderClick,
-        )
-        PreferenceRow(
-            title = stringResource(id = R.string.list_item_auto_sort),
-            value = state.listItemSorting.getText(context),
-            testTag = "CheckedListItemSorting",
-            onClick = onCheckedListItemSortingClick,
-        )
-        PreferenceRow(
-            title = stringResource(id = R.string.start_view),
-            value = startViewValueText,
-            testTag = "StartView",
-            onClick = onStartViewClick,
-        )
-        PreferenceRow(
-            title = stringResource(id = R.string.default_list_note_view_mode),
-            value = state.defaultListNoteViewMode.getText(context),
-            testTag = "DefaultListNoteViewMode",
-            onClick = onDefaultListNoteViewModeClick,
-        )
-        val offText = stringResource(id = R.string.off)
-        StepperPreferenceRow(
-            title = stringResource(id = R.string.auto_save_after_idle_time),
-            value = state.autoSaveAfterIdleTime,
-            valueRange = NUMBER_PREF_DISABLED..Integer.MAX_VALUE,
-            labelFormatter = { v -> if (v == -1) offText else "${v}s" },
-            testTag = "AutoSaveAfterIdle",
-            onValueChange = onAutoSaveAfterIdleChange,
-        )
-        StepperPreferenceRow(
-            title = stringResource(id = R.string.auto_remove_deleted_notes),
-            value = state.autoRemoveDeletedNotesAfterDays,
-            valueRange = 0..Integer.MAX_VALUE,
-            labelFormatter = { v ->
-                if (v == 0) offText else "$v ${context.getQuantityStringPlain(R.plurals.days, v)}"
-            },
-            testTag = "AutoEmptyBin",
-            onValueChange = onAutoRemoveDeletedNotesChange,
-        )
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-        // Section: Content Density
-        SectionHeaderItem(title = stringResource(id = R.string.content_density))
-        SeekBarPreferenceRow(
-            title = stringResource(id = R.string.max_lines_to_display_title),
-            value = state.maxTitle.toFloat(),
-            valueRange = MAX_TITLE_LINES_MIN.toFloat()..MAX_TITLE_LINES_MAX.toFloat(),
-            testTag = "MaxTitle",
-            onValueChange = { onMaxTitleChange(it.roundToInt()) },
-        )
-        SeekBarPreferenceRow(
-            title = stringResource(id = R.string.max_items_to_display),
-            value = state.maxItems.toFloat(),
-            valueRange = 0f..MAX_ITEMS_MAX.toFloat(),
-            testTag = "MaxItems",
-            onValueChange = { onMaxItemsChange(it.roundToInt()) },
-        )
-        SeekBarPreferenceRow(
-            title = stringResource(id = R.string.max_lines_to_display),
-            value = state.maxLines.toFloat(),
-            valueRange = 0f..MAX_ITEMS_MAX.toFloat(),
-            testTag = "MaxLines",
-            onValueChange = { onMaxLinesChange(it.roundToInt()) },
-        )
-        StepperPreferenceRow(
-            title = stringResource(id = R.string.max_labels_to_display),
-            value = state.maxLabels,
-            valueRange = 0..MAX_LABELS_IN_NAVIGATION_MAX,
-            testTag = "MaxLabels",
-            onValueChange = onMaxLabelsChange,
-        )
-        PreferenceRow(
-            title = stringResource(id = R.string.labels_hidden_in_overview_title),
-            value =
-                if (state.labelTagsHiddenInOverview) stringResource(id = R.string.enabled)
-                else stringResource(id = R.string.disabled),
-            testTag = "LabelsHiddenInOverview",
-            onClick = onLabelTagsHiddenClick,
-        )
-        PreferenceRow(
-            title = stringResource(id = R.string.images_hidden_in_overview_title),
-            value =
-                if (state.imagesHiddenInOverview) stringResource(id = R.string.enabled)
-                else stringResource(id = R.string.disabled),
-            testTag = "ImagesHiddenInOverview",
-            onClick = onImagesHiddenClick,
-        )
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-        // Section: Backup
+    Column(modifier = modifier) {
         SectionHeaderItem(title = stringResource(id = R.string.backup))
         PreferenceRow(
             title = stringResource(id = R.string.import_backup),
             testTag = "ImportBackup",
-            onClick = onImportBackupClick,
+            onClick = actions.onImportBackupClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.import_other),
             testTag = "ImportOther",
-            onClick = onImportOtherClick,
+            onClick = actions.onImportOtherClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.export_backup),
             testTag = "ExportBackup",
-            onClick = onExportBackupClick,
+            onClick = actions.onExportBackupClick,
         )
 
         SectionHeaderItem(title = stringResource(id = R.string.auto_backup))
@@ -543,7 +550,7 @@ internal fun SettingsScreen(
             title = stringResource(id = R.string.auto_backups_folder),
             value = backupsFolderText,
             testTag = "BackupsFolder",
-            onClick = onBackupsFolderClick,
+            onClick = actions.onBackupsFolderClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.auto_backup_on_save),
@@ -554,7 +561,7 @@ internal fun SettingsScreen(
                 else stringResource(id = R.string.disabled),
             enabled = state.backupsFolder != EMPTY_PATH,
             testTag = "BackupOnSave",
-            onClick = onBackupOnSaveClick,
+            onClick = actions.onBackupOnSaveClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.backup_periodic),
@@ -565,7 +572,7 @@ internal fun SettingsScreen(
                 else stringResource(id = R.string.disabled),
             enabled = state.backupsFolder != EMPTY_PATH,
             testTag = "PeriodicBackups",
-            onClick = onPeriodicBackupsClick,
+            onClick = actions.onPeriodicBackupsClick,
         )
         if (state.periodicBackupLastExecution != -1L) {
             val lastBackupFormatted =
@@ -590,7 +597,7 @@ internal fun SettingsScreen(
             valueRange = BACKUP_PERIOD_DAYS_MIN..BACKUP_PERIOD_DAYS_MAX,
             enabled = periodicBackupsEnabled,
             testTag = "PeriodicBackupsPeriodInDays",
-            onValueChange = onPeriodicBackupsPeriodInDaysChange,
+            onValueChange = actions.onPeriodicBackupsPeriodInDaysChange,
         )
         StepperPreferenceRow(
             title = stringResource(id = R.string.max_backups),
@@ -598,18 +605,32 @@ internal fun SettingsScreen(
             valueRange = BACKUP_MAX_MIN..BACKUP_MAX_MAX,
             enabled = periodicBackupsEnabled,
             testTag = "PeriodicBackupsMax",
-            onValueChange = onPeriodicBackupsMaxChange,
+            onValueChange = actions.onPeriodicBackupsMaxChange,
         )
+    }
+}
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+@Composable
+private fun SettingsSecuritySection(
+    state: SettingsUiState,
+    actions: SettingsActions,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val biometricLockText =
+        if (state.biometricLock == BiometricLock.ENABLED && state.biometricLockEncryptsDb) {
+            stringResource(id = R.string.biometric_lock_enabled_with_encryption)
+        } else {
+            state.biometricLock.getText(context)
+        }
 
-        // Section: Security
+    Column(modifier = modifier) {
         SectionHeaderItem(title = stringResource(id = R.string.security))
         PreferenceRow(
             title = stringResource(id = R.string.biometric_lock),
             value = biometricLockText,
             testTag = "BiometricLock",
-            onClick = onBiometricLockClick,
+            onClick = actions.onBiometricLockClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.backup_password),
@@ -617,7 +638,7 @@ internal fun SettingsScreen(
                 if (state.backupPassword != PASSWORD_EMPTY) "••••••••"
                 else stringResource(id = R.string.tap_to_set_up),
             testTag = "BackupPassword",
-            onClick = onBackupPasswordClick,
+            onClick = actions.onBackupPasswordClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.disallow_screenshots),
@@ -625,27 +646,33 @@ internal fun SettingsScreen(
                 if (state.secureFlag) stringResource(id = R.string.enabled)
                 else stringResource(id = R.string.disabled),
             testTag = "SecureFlag",
-            onClick = onSecureFlagClick,
+            onClick = actions.onSecureFlagClick,
         )
+    }
+}
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-        // Section: Settings
+@Composable
+private fun SettingsGeneralSection(
+    state: SettingsUiState,
+    actions: SettingsActions,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
         SectionHeaderItem(title = stringResource(id = R.string.settings))
         PreferenceRow(
             title = stringResource(id = R.string.import_settings),
             testTag = "ImportSettings",
-            onClick = onImportSettingsClick,
+            onClick = actions.onImportSettingsClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.export_settings),
             testTag = "ExportSettings",
-            onClick = onExportSettingsClick,
+            onClick = actions.onExportSettingsClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.reset_settings),
             testTag = "ResetSettings",
-            onClick = onResetSettingsClick,
+            onClick = actions.onResetSettingsClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.data_in_public),
@@ -653,52 +680,58 @@ internal fun SettingsScreen(
                 if (state.dataInPublicFolder) stringResource(id = R.string.enabled)
                 else stringResource(id = R.string.disabled),
             testTag = "DataInPublicFolder",
-            onClick = onDataInPublicFolderClick,
+            onClick = actions.onDataInPublicFolderClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.clear_data),
             testTag = "ClearData",
-            onClick = onClearDataClick,
+            onClick = actions.onClearDataClick,
         )
+    }
+}
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-        // Section: About
+@Composable
+private fun SettingsAboutSection(
+    state: SettingsUiState,
+    actions: SettingsActions,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
         SectionHeaderItem(title = stringResource(id = R.string.about))
         PreferenceRow(
             title = stringResource(id = R.string.send_feedback),
             testTag = "SendFeedback",
-            onClick = onSendFeedbackClick,
+            onClick = actions.onSendFeedbackClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.rate),
             testTag = "Rate",
-            onClick = onRateClick,
+            onClick = actions.onRateClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.donate),
             testTag = "Donate",
-            onClick = onDonateClick,
+            onClick = actions.onDonateClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.view_logs),
             testTag = "ViewLogs",
-            onClick = onViewLogsClick,
+            onClick = actions.onViewLogsClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.view_crash_logs),
             testTag = "ViewCrashes",
-            onClick = onViewCrashesClick,
+            onClick = actions.onViewCrashesClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.documentation),
             testTag = "Documentation",
-            onClick = onDocumentationClick,
+            onClick = actions.onDocumentationClick,
         )
         PreferenceRow(
             title = stringResource(id = R.string.source_code),
             testTag = "SourceCode",
-            onClick = onSourceCodeClick,
+            onClick = actions.onSourceCodeClick,
         )
         if (state.appVersion.isNotEmpty()) {
             Text(
@@ -710,6 +743,42 @@ internal fun SettingsScreen(
             )
         }
     }
+}
+
+/** Composable replacing fragment_settings.xml layout. */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+internal fun SettingsScreen(
+    state: SettingsUiState,
+    modifier: Modifier = Modifier,
+    scrollState: ScrollState = rememberScrollState(),
+    dialogState: SettingsDialogState? = null,
+    importProgress: Progress? = null,
+    actions: SettingsActions = SettingsActions(),
+) {
+    val context = LocalContext.current
+
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .semantics { testTagsAsResourceId = true }
+                .verticalScroll(scrollState)
+    ) {
+        SettingsAppearanceSection(state = state, actions = actions)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        SettingsBehaviourSection(state = state, actions = actions)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        SettingsContentDensitySection(state = state, actions = actions)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        SettingsBackupSection(state = state, actions = actions)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        SettingsSecuritySection(state = state, actions = actions)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        SettingsGeneralSection(state = state, actions = actions)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        SettingsAboutSection(state = state, actions = actions)
+    }
 
     when (dialogState) {
         is SettingsDialogState.SingleSelection<*> -> {
@@ -719,25 +788,24 @@ internal fun SettingsScreen(
                 title = s.title,
                 items = s.items,
                 selectedItem = s.selectedItem,
-                onDismissRequest = onDismissDialog,
+                onDismissRequest = actions.onDismissDialog,
                 onConfirm = { selected ->
                     s.onConfirm(selected)
-                    onDismissDialog()
+                    actions.onDismissDialog()
                 },
             )
         }
         is SettingsDialogState.Theme -> {
             PreferenceEnumWithToggleDialog(
                 title = stringResource(R.string.theme),
-                hint = null,
                 items = Theme.entries.map { SelectionItem(it, it.getText(context)) },
                 selectedItem = dialogState.initialTheme,
                 toggleLabel = stringResource(R.string.theme_use_dynamic_colors),
                 initialToggleValue = dialogState.initialUseDynamicColors,
-                onDismissRequest = onDismissDialog,
+                onDismissRequest = actions.onDismissDialog,
                 onConfirm = { newTheme, useDynamicColors ->
                     dialogState.onConfirm(newTheme, useDynamicColors)
-                    onDismissDialog()
+                    actions.onDismissDialog()
                 },
             )
         }
@@ -745,20 +813,20 @@ internal fun SettingsScreen(
             DateTimeFormatDialog(
                 initialDateFormat = dialogState.initialDate,
                 initialTimeFormat = dialogState.initialTime,
-                onDismissRequest = onDismissDialog,
+                onDismissRequest = actions.onDismissDialog,
                 onConfirm = { newDate, newTime ->
                     dialogState.onConfirm(newDate, newTime)
-                    onDismissDialog()
+                    actions.onDismissDialog()
                 },
             )
         }
         is SettingsDialogState.NotesSort -> {
             NotesSortDialog(
                 currentSort = dialogState.currentSort,
-                onDismissRequest = onDismissDialog,
+                onDismissRequest = actions.onDismissDialog,
                 onConfirm = { newSort ->
                     dialogState.onConfirm(newSort)
-                    onDismissDialog()
+                    actions.onDismissDialog()
                 },
             )
         }
@@ -767,10 +835,10 @@ internal fun SettingsScreen(
                 title = dialogState.title,
                 message = dialogState.message,
                 initialValue = dialogState.initialValue,
-                onDismissRequest = onDismissDialog,
+                onDismissRequest = actions.onDismissDialog,
                 onConfirm = { newValue ->
                     dialogState.onConfirm(newValue)
-                    onDismissDialog()
+                    actions.onDismissDialog()
                 },
             )
         }
@@ -780,10 +848,10 @@ internal fun SettingsScreen(
                 initialValue = dialogState.password,
                 message = stringResource(R.string.backup_password_hint),
                 isPassword = true,
-                onDismissRequest = onDismissDialog,
+                onDismissRequest = actions.onDismissDialog,
                 onConfirm = { updatedPassword ->
                     dialogState.onConfirm(updatedPassword)
-                    onDismissDialog()
+                    actions.onDismissDialog()
                 },
             )
         }
@@ -793,10 +861,10 @@ internal fun SettingsScreen(
                 initialText = dialogState.initialPassword,
                 message = stringResource(R.string.import_backup_password_hint),
                 initialCheckDuplicates = true,
-                onDismissRequest = onDismissDialog,
+                onDismissRequest = actions.onDismissDialog,
                 onConfirm = { usedPassword, checkDuplicates ->
                     dialogState.onConfirm(usedPassword, checkDuplicates)
-                    onDismissDialog()
+                    actions.onDismissDialog()
                 },
             )
         }
@@ -804,9 +872,9 @@ internal fun SettingsScreen(
             IconListDialog(
                 title = dialogState.title,
                 items = dialogState.items,
-                onDismissRequest = onDismissDialog,
+                onDismissRequest = actions.onDismissDialog,
                 onItemClick = { which ->
-                    onDismissDialog()
+                    actions.onDismissDialog()
                     dialogState.onItemClick(which)
                 },
             )
@@ -815,9 +883,9 @@ internal fun SettingsScreen(
             ListDialog(
                 title = dialogState.title,
                 items = dialogState.items,
-                onDismissRequest = onDismissDialog,
+                onDismissRequest = actions.onDismissDialog,
                 onItemClick = { which ->
-                    onDismissDialog()
+                    actions.onDismissDialog()
                     dialogState.onItemClick(which)
                 },
             )
@@ -832,15 +900,15 @@ internal fun SettingsScreen(
                     dialogState.negativeButtonText.ifEmpty { stringResource(R.string.cancel) },
                 neutralButtonText = dialogState.neutralButtonText,
                 onNeutralButtonClick = dialogState.onNeutralButtonClick,
-                onDismissRequest = onDismissDialog,
+                onDismissRequest = actions.onDismissDialog,
                 onConfirm = dialogState.onConfirm,
             )
         }
         is SettingsDialogState.EncryptDatabase -> {
             EncryptDatabaseDialog(
-                onDismissRequest = onDismissDialog,
+                onDismissRequest = actions.onDismissDialog,
                 onContinue = { shouldEncrypt ->
-                    onDismissDialog()
+                    actions.onDismissDialog()
                     dialogState.onContinue(shouldEncrypt)
                 },
             )

@@ -61,23 +61,27 @@ import com.philkes.notallyx.feature.editor.screens.FileAttachmentPreviewChip
 import java.io.File
 import java.util.Date
 
+data class NoteCardDisplayConfig(
+    val dateFormat: DateFormat = DateFormat.DD_MM_YY_GER,
+    val timeFormat: TimeFormat = TimeFormat.NONE,
+    val sortBy: NotesSortBy = NotesSortBy.CREATION_DATE,
+    val textSize: Float = 16f,
+    val maxTitleLines: Int = 2,
+    val maxLines: Int = 10,
+    val maxItems: Int = 5,
+    val hideLabels: Boolean = false,
+    val hideImages: Boolean = false,
+)
+
 /** Composable replacing recycler_base_note.xml layout. Exactly 1 BaseNoteCard composable. */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 internal fun BaseNoteCard(
     baseNote: BaseNote,
     modifier: Modifier = Modifier,
+    config: NoteCardDisplayConfig = NoteCardDisplayConfig(),
     imageRoot: File? = null,
     isSelected: Boolean = false,
-    dateFormat: DateFormat = DateFormat.DD_MM_YY_GER,
-    timeFormat: TimeFormat = TimeFormat.NONE,
-    sortBy: NotesSortBy = NotesSortBy.CREATION_DATE,
-    textSize: Float = 16f,
-    maxTitleLines: Int = 2,
-    maxLines: Int = 10,
-    maxItems: Int = 5,
-    hideLabels: Boolean = false,
-    hideImages: Boolean = false,
     onClick: () -> Unit = {},
     onLongClick: (() -> Unit)? = null,
     onReminderClick: (() -> Unit)? = null,
@@ -103,7 +107,7 @@ internal fun BaseNoteCard(
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
             // Image Preview
-            if (baseNote.images.isNotEmpty() && !hideImages) {
+            if (baseNote.images.isNotEmpty() && !config.hideImages) {
                 val imageFile =
                     if (imageRoot != null) File(imageRoot, baseNote.images[0].localName) else null
                 val bitmap =
@@ -163,17 +167,17 @@ internal fun BaseNoteCard(
             if (titleText.isNotEmpty()) {
                 Text(
                     text = titleText,
-                    fontSize = textSize.displayTitleSize.sp,
+                    fontSize = config.textSize.displayTitleSize.sp,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = maxTitleLines,
+                    maxLines = config.maxTitleLines,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
 
             // Date text and Reminder chip (directly below note title)
             val (dateTimestamp, datePrefixResId) =
-                when (sortBy) {
+                when (config.sortBy) {
                     NotesSortBy.CREATION_DATE -> Pair(baseNote.timestamp, R.string.creation_date)
                     NotesSortBy.MODIFIED_DATE ->
                         Pair(baseNote.modifiedTimestamp, R.string.modified_date)
@@ -182,7 +186,7 @@ internal fun BaseNoteCard(
 
             val hasDate =
                 dateTimestamp != null &&
-                    (dateFormat != DateFormat.NONE || timeFormat != TimeFormat.NONE)
+                    (config.dateFormat != DateFormat.NONE || config.timeFormat != TimeFormat.NONE)
             val hasReminder = baseNote.reminders.isNotEmpty()
 
             if (hasDate || hasReminder) {
@@ -195,10 +199,11 @@ internal fun BaseNoteCard(
                 ) {
                     if (hasDate && dateTimestamp != null) {
                         val prefixText = datePrefixResId?.let { stringResource(it) } ?: ""
-                        val formattedDate = Date(dateTimestamp).format(dateFormat, timeFormat)
+                        val formattedDate =
+                            Date(dateTimestamp).format(config.dateFormat, config.timeFormat)
                         Text(
                             text = "$prefixText $formattedDate".trim(),
-                            fontSize = textSize.displayBodySize.sp,
+                            fontSize = config.textSize.displayBodySize.sp,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         )
@@ -208,9 +213,9 @@ internal fun BaseNoteCard(
                         Spacer(modifier = Modifier.weight(1f))
                         ReminderChip(
                             baseNote = baseNote,
-                            dateFormat = dateFormat,
-                            timeFormat = timeFormat,
-                            textSize = textSize,
+                            dateFormat = config.dateFormat,
+                            timeFormat = config.timeFormat,
+                            textSize = config.textSize,
                             onClick = onReminderClick,
                         )
                     }
@@ -242,17 +247,17 @@ internal fun BaseNoteCard(
 
             // Body text for Note
             if (baseNote.type == Type.NOTE && baseNote.body.isNotEmpty()) {
-                val showBody = maxLines >= 1 || baseNote.title.isEmpty()
+                val showBody = config.maxLines >= 1 || baseNote.title.isEmpty()
                 if (showBody) {
                     if (titleText.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(4.dp))
                     }
                     Text(
                         text = baseNote.body,
-                        fontSize = textSize.displayBodySize.sp,
+                        fontSize = config.textSize.displayBodySize.sp,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = if (maxLines >= 1) maxLines else 1,
+                        maxLines = if (config.maxLines >= 1) config.maxLines else 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
@@ -261,8 +266,9 @@ internal fun BaseNoteCard(
             // Checklist for List
             if (baseNote.type == Type.LIST && baseNote.items.isNotEmpty()) {
                 val initializedItems = remember(baseNote.items) { baseNote.items.init() }
-                val forceShowFirstItem = maxItems < 1 && baseNote.title.isEmpty()
-                val displayedItems = initializedItems.take(if (forceShowFirstItem) 1 else maxItems)
+                val forceShowFirstItem = config.maxItems < 1 && baseNote.title.isEmpty()
+                val displayedItems =
+                    initializedItems.take(if (forceShowFirstItem) 1 else config.maxItems)
 
                 if (displayedItems.isNotEmpty()) {
                     if (titleText.isNotEmpty()) {
@@ -288,7 +294,7 @@ internal fun BaseNoteCard(
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = item.body,
-                                    fontSize = textSize.displayBodySize.sp,
+                                    fontSize = config.textSize.displayBodySize.sp,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,
@@ -299,7 +305,7 @@ internal fun BaseNoteCard(
                         if (initializedItems.size > displayedItems.size) {
                             Text(
                                 text = "+${initializedItems.size - displayedItems.size}",
-                                fontSize = textSize.displaySmallerSize.sp,
+                                fontSize = config.textSize.displaySmallerSize.sp,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 2.dp),
@@ -310,7 +316,7 @@ internal fun BaseNoteCard(
             }
 
             // Labels
-            if (!hideLabels && baseNote.labels.isNotEmpty()) {
+            if (!config.hideLabels && baseNote.labels.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(6.dp))
                 FlowRow(modifier = Modifier.fillMaxWidth()) {
                     baseNote.labels.forEach { label ->

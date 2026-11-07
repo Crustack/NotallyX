@@ -29,12 +29,13 @@ internal fun TriStateMultiChoiceContent(
     items: Array<String>,
     initialStates: Array<ToggleableState>,
     onItemClick: (index: Int, state: ToggleableState) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val states = remember { initialStates.clone() }
 
     Column(
         modifier =
-            Modifier.fillMaxWidth().padding(top = 8.dp).verticalScroll(rememberScrollState()),
+            modifier.fillMaxWidth().padding(top = 8.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         items.forEachIndexed { index, item ->
@@ -93,5 +94,18 @@ internal fun TriStateChoiceItemRow(
 private fun TriStateChoiceItemRowPreview() {
     NotallyXTheme {
         TriStateChoiceItemRow(text = "Test", state = ToggleableState.Indeterminate, onClick = {})
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TriStateMultiChoiceContentPreview() {
+    NotallyXTheme {
+        TriStateMultiChoiceContent(
+            items = arrayOf("Item 1", "Item 2", "Item 3"),
+            initialStates =
+                arrayOf(ToggleableState.On, ToggleableState.Off, ToggleableState.Indeterminate),
+            onItemClick = { _, _ -> },
+        )
     }
 }

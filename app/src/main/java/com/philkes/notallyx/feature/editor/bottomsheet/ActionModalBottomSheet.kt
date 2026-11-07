@@ -31,8 +31,10 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
 data class ActionItem(
     val labelResId: Int? = null,
@@ -133,10 +135,35 @@ fun ActionBottomSheetContent(
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+private fun ActionBottomSheetContentPreview() {
+    NotallyXTheme {
+        ActionBottomSheetContent(
+            title = "Actions",
+            actions =
+                listOf(
+                    ActionItem(
+                        label = "Option 1",
+                        drawableResId = R.drawable.add,
+                        onClick = {},
+                    ),
+                    ActionItem(
+                        label = "Option 2",
+                        drawableResId = R.drawable.delete,
+                        showDividerAbove = true,
+                        onClick = {},
+                    ),
+                ),
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActionModalBottomSheet(
     actions: List<ActionItem>,
+    modifier: Modifier = Modifier,
     title: String? = null,
     onReset: (() -> Unit)? = null,
     backgroundColor: Color? = null,
@@ -147,13 +174,33 @@ fun ActionModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
         containerColor = backgroundColor ?: MaterialTheme.colorScheme.surface,
-        modifier = Modifier.testTag("ActionModalBottomSheet"),
+        modifier = modifier.testTag("ActionModalBottomSheet"),
     ) {
         ActionBottomSheetContent(
             actions = actions,
             title = title,
             onReset = onReset,
             onDismissRequest = onDismissRequest,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Composable
+private fun ActionModalBottomSheetPreview() {
+    NotallyXTheme {
+        ActionModalBottomSheet(
+            title = "Actions",
+            actions =
+                listOf(
+                    ActionItem(
+                        label = "Option 1",
+                        drawableResId = R.drawable.add,
+                        onClick = {},
+                    )
+                ),
+            onDismissRequest = {},
         )
     }
 }

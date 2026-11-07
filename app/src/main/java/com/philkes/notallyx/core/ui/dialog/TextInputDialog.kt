@@ -21,24 +21,28 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
 @Composable
 internal fun TextInputDialog(
     title: String,
+    onDismissRequest: () -> Unit,
+    onConfirm: (String) -> Unit,
+    modifier: Modifier = Modifier,
     initialValue: String = "",
     hint: String? = null,
     message: String? = null,
     isPassword: Boolean = false,
     positiveButtonText: String = stringResource(R.string.save),
     negativeButtonText: String = stringResource(R.string.cancel),
-    onDismissRequest: () -> Unit,
-    onConfirm: (String) -> Unit,
 ) {
     var text by remember { mutableStateOf(initialValue) }
 
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(text = title) },
         text = {
@@ -82,6 +86,9 @@ internal fun TextInputDialog(
 @Composable
 fun DualTextInputDialog(
     title: String,
+    onDismissRequest: () -> Unit,
+    onConfirm: (String, String) -> Unit,
+    modifier: Modifier = Modifier,
     initialValue1: String = "",
     initialValue2: String = "",
     hint1: String? = null,
@@ -89,13 +96,12 @@ fun DualTextInputDialog(
     message: String? = null,
     positiveButtonText: String = stringResource(R.string.save),
     negativeButtonText: String = stringResource(R.string.cancel),
-    onDismissRequest: () -> Unit,
-    onConfirm: (String, String) -> Unit,
 ) {
     var text1 by remember { mutableStateOf(initialValue1) }
     var text2 by remember { mutableStateOf(initialValue2) }
 
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(text = title) },
         text = {
@@ -136,4 +142,31 @@ fun DualTextInputDialog(
         },
         dismissButton = { TextButton(onClick = onDismissRequest) { Text(negativeButtonText) } },
     )
+}
+
+@Preview
+@Composable
+private fun TextInputDialogPreview() {
+    NotallyXTheme {
+        TextInputDialog(
+            title = "Enter Label Name",
+            hint = "Label name",
+            onDismissRequest = {},
+            onConfirm = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun DualTextInputDialogPreview() {
+    NotallyXTheme {
+        DualTextInputDialog(
+            title = "Enter Credentials",
+            hint1 = "Username",
+            hint2 = "Password",
+            onDismissRequest = {},
+            onConfirm = { _, _ -> },
+        )
+    }
 }

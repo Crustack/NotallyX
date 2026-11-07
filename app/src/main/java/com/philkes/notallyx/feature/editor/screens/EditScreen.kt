@@ -62,6 +62,7 @@ import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.feature.editor.formatting.TextFormattingBar
+import com.philkes.notallyx.feature.editor.formatting.TextFormattingBarActions
 import com.philkes.notallyx.feature.editor.formatting.TextFormattingState
 import com.philkes.notallyx.feature.media.audio.AudioItemRow
 import java.io.File
@@ -184,6 +185,146 @@ private fun ActionIconButton(
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+private fun ActionIconButtonPreview() {
+    NotallyXTheme {
+        ActionIconButton(
+            iconResId = R.drawable.search,
+            contentDescription = "Search",
+            onClick = {},
+        )
+    }
+}
+
+@Composable
+private fun EditScreenImageSection(
+    images: List<FileAttachment>,
+    mediaRoot: File?,
+    onImageClick: (FileAttachment) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .testTag("ImagePreview")
+    ) {
+        val loadedBitmaps =
+            remember(images, mediaRoot) {
+                images.map { attachment ->
+                    val imageFile =
+                        if (mediaRoot != null) File(mediaRoot, attachment.localName) else null
+                    if (imageFile?.exists() == true) {
+                        try {
+                            android.graphics.BitmapFactory.decodeFile(imageFile.absolutePath)
+                                ?.asImageBitmap()
+                        } catch (_: Exception) {
+                            null
+                        }
+                    } else null
+                }
+            }
+        val hasAnyBitmap = loadedBitmaps.any { it != null }
+
+        if (hasAnyBitmap) {
+            LazyRow(modifier = Modifier.fillMaxWidth()) {
+                items(
+                    images.zip(loadedBitmaps),
+                    key = { (attachment, _) -> attachment.localName },
+                ) { (attachment, bitmap) ->
+                    if (bitmap != null) {
+                        Image(
+                            bitmap = bitmap,
+                            contentDescription = attachment.localName,
+                            modifier =
+                                Modifier.height(200.dp).padding(end = 8.dp).clickable {
+                                    onImageClick(attachment)
+                                },
+                        )
+                    } else {
+                        ImagePreviewCard(
+                            modifier =
+                                Modifier.fillMaxWidth().clickable { onImageClick(attachment) }
+                        )
+                    }
+                }
+            }
+
+            if (images.size > 1) {
+                AssistChip(
+                    onClick = { onImageClick(images.first()) },
+                    label = { Text("${images.size}") },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.add_images),
+                            contentDescription = null,
+                        )
+                    },
+                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+                )
+            }
+        } else {
+            Column(
+                modifier =
+                    Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable {
+                        onImageClick(images.first())
+                    },
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (images.size > 1) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        AssistChip(
+                            onClick = { onImageClick(images.first()) },
+                            label = { Text("${images.size}") },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.add_images),
+                                    contentDescription = null,
+                                )
+                            },
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+                Text(
+                    text = stringResource(R.string.cant_load_image),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EditScreenAudioSection(
+    audios: List<Audio>,
+    onAudioClick: (Audio) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(id = R.string.audio_recordings),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+        )
+
+        audios.forEach { audio ->
+            AudioItemRow(
+                dateText = audio.name,
+                lengthText = "${(audio.duration ?: 0L) / 1000}s",
+                onClick = { onAudioClick(audio) },
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun EditScreen(
@@ -245,13 +386,16 @@ internal fun EditScreen(
                 TextFormattingBar(
                     formattingState = formattingState,
                     backgroundColor = backgroundColor,
-                    onBoldClick = { clickHandlers.onBoldClick() },
-                    onItalicClick = { clickHandlers.onItalicClick() },
-                    onStrikethroughClick = { clickHandlers.onStrikethroughClick() },
-                    onMonospaceClick = { clickHandlers.onMonospaceClick() },
-                    onLinkClick = { clickHandlers.onLinkClick() },
-                    onClearFormattingClick = { clickHandlers.onClearFormattingClick() },
-                    onCloseClick = { clickHandlers.onCloseFormattingClick() },
+                    actions =
+                        TextFormattingBarActions(
+                            onBoldClick = { clickHandlers.onBoldClick() },
+                            onItalicClick = { clickHandlers.onItalicClick() },
+                            onStrikethroughClick = { clickHandlers.onStrikethroughClick() },
+                            onMonospaceClick = { clickHandlers.onMonospaceClick() },
+                            onLinkClick = { clickHandlers.onLinkClick() },
+                            onClearFormattingClick = { clickHandlers.onClearFormattingClick() },
+                            onCloseClick = { clickHandlers.onCloseFormattingClick() },
+                        ),
                 )
             } else {
                 Row(
@@ -334,106 +478,11 @@ internal fun EditScreen(
         ) {
             // Image Preview
             if (noteState.images.isNotEmpty()) {
-                Box(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                            .testTag("ImagePreview")
-                ) {
-                    val loadedBitmaps =
-                        remember(noteState.images, noteState.mediaRoot) {
-                            noteState.images.map { attachment ->
-                                val imageFile =
-                                    if (noteState.mediaRoot != null)
-                                        File(noteState.mediaRoot, attachment.localName)
-                                    else null
-                                if (imageFile?.exists() == true) {
-                                    try {
-                                        android.graphics.BitmapFactory.decodeFile(
-                                                imageFile.absolutePath
-                                            )
-                                            ?.asImageBitmap()
-                                    } catch (_: Exception) {
-                                        null
-                                    }
-                                } else null
-                            }
-                        }
-                    val hasAnyBitmap = loadedBitmaps.any { it != null }
-
-                    if (hasAnyBitmap) {
-                        LazyRow(modifier = Modifier.fillMaxWidth()) {
-                            items(noteState.images.zip(loadedBitmaps)) { (attachment, bitmap) ->
-                                if (bitmap != null) {
-                                    Image(
-                                        bitmap = bitmap,
-                                        contentDescription = attachment.localName,
-                                        modifier =
-                                            Modifier.height(200.dp).padding(end = 8.dp).clickable {
-                                                clickHandlers.onImageClick(attachment)
-                                            },
-                                    )
-                                } else {
-                                    ImagePreviewCard(
-                                        modifier =
-                                            Modifier.fillMaxWidth().clickable {
-                                                clickHandlers.onImageClick(attachment)
-                                            }
-                                    )
-                                }
-                            }
-                        }
-
-                        if (noteState.images.size > 1) {
-                            AssistChip(
-                                onClick = { clickHandlers.onImageClick(noteState.images.first()) },
-                                label = { Text("${noteState.images.size}") },
-                                leadingIcon = {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.add_images),
-                                        contentDescription = null,
-                                    )
-                                },
-                                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
-                            )
-                        }
-                    } else {
-                        Column(
-                            modifier =
-                                Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable {
-                                    clickHandlers.onImageClick(noteState.images.first())
-                                },
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            if (noteState.images.size > 1) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.End,
-                                ) {
-                                    AssistChip(
-                                        onClick = {
-                                            clickHandlers.onImageClick(noteState.images.first())
-                                        },
-                                        label = { Text("${noteState.images.size}") },
-                                        leadingIcon = {
-                                            Icon(
-                                                painter =
-                                                    painterResource(id = R.drawable.add_images),
-                                                contentDescription = null,
-                                            )
-                                        },
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-                            Text(
-                                text = stringResource(R.string.cant_load_image),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
+                EditScreenImageSection(
+                    images = noteState.images,
+                    mediaRoot = noteState.mediaRoot,
+                    onImageClick = { clickHandlers.onImageClick(it) },
+                )
             }
 
             // Title Field
@@ -534,7 +583,7 @@ internal fun EditScreen(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 2.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    items(noteState.files) { fileAttachment ->
+                    items(noteState.files, key = { it.originalName }) { fileAttachment ->
                         FileAttachmentPreviewChip(
                             fileName = fileAttachment.originalName,
                             onClick = { clickHandlers.onFileClick(fileAttachment) },
@@ -549,7 +598,9 @@ internal fun EditScreen(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 2.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    items(noteState.labels) { labelName -> LabelChip(text = labelName) }
+                    items(noteState.labels, key = { it }) { labelName ->
+                        LabelChip(text = labelName)
+                    }
                 }
             }
 
@@ -561,20 +612,10 @@ internal fun EditScreen(
 
             // Audio Recordings Section
             if (noteState.audios.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = stringResource(id = R.string.audio_recordings),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                EditScreenAudioSection(
+                    audios = noteState.audios,
+                    onAudioClick = { clickHandlers.onAudioClick(it) },
                 )
-
-                noteState.audios.forEach { audio ->
-                    AudioItemRow(
-                        dateText = audio.name,
-                        lengthText = "${(audio.duration ?: 0L) / 1000}s",
-                        onClick = { clickHandlers.onAudioClick(audio) },
-                    )
-                }
             }
         }
     }

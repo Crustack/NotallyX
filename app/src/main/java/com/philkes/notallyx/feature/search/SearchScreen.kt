@@ -48,8 +48,7 @@ internal fun SearchScreen(
         onFolderSelected = onFolderSelected,
         backgroundResId = R.drawable.search,
         isLoading = isLoading,
-        dateFormat = dateFormat,
-        timeFormat = timeFormat,
+        displayConfig = NoteCardDisplayConfig(dateFormat = dateFormat, timeFormat = timeFormat),
         onNoteClick = onNoteClick,
         onNoteLongClick = onNoteLongClick,
     )
