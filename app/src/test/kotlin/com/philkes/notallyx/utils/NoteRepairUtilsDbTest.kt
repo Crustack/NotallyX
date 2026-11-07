@@ -1,7 +1,8 @@
 package com.philkes.notallyx.utils
 
 import android.content.Context
-import androidx.room.Room
+import android.content.ContextWrapper
+import androidx.room3.Room
 import androidx.test.core.app.ApplicationProvider
 import com.philkes.notallyx.core.common.NoteRepairUtils
 import com.philkes.notallyx.core.common.error.*
@@ -48,7 +49,7 @@ class NoteRepairUtilsDbTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         db =
             Room.inMemoryDatabaseBuilder(context, NotallyDatabase::class.java)
-                .allowMainThreadQueries()
+                .setDriver(BackupSQLiteDriver(context as ContextWrapper))
                 .build()
         dao = db.getBaseNoteDao()
     }

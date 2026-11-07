@@ -3,12 +3,13 @@ package com.philkes.notallyx.preference
 import android.app.Application
 import android.os.Environment
 import androidx.core.net.toUri
-import androidx.room.Room
+import androidx.room3.Room
 import androidx.test.core.app.ApplicationProvider
 import com.philkes.notallyx.core.common.extensions.SUBFOLDER_BACKUPS
 import com.philkes.notallyx.core.common.extensions.getDefaultSharedPreferences
 import com.philkes.notallyx.core.common.extensions.getDocumentFolder
 import com.philkes.notallyx.core.common.extensions.getExternalBackupsDirectory
+import com.philkes.notallyx.core.database.BackupSQLiteDriver
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.preference.PeriodicBackup
@@ -68,7 +69,7 @@ class NotallyXPreferencesBackupsTest {
                 NotallyDatabase::class.java,
                 NotallyDatabase.DATABASE_NAME,
             )
-            .allowMainThreadQueries()
+            .setDriver(BackupSQLiteDriver(application))
             .build()
             .also { NotallyDatabase.postInstance(it) }
 

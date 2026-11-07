@@ -31,7 +31,8 @@ dependencies {
     // Dependencies required by shared test helpers in test-lib
     api(libs.androidx.work)
     api(libs.androidx.sqlite)
-    api(libs.androidx.room.runtime)
+    api(libs.androidx.room3.common)
+    api(libs.androidx.room3.runtime)
     api(libs.androidx.test.uiautomator)
     api(libs.androidx.test.runner)
     api(libs.androidx.test.rules)

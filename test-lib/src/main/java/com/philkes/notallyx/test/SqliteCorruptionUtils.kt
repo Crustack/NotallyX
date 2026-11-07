@@ -1,7 +1,7 @@
 package com.philkes.notallyx.test
 
 import android.database.sqlite.SQLiteDatabase
-import androidx.sqlite.db.SimpleSQLiteQuery
+import androidx.room3.RoomRawQuery
 import com.philkes.notallyx.core.database.NotallyDatabase
 import java.io.File
 import java.io.RandomAccessFile
@@ -95,9 +95,12 @@ fun File.integrityCheckOnCopy(): String {
 }
 
 /** `SELECT rootpage FROM sqlite_master WHERE name = ?` */
-fun NotallyDatabase.rootPageOf(table: String): Int {
+suspend fun NotallyDatabase.rootPageOf(table: String): Int {
     val query =
-        SimpleSQLiteQuery("SELECT rootpage FROM sqlite_master WHERE name = ?", arrayOf(table))
+        RoomRawQuery(
+            sql = "SELECT rootpage FROM sqlite_master WHERE name = ?",
+            onBindStatement = { it.bindText(1, table) },
+        )
     val rootPage = getBaseNoteDao().query(query)
     check(rootPage > 1) { "Unexpected rootpage $rootPage for table '$table'" }
     return rootPage

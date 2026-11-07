@@ -503,6 +503,12 @@ class ScreenshotTests {
         val intent = Intent(context, MainActivity::class.java).putNavKey(NotallyNavKey.Labels)
         ActivityScenario.launch<MainActivity>(intent).use { scenario ->
             ShadowLooper.idleMainLooper()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(context.getString(R.string.edit)))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
             composeTestRule
                 .onRoot()
                 .captureRoboImage("${ScreenshotTests::class.java.simpleName}/labels/00_initial.png")

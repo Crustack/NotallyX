@@ -1,6 +1,6 @@
 package com.philkes.notallyx.core.database
 
-import androidx.room.TypeConverter
+import androidx.room3.ColumnTypeConverter
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.ListItem
@@ -18,7 +18,7 @@ class ConverterException(message: String, cause: Throwable) : RuntimeException(m
 
 object Converters {
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun labelsToJson(labels: List<String>) =
         try {
             JSONArray(labels).toString()
@@ -29,7 +29,7 @@ object Converters {
             "[]"
         }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun jsonToLabels(json: String) =
         try {
             jsonToLabels(JSONArray(json))
@@ -42,7 +42,7 @@ object Converters {
 
     fun jsonToLabels(jsonArray: JSONArray) = jsonArray.iterable<String>().toList()
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun filesToJson(files: List<FileAttachment>): String {
         return try {
             val objects = files.map { file ->
@@ -60,7 +60,7 @@ object Converters {
         }
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun jsonToFiles(json: String) =
         try {
             jsonToFiles(JSONArray(json))
@@ -80,7 +80,7 @@ object Converters {
         }
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun audiosToJson(audios: List<Audio>): String {
         return try {
             val objects = audios.map { audio ->
@@ -98,7 +98,7 @@ object Converters {
         }
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun jsonToAudios(json: String) =
         try {
             jsonToAudios(JSONArray(json))
@@ -118,7 +118,7 @@ object Converters {
         }
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun jsonToSpans(json: String) =
         try {
             jsonToSpans(JSONArray(json))
@@ -159,7 +159,7 @@ object Converters {
             .filterNotNull()
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun spansToJson(list: List<SpanRepresentation>) =
         try {
             spansToJSONArray(list).toString()
@@ -185,7 +185,7 @@ object Converters {
         return JSONArray(objects)
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun jsonToItems(json: String) =
         try {
             jsonToItems(JSONArray(json))
@@ -214,7 +214,7 @@ object Converters {
         }
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun itemsToJson(list: List<ListItem>) =
         try {
             itemsToJSONArray(list).toString()
@@ -237,7 +237,7 @@ object Converters {
         return JSONArray(objects)
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun remindersToJson(reminders: List<Reminder>) =
         try {
             remindersToJSONArray(reminders).toString()
@@ -260,7 +260,7 @@ object Converters {
         return JSONArray(objects)
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun jsonToReminders(json: String) =
         try {
             jsonToReminders(JSONArray(json))
@@ -281,7 +281,7 @@ object Converters {
         }
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun repetitionToJson(repetition: Repetition): String {
         return try {
             repetitionToJsonObject(repetition).toString()
@@ -302,7 +302,7 @@ object Converters {
         return jsonObject
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun jsonToRepetition(json: String): Repetition {
         return try {
             val jsonObject = JSONObject(json)

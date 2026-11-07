@@ -1,8 +1,8 @@
 package com.philkes.notallyx.data.dao
 
 import android.util.Log
-import androidx.room.Dao
-import androidx.room.Transaction
+import androidx.room3.Dao
+import androidx.room3.Transaction
 import com.philkes.notallyx.core.common.NoteSplitUtils
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
@@ -180,7 +180,7 @@ abstract class CommonDao(private val database: NotallyDatabase) {
      * [note], or null if none found. For text notes, compares the body. For list notes, compares
      * the textual representation of items (including checked state and hierarchy).
      */
-    private fun findDuplicateId(note: BaseNote): Long? {
+    private suspend fun findDuplicateId(note: BaseNote): Long? {
         val dao = database.getBaseNoteDao()
         val titleMatches = dao.getByTitle(note.title)
         if (titleMatches.isEmpty()) return null

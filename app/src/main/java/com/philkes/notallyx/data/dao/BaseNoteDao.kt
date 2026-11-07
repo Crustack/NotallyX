@@ -1,13 +1,13 @@
 package com.philkes.notallyx.data.dao
 
 import android.content.ContextWrapper
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.RawQuery
-import androidx.room.Update
-import androidx.sqlite.db.SupportSQLiteQuery
+import androidx.room3.Dao
+import androidx.room3.Insert
+import androidx.room3.OnConflictStrategy
+import androidx.room3.Query
+import androidx.room3.RawQuery
+import androidx.room3.RoomRawQuery
+import androidx.room3.Update
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.charLimit
 import com.philkes.notallyx.core.common.extensions.log
@@ -30,7 +30,7 @@ const val MAX_BODY_SIZE_MB = 1.5
 @Dao
 interface BaseNoteDao {
 
-    @RawQuery fun query(query: SupportSQLiteQuery): Int
+    @RawQuery suspend fun query(query: RoomRawQuery): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insert(baseNote: BaseNote): Long
 
@@ -70,7 +70,7 @@ interface BaseNoteDao {
 
     @Update(entity = BaseNote::class) suspend fun update(labelsInBaseNotes: List<LabelsInBaseNote>)
 
-    @Query("SELECT COUNT(*) FROM BaseNote") fun count(): Int
+    @Query("SELECT COUNT(*) FROM BaseNote") suspend fun count(): Int
 
     @Query("DELETE FROM BaseNote WHERE id = :id") suspend fun delete(id: Long)
 
@@ -89,33 +89,34 @@ interface BaseNoteDao {
     )
     suspend fun getAllPinnedToStatusNotes(): List<BaseNote>
 
-    @Query("SELECT * FROM BaseNote") fun getAll(): List<BaseNote>
+    @Query("SELECT * FROM BaseNote") suspend fun getAll(): List<BaseNote>
 
-    @Query("SELECT * FROM BaseNote WHERE id IN (:ids)") fun getByIds(ids: LongArray): List<BaseNote>
+    @Query("SELECT * FROM BaseNote WHERE id IN (:ids)")
+    suspend fun getByIds(ids: LongArray): List<BaseNote>
 
-    @Query("SELECT B.id FROM BaseNote B") fun getAllIds(): List<Long>
+    @Query("SELECT B.id FROM BaseNote B") suspend fun getAllIds(): List<Long>
 
-    @Query("SELECT * FROM BaseNote WHERE id = :id") fun get(id: Long): BaseNote?
+    @Query("SELECT * FROM BaseNote WHERE id = :id") suspend fun get(id: Long): BaseNote?
 
     @Query("SELECT * FROM BaseNote WHERE title = :title")
-    fun getByTitle(title: String): List<BaseNote>
+    suspend fun getByTitle(title: String): List<BaseNote>
 
-    @Query("SELECT images FROM BaseNote WHERE id = :id") fun getImages(id: Long): String
+    @Query("SELECT images FROM BaseNote WHERE id = :id") suspend fun getImages(id: Long): String
 
     @Query("SELECT images FROM BaseNote WHERE id IN (:ids)")
-    fun getImages(ids: LongArray): List<String>
+    suspend fun getImages(ids: LongArray): List<String>
 
     @Query("SELECT files FROM BaseNote WHERE id IN (:ids)")
-    fun getFiles(ids: LongArray): List<String>
+    suspend fun getFiles(ids: LongArray): List<String>
 
     @Query("SELECT audios FROM BaseNote WHERE id IN (:ids)")
-    fun getAudios(ids: LongArray): List<String>
+    suspend fun getAudios(ids: LongArray): List<String>
 
-    @Query("SELECT images FROM BaseNote") fun getAllImages(): List<String>
+    @Query("SELECT images FROM BaseNote") suspend fun getAllImages(): List<String>
 
-    @Query("SELECT files FROM BaseNote") fun getAllFiles(): List<String>
+    @Query("SELECT files FROM BaseNote") suspend fun getAllFiles(): List<String>
 
-    @Query("SELECT audios FROM BaseNote") fun getAllAudios(): List<String>
+    @Query("SELECT audios FROM BaseNote") suspend fun getAllAudios(): List<String>
 
     @Query("SELECT id, reminders FROM BaseNote WHERE reminders IS NOT NULL AND reminders != '[]'")
     suspend fun getAllReminders(): List<NoteIdReminder>
@@ -125,7 +126,8 @@ interface BaseNoteDao {
     )
     suspend fun getAllWithRemindersOrPinned(): List<BaseNote>
 
-    @Query("SELECT color FROM BaseNote WHERE id = :id ") fun getColorOfNote(id: Long): String?
+    @Query("SELECT color FROM BaseNote WHERE id = :id ")
+    suspend fun getColorOfNote(id: Long): String?
 
     @Query(
         "SELECT * FROM BaseNote WHERE reminders IS NOT NULL AND reminders != '[]' AND folder = 'NOTES'"
@@ -167,10 +169,10 @@ interface BaseNoteDao {
     suspend fun updatePinned(ids: LongArray, pinned: Boolean)
 
     @Query("UPDATE BaseNote SET isPinnedToStatus = :isPinnedToStatus WHERE id = :id")
-    fun updatePinnedToStatus(id: Long, isPinnedToStatus: Boolean)
+    suspend fun updatePinnedToStatus(id: Long, isPinnedToStatus: Boolean)
 
     @Query("UPDATE BaseNote SET isPinnedToStatus = :isPinnedToStatus WHERE id IN (:ids)")
-    fun updatePinnedToStatus(ids: LongArray, isPinnedToStatus: Boolean)
+    suspend fun updatePinnedToStatus(ids: LongArray, isPinnedToStatus: Boolean)
 
     @Query("UPDATE BaseNote SET labels = :labels WHERE id = :id")
     suspend fun updateLabels(id: Long, labels: List<String>)

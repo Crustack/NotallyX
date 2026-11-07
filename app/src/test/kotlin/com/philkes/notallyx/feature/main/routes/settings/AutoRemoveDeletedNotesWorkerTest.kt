@@ -50,12 +50,12 @@ class AutoRemoveDeletedNotesWorkerTest {
 
         ShadowEnvironment.setExternalStorageState(Environment.MEDIA_MOUNTED)
         database = NotallyDatabase.getDatabase(application).value!!
-        database.clearAllTables()
+        runBlocking { database.clearAllTables() }
     }
 
     @After
     fun tearDown() {
-        database.clearAllTables()
+        runBlocking { database.clearAllTables() }
         NotallyXPreferences.clearInstance()
     }
 

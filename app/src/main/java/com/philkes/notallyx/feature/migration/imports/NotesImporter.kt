@@ -172,7 +172,7 @@ class NotesImporter(private val app: Application, private val database: NotallyD
         const val IMPORT_CACHE_FOLDER = "imports"
     }
 
-    private fun findDuplicateId(note: com.philkes.notallyx.data.model.BaseNote): Long? {
+    private suspend fun findDuplicateId(note: com.philkes.notallyx.data.model.BaseNote): Long? {
         val dao = database.getBaseNoteDao()
         val titleMatches = dao.getByTitle(note.title)
         if (titleMatches.isEmpty()) return null

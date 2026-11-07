@@ -11,6 +11,7 @@ import com.philkes.notallyx.core.common.extensions.SUBFOLDER_FILES
 import com.philkes.notallyx.core.common.extensions.SUBFOLDER_IMAGES
 import com.philkes.notallyx.core.common.extensions.getExternalMediaDirectory
 import com.philkes.notallyx.core.common.extensions.getPrivateAttachmentsRoot
+import com.philkes.notallyx.core.database.BackupSQLiteDriver
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.database.NotallyDatabase.Companion.setupEncryption
 import com.philkes.notallyx.core.preference.NotallyXPreferences
@@ -74,13 +75,15 @@ class NotallyDatabaseCorruptionTest {
         databaseFile.parentFile?.mkdirs()
         databaseFile.databaseFiles().forEach { it.delete() }
         ShadowEnvironment.setExternalStorageState(Environment.MEDIA_MOUNTED)
+        File(application.externalMediaDirs.first(), "Crashes").deleteRecursively()
     }
 
     @After
     fun tearDown() {
-        database?.let { if (it.isOpen) it.close() }
+        database?.close()
         database = null
         databaseFile.databaseFiles().forEach { it.delete() }
+        File(application.externalMediaDirs.first(), "Crashes").deleteRecursively()
     }
 
     /** TC1: the reported stack trace, reproduced - and the whole database is gone afterwards. */
@@ -194,7 +197,7 @@ class NotallyDatabaseCorruptionTest {
             NotallyDatabase.builder(application, preferences.dataInPublicFolder.value)
                 .setupEncryption(application, preferences)
                 .allowMainThreadQueries()
-        factory?.let { builder.openHelperFactory(it) }
+        factory?.let { builder.setDriver(BackupSQLiteDriver(application, it)) }
         return builder.build().also { database = it }
     }
 
@@ -205,12 +208,13 @@ class NotallyDatabaseCorruptionTest {
      */
     private fun seedAndClose(noteCount: Int = 20): Int {
         val database = openDatabase()
-        runBlocking {
+        val rootPage = runBlocking {
             repeat(noteCount) { index -> database.getBaseNoteDao().insert(pinnedNote(index)) }
+            assertThat(database.getBaseNoteDao().count()).isEqualTo(noteCount)
+            val page = database.rootPageOf("BaseNote")
+            database.checkpoint()
+            page
         }
-        assertThat(database.getBaseNoteDao().count()).isEqualTo(noteCount)
-        val rootPage = database.rootPageOf("BaseNote")
-        database.checkpoint()
         database.close()
         this.database = null
 
