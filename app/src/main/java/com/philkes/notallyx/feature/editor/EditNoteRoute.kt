@@ -91,6 +91,7 @@ import com.philkes.notallyx.navigation.NotallyNavKey
 import com.philkes.notallyx.navigation.PickedNoteResult
 import com.philkes.notallyx.navigation.RemindersUpdatedResult
 import com.philkes.notallyx.navigation.SelectedLabelsResult
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -211,7 +212,7 @@ fun EditNoteRoute(
     LaunchedEffect(lastEditTime) {
         val idleTime = preferences.autoSaveAfterIdleTime.value
         if (idleTime > -1) {
-            delay(idleTime.toLong() * 1000)
+            delay((idleTime.toLong() * 1000).milliseconds)
             if (notallyModel.isModified() && !notallyModel.isEmpty()) {
                 saveNote(checkBackupOnSave = false)
             }

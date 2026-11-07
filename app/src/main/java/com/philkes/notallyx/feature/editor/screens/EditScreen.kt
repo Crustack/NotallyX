@@ -5,7 +5,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -22,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -31,7 +29,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -54,7 +51,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -68,12 +64,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -142,135 +135,6 @@ data class EditNotePreferences(
         listOf(EditAction.SEARCH, EditAction.REMINDERS, EditAction.PIN),
     val bottomAction: EditAction = EditAction.TOGGLE_VIEW_MODE,
 )
-
-data class SearchState(
-    val isActive: Boolean = false,
-    val query: String = "",
-    val resultsCount: Int = 0,
-    val resultPos: Int = 0,
-)
-
-class SearchHighlightVisualTransformation(
-    private val query: String,
-    private val selectedIndex: Int,
-    private val highlightColor: Color = Color(0xFFFFF59D),
-    private val selectedHighlightColor: Color = Color(0xFFFFC107),
-) : VisualTransformation {
-    override fun filter(text: AnnotatedString): TransformedText {
-        if (query.isEmpty()) return TransformedText(text, OffsetMapping.Identity)
-
-        val rawText = text.text
-        val occurrences = rawText.findAllOccurrences(query)
-        if (occurrences.isEmpty()) return TransformedText(text, OffsetMapping.Identity)
-
-        val builder = AnnotatedString.Builder(text)
-        occurrences.forEachIndexed { index, (start, end) ->
-            val color = if (index == selectedIndex) selectedHighlightColor else highlightColor
-            builder.addStyle(
-                style = SpanStyle(background = color),
-                start = start,
-                end = end,
-            )
-        }
-        return TransformedText(builder.toAnnotatedString(), OffsetMapping.Identity)
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SearchTopAppBar(
-    searchState: SearchState,
-    onQueryChange: (String) -> Unit,
-    onNextResult: () -> Unit,
-    onPrevResult: () -> Unit,
-    onCloseSearch: () -> Unit,
-    backgroundColor: Color,
-) {
-    val contentColor = contentColorFor(backgroundColor)
-    TopAppBar(
-        title = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val searchHint = stringResource(id = R.string.search)
-                BasicTextField(
-                    value = searchState.query,
-                    onValueChange = onQueryChange,
-                    modifier = Modifier.weight(1f).semantics { contentDescription = searchHint },
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = contentColor),
-                    singleLine = true,
-                    cursorBrush = SolidColor(contentColor),
-                    decorationBox = { innerTextField ->
-                        Box {
-                            if (searchState.query.isEmpty()) {
-                                Text(
-                                    text = searchHint,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = contentColor.copy(alpha = 0.6f),
-                                )
-                            }
-                            innerTextField()
-                        }
-                    },
-                )
-
-                val countText =
-                    if (searchState.query.isNotEmpty()) {
-                        if (searchState.resultsCount > 0) {
-                            "${searchState.resultPos + 1}/${searchState.resultsCount}"
-                        } else {
-                            "0/0"
-                        }
-                    } else {
-                        "0/0"
-                    }
-
-                Text(
-                    text = countText,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = contentColor.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                )
-
-                IconButton(
-                    onClick = onPrevResult,
-                    enabled = searchState.resultsCount > 0,
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.arrow_upward),
-                        contentDescription = stringResource(id = R.string.previous),
-                    )
-                }
-
-                IconButton(
-                    onClick = onNextResult,
-                    enabled = searchState.resultsCount > 0,
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.arrow_downward),
-                        contentDescription = stringResource(id = R.string.next),
-                    )
-                }
-            }
-        },
-        navigationIcon = {
-            IconButton(onClick = onCloseSearch) {
-                Icon(
-                    painter = painterResource(id = R.drawable.arrow_back),
-                    contentDescription = stringResource(id = R.string.back),
-                )
-            }
-        },
-        colors =
-            TopAppBarDefaults.topAppBarColors(
-                containerColor = backgroundColor,
-                navigationIconContentColor = contentColor,
-                actionIconContentColor = contentColor,
-                titleContentColor = contentColor,
-            ),
-    )
-}
 
 internal interface EditChangeHandlers {
     fun onTitleChange(title: String) {}
@@ -344,40 +208,6 @@ internal interface EditClickHandlers {
     fun onPrevSearchResult() {}
 
     fun onCloseSearch() {}
-}
-
-@Composable
-private fun ActionIconButton(
-    iconResId: Int,
-    contentDescription: String,
-    onClick: () -> Unit,
-    onLongClick: (() -> Unit)? = null,
-    enabled: Boolean = true,
-    modifier: Modifier = Modifier,
-) {
-    val clickModifier =
-        if (onLongClick != null) {
-            Modifier.combinedClickable(
-                enabled = enabled,
-                onClick = onClick,
-                onLongClick = onLongClick,
-            )
-        } else {
-            Modifier.clickable(enabled = enabled, onClick = onClick)
-        }
-
-    Box(
-        modifier = modifier.size(48.dp).clip(CircleShape).then(clickModifier),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = painterResource(id = iconResId),
-            contentDescription = contentDescription,
-            tint =
-                if (enabled) LocalContentColor.current
-                else LocalContentColor.current.copy(alpha = 0.38f),
-        )
-    }
 }
 
 @Composable
@@ -1198,31 +1028,6 @@ internal fun EditListScreen(
     )
 }
 
-@Composable
-private fun createSearchHighlightListItemTransformation(
-    noteState: EditNoteState,
-    index: Int,
-    searchState: SearchState,
-    item: ListItem,
-): SearchHighlightVisualTransformation {
-    val priorCount =
-        noteState.items.take(index).sumOf { it.body.findAllOccurrences(searchState.query).size }
-    val countInThisItem = item.body.findAllOccurrences(searchState.query).size
-    val selectedInThisItem =
-        if (
-            searchState.resultPos >= priorCount &&
-                searchState.resultPos < priorCount + countInThisItem
-        ) {
-            searchState.resultPos - priorCount
-        } else {
-            -1
-        }
-    return SearchHighlightVisualTransformation(
-        query = searchState.query,
-        selectedIndex = selectedInThisItem,
-    )
-}
-
 @Preview(showBackground = true)
 @Preview(name = "Dark Mode", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
@@ -1299,113 +1104,6 @@ private fun EditNoteScreenPreview() {
                     )
                 ),
             canUndo = true,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Preview(name = "Dark Mode", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun EditListScreenPreview() {
-    NotallyXTheme {
-        EditListScreen(
-            noteState =
-                EditNoteState(
-                    title = "Weekly Grocery List",
-                    createdTimestamp = System.currentTimeMillis() - 86400000L,
-                    modifiedTimestamp = System.currentTimeMillis(),
-                    items =
-                        listOf(
-                            ListItem(
-                                id = 0,
-                                body = "Fresh Organic Apples",
-                                checked = false,
-                                isChild = false,
-                                order = 1,
-                                children = mutableListOf(),
-                            ),
-                            ListItem(
-                                id = 1,
-                                body = "Almond Milk (Unsweetened)",
-                                checked = false,
-                                isChild = false,
-                                order = 2,
-                                children = mutableListOf(),
-                            ),
-                            ListItem(
-                                id = 2,
-                                body =
-                                    "Whole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain Bread",
-                                checked = false,
-                                isChild = false,
-                                order = 3,
-                                children = mutableListOf(),
-                            ),
-                        ),
-                    checkedItems =
-                        listOf(
-                            ListItem(
-                                id = 3,
-                                body = "Greek Yogurt",
-                                checked = true,
-                                isChild = false,
-                                order = 4,
-                                children = mutableListOf(),
-                            ),
-                            ListItem(
-                                id = 4,
-                                body = "Avocados",
-                                checked = true,
-                                isChild = false,
-                                order = 5,
-                                children = mutableListOf(),
-                            ),
-                        ),
-                    images =
-                        listOf(
-                            FileAttachment(
-                                localName = "recipe.jpg",
-                                originalName = "Recipe_Idea.jpg",
-                                mimeType = "image/jpeg",
-                            )
-                        ),
-                    files =
-                        listOf(
-                            FileAttachment(
-                                localName = "coupons.pdf",
-                                originalName = "Store_Coupons.pdf",
-                                mimeType = "application/pdf",
-                            )
-                        ),
-                    audios =
-                        listOf(
-                            Audio(
-                                name = "Shopping Voice Note",
-                                duration = 18000L,
-                                timestamp = System.currentTimeMillis(),
-                            )
-                        ),
-                    labels = listOf("Shopping", "Personal"),
-                    reminders =
-                        listOf(
-                            Reminder(
-                                id = 2L,
-                                dateTime = Date(),
-                                repetition = null,
-                            )
-                        ),
-                    type = Type.LIST,
-                ),
-            preferences =
-                EditNotePreferences(
-                    notesSortBy = NotesSortBy.MODIFIED_DATE,
-                    dateFormat = DateFormat.DD_MM_YY_GER,
-                    timeFormat = TimeFormat.AM_PM,
-                    topActions = listOf(EditAction.SEARCH, EditAction.REMINDERS, EditAction.PIN),
-                    bottomAction = EditAction.TOGGLE_VIEW_MODE,
-                ),
-            canUndo = true,
-            canRedo = true,
         )
     }
 }
@@ -1518,113 +1216,6 @@ private fun EditListColoredScreenPreview() {
                         com.philkes.notallyx.data.model.Color.CORAL.toColorString()
                     )
                 ),
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Preview(name = "Dark Mode", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun EditListDarkColoredScreenPreview() {
-    NotallyXTheme {
-        EditListScreen(
-            noteState =
-                EditNoteState(
-                    title = "Weekly Grocery List",
-                    createdTimestamp = System.currentTimeMillis() - 86400000L,
-                    modifiedTimestamp = System.currentTimeMillis(),
-                    items =
-                        listOf(
-                            ListItem(
-                                id = 0,
-                                body = "Fresh Organic Apples",
-                                checked = false,
-                                isChild = false,
-                                order = 1,
-                                children = mutableListOf(),
-                            ),
-                            ListItem(
-                                id = 1,
-                                body = "Almond Milk (Unsweetened)",
-                                checked = false,
-                                isChild = false,
-                                order = 2,
-                                children = mutableListOf(),
-                            ),
-                            ListItem(
-                                id = 2,
-                                body = "Whole Grain Bread",
-                                checked = false,
-                                isChild = false,
-                                order = 3,
-                                children = mutableListOf(),
-                            ),
-                        ),
-                    checkedItems =
-                        listOf(
-                            ListItem(
-                                id = 3,
-                                body = "Greek Yogurt",
-                                checked = true,
-                                isChild = false,
-                                order = 4,
-                                children = mutableListOf(),
-                            ),
-                            ListItem(
-                                id = 4,
-                                body = "Avocados",
-                                checked = true,
-                                isChild = false,
-                                order = 5,
-                                children = mutableListOf(),
-                            ),
-                        ),
-                    images =
-                        listOf(
-                            FileAttachment(
-                                localName = "recipe.jpg",
-                                originalName = "Recipe_Idea.jpg",
-                                mimeType = "image/jpeg",
-                            )
-                        ),
-                    files =
-                        listOf(
-                            FileAttachment(
-                                localName = "coupons.pdf",
-                                originalName = "Store_Coupons.pdf",
-                                mimeType = "application/pdf",
-                            )
-                        ),
-                    audios =
-                        listOf(
-                            Audio(
-                                name = "Shopping Voice Note",
-                                duration = 18000L,
-                                timestamp = System.currentTimeMillis(),
-                            )
-                        ),
-                    labels = listOf("Shopping", "Personal"),
-                    reminders =
-                        listOf(
-                            Reminder(
-                                id = 2L,
-                                dateTime = Date(),
-                                repetition = null,
-                            )
-                        ),
-                    type = Type.LIST,
-                ),
-            preferences =
-                EditNotePreferences(
-                    notesSortBy = NotesSortBy.MODIFIED_DATE,
-                    dateFormat = DateFormat.DD_MM_YY_GER,
-                    timeFormat = TimeFormat.AM_PM,
-                    topActions = listOf(EditAction.SEARCH, EditAction.REMINDERS, EditAction.PIN),
-                    bottomAction = EditAction.TOGGLE_VIEW_MODE,
-                ),
-            canUndo = true,
-            canRedo = true,
-            backgroundColor = Color.Black,
         )
     }
 }
