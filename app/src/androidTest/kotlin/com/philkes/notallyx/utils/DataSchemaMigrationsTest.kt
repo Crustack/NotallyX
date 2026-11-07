@@ -126,7 +126,7 @@ class DataSchemaMigrationsTest : UiTestBase() {
                 NotallyDatabase.getCurrentDatabaseFile(context).isUnencryptedDatabase(context)
         }
 
-        // Navigate to Notes fragment to verify notes list
+        // Navigate to Notes route to verify notes list
         composeTestRule.navigateTo(NotallyNavKey.Notes)
 
         composeTestRule.waitUntil(15_000L) {

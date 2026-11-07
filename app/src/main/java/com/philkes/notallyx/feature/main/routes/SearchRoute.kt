@@ -12,7 +12,7 @@ import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Item
-import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel
+import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel
 import kotlinx.coroutines.flow.flowOf
 import org.koin.androidx.compose.koinViewModel
 
@@ -25,23 +25,23 @@ fun SearchRoute(
     onNoteLongClick: (BaseNote, Int, List<Item>) -> Unit,
     onReminderClick: (BaseNote) -> Unit,
     modifier: Modifier = Modifier,
-    notallyFragmentModel: NotesFragmentViewModel = koinViewModel(),
-    preferences: NotallyXPreferences = notallyFragmentModel.preferences,
+    notallyRouteModel: NotesRouteViewModel = koinViewModel(),
+    preferences: NotallyXPreferences = notallyRouteModel.preferences,
 ) {
-    val searchKeyword by notallyFragmentModel.keywordFlow.collectAsStateWithLifecycle()
-    val selectedFolder by notallyFragmentModel.folder.collectAsStateWithLifecycle()
-    val searchResults = notallyFragmentModel.searchResults
+    val searchKeyword by notallyRouteModel.keywordFlow.collectAsStateWithLifecycle()
+    val selectedFolder by notallyRouteModel.folder.collectAsStateWithLifecycle()
+    val searchResults = notallyRouteModel.searchResults
     val items by
         (searchResults?.results ?: flowOf(emptyList())).collectAsStateWithLifecycle(emptyList())
     val selectedIds by
-        notallyFragmentModel.actionMode.selectedIdsFlow.collectAsStateWithLifecycle(emptySet())
+        notallyRouteModel.actionMode.selectedIdsFlow.collectAsStateWithLifecycle(emptySet())
     val notesView by
         preferences.notesView.flow.collectAsStateWithLifecycle(preferences.notesView.value)
 
     LaunchedEffect(initialFolder, initialLabel) {
-        notallyFragmentModel.currentLabel = initialLabel
+        notallyRouteModel.currentLabel = initialLabel
         if (initialLabel.isNullOrEmpty() && initialFolder != null) {
-            notallyFragmentModel.setFolder(initialFolder)
+            notallyRouteModel.setFolder(initialFolder)
         }
     }
 
@@ -51,12 +51,12 @@ fun SearchRoute(
         selectedNoteIds = selectedIds,
         displayConfig = displayConfig,
         backgroundResId = R.drawable.search,
-        imageRoot = notallyFragmentModel.imageRoot,
+        imageRoot = notallyRouteModel.imageRoot,
         showSearchBar = true,
         searchKeyword = searchKeyword,
-        onSearchKeywordChange = { notallyFragmentModel.keyword = it },
+        onSearchKeywordChange = { notallyRouteModel.keyword = it },
         selectedFolder = selectedFolder,
-        onFolderSelected = { notallyFragmentModel.setFolder(it) },
+        onFolderSelected = { notallyRouteModel.setFolder(it) },
         onNoteClick = onNoteClick,
         onNoteLongClick = onNoteLongClick,
         onReminderClick = { note, _ -> onReminderClick(note) },

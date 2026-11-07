@@ -1,4 +1,4 @@
-package com.philkes.notallyx.activity.main.fragments
+package com.philkes.notallyx.activity.main.routes
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
@@ -26,7 +26,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder
-class ArchivedFragmentTest : UiTestBase() {
+class ArchivedRouteTest : UiTestBase() {
 
     @get:Rule val composeTestRule = createEmptyComposeRule()
 

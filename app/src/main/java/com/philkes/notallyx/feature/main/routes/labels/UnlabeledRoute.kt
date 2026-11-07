@@ -13,8 +13,8 @@ import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.feature.main.routes.NotesGridScreen
-import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel
-import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel.Companion.CURRENT_LABEL_NONE
+import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel
+import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel.Companion.CURRENT_LABEL_NONE
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -25,18 +25,18 @@ fun UnlabeledRoute(
     onReminderClick: (BaseNote) -> Unit,
     modifier: Modifier = Modifier,
     unlabeledViewModel: UnlabeledViewModel = koinViewModel(),
-    notallyFragmentModel: NotesFragmentViewModel = koinViewModel(),
-    preferences: NotallyXPreferences = notallyFragmentModel.preferences,
+    notallyRouteModel: NotesRouteViewModel = koinViewModel(),
+    preferences: NotallyXPreferences = notallyRouteModel.preferences,
 ) {
     val items by unlabeledViewModel.unlabeledNotes.collectAsStateWithLifecycle(emptyList())
     val selectedIds by
-        notallyFragmentModel.actionMode.selectedIdsFlow.collectAsStateWithLifecycle(emptySet())
+        notallyRouteModel.actionMode.selectedIdsFlow.collectAsStateWithLifecycle(emptySet())
     val notesView by
         preferences.notesView.flow.collectAsStateWithLifecycle(preferences.notesView.value)
 
     LaunchedEffect(Unit) {
-        notallyFragmentModel.setFolder(Folder.NOTES)
-        notallyFragmentModel.currentLabel = CURRENT_LABEL_NONE
+        notallyRouteModel.setFolder(Folder.NOTES)
+        notallyRouteModel.currentLabel = CURRENT_LABEL_NONE
     }
 
     NotesGridScreen(
@@ -45,7 +45,7 @@ fun UnlabeledRoute(
         selectedNoteIds = selectedIds,
         displayConfig = displayConfig,
         backgroundResId = R.drawable.label_off,
-        imageRoot = notallyFragmentModel.imageRoot,
+        imageRoot = notallyRouteModel.imageRoot,
         onNoteClick = onNoteClick,
         onNoteLongClick = onNoteLongClick,
         onReminderClick = { note, _ -> onReminderClick(note) },

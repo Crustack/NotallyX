@@ -50,7 +50,6 @@ import androidx.core.content.getSystemService
 import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -1106,8 +1105,6 @@ fun @receiver:ColorInt Int.getSlightContrastColor(): Int {
         this,
     )
 }
-
-fun Fragment.showToast(messageResId: Int) = requireContext().showToast(messageResId)
 
 fun Context.showToast(messageResId: Int) =
     ContextCompat.getMainExecutor(this).execute {

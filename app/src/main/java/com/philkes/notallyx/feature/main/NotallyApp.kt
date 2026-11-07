@@ -37,8 +37,8 @@ import com.philkes.notallyx.feature.main.routes.deleted.DeletedRoute
 import com.philkes.notallyx.feature.main.routes.labels.DisplayLabelRoute
 import com.philkes.notallyx.feature.main.routes.labels.LabelsRoute
 import com.philkes.notallyx.feature.main.routes.labels.UnlabeledRoute
-import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel
 import com.philkes.notallyx.feature.main.routes.notes.NotesRoute
+import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel
 import com.philkes.notallyx.feature.main.routes.reminders.RemindersRoute
 import com.philkes.notallyx.feature.main.routes.settings.SettingsRoute
 import com.philkes.notallyx.feature.migration.ExportMimeType
@@ -66,9 +66,9 @@ fun NotallyApp(
     migrationProgressState: MigrationProgress?,
     modifier: Modifier = Modifier,
     mainActivityViewModel: MainActivityViewModel = koinViewModel(),
-    notallyFragmentModel: NotesFragmentViewModel = koinViewModel(),
+    notallyRouteModel: NotesRouteViewModel = koinViewModel(),
     labelsViewModel: LabelsViewModel = koinViewModel(),
-    preferences: NotallyXPreferences = notallyFragmentModel.preferences,
+    preferences: NotallyXPreferences = notallyRouteModel.preferences,
 ) {
     val currentTheme by preferences.theme.flow.collectAsStateWithLifecycle(preferences.theme.value)
     val useDynamicColors by
@@ -100,18 +100,18 @@ fun NotallyApp(
 
         val activeDialog by mainActivityViewModel.activeDialog.collectAsStateWithLifecycle()
         val mainProgress by mainActivityViewModel.progress.collectAsStateWithLifecycle()
-        val fragmentProgress by notallyFragmentModel.progress.collectAsStateWithLifecycle()
+        val routeProgress by notallyRouteModel.progress.collectAsStateWithLifecycle()
 
         val labelsState = mainActivityViewModel.labels.collectAsStateWithLifecycle(emptyList())
         val actionModeEnabledState =
-            notallyFragmentModel.actionMode.enabled.collectAsStateWithLifecycle(false)
+            notallyRouteModel.actionMode.enabled.collectAsStateWithLifecycle(false)
         val selectedNoteIds by
-            notallyFragmentModel.actionMode.selectedIdsFlow.collectAsStateWithLifecycle(emptySet())
+            notallyRouteModel.actionMode.selectedIdsFlow.collectAsStateWithLifecycle(emptySet())
         val selectedNotesCount = selectedNoteIds.size
 
-        val currentFolder by notallyFragmentModel.folder.collectAsStateWithLifecycle(Folder.NOTES)
+        val currentFolder by notallyRouteModel.folder.collectAsStateWithLifecycle(Folder.NOTES)
 
-        val selectedNotes = notallyFragmentModel.actionMode.selectedNotes.values
+        val selectedNotes = notallyRouteModel.actionMode.selectedNotes.values
         val isAllPinned = selectedNotes.isNotEmpty() && selectedNotes.all { it.pinned }
         val isAllPinnedToStatus =
             selectedNotes.isNotEmpty() && selectedNotes.all { it.isPinnedToStatus }
@@ -130,22 +130,22 @@ fun NotallyApp(
             )
 
         val actionModeListener =
-            remember(notallyFragmentModel, mainActivityViewModel) {
+            remember(notallyRouteModel, mainActivityViewModel) {
                 object : ActionModeListener {
                     override fun onClose() {
-                        notallyFragmentModel.actionMode.close(true)
+                        notallyRouteModel.actionMode.close(true)
                     }
 
                     override fun onSelectAll() {
-                        notallyFragmentModel.selectAll()
+                        notallyRouteModel.selectAll()
                     }
 
                     override fun onPin() {
-                        notallyFragmentModel.togglePinSelectedNotes()
+                        notallyRouteModel.togglePinSelectedNotes()
                     }
 
                     override fun onLabels() {
-                        notallyFragmentModel.onLabelsClick(
+                        notallyRouteModel.onLabelsClick(
                             onNavigateToLabels = { backStack.add(NotallyNavKey.Labels) },
                             onShowDialog = { labels, baseNotes ->
                                 val checkedPositions =
@@ -191,7 +191,7 @@ fun NotallyApp(
                                             }
                                             baseNote.id to noteLabels
                                         }
-                                        notallyFragmentModel.updateBaseNotesLabels(updatedNotes)
+                                        notallyRouteModel.updateBaseNotesLabels(updatedNotes)
                                     },
                                 )
                             },
@@ -215,11 +215,11 @@ fun NotallyApp(
                     }
 
                     override fun onDuplicate() {
-                        notallyFragmentModel.duplicateSelectedBaseNotes()
+                        notallyRouteModel.duplicateSelectedBaseNotes()
                     }
 
                     override fun onChangeColor() {
-                        notallyFragmentModel.onChangeColorClick { colors, currentColor ->
+                        notallyRouteModel.onChangeColorClick { colors, currentColor ->
                             mainActivityViewModel.showColorPicker(
                                 colors = colors,
                                 currentColor = currentColor,
@@ -229,11 +229,11 @@ fun NotallyApp(
                                             colors = colors + preferences.defaultNoteColor.value,
                                             currentColor = null,
                                             onColorSelected = { color ->
-                                                notallyFragmentModel.colorBaseNote(color)
+                                                notallyRouteModel.colorBaseNote(color)
                                             },
                                         )
                                     } else {
-                                        notallyFragmentModel.colorBaseNote(selectedColor)
+                                        notallyRouteModel.colorBaseNote(selectedColor)
                                     }
                                 },
                             )
@@ -241,15 +241,15 @@ fun NotallyApp(
                     }
 
                     override fun onPinToStatus() {
-                        notallyFragmentModel.onPinToStatusClick(
+                        notallyRouteModel.onPinToStatusClick(
                             activity = activity,
                             onRequestPermission = onRequestNotificationPermission,
                         )
                     }
 
                     override fun onShare() {
-                        if (!notallyFragmentModel.actionMode.isEmpty()) {
-                            val baseNote = notallyFragmentModel.actionMode.getFirstNote()
+                        if (!notallyRouteModel.actionMode.isEmpty()) {
+                            val baseNote = notallyRouteModel.actionMode.getFirstNote()
                             activity.shareNote(baseNote)
                         }
                     }
@@ -307,13 +307,13 @@ fun NotallyApp(
             },
             onSearchClick = {
                 if (currentKey is NotallyNavKey.Search) {
-                    notallyFragmentModel.keyword = ""
+                    notallyRouteModel.keyword = ""
                     if (backStack.size > 1) backStack.removeAt(backStack.lastIndex)
                 } else {
                     backStack.add(
                         NotallyNavKey.Search(
-                            initialFolder = notallyFragmentModel.folder.value,
-                            initialLabel = notallyFragmentModel.currentLabel,
+                            initialFolder = notallyRouteModel.folder.value,
+                            initialLabel = notallyRouteModel.currentLabel,
                         )
                     )
                 }
@@ -413,7 +413,7 @@ fun NotallyApp(
         NotallyAppDialogs(
             activeDialog = activeDialog,
             mainProgress = mainProgress,
-            fragmentProgress = fragmentProgress,
+            routeProgress = routeProgress,
             migrationProgress = migrationProgressState,
             onDismissDialog = { mainActivityViewModel.dismissDialog() },
         )
@@ -424,7 +424,7 @@ fun NotallyApp(
 private fun NotallyAppDialogs(
     activeDialog: MainActiveDialog?,
     mainProgress: com.philkes.notallyx.core.common.result.Progress?,
-    fragmentProgress: com.philkes.notallyx.core.common.result.Progress?,
+    routeProgress: com.philkes.notallyx.core.common.result.Progress?,
     migrationProgress: MigrationProgress?,
     onDismissDialog: () -> Unit,
 ) {
@@ -491,9 +491,7 @@ private fun NotallyAppDialogs(
     }
 
     val activeProgress =
-        listOfNotNull(mainProgress, fragmentProgress, migrationProgress).firstOrNull {
-            it.inProgress
-        }
+        listOfNotNull(mainProgress, routeProgress, migrationProgress).firstOrNull { it.inProgress }
 
     if (activeProgress != null) {
         val msg =

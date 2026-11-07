@@ -17,8 +17,8 @@ import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.feature.main.routes.NotesGridScreen
-import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel
-import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel.Companion.CURRENT_LABEL_EMPTY
+import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel
+import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel.Companion.CURRENT_LABEL_EMPTY
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -29,20 +29,20 @@ fun DeletedRoute(
     onReminderClick: (BaseNote) -> Unit,
     modifier: Modifier = Modifier,
     deletedViewModel: DeletedViewModel = koinViewModel(),
-    notallyFragmentModel: NotesFragmentViewModel = koinViewModel(),
-    preferences: NotallyXPreferences = notallyFragmentModel.preferences,
+    notallyRouteModel: NotesRouteViewModel = koinViewModel(),
+    preferences: NotallyXPreferences = notallyRouteModel.preferences,
 ) {
     val items by deletedViewModel.deletedNotes.collectAsStateWithLifecycle(emptyList())
     val selectedIds by
-        notallyFragmentModel.actionMode.selectedIdsFlow.collectAsStateWithLifecycle(emptySet())
+        notallyRouteModel.actionMode.selectedIdsFlow.collectAsStateWithLifecycle(emptySet())
     val notesView by
         preferences.notesView.flow.collectAsStateWithLifecycle(preferences.notesView.value)
     val showConfirmDeleteAllDialog by
         deletedViewModel.showConfirmDeleteAllDialog.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        notallyFragmentModel.setFolder(Folder.DELETED)
-        notallyFragmentModel.currentLabel = CURRENT_LABEL_EMPTY
+        notallyRouteModel.setFolder(Folder.DELETED)
+        notallyRouteModel.currentLabel = CURRENT_LABEL_EMPTY
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -52,7 +52,7 @@ fun DeletedRoute(
             selectedNoteIds = selectedIds,
             displayConfig = displayConfig,
             backgroundResId = R.drawable.delete,
-            imageRoot = notallyFragmentModel.imageRoot,
+            imageRoot = notallyRouteModel.imageRoot,
             onNoteClick = onNoteClick,
             onNoteLongClick = onNoteLongClick,
             onReminderClick = { note, _ -> onReminderClick(note) },

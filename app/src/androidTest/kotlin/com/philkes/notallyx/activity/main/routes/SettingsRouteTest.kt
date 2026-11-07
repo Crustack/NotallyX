@@ -1,4 +1,4 @@
-package com.philkes.notallyx.activity.main.fragments
+package com.philkes.notallyx.activity.main.routes
 
 import android.app.Activity
 import android.app.Instrumentation
@@ -77,7 +77,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder
-class SettingsFragmentTest : UiTestBase() {
+class SettingsRouteTest : UiTestBase() {
 
     @get:Rule val composeTestRule = createAndroidComposeRule<MainActivity>()
 

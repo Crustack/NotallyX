@@ -10,8 +10,8 @@ import com.philkes.notallyx.core.preference.NotesView
 import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Item
-import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel
-import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel.Companion.CURRENT_LABEL_EMPTY
+import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel
+import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel.Companion.CURRENT_LABEL_EMPTY
 import com.philkes.notallyx.feature.reminder.RemindersScreen
 import com.philkes.notallyx.feature.reminder.RemindersViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -24,17 +24,17 @@ fun RemindersRoute(
     onReminderClick: (BaseNote) -> Unit,
     modifier: Modifier = Modifier,
     remindersViewModel: RemindersViewModel = koinViewModel(),
-    notallyFragmentModel: NotesFragmentViewModel = koinViewModel(),
-    preferences: NotallyXPreferences = notallyFragmentModel.preferences,
+    notallyRouteModel: NotesRouteViewModel = koinViewModel(),
+    preferences: NotallyXPreferences = notallyRouteModel.preferences,
 ) {
     val allReminderNotes by
         remindersViewModel.reminderNotes.collectAsStateWithLifecycle(emptyList())
     val selectedIds by
-        notallyFragmentModel.actionMode.selectedIdsFlow.collectAsStateWithLifecycle(emptySet())
+        notallyRouteModel.actionMode.selectedIdsFlow.collectAsStateWithLifecycle(emptySet())
     val notesView by
         preferences.notesView.flow.collectAsStateWithLifecycle(preferences.notesView.value)
 
-    LaunchedEffect(Unit) { notallyFragmentModel.currentLabel = CURRENT_LABEL_EMPTY }
+    LaunchedEffect(Unit) { notallyRouteModel.currentLabel = CURRENT_LABEL_EMPTY }
 
     RemindersScreen(
         notes = allReminderNotes,
