@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
-internal enum class RepetitionOption(val labelResId: Int) {
+enum class RepetitionOption(val labelResId: Int) {
     NONE(R.string.none),
     DAILY(R.string.daily),
     WEEKLY(R.string.weekly),
@@ -40,7 +40,7 @@ internal enum class RepetitionOption(val labelResId: Int) {
     CUSTOM(R.string.custom),
 }
 
-internal enum class TimeUnit {
+enum class TimeUnit {
     MINUTES,
     HOURS,
     DAYS,

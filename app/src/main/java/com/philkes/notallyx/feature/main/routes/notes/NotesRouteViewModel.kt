@@ -43,15 +43,17 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class NotesRouteViewModel(app: Application, preferences: NotallyXPreferences) :
-    BaseViewModel(app, preferences) {
+class NotesRouteViewModel(
+    app: Application,
+    preferences: NotallyXPreferences,
+    val actionMode: ActionMode = ActionMode(),
+) : BaseViewModel(app, preferences) {
 
     lateinit var selectedExportMimeType: ExportMimeType
 
     val imageRoot
         get() = app.getCurrentImagesDirectory()
 
-    val actionMode = ActionMode()
     val progress: StateFlow<Progress?>
         field = MutableStateFlow<Progress?>(null)
 

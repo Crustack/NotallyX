@@ -488,7 +488,6 @@ fun NotallyApp(
                             onNoteClick = handleNoteClick,
                             onNoteLongClick = onNoteLongClick,
                             onReminderClick = handleReminderClick,
-                            notallyRouteModel = notallyRouteModel,
                         )
                     }
 
@@ -508,7 +507,6 @@ fun NotallyApp(
                             onNoteClick = handleNoteClick,
                             onNoteLongClick = onNoteLongClick,
                             onReminderClick = handleReminderClick,
-                            notallyRouteModel = notallyRouteModel,
                         )
                     }
 
@@ -518,7 +516,6 @@ fun NotallyApp(
                             onNoteClick = handleNoteClick,
                             onNoteLongClick = onNoteLongClick,
                             onReminderClick = handleReminderClick,
-                            notallyRouteModel = notallyRouteModel,
                         )
                     }
 
@@ -542,7 +539,6 @@ fun NotallyApp(
                             onNoteClick = handleNoteClick,
                             onNoteLongClick = onNoteLongClick,
                             onReminderClick = handleReminderClick,
-                            notallyRouteModel = notallyRouteModel,
                         )
                     }
 
