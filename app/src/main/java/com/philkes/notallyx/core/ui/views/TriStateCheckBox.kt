@@ -71,7 +71,7 @@ internal fun TriStateChoiceItemRow(
             modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
-                .padding(horizontal = 24.dp, vertical = 4.dp)
+                .padding(horizontal = 0.dp, vertical = 4.dp)
                 .testTag("TriStateChoiceItemRow"),
         verticalAlignment = Alignment.CenterVertically,
     ) {

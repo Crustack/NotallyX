@@ -1,13 +1,21 @@
 package com.philkes.notallyx.feature.editor.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AssistChip
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -23,28 +31,38 @@ internal fun FileAttachmentPreviewChip(
     fileName: String,
     modifier: Modifier = Modifier,
     showIcon: Boolean = true,
-    onClick: () -> Unit = {},
+    onClick: (() -> Unit)? = null,
 ) {
-    AssistChip(
-        onClick = onClick,
-        label = {
-            Text(
-                text = fileName.ifEmpty { stringResource(R.string.cant_load_file) },
-                style = MaterialTheme.typography.bodySmall,
-            )
-        },
-        leadingIcon =
-            if (showIcon) {
-                {
+    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+        Surface(
+            onClick = onClick ?: {},
+            enabled = onClick != null,
+            shape = RoundedCornerShape(20),
+            color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.05f),
+            modifier = modifier,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                if (showIcon) {
                     Icon(
                         painter = painterResource(id = R.drawable.text_file),
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp),
                     )
+                    Spacer(modifier = Modifier.width(4.dp))
                 }
-            } else null,
-        modifier = modifier.padding(end = 6.dp),
-    )
+                Text(
+                    text = fileName.ifEmpty { stringResource(R.string.cant_load_file) },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
 }
 
 /** Composable replacing recycler_preview_image.xml layout. */

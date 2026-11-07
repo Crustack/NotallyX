@@ -20,6 +20,7 @@ internal fun LabelChip(
     text: String,
     modifier: Modifier = Modifier,
     textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    borderColor: Color = MaterialTheme.colorScheme.outline,
     onClick: (() -> Unit)? = null,
 ) {
     val clickableModifier =
@@ -30,9 +31,9 @@ internal fun LabelChip(
         }
 
     Surface(
-        modifier = clickableModifier.padding(end = 4.dp, bottom = 4.dp),
+        modifier = clickableModifier,
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        border = BorderStroke(1.dp, borderColor),
         color = Color.Transparent,
     ) {
         Text(

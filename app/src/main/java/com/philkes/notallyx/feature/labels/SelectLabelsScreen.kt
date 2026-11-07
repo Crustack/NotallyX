@@ -46,7 +46,7 @@ internal fun SelectLabelsScreen(
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
-                            painter = painterResource(id = R.drawable.close),
+                            painter = painterResource(id = R.drawable.arrow_back),
                             contentDescription = stringResource(R.string.back),
                         )
                     }

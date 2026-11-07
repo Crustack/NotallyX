@@ -269,7 +269,20 @@ class EditActivityTest : UiTestBase() {
                 .fetchSemanticsNodes()
                 .size >= 2
         }
-        composeTestRule.onAllNodes(hasContentDescription(remindersLabel))[1].assertIsDisplayed()
+        val reminderChip = composeTestRule.onAllNodes(hasContentDescription(remindersLabel))[1]
+        reminderChip.assertIsDisplayed()
+
+        // Click reminder chip and verify it brings user to RemindersActivity (reminders list view)
+        reminderChip.performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(context.getString(R.string.add_reminder)))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.add_reminder))
+            .assertIsDisplayed()
 
         scenario.close()
     }

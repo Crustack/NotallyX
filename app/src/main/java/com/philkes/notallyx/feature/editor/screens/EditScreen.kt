@@ -55,6 +55,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -77,6 +78,7 @@ import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.core.ui.components.ImageCountChip
 import com.philkes.notallyx.core.ui.components.LabelChip
 import com.philkes.notallyx.core.ui.components.ReminderChip
+import com.philkes.notallyx.core.ui.extensions.extractColor
 import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.Audio
@@ -85,7 +87,10 @@ import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Reminder
+import com.philkes.notallyx.data.model.Repetition
+import com.philkes.notallyx.data.model.RepetitionTimeUnit
 import com.philkes.notallyx.data.model.Type
+import com.philkes.notallyx.data.model.toColorString
 import com.philkes.notallyx.feature.editor.formatting.TextFormattingBar
 import com.philkes.notallyx.feature.editor.formatting.TextFormattingBarActions
 import com.philkes.notallyx.feature.editor.formatting.TextFormattingState
@@ -313,7 +318,7 @@ internal interface EditClickHandlers {
 
     fun onAudioClick(audio: Audio) {}
 
-    fun onReminderClick(reminder: Reminder) {}
+    fun onReminderClick(reminder: Reminder) = onActionClick(EditAction.REMINDERS)
 
     fun onNextSearchResult() {}
 
@@ -354,28 +359,6 @@ private fun ActionIconButton(
             tint =
                 if (enabled) LocalContentColor.current
                 else LocalContentColor.current.copy(alpha = 0.38f),
-        )
-    }
-}
-
-@Composable
-private fun FileAttachmentPreviewChip(
-    fileName: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier =
-            modifier
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                .clickable(onClick = onClick)
-                .padding(horizontal = 12.dp, vertical = 6.dp)
-    ) {
-        Text(
-            text = fileName,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -669,114 +652,125 @@ internal fun EditScreen(
                     onImageClick = { clickHandlers.onImageClick(it) },
                 )
             }
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(horizontal = 12.dp),
+            ) {
+                // Title Field
+                val titleDesc = stringResource(id = R.string.title)
+                BasicTextField(
+                    value = noteState.title,
+                    onValueChange = { changeHandlers.onTitleChange(it) },
+                    modifier =
+                        Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 0.dp).semantics {
+                            contentDescription = titleDesc
+                        },
+                    textStyle =
+                        MaterialTheme.typography.headlineSmall.copy(
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    decorationBox = { innerTextField ->
+                        Box {
+                            if (noteState.title.isEmpty()) {
+                                Text(
+                                    text = stringResource(id = R.string.title),
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    color =
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                            alpha = 0.6f
+                                        ),
+                                )
+                            }
+                            innerTextField()
+                        }
+                    },
+                )
 
-            // Title Field
-            val titleDesc = stringResource(id = R.string.title)
-            BasicTextField(
-                value = noteState.title,
-                onValueChange = { changeHandlers.onTitleChange(it) },
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, top = 4.dp, bottom = 2.dp)
-                        .semantics { contentDescription = titleDesc },
-                textStyle =
-                    MaterialTheme.typography.headlineSmall.copy(
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                decorationBox = { innerTextField ->
-                    Box {
-                        if (noteState.title.isEmpty()) {
+                val prefixRes =
+                    if (preferences.notesSortBy == NotesSortBy.CREATION_DATE) R.string.creation_date
+                    else R.string.modified_date
+                val prefixText = stringResource(id = prefixRes)
+
+                val targetTimestamp =
+                    when (preferences.notesSortBy) {
+                        NotesSortBy.CREATION_DATE ->
+                            noteState.createdTimestamp ?: noteState.modifiedTimestamp
+
+                        else -> noteState.modifiedTimestamp ?: noteState.createdTimestamp
+                    }
+                val formattedDateText =
+                    if (
+                        targetTimestamp != null &&
+                            (preferences.dateFormat != DateFormat.NONE ||
+                                preferences.timeFormat != TimeFormat.NONE)
+                    ) {
+                        val formatted =
+                            Date(targetTimestamp)
+                                .format(preferences.dateFormat, preferences.timeFormat)
+                        if (formatted.isNotEmpty()) "$prefixText $formatted" else ""
+                    } else ""
+
+                if (formattedDateText.isNotEmpty() || noteState.reminders.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (formattedDateText.isNotEmpty()) {
                             Text(
-                                text = stringResource(id = R.string.title),
-                                style = MaterialTheme.typography.headlineSmall,
+                                text = formattedDateText,
+                                style = MaterialTheme.typography.bodyMedium,
                                 color =
                                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                             )
                         }
-                        innerTextField()
+
+                        if (noteState.reminders.isNotEmpty()) {
+                            Spacer(modifier = Modifier.weight(1f))
+                            ReminderChip(
+                                reminders = noteState.reminders,
+                                dateFormat = preferences.dateFormat,
+                                timeFormat = preferences.timeFormat,
+                                onClick = {
+                                    clickHandlers.onReminderClick(noteState.reminders.first())
+                                },
+                            )
+                        }
                     }
-                },
+                }
+
+                // Files Preview
+                if (noteState.files.isNotEmpty()) {
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(noteState.files, key = { it.originalName }) { fileAttachment ->
+                            FileAttachmentPreviewChip(
+                                fileName = fileAttachment.originalName,
+                                onClick = { clickHandlers.onFileClick(fileAttachment) },
+                            )
+                        }
+                    }
+                }
+
+                // Labels
+                if (noteState.labels.isNotEmpty()) {
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(noteState.labels, key = { it }) { labelName ->
+                            LabelChip(text = labelName)
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
             )
-
-            val prefixRes =
-                if (preferences.notesSortBy == NotesSortBy.CREATION_DATE) R.string.creation_date
-                else R.string.modified_date
-            val prefixText = stringResource(id = prefixRes)
-
-            val targetTimestamp =
-                when (preferences.notesSortBy) {
-                    NotesSortBy.CREATION_DATE ->
-                        noteState.createdTimestamp ?: noteState.modifiedTimestamp
-                    else -> noteState.modifiedTimestamp ?: noteState.createdTimestamp
-                }
-            val formattedDateText =
-                if (
-                    targetTimestamp != null &&
-                        (preferences.dateFormat != DateFormat.NONE ||
-                            preferences.timeFormat != TimeFormat.NONE)
-                ) {
-                    val formatted =
-                        Date(targetTimestamp).format(preferences.dateFormat, preferences.timeFormat)
-                    if (formatted.isNotEmpty()) "$prefixText $formatted" else ""
-                } else ""
-
-            if (formattedDateText.isNotEmpty() || noteState.reminders.isNotEmpty()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (formattedDateText.isNotEmpty()) {
-                        Text(
-                            text = formattedDateText,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        )
-                    }
-
-                    if (noteState.reminders.isNotEmpty()) {
-                        Spacer(modifier = Modifier.weight(1f))
-                        ReminderChip(
-                            reminders = noteState.reminders,
-                            dateFormat = preferences.dateFormat,
-                            timeFormat = preferences.timeFormat,
-                            onClick = {
-                                clickHandlers.onReminderClick(noteState.reminders.first())
-                            },
-                        )
-                    }
-                }
-            }
-
-            // Files Preview
-            if (noteState.files.isNotEmpty()) {
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(noteState.files, key = { it.originalName }) { fileAttachment ->
-                        FileAttachmentPreviewChip(
-                            fileName = fileAttachment.originalName,
-                            onClick = { clickHandlers.onFileClick(fileAttachment) },
-                        )
-                    }
-                }
-            }
-
-            // Labels
-            if (noteState.labels.isNotEmpty()) {
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(noteState.labels, key = { it }) { labelName ->
-                        LabelChip(text = labelName)
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-            HorizontalDivider(modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(4.dp))
 
             content()
@@ -1083,7 +1077,10 @@ internal fun EditListScreen(
 
             // Checklist Checked Items
             if (noteState.checkedItems.isNotEmpty()) {
-                HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
+                HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    color = MaterialTheme.colorScheme.outline,
+                )
                 LazyColumn(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -1191,7 +1188,7 @@ private fun EditNoteScreenPreview() {
                             Reminder(
                                 id = 1L,
                                 dateTime = Date(),
-                                repetition = null,
+                                repetition = Repetition(1, RepetitionTimeUnit.DAYS),
                             )
                         ),
                     pinned = true,
@@ -1204,6 +1201,12 @@ private fun EditNoteScreenPreview() {
                     timeFormat = TimeFormat.AM_PM,
                     topActions = listOf(EditAction.SEARCH, EditAction.REMINDERS, EditAction.PIN),
                     bottomAction = EditAction.TOGGLE_VIEW_MODE,
+                ),
+            backgroundColor =
+                Color(
+                    LocalContext.current.extractColor(
+                        com.philkes.notallyx.data.model.Color.CORAL.toColorString()
+                    )
                 ),
             canUndo = true,
             canRedo = false,
