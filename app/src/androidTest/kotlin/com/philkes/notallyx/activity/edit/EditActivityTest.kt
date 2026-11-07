@@ -5,6 +5,7 @@ import android.app.Activity
 import android.app.Instrumentation
 import android.content.ClipData
 import android.content.Intent
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
@@ -30,18 +31,29 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasType
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getTempAudioFile
 import com.philkes.notallyx.core.common.extensions.getUriForFile
+import com.philkes.notallyx.core.ui.extensions.extractColor
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Color
 import com.philkes.notallyx.data.model.toColorString
+import com.philkes.notallyx.feature.editor.EditActivity
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.media.audio.RecordAudioActivity
+import com.philkes.notallyx.feature.migration.ExportMimeType
+import com.philkes.notallyx.feature.reminder.PinnedNotificationManager
+import com.philkes.notallyx.navigation.NotallyNavKey
 import com.philkes.notallyx.test.UiTestBase
+import com.philkes.notallyx.test.createBaseNote
+import com.philkes.notallyx.test.navigateTo
 import com.philkes.notallyx.test.waitUntil
 import java.io.File
+import kotlinx.coroutines.runBlocking
 import org.hamcrest.Matchers.allOf
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.FixMethodOrder
 import org.junit.Rule
@@ -540,6 +552,242 @@ class EditActivityTest : UiTestBase() {
         file.outputStream().use { out ->
             out.write(header)
             out.write(ByteArray(pcmDataSize))
+        }
+    }
+
+    @Test
+    fun moreOptions() {
+        var note = createBaseNote(title = "Options Test Note", body = "Options Test Body")
+        runBlocking {
+            val id = database.getBaseNoteDao().insert(note)
+            note = note.copy(id = id)
+        }
+
+        Intents.init()
+        val exportFile = File(context.cacheDir, "export_test.txt").apply { if (exists()) delete() }
+        try {
+            val exportUri = context.getUriForFile(exportFile)
+            val exportResult =
+                Instrumentation.ActivityResult(
+                    Activity.RESULT_OK,
+                    Intent().apply { data = exportUri },
+                )
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(
+                            Intent.EXTRA_INTENT,
+                            hasAction(Intent.ACTION_CREATE_DOCUMENT),
+                        ),
+                    )
+                )
+                .respondWith(exportResult)
+
+            val shareResult = Instrumentation.ActivityResult(Activity.RESULT_OK, null)
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(
+                            Intent.EXTRA_INTENT,
+                            hasAction(Intent.ACTION_SEND),
+                        ),
+                    )
+                )
+                .respondWith(shareResult)
+
+            val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+            val moreOptionsLabel = context.getString(R.string.tap_for_more_options)
+            val saveLabel = context.getString(R.string.save)
+
+            // Open existing note
+            composeTestRule.onNodeWithText("Options Test Note").performClick()
+
+            // 1. Change Color
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.change_color)).performClick()
+            composeTestRule.onNodeWithContentDescription(BaseNote.COLOR_NEW).performClick()
+            composeTestRule.onNodeWithContentDescription(Color.CORAL.toColorString()).performClick()
+            composeTestRule.onNodeWithText(saveLabel).performClick()
+
+            var currentEditActivity: EditActivity? = null
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                val resumedActivities =
+                    ActivityLifecycleMonitorRegistry.getInstance()
+                        .getActivitiesInStage(Stage.RESUMED)
+                currentEditActivity =
+                    resumedActivities.filterIsInstance<EditActivity>().firstOrNull()
+            }
+            assertEquals(Color.CORAL.toColorString(), currentEditActivity?.notallyModel?.color)
+            assertEquals(
+                context.extractColor(Color.CORAL.toColorString()),
+                currentEditActivity?.colorInt,
+            )
+
+            // 2. Pin to status bar / Unpin from status bar
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.pin_to_status_bar))
+                .performClick()
+            waitUntil(10_000) {
+                PinnedNotificationManager.getPinnedNotifications(context).any {
+                    it?.id?.toLong() == note.id
+                }
+            }
+
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.unpin_from_status_bar))
+                .performClick()
+            waitUntil(10_000) {
+                PinnedNotificationManager.getPinnedNotifications(context).none {
+                    it?.id?.toLong() == note.id
+                }
+            }
+
+            // 3. Convert to list / Convert to text
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.convert_to_list_note))
+                .performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(context.getString(R.string.add_item)))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty() &&
+                    composeTestRule
+                        .onAllNodes(hasText("Options Test Body"))
+                        .fetchSemanticsNodes()
+                        .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("Options Test Body").assertIsDisplayed()
+
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.convert_to_text_note))
+                .performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription(context.getString(R.string.note)))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.note))
+                .assert(hasText("Options Test Body"))
+
+            // 4. Export
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.export)).performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(ExportMimeType.TXT.name))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(ExportMimeType.TXT.name).performClick()
+            intended(
+                allOf(
+                    hasAction(Intent.ACTION_CHOOSER),
+                    hasExtra(
+                        Intent.EXTRA_INTENT,
+                        hasAction(Intent.ACTION_CREATE_DOCUMENT),
+                    ),
+                )
+            )
+            waitUntil(10_000) { exportFile.exists() && exportFile.length() > 0 }
+            assertTrue(
+                "Exported TXT file should exist and contain note body",
+                exportFile.exists() && exportFile.readText().contains("Options Test Body"),
+            )
+
+            // 5. Share
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.share)).performClick()
+            intended(
+                allOf(
+                    hasAction(Intent.ACTION_CHOOSER),
+                    hasExtra(
+                        Intent.EXTRA_INTENT,
+                        hasAction(Intent.ACTION_SEND),
+                    ),
+                )
+            )
+
+            // 6. Duplicate
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.duplicate)).performClick()
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.back))
+                .performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Options Test Note"))
+                    .fetchSemanticsNodes()
+                    .size == 1 &&
+                    composeTestRule
+                        .onAllNodes(hasText("Options Test Note (Copy)"))
+                        .fetchSemanticsNodes()
+                        .size == 1
+            }
+            composeTestRule.onNodeWithText("Options Test Note").performClick()
+
+            // 7. Archive
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.archive)).performClick()
+
+            composeTestRule.navigateTo(NotallyNavKey.Archived)
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Options Test Note"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("Options Test Note").performClick()
+
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.unarchive)).performClick()
+
+            composeTestRule.navigateTo(NotallyNavKey.Notes)
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Options Test Note"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("Options Test Note").performClick()
+
+            // 8. Delete
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.delete)).performClick()
+
+            composeTestRule.navigateTo(NotallyNavKey.Deleted)
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Options Test Note"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("Options Test Note").performClick()
+
+            // 9. Delete Forever
+            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+            composeTestRule
+                .onNodeWithText(context.getString(R.string.delete_forever))
+                .performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.delete)).performClick()
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Options Test Note"))
+                    .fetchSemanticsNodes()
+                    .isEmpty()
+            }
+
+            scenario.close()
+        } finally {
+            exportFile.delete()
+            Intents.release()
         }
     }
 }
