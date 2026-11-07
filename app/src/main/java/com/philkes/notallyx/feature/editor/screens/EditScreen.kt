@@ -52,9 +52,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.extensions.findAllOccurrences
 import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.preference.NotesSortBy
@@ -110,6 +116,134 @@ data class EditNotePreferences(
     val bottomAction: EditAction = EditAction.TOGGLE_VIEW_MODE,
 )
 
+data class SearchState(
+    val isActive: Boolean = false,
+    val query: String = "",
+    val resultsCount: Int = 0,
+    val resultPos: Int = 0,
+)
+
+class SearchHighlightVisualTransformation(
+    private val query: String,
+    private val selectedIndex: Int,
+    private val highlightColor: Color = Color(0xFFFFF59D),
+    private val selectedHighlightColor: Color = Color(0xFFFFC107),
+) : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        if (query.isEmpty()) return TransformedText(text, OffsetMapping.Identity)
+
+        val rawText = text.text
+        val occurrences = rawText.findAllOccurrences(query)
+        if (occurrences.isEmpty()) return TransformedText(text, OffsetMapping.Identity)
+
+        val builder = AnnotatedString.Builder(text)
+        occurrences.forEachIndexed { index, (start, end) ->
+            val color = if (index == selectedIndex) selectedHighlightColor else highlightColor
+            builder.addStyle(
+                style = SpanStyle(background = color),
+                start = start,
+                end = end,
+            )
+        }
+        return TransformedText(builder.toAnnotatedString(), OffsetMapping.Identity)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SearchTopAppBar(
+    searchState: SearchState,
+    onQueryChange: (String) -> Unit,
+    onNextResult: () -> Unit,
+    onPrevResult: () -> Unit,
+    onCloseSearch: () -> Unit,
+    backgroundColor: Color,
+) {
+    TopAppBar(
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val searchHint = stringResource(id = R.string.search)
+                BasicTextField(
+                    value = searchState.query,
+                    onValueChange = onQueryChange,
+                    modifier = Modifier.weight(1f).semantics { contentDescription = searchHint },
+                    textStyle =
+                        MaterialTheme.typography.bodyLarge.copy(
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
+                    singleLine = true,
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    decorationBox = { innerTextField ->
+                        Box {
+                            if (searchState.query.isEmpty()) {
+                                Text(
+                                    text = searchHint,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color =
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                            alpha = 0.6f
+                                        ),
+                                )
+                            }
+                            innerTextField()
+                        }
+                    },
+                )
+
+                val countText =
+                    if (searchState.query.isNotEmpty()) {
+                        if (searchState.resultsCount > 0) {
+                            "${searchState.resultPos + 1}/${searchState.resultsCount}"
+                        } else {
+                            "0/0"
+                        }
+                    } else {
+                        "0/0"
+                    }
+
+                Text(
+                    text = countText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                )
+
+                IconButton(
+                    onClick = onPrevResult,
+                    enabled = searchState.resultsCount > 0,
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.arrow_upward),
+                        contentDescription = stringResource(id = R.string.previous),
+                    )
+                }
+
+                IconButton(
+                    onClick = onNextResult,
+                    enabled = searchState.resultsCount > 0,
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.arrow_downward),
+                        contentDescription = stringResource(id = R.string.next),
+                    )
+                }
+            }
+        },
+        navigationIcon = {
+            IconButton(onClick = onCloseSearch) {
+                Icon(
+                    painter = painterResource(id = R.drawable.arrow_back),
+                    contentDescription = stringResource(id = R.string.back),
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor),
+    )
+}
+
 internal interface EditChangeHandlers {
     fun onTitleChange(title: String) {}
 
@@ -126,6 +260,8 @@ internal interface EditChangeHandlers {
     fun onItemSwipeLeft(item: ListItem) {}
 
     fun onItemMove(fromIndex: Int, toIndex: Int, originalItem: ListItem? = null) {}
+
+    fun onSearchQueryChange(query: String) {}
 }
 
 internal typealias EditNoteChangeHandlers = EditChangeHandlers
@@ -168,6 +304,12 @@ internal interface EditClickHandlers {
     fun onAudioClick(audio: Audio) {}
 
     fun onReminderClick(reminder: Reminder) {}
+
+    fun onNextSearchResult() {}
+
+    fun onPrevSearchResult() {}
+
+    fun onCloseSearch() {}
 }
 
 internal typealias EditNoteClickHandlers = EditClickHandlers
@@ -313,6 +455,7 @@ internal fun EditScreen(
     noteState: EditNoteState,
     modifier: Modifier = Modifier,
     preferences: EditNotePreferences = EditNotePreferences(),
+    searchState: SearchState = SearchState(),
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     canUndo: Boolean = false,
     canRedo: Boolean = false,
@@ -327,36 +470,47 @@ internal fun EditScreen(
         modifier = modifier.fillMaxSize(),
         containerColor = backgroundColor,
         topBar = {
-            TopAppBar(
-                title = {},
-                navigationIcon = {
-                    IconButton(onClick = { clickHandlers.onBackClick() }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.arrow_back),
-                            contentDescription = stringResource(id = R.string.back),
-                        )
-                    }
-                },
-                actions = {
-                    preferences.topActions.forEach { action ->
-                        val (titleResId, iconResId) =
-                            action.getTitleAndIcon(
-                                noteState.pinned,
-                                noteState.viewMode,
-                                noteState.folder,
-                                noteState.type,
-                                noteState.isPinnedToStatus,
+            if (searchState.isActive) {
+                SearchTopAppBar(
+                    searchState = searchState,
+                    onQueryChange = { changeHandlers.onSearchQueryChange(it) },
+                    onNextResult = { clickHandlers.onNextSearchResult() },
+                    onPrevResult = { clickHandlers.onPrevSearchResult() },
+                    onCloseSearch = { clickHandlers.onCloseSearch() },
+                    backgroundColor = backgroundColor,
+                )
+            } else {
+                TopAppBar(
+                    title = {},
+                    navigationIcon = {
+                        IconButton(onClick = { clickHandlers.onBackClick() }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.arrow_back),
+                                contentDescription = stringResource(id = R.string.back),
                             )
-                        ActionIconButton(
-                            iconResId = iconResId,
-                            contentDescription = stringResource(id = titleResId),
-                            onClick = { clickHandlers.onActionClick(action) },
-                            onLongClick = { clickHandlers.onActionLongClick(action) },
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor),
-            )
+                        }
+                    },
+                    actions = {
+                        preferences.topActions.forEach { action ->
+                            val (titleResId, iconResId) =
+                                action.getTitleAndIcon(
+                                    noteState.pinned,
+                                    noteState.viewMode,
+                                    noteState.folder,
+                                    noteState.type,
+                                    noteState.isPinnedToStatus,
+                                )
+                            ActionIconButton(
+                                iconResId = iconResId,
+                                contentDescription = stringResource(id = titleResId),
+                                onClick = { clickHandlers.onActionClick(action) },
+                                onLongClick = { clickHandlers.onActionLongClick(action) },
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor),
+                )
+            }
         },
         bottomBar = {
             if (isFormattingMenuVisible) {
@@ -583,6 +737,7 @@ internal fun EditNoteScreen(
     noteState: EditNoteState,
     modifier: Modifier = Modifier,
     preferences: EditNotePreferences = EditNotePreferences(),
+    searchState: SearchState = SearchState(),
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     canUndo: Boolean = false,
     canRedo: Boolean = false,
@@ -603,6 +758,7 @@ internal fun EditNoteScreen(
         noteState = noteState,
         modifier = modifier,
         preferences = preferences,
+        searchState = searchState,
         backgroundColor = backgroundColor,
         canUndo = canUndo,
         canRedo = canRedo,
@@ -613,9 +769,22 @@ internal fun EditNoteScreen(
         bottomLeftActions = bottomLeftActions,
         content = {
             val bodyDesc = stringResource(id = R.string.note)
+            val visualTransformation =
+                remember(searchState.isActive, searchState.query, searchState.resultPos) {
+                    if (searchState.isActive && searchState.query.isNotEmpty()) {
+                        SearchHighlightVisualTransformation(
+                            query = searchState.query,
+                            selectedIndex = searchState.resultPos,
+                        )
+                    } else {
+                        VisualTransformation.None
+                    }
+                }
+
             BasicTextField(
                 value = noteState.bodyText,
                 onValueChange = { changeHandlers.onBodyTextChange(it) },
+                visualTransformation = visualTransformation,
                 modifier =
                     Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp).semantics {
                         contentDescription = bodyDesc
@@ -648,6 +817,7 @@ internal fun EditListScreen(
     noteState: EditNoteState,
     modifier: Modifier = Modifier,
     preferences: EditNotePreferences = EditNotePreferences(),
+    searchState: SearchState = SearchState(),
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     canUndo: Boolean = false,
     canRedo: Boolean = false,
@@ -706,6 +876,7 @@ internal fun EditListScreen(
         noteState = noteState.copy(type = Type.LIST),
         modifier = modifier,
         preferences = preferences,
+        searchState = searchState,
         backgroundColor = backgroundColor,
         canUndo = canUndo,
         canRedo = canRedo,

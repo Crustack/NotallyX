@@ -92,6 +92,7 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
     override fun RenderScreen() {
         val canUndoState = changeHistory.canUndo.collectAsStateWithLifecycle(false)
         val canRedoState = changeHistory.canRedo.collectAsStateWithLifecycle(false)
+        val searchState = this.searchState
 
         val noteState =
             EditNoteState(
@@ -103,6 +104,7 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
 
         EditNoteScreen(
             noteState = noteState,
+            searchState = searchState,
             backgroundColor = Color(colorIntState.intValue),
             canUndo = canUndoState.value,
             canRedo = canRedoState.value,
@@ -116,6 +118,13 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
                     override fun onBodyTextChange(bodyText: String) {
                         bodyTextState.value = bodyText
                         notallyModel.body.replace(0, notallyModel.body.length, bodyText)
+                        if (isSearchActiveState.value) {
+                            updateSearchResults(searchQueryState.value)
+                        }
+                    }
+
+                    override fun onSearchQueryChange(query: String) {
+                        this@EditTextPlainActivity.onSearchQueryChange(query)
                     }
                 },
             clickHandlers =
@@ -134,6 +143,18 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
 
                     override fun onRedoClick() {
                         changeHistory.redo()
+                    }
+
+                    override fun onNextSearchResult() {
+                        this@EditTextPlainActivity.onNextSearchResult()
+                    }
+
+                    override fun onPrevSearchResult() {
+                        this@EditTextPlainActivity.onPrevSearchResult()
+                    }
+
+                    override fun onCloseSearch() {
+                        this@EditTextPlainActivity.endSearch()
                     }
                 },
             bottomLeftActions = {

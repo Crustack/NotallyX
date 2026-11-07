@@ -790,4 +790,73 @@ class EditActivityTest : UiTestBase() {
             Intents.release()
         }
     }
+
+    @Test
+    fun search() {
+        val noteTitle = "Search Test Note"
+        val noteBody =
+            "The quick brown fox jumps over the lazy dog. Fox is fast. Another fox is near."
+        val note = createBaseNote(title = noteTitle, body = noteBody)
+        runBlocking { database.getBaseNoteDao().insert(note) }
+
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        val searchLabel = context.getString(R.string.search)
+        val nextLabel = context.getString(R.string.next)
+        val prevLabel = context.getString(R.string.previous)
+        val backLabel = context.getString(R.string.back)
+
+        // Wait for MainActivity to display the note
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+        // Open existing note
+        composeTestRule.onNodeWithText(noteTitle).performClick()
+
+        // Wait for EditActivity to load
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasContentDescription(searchLabel))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        // Click search action in top bar
+        composeTestRule.onNodeWithContentDescription(searchLabel).performClick()
+
+        // Enter search query into search bar
+        composeTestRule.onNodeWithContentDescription(searchLabel).performTextInput("fox")
+
+        // Check occurrence indicator displays "1/3"
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("1/3")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("1/3").assertIsDisplayed()
+
+        // Jump to next occurrence -> "2/3"
+        composeTestRule.onNodeWithContentDescription(nextLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("2/3")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("2/3").assertIsDisplayed()
+
+        // Jump to next occurrence -> "3/3"
+        composeTestRule.onNodeWithContentDescription(nextLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("3/3")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("3/3").assertIsDisplayed()
+
+        // Jump to previous occurrence -> "2/3"
+        composeTestRule.onNodeWithContentDescription(prevLabel).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodes(hasText("2/3")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("2/3").assertIsDisplayed()
+
+        // Close search mode
+        composeTestRule.onNodeWithContentDescription(backLabel).performClick()
+
+        scenario.close()
+    }
 }
