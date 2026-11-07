@@ -16,6 +16,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -30,6 +31,7 @@ import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.core.preference.displaySmallerSize
 import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
+import com.philkes.notallyx.core.ui.theme.contentColorFor
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Repetition
@@ -45,6 +47,7 @@ internal fun ReminderChip(
     timeFormat: TimeFormat,
     modifier: Modifier = Modifier,
     textSize: Float = 16f,
+    backgroundColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     onClick: (() -> Unit)? = null,
 ) {
     if (reminders.isEmpty()) return
@@ -63,16 +66,13 @@ internal fun ReminderChip(
     val isElapsed = mostRecentNotificationDate < now
 
     val remindersLabel = stringResource(id = R.string.reminders)
-
+    val surfaceColor = contentColorFor(backgroundColor)
     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
         Surface(
             onClick = onClick ?: {},
             enabled = onClick != null,
             shape = CircleShape,
-            color =
-                MaterialTheme.colorScheme.surfaceVariant.copy(
-                    alpha = if (isElapsed) 0.5f else 1.0f
-                ),
+            color = surfaceColor.copy(alpha = 0.1f),
             modifier = modifier.semantics { contentDescription = remindersLabel },
         ) {
             Row(
@@ -82,10 +82,6 @@ internal fun ReminderChip(
                 Icon(
                     painter = painterResource(id = R.drawable.notifications),
                     contentDescription = null,
-                    tint =
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                            alpha = if (isElapsed) 0.5f else 1.0f
-                        ),
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(modifier = Modifier.width(6.dp))
@@ -96,20 +92,12 @@ internal fun ReminderChip(
                     style = MaterialTheme.typography.labelSmall,
                     textDecoration =
                         if (isElapsed) TextDecoration.LineThrough else TextDecoration.None,
-                    color =
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                            alpha = if (isElapsed) 0.5f else 1.0f
-                        ),
                 )
                 if (hasRepetition) {
                     Spacer(modifier = Modifier.width(6.dp))
                     Icon(
                         painter = painterResource(id = R.drawable.repetition),
                         contentDescription = null,
-                        tint =
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                alpha = if (isElapsed) 0.5f else 1.0f
-                            ),
                         modifier = Modifier.size(14.dp),
                     )
                 }

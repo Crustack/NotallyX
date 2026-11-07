@@ -144,6 +144,10 @@ android {
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
 }
 
+screenshotTests {
+    imageDifferenceThreshold = 0.00025f // 0.025%
+}
+
 androidComponents {
     onVariants { variant ->
         val versionName = project.findProperty("app.versionName").toString()

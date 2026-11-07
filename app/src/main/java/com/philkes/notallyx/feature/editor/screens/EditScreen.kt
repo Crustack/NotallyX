@@ -754,6 +754,7 @@ internal fun EditScreen(
                                 reminders = noteState.reminders,
                                 dateFormat = preferences.dateFormat,
                                 timeFormat = preferences.timeFormat,
+                                backgroundColor = backgroundColor,
                                 onClick = {
                                     clickHandlers.onReminderClick(noteState.reminders.first())
                                 },
@@ -1067,11 +1068,7 @@ internal fun EditListScreen(
                     val onSwipeRight = { changeHandlers.onItemSwipeRight(item) }
                     val onSwipeLeft = { changeHandlers.onItemSwipeLeft(item) }
                     val swipeModifier =
-                        if (
-                            dragDropState.draggingItemIndex == null &&
-                                onSwipeRight != null &&
-                                onSwipeLeft != null
-                        ) {
+                        if (dragDropState.draggingItemIndex == null) {
                             createSwipeModifier(onSwipeRight, onSwipeLeft)
                         } else Modifier
                     val draggingIndex = dragDropState.draggingItemIndex
@@ -1127,6 +1124,7 @@ internal fun EditListScreen(
                         onDelete = { changeHandlers.onItemDelete(item) },
                         focusRequester = if (item.id == itemToFocusId) focusRequester else null,
                         dragState = dragState,
+                        backgroundColor = backgroundColor,
                     )
                 }
             }
@@ -1180,6 +1178,7 @@ internal fun EditListScreen(
                             onEnterKey = { wrappedClickHandlers.onAddItemClick() },
                             onBackspaceOnEmpty = { changeHandlers.onItemDelete(item) },
                             onDelete = { changeHandlers.onItemDelete(item) },
+                            backgroundColor = backgroundColor,
                         )
                     }
                 }
@@ -1395,6 +1394,225 @@ private fun EditListScreenPreview() {
                 ),
             canUndo = true,
             canRedo = true,
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Preview(name = "Dark Mode", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun EditListColoredScreenPreview() {
+    NotallyXTheme {
+        EditListScreen(
+            noteState =
+                EditNoteState(
+                    title = "Weekly Grocery List",
+                    createdTimestamp = System.currentTimeMillis() - 86400000L,
+                    modifiedTimestamp = System.currentTimeMillis(),
+                    items =
+                        listOf(
+                            ListItem(
+                                id = 0,
+                                body = "Fresh Organic Apples",
+                                checked = false,
+                                isChild = false,
+                                order = 1,
+                                children = mutableListOf(),
+                            ),
+                            ListItem(
+                                id = 1,
+                                body = "Almond Milk (Unsweetened)",
+                                checked = false,
+                                isChild = false,
+                                order = 2,
+                                children = mutableListOf(),
+                            ),
+                            ListItem(
+                                id = 2,
+                                body = "Whole Grain Bread",
+                                checked = false,
+                                isChild = false,
+                                order = 3,
+                                children = mutableListOf(),
+                            ),
+                        ),
+                    checkedItems =
+                        listOf(
+                            ListItem(
+                                id = 3,
+                                body = "Greek Yogurt",
+                                checked = true,
+                                isChild = false,
+                                order = 4,
+                                children = mutableListOf(),
+                            ),
+                            ListItem(
+                                id = 4,
+                                body = "Avocados",
+                                checked = true,
+                                isChild = false,
+                                order = 5,
+                                children = mutableListOf(),
+                            ),
+                        ),
+                    images =
+                        listOf(
+                            FileAttachment(
+                                localName = "recipe.jpg",
+                                originalName = "Recipe_Idea.jpg",
+                                mimeType = "image/jpeg",
+                            )
+                        ),
+                    files =
+                        listOf(
+                            FileAttachment(
+                                localName = "coupons.pdf",
+                                originalName = "Store_Coupons.pdf",
+                                mimeType = "application/pdf",
+                            )
+                        ),
+                    audios =
+                        listOf(
+                            Audio(
+                                name = "Shopping Voice Note",
+                                duration = 18000L,
+                                timestamp = System.currentTimeMillis(),
+                            )
+                        ),
+                    labels = listOf("Shopping", "Personal"),
+                    reminders =
+                        listOf(
+                            Reminder(
+                                id = 2L,
+                                dateTime = Date(),
+                                repetition = null,
+                            )
+                        ),
+                    type = Type.LIST,
+                ),
+            preferences =
+                EditNotePreferences(
+                    notesSortBy = NotesSortBy.MODIFIED_DATE,
+                    dateFormat = DateFormat.DD_MM_YY_GER,
+                    timeFormat = TimeFormat.AM_PM,
+                    topActions = listOf(EditAction.SEARCH, EditAction.REMINDERS, EditAction.PIN),
+                    bottomAction = EditAction.TOGGLE_VIEW_MODE,
+                ),
+            canUndo = true,
+            canRedo = true,
+            backgroundColor =
+                Color(
+                    LocalContext.current.extractColor(
+                        com.philkes.notallyx.data.model.Color.CORAL.toColorString()
+                    )
+                ),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Preview(name = "Dark Mode", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun EditListDarkColoredScreenPreview() {
+    NotallyXTheme {
+        EditListScreen(
+            noteState =
+                EditNoteState(
+                    title = "Weekly Grocery List",
+                    createdTimestamp = System.currentTimeMillis() - 86400000L,
+                    modifiedTimestamp = System.currentTimeMillis(),
+                    items =
+                        listOf(
+                            ListItem(
+                                id = 0,
+                                body = "Fresh Organic Apples",
+                                checked = false,
+                                isChild = false,
+                                order = 1,
+                                children = mutableListOf(),
+                            ),
+                            ListItem(
+                                id = 1,
+                                body = "Almond Milk (Unsweetened)",
+                                checked = false,
+                                isChild = false,
+                                order = 2,
+                                children = mutableListOf(),
+                            ),
+                            ListItem(
+                                id = 2,
+                                body = "Whole Grain Bread",
+                                checked = false,
+                                isChild = false,
+                                order = 3,
+                                children = mutableListOf(),
+                            ),
+                        ),
+                    checkedItems =
+                        listOf(
+                            ListItem(
+                                id = 3,
+                                body = "Greek Yogurt",
+                                checked = true,
+                                isChild = false,
+                                order = 4,
+                                children = mutableListOf(),
+                            ),
+                            ListItem(
+                                id = 4,
+                                body = "Avocados",
+                                checked = true,
+                                isChild = false,
+                                order = 5,
+                                children = mutableListOf(),
+                            ),
+                        ),
+                    images =
+                        listOf(
+                            FileAttachment(
+                                localName = "recipe.jpg",
+                                originalName = "Recipe_Idea.jpg",
+                                mimeType = "image/jpeg",
+                            )
+                        ),
+                    files =
+                        listOf(
+                            FileAttachment(
+                                localName = "coupons.pdf",
+                                originalName = "Store_Coupons.pdf",
+                                mimeType = "application/pdf",
+                            )
+                        ),
+                    audios =
+                        listOf(
+                            Audio(
+                                name = "Shopping Voice Note",
+                                duration = 18000L,
+                                timestamp = System.currentTimeMillis(),
+                            )
+                        ),
+                    labels = listOf("Shopping", "Personal"),
+                    reminders =
+                        listOf(
+                            Reminder(
+                                id = 2L,
+                                dateTime = Date(),
+                                repetition = null,
+                            )
+                        ),
+                    type = Type.LIST,
+                ),
+            preferences =
+                EditNotePreferences(
+                    notesSortBy = NotesSortBy.MODIFIED_DATE,
+                    dateFormat = DateFormat.DD_MM_YY_GER,
+                    timeFormat = TimeFormat.AM_PM,
+                    topActions = listOf(EditAction.SEARCH, EditAction.REMINDERS, EditAction.PIN),
+                    bottomAction = EditAction.TOGGLE_VIEW_MODE,
+                ),
+            canUndo = true,
+            canRedo = true,
+            backgroundColor = Color.Black,
         )
     }
 }
