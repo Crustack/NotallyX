@@ -17,7 +17,7 @@ private const val SEARCH_HIGHLIGHT_LIMIT = 1_000
  * [AppCompatEditText] whose changes (text edits or span changes) are pushed to [changeHistory].
  * *
  */
-open class HighlightableEditText(context: Context, attrs: AttributeSet) :
+open class HighlightableEditText(context: Context, attrs: AttributeSet? = null) :
     EditTextWithWatcher(context, attrs) {
 
     fun getSpanRange(span: CharacterStyle): Pair<Int, Int> {

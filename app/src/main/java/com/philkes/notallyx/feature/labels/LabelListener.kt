@@ -1,4 +1,4 @@
-package com.philkes.notallyx.feature.labels.adapter
+package com.philkes.notallyx.feature.labels
 
 import androidx.recyclerview.widget.RecyclerView
 

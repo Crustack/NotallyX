@@ -22,8 +22,6 @@ import com.philkes.notallyx.core.ui.extensions.setCancelButton
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.feature.labels.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
-import com.philkes.notallyx.feature.labels.adapter.LabelData
-import com.philkes.notallyx.feature.labels.adapter.LabelListener
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class LabelsFragment : Fragment(), LabelListener {

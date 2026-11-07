@@ -248,7 +248,7 @@ class NoteHelperTest {
    - DAOs: Interface suffix `*Dao` (`BaseNoteDao`, `LabelDao`).
    - ViewModels: `*Model` or `*ViewModel` (`BaseNoteModel`, `NotallyModel`).
    - Activities & Fragments: `*Activity`, `*Fragment` (`EditNoteActivity`, `NotesFragment`).
-   - Adapters & ViewHolders: `*Adapter`, `*VH` (`BaseNoteAdapter`, `BaseNoteVH`).
+   - Composables: PascalCase functions (`BaseNoteCard`, `NotesGridScreen`).
    - Preferences: Wrapper properties in `NotallyXPreferences`.
 3. **Error Handling**:
    - Catch specific exceptions rather than swallowing generic `Throwable`.

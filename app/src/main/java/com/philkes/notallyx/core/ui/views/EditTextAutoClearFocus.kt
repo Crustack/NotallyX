@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.KeyEvent
 
-class EditTextAutoClearFocus(context: Context, attributeSet: AttributeSet) :
+class EditTextAutoClearFocus(context: Context, attributeSet: AttributeSet? = null) :
     HighlightableEditText(context, attributeSet) {
 
     override fun onKeyPreIme(keyCode: Int, event: KeyEvent): Boolean {

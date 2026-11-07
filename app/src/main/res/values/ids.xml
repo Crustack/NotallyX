@@ -62,4 +62,11 @@
     <item name="ImagePreviewPosition" type="id" />
     <item name="FilesPreview" type="id" />
     <item name="AudioRecyclerView" type="id" />
+    <item name="EditText" type="id" />
+    <item name="SwipeLayout" type="id" />
+    <item name="DragHandle" type="id" />
+    <item name="Delete" type="id" />
+    <item name="CheckBox" type="id" />
+    <item name="Content" type="id" />
+    <item name="IndentSpace" type="id" />
 </resources>

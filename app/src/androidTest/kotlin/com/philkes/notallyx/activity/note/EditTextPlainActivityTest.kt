@@ -1,11 +1,11 @@
 package com.philkes.notallyx.activity.note
 
-// import com.philkes.notallyx.R
 import android.app.Activity
 import android.app.Instrumentation
 import android.content.Intent
 import android.net.Uri
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.intent.Intents
@@ -15,6 +15,7 @@ import androidx.test.espresso.matcher.ViewMatchers.isEnabled
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.error.*
 import com.philkes.notallyx.core.common.extensions.*
 import com.philkes.notallyx.core.common.result.*
@@ -144,7 +145,7 @@ class EditTextPlainActivityTest : UiTestBase() {
         R.id.EnterTitle.byId().typeTextAtEnd(noteTitle)
         R.id.EnterBody.byId().typeTextAtEnd(noteBody)
 
-        androidx.test.espresso.Espresso.closeSoftKeyboard()
+        Espresso.closeSoftKeyboard()
 
         R.string.convert_to_text_note.byContentDescription().perform(click())
 

@@ -13,7 +13,7 @@ import com.philkes.notallyx.core.ui.extensions.showKeyboard
 // import com.philkes.notallyx.clone
 // import com.philkes.notallyx.showKeyboard
 
-open class EditTextWithWatcher(context: Context, attrs: AttributeSet) :
+open class EditTextWithWatcher(context: Context, attrs: AttributeSet? = null) :
     AppCompatEditText(context, attrs) {
     var textWatcher: TextWatcher? = null
     private var onSelectionChange: ((selStart: Int, selEnd: Int) -> Unit)? = null

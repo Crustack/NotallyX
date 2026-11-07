@@ -13,7 +13,6 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.findNavController
-import androidx.recyclerview.widget.SortedListAdapterCallback
 import com.google.android.material.snackbar.Snackbar
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.preference.NotesView
@@ -35,9 +34,6 @@ import com.philkes.notallyx.feature.editor.EditListActivity
 import com.philkes.notallyx.feature.editor.EditNoteActivity
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.main.NotesGridScreen
-import com.philkes.notallyx.feature.main.adapter.BaseNoteAdapter
-import com.philkes.notallyx.feature.main.adapter.BaseNoteVHPreferences
-import com.philkes.notallyx.feature.main.adapter.createCallback
 import com.philkes.notallyx.feature.reminder.RemindersActivity
 import com.philkes.notallyx.feature.reminder.RemindersFragment
 import com.philkes.notallyx.feature.search.SearchFragment
@@ -47,22 +43,19 @@ import org.koin.androidx.viewmodel.ext.android.activityViewModel
 
 abstract class NotesFragment : Fragment(), ItemListener {
 
-    protected var notesAdapter: BaseNoteAdapter? = null
+    private var currentItems: List<Item> = emptyList()
     private lateinit var openNoteActivityResultLauncher: ActivityResultLauncher<Intent>
     private var lastSelectedNotePosition = -1
 
     internal val model: NotesFragmentViewModel by activityViewModel()
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        notesAdapter = null
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setupAdapter()
         setupObserver()
         setupActivityResultLaunchers()
+        (activity as? MainActivity)?.getCurrentFragmentNotes = {
+            currentItems.filterIsInstance<BaseNote>()
+        }
     }
 
     private fun setupActivityResultLaunchers() {
@@ -178,7 +171,7 @@ abstract class NotesFragment : Fragment(), ItemListener {
 
     override fun onClick(position: Int) {
         if (position != -1) {
-            notesAdapter?.getItem(position)?.let { item ->
+            currentItems.getOrNull(position)?.let { item ->
                 if (item is BaseNote) {
                     if (model.actionMode.isEnabled()) {
                         handleNoteSelection(item.id, position, item)
@@ -199,7 +192,7 @@ abstract class NotesFragment : Fragment(), ItemListener {
             return
         }
         if (position != -1) {
-            notesAdapter?.getItem(position)?.let { item ->
+            currentItems.getOrNull(position)?.let { item ->
                 if (item is BaseNote) {
                     val intent =
                         Intent(requireContext(), RemindersActivity::class.java).apply {
@@ -214,22 +207,19 @@ abstract class NotesFragment : Fragment(), ItemListener {
     override fun onLongClick(position: Int) {
         if (position != -1) {
             if (model.actionMode.selectedNotes.isNotEmpty()) {
-                if (lastSelectedNotePosition > position) {
-                        position..lastSelectedNotePosition
-                    } else {
-                        lastSelectedNotePosition..position
-                    }
-                    .forEach { pos ->
-                        notesAdapter!!.getItem(pos)?.let { item ->
-                            if (item is BaseNote) {
-                                if (!model.actionMode.selectedNotes.contains(item.id)) {
-                                    handleNoteSelection(item.id, pos, item)
-                                }
+                val start = minOf(lastSelectedNotePosition, position)
+                val end = maxOf(lastSelectedNotePosition, position)
+                (start..end).forEach { pos ->
+                    currentItems.getOrNull(pos)?.let { item ->
+                        if (item is BaseNote) {
+                            if (!model.actionMode.selectedNotes.contains(item.id)) {
+                                handleNoteSelection(item.id, pos, item)
                             }
                         }
                     }
+                }
             } else {
-                notesAdapter?.getItem(position)?.let { item ->
+                currentItems.getOrNull(position)?.let { item ->
                     if (item is BaseNote) {
                         handleNoteSelection(item.id, position, item)
                     }
@@ -245,76 +235,11 @@ abstract class NotesFragment : Fragment(), ItemListener {
             model.actionMode.add(id, baseNote)
             lastSelectedNotePosition = position
         }
-        notesAdapter?.notifyItemChanged(position, 0)
-    }
-
-    private fun setupAdapter() {
-        notesAdapter =
-            with(model.preferences) {
-                BaseNoteAdapter(
-                    model.actionMode.selectedIds,
-                    dateFormatOverview.value,
-                    timeFormatOverview.value,
-                    notesAdapterSortCallback(),
-                    BaseNoteVHPreferences(
-                        textSizeOverview.value,
-                        maxItems.value,
-                        maxLines.value,
-                        maxTitle.value,
-                        labelTagsHiddenInOverview.value,
-                        imagesHiddenInOverview.value,
-                        notesSorting.value.sortedBy,
-                    ),
-                    model.imageRoot,
-                    this@NotesFragment,
-                )
-            }
-
-        model.actionMode.addListener = { notesAdapter?.notifyDataSetChanged() }
-        if (activity is MainActivity) {
-            (activity as MainActivity).getCurrentFragmentNotes = {
-                notesAdapter?.currentList?.filterIsInstance<BaseNote>()
-            }
-        }
-    }
-
-    protected open fun notesAdapterSortCallback():
-        (BaseNoteAdapter) -> SortedListAdapterCallback<Item> = { adapter ->
-        model.preferences.notesSorting.value.createCallback(adapter)
     }
 
     private fun setupObserver() {
-        var lastSubmittedList: List<Item>? = null
-        var currentAppliedSort = model.preferences.notesSorting.value
-
         viewLifecycleOwner.repeatOnLifecycleScope {
-            launch {
-                getFlow().collect { list ->
-                    if (list != lastSubmittedList) {
-                        lastSubmittedList = list
-                        notesAdapter?.submitList(list)
-                    }
-                }
-            }
-            launch {
-                model.preferences.notesSorting.flow.collect { notesSort ->
-                    if (notesSort != currentAppliedSort) {
-                        currentAppliedSort = notesSort
-                        notesAdapter?.setNotesSort(notesSort)
-                    }
-                }
-            }
-            launch {
-                model.actionMode.closeListener.collect { event ->
-                    event?.handle { ids ->
-                        notesAdapter?.currentList?.forEachIndexed { index, item ->
-                            if (item is BaseNote && ids.contains(item.id)) {
-                                notesAdapter?.notifyItemChanged(index, 0)
-                            }
-                        }
-                    }
-                }
-            }
+            launch { getFlow().collect { list -> currentItems = list } }
         }
     }
 

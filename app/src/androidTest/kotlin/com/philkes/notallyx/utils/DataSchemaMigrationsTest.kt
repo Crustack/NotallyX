@@ -1,6 +1,5 @@
 package com.philkes.notallyx.utils
 
-// import com.philkes.notallyx.R
 import android.app.Application
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.action.ViewActions.click
@@ -9,6 +8,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.error.*
 import com.philkes.notallyx.core.common.extensions.*
 import com.philkes.notallyx.core.common.result.*

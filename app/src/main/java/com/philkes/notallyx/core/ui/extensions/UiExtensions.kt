@@ -84,7 +84,6 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.shape.RelativeCornerSize
@@ -100,7 +99,6 @@ import com.philkes.notallyx.core.common.result.Progress
 import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.preference.TimeFormat
-import com.philkes.notallyx.core.preference.displayBodySize
 import com.philkes.notallyx.core.ui.dialog.TextInputDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.core.ui.views.StylableEditTextWithHistory
@@ -111,7 +109,6 @@ import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.extensions.findNextNotificationDate
 import com.philkes.notallyx.data.model.extensions.haveAnyRepetition
-import com.philkes.notallyx.databinding.LabelBinding
 import com.philkes.notallyx.feature.editor.EditActivityViewModel
 import com.philkes.notallyx.feature.editor.history.ChangeHistory
 import com.philkes.notallyx.feature.editor.history.changes.EditTextState
@@ -1086,42 +1083,6 @@ fun Window.setLightStatusAndNavBar(value: Boolean, view: View = decorView) {
     val windowInsetsControllerCompat = WindowInsetsControllerCompat(this, view)
     windowInsetsControllerCompat.isAppearanceLightStatusBars = value
     windowInsetsControllerCompat.isAppearanceLightNavigationBars = value
-}
-
-fun ChipGroup.bindLabels(
-    labels: List<String>,
-    textSize: Float,
-    paddingTop: Boolean,
-    color: Int? = null,
-    onClick: ((label: String) -> Unit)? = null,
-    onLongClick: ((label: String) -> Unit)? = null,
-) {
-    if (labels.isEmpty()) {
-        visibility = View.GONE
-    } else {
-        apply {
-            visibility = View.VISIBLE
-            removeAllViews()
-            updatePadding(top = if (paddingTop) 8.dp else 0)
-        }
-        val inflater = LayoutInflater.from(context)
-        val labelSize = textSize.displayBodySize
-        for (label in labels) {
-            LabelBinding.inflate(inflater, this, true).root.apply {
-                background = getOutlinedDrawable(this@bindLabels.context)
-                setTextSizeSp(labelSize)
-                text = label
-                color?.let { setControlsContrastColorForAllViews(it) }
-                onClick?.let { setOnClickListener { it(label) } }
-                onLongClick?.let {
-                    setOnLongClickListener {
-                        it(label)
-                        true
-                    }
-                }
-            }
-        }
-    }
 }
 
 private fun getOutlinedDrawable(context: Context): MaterialShapeDrawable {

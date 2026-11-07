@@ -3,20 +3,24 @@ package com.philkes.notallyx.feature.editor.listitem
 import android.graphics.Paint
 import android.view.KeyEvent
 import android.view.MotionEvent
-import android.view.View.GONE
+import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.CompoundButton.OnCheckedChangeListener
 import android.widget.EditText
-import android.widget.TextView.INVISIBLE
-import android.widget.TextView.VISIBLE
+import android.widget.ImageButton
+import android.widget.Space
 import androidx.annotation.ColorInt
+import androidx.compose.ui.platform.ComposeView
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
+import cn.leaqi.drawer.SwipeDrawer
 import cn.leaqi.drawer.SwipeDrawer.DIRECTION_LEFT
 import cn.leaqi.drawer.SwipeDrawer.STATE_CLOSE
 import cn.leaqi.drawer.SwipeDrawer.STATE_OPEN
+import com.google.android.material.checkbox.MaterialCheckBox
+import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.copyToClipBoard
 import com.philkes.notallyx.core.common.extensions.textMaxLengthFilter
 import com.philkes.notallyx.core.preference.ListItemSort
@@ -27,21 +31,67 @@ import com.philkes.notallyx.core.ui.extensions.createListTextWatcherWithHistory
 import com.philkes.notallyx.core.ui.extensions.setControlsContrastColorForAllViews
 import com.philkes.notallyx.core.ui.extensions.setOnNextAction
 import com.philkes.notallyx.core.ui.extensions.setTextSizeSp
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.core.ui.views.EditTextAutoClearFocus
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
-import com.philkes.notallyx.databinding.RecyclerListItemBinding
 import com.philkes.notallyx.feature.editor.history.changes.EditTextState
+import com.philkes.notallyx.feature.editor.screens.ChecklistItemRow
 import com.philkes.notallyx.feature.migration.imports.txt.extractListItems
 import com.philkes.notallyx.feature.migration.imports.txt.findListSyntaxRegex
 
+class ListItemBinding(
+    val root: View,
+    val SwipeLayout: SwipeDrawer,
+    val Content: ViewGroup,
+    val EditText: EditTextAutoClearFocus,
+    val CheckBox: MaterialCheckBox,
+    val DragHandle: View,
+    val Delete: ImageButton,
+    val ComposeView: ComposeView,
+)
+
 class ListItemVH(
-    val binding: RecyclerListItemBinding,
+    val composeView: ComposeView,
     val listManager: ListManager,
-    touchHelper: ItemTouchHelper,
+    private val touchHelper: ItemTouchHelper,
     textSize: Float,
     private val inCheckedList: Boolean,
-) : RecyclerView.ViewHolder(binding.root) {
+) :
+    RecyclerView.ViewHolder(
+        SwipeDrawer(composeView.context).apply {
+            id = R.id.SwipeLayout
+            layoutParams =
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                )
+            leftMode = SwipeDrawer.MODE_DRAWER
+            leftType = SwipeDrawer.TYPE_VIEW
+            val indentSpace =
+                Space(context).apply {
+                    id = R.id.IndentSpace
+                    layoutParams = ViewGroup.LayoutParams(20, ViewGroup.LayoutParams.MATCH_PARENT)
+                }
+            addView(indentSpace)
+            addView(composeView)
+        }
+    ) {
+
+    val editText = EditTextAutoClearFocus(composeView.context).apply { id = R.id.EditText }
+    private val swipeLayout = itemView as SwipeDrawer
+
+    val binding =
+        ListItemBinding(
+            root = itemView,
+            SwipeLayout = swipeLayout,
+            Content = swipeLayout,
+            EditText = editText,
+            CheckBox = MaterialCheckBox(composeView.context).apply { id = R.id.CheckBox },
+            DragHandle = View(composeView.context).apply { id = R.id.DragHandle },
+            Delete = ImageButton(composeView.context).apply { id = R.id.Delete },
+            ComposeView = composeView,
+        )
 
     private var dragHandleInitialY: Float = 0f
 
@@ -68,7 +118,7 @@ class ListItemVH(
                 MotionEvent.ACTION_DOWN -> dragHandleInitialY = event.y
                 MotionEvent.ACTION_MOVE,
                 MotionEvent.ACTION_CANCEL -> {
-                    val dY = Math.abs(dragHandleInitialY!! - event.y)
+                    val dY = Math.abs(dragHandleInitialY - event.y)
                     if (dY > binding.DragHandle.measuredHeight * 0.15f) {
                         touchHelper.startDrag(this)
                     }
@@ -77,7 +127,7 @@ class ListItemVH(
             false
         }
 
-        binding.SwipeLayout.setOnDrawerChange { view, state, progress ->
+        binding.SwipeLayout.setOnDrawerChange { _, state, _ ->
             when (state) {
                 STATE_OPEN -> listManager.changeIsChild(absoluteAdapterPosition, true)
                 STATE_CLOSE -> listManager.changeIsChild(absoluteAdapterPosition, false)
@@ -99,15 +149,57 @@ class ListItemVH(
 
         updateDeleteButton(item, position, viewMode)
 
+        val showDragHandle =
+            when {
+                viewMode != NoteViewMode.EDIT -> false
+                item.checked && autoSort.isAutoSortChecked -> false
+                else -> true
+            }
+
+        val showDelete =
+            when {
+                viewMode != NoteViewMode.EDIT -> false
+                item.checked -> true
+                else -> false
+            }
+
         updateSwipe(item.isChild, viewMode == NoteViewMode.EDIT && position != 0 && !item.checked)
-        binding.DragHandle.apply {
-            visibility =
-                when {
-                    viewMode != NoteViewMode.EDIT -> GONE
-                    item.checked && autoSort.isAutoSortChecked -> INVISIBLE
-                    else -> VISIBLE
-                }
-            contentDescription = "Drag$position"
+
+        binding.ComposeView.setContent {
+            NotallyXTheme {
+                ChecklistItemRow(
+                    editText = binding.EditText,
+                    isChecked = item.checked,
+                    onCheckedChange = { isChecked ->
+                        if (absoluteAdapterPosition != NO_POSITION) {
+                            listManager.changeChecked(
+                                absoluteAdapterPosition,
+                                isChecked,
+                                inCheckedList,
+                            )
+                        }
+                    },
+                    isChild = item.isChild,
+                    showDragHandle = showDragHandle,
+                    showDelete = showDelete,
+                    onDragTouch = { event ->
+                        when (event.actionMasked) {
+                            MotionEvent.ACTION_DOWN -> dragHandleInitialY = event.y
+                            MotionEvent.ACTION_MOVE,
+                            MotionEvent.ACTION_CANCEL -> {
+                                val dY = Math.abs(dragHandleInitialY - event.y)
+                                if (dY > 40f) {
+                                    touchHelper.startDrag(this)
+                                }
+                            }
+                        }
+                        false
+                    },
+                    onDelete = {
+                        listManager.delete(absoluteAdapterPosition, inCheckedList = inCheckedList)
+                    },
+                )
+            }
         }
 
         highlights?.let {
@@ -125,7 +217,7 @@ class ListItemVH(
     }
 
     fun focusEditText(
-        selectionStart: Int = binding.EditText.text!!.length,
+        selectionStart: Int = binding.EditText.text?.length ?: 0,
         selectionEnd: Int = selectionStart,
         inputMethodManager: InputMethodManager?,
     ) {
@@ -136,9 +228,9 @@ class ListItemVH(
         binding.Delete.apply {
             visibility =
                 when {
-                    viewMode != NoteViewMode.EDIT -> GONE
-                    item.checked -> VISIBLE
-                    else -> INVISIBLE
+                    viewMode != NoteViewMode.EDIT -> View.GONE
+                    item.checked -> View.VISIBLE
+                    else -> View.INVISIBLE
                 }
             setOnClickListener {
                 listManager.delete(absoluteAdapterPosition, inCheckedList = inCheckedList)
@@ -160,12 +252,10 @@ class ListItemVH(
             contentDescription = "EditText$position"
             if (viewMode == NoteViewMode.EDIT) {
                 setOnFocusChangeListener { _, hasFocus ->
-                    binding.Delete.visibility = if (hasFocus) VISIBLE else INVISIBLE
+                    binding.Delete.visibility = if (hasFocus) View.VISIBLE else View.INVISIBLE
                 }
-                binding.Content.descendantFocusability = ViewGroup.FOCUS_BEFORE_DESCENDANTS
             } else {
                 onFocusChangeListener = null
-                binding.Content.descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
             }
             setCanEdit(viewMode == NoteViewMode.EDIT)
             isFocusable = !item.checked
@@ -197,9 +287,6 @@ class ListItemVH(
                         keyCode == KeyEvent.KEYCODE_DEL &&
                         item.body.isEmpty()
                 ) {
-                    // TODO: when there are multiple checked items above it does not jump to the
-                    // last
-                    // unchecked item but always re-adds a new item
                     listManager.delete(
                         absoluteAdapterPosition,
                         inCheckedList = inCheckedList,
@@ -219,7 +306,11 @@ class ListItemVH(
             checkBoxListener = OnCheckedChangeListener { _, isChecked ->
                 binding.CheckBox.setOnCheckedChangeListener(null)
                 if (absoluteAdapterPosition != NO_POSITION) {
-                    listManager.changeChecked(absoluteAdapterPosition, isChecked, inCheckedList)
+                    listManager.changeChecked(
+                        absoluteAdapterPosition,
+                        isChecked,
+                        inCheckedList,
+                    )
                 }
                 binding.CheckBox.setOnCheckedChangeListener(checkBoxListener)
             }

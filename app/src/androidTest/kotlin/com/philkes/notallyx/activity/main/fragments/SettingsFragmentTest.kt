@@ -1,6 +1,5 @@
 package com.philkes.notallyx.activity.main.fragments
 
-// import com.philkes.notallyx.R
 import android.app.Activity
 import android.app.Instrumentation
 import android.content.Intent
@@ -35,7 +34,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
-import com.philkes.notallyx.activity.note.refreshStatusBarPin
+import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.error.*
 import com.philkes.notallyx.core.common.extensions.*
 import com.philkes.notallyx.core.common.result.*
@@ -47,6 +46,7 @@ import com.philkes.notallyx.core.ui.dialog.*
 import com.philkes.notallyx.core.ui.extensions.*
 import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.model.extensions.*
+import com.philkes.notallyx.feature.editor.refreshStatusBarPin
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.migration.backup.ON_SAVE_BACKUP_FILE
 import com.philkes.notallyx.feature.migration.backup.PERIODIC_BACKUP_FILE_PREFIX

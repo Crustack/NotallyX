@@ -18,7 +18,7 @@ import com.philkes.notallyx.core.ui.dialog.*
 import com.philkes.notallyx.core.ui.extensions.*
 import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.model.extensions.*
-import com.philkes.notallyx.feature.editor.history.EditTextState
+import com.philkes.notallyx.feature.editor.history.changes.EditTextState
 import com.philkes.notallyx.test.mockAndroidLog
 import kotlin.jvm.java
 import org.junit.Assert.assertEquals
