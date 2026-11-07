@@ -1,32 +1,57 @@
 package com.philkes.notallyx.feature.editor.bottomsheet
 
-import androidx.annotation.ColorInt
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.feature.editor.NoteActionHandler
 
 /** BottomSheet inside note for adding files, recording audio. */
-class AddBottomSheet(handler: NoteActionHandler, @ColorInt color: Int?) :
-    ActionBottomSheet(createActions(handler), color) {
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddBottomSheet(
+    actionHandler: NoteActionHandler,
+    modifier: Modifier = Modifier,
+    backgroundColor: Color? = null,
+    onDismissRequest: () -> Unit,
+) {
+    val actions = remember(actionHandler) { createAddActions(actionHandler) }
+    ActionModalBottomSheet(
+        actions = actions,
+        backgroundColor = backgroundColor,
+        modifier = modifier,
+        onDismissRequest = onDismissRequest,
+    )
+}
 
-    companion object {
-        const val TAG = "AddBottomSheet"
+fun createAddActions(actionHandler: NoteActionHandler): List<ActionItem> =
+    listOf(
+        ActionItem(
+            labelResId = R.string.add_images,
+            drawableResId = R.drawable.add_images,
+        ) {
+            actionHandler.addImages()
+        },
+        ActionItem(
+            labelResId = R.string.attach_file,
+            drawableResId = R.drawable.text_file,
+        ) {
+            actionHandler.attachFiles()
+        },
+        ActionItem(
+            labelResId = R.string.record_audio,
+            drawableResId = R.drawable.record_audio,
+        ) {
+            actionHandler.recordAudio()
+        },
+    )
 
-        fun createActions(actionHandler: NoteActionHandler) =
-            listOf(
-                Action(R.string.add_images, R.drawable.add_images) { _ ->
-                    actionHandler.addImages()
-                    true
-                },
-                Action(R.string.attach_file, R.drawable.text_file) { _ ->
-                    actionHandler.attachFiles()
-                    true
-                },
-            ) +
-                listOf(
-                    Action(R.string.record_audio, R.drawable.record_audio) { _ ->
-                        actionHandler.recordAudio()
-                        true
-                    }
-                )
-    }
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun AddBottomSheetPreview() {
+    NotallyXTheme { AddBottomSheet(actionHandler = object : NoteActionHandler {}) {} }
 }

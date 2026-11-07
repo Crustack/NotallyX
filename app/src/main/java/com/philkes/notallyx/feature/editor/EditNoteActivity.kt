@@ -32,7 +32,6 @@ import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.extensions.getNoteIdFromUrl
 import com.philkes.notallyx.data.model.extensions.getNoteTypeFromUrl
 import com.philkes.notallyx.data.model.extensions.isNoteUrl
-import com.philkes.notallyx.feature.editor.bottomsheet.AddNoteBottomSheet
 import com.philkes.notallyx.feature.editor.formatting.getFormattingState
 import com.philkes.notallyx.feature.editor.screens.EditChangeHandlers
 import com.philkes.notallyx.feature.editor.screens.EditClickHandlers
@@ -190,8 +189,7 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                     }
 
                     override fun onAddItemClick() {
-                        AddNoteBottomSheet(actionHandler, colorInt)
-                            .show(supportFragmentManager, AddNoteBottomSheet.TAG)
+                        notallyModel.activeBottomSheet.value = EditorBottomSheetState.AddNote
                     }
 
                     override fun onMoreOptionsClick() {

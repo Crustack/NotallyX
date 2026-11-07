@@ -20,6 +20,7 @@ import com.philkes.notallyx.core.common.result.FileError
 import com.philkes.notallyx.core.common.result.Progress
 import com.philkes.notallyx.core.database.DatabaseNotConnectedException
 import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.preference.TextSizeSp
 import com.philkes.notallyx.core.ui.extensions.showToast
@@ -36,7 +37,9 @@ import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.deepCopy
 import com.philkes.notallyx.data.model.extensions.attachmentsDifferFrom
+import com.philkes.notallyx.feature.editor.bottomsheet.ActionItem
 import com.philkes.notallyx.feature.editor.listitem.init
+import com.philkes.notallyx.feature.migration.ExportMimeType
 import com.philkes.notallyx.feature.migration.backup.checkBackupOnSave
 import com.philkes.notallyx.feature.migration.backup.importAudio
 import com.philkes.notallyx.feature.migration.backup.importFile
@@ -106,6 +109,38 @@ sealed interface EditorDialogState {
     ) : EditorDialogState
 }
 
+sealed interface EditorBottomSheetState {
+    data class MoreNote(
+        val topActions: Collection<EditAction>,
+        val bottomAction: EditAction?,
+    ) : EditorBottomSheetState
+
+    data class MoreList(
+        val topActions: Collection<EditAction>,
+        val bottomAction: EditAction?,
+    ) : EditorBottomSheetState
+
+    data object AddNote : EditorBottomSheetState
+
+    data object Add : EditorBottomSheetState
+
+    data class Export(val onExport: (ExportMimeType) -> Unit) : EditorBottomSheetState
+
+    data class ActionSelection(
+        val actions: List<EditAction>,
+        val oldAction: EditAction,
+        val title: String? = null,
+        val onReset: (() -> Unit)? = null,
+        val onActionSelected: (EditAction) -> Unit,
+    ) : EditorBottomSheetState
+
+    data class Custom(
+        val actions: List<ActionItem>,
+        val title: String? = null,
+        val onReset: (() -> Unit)? = null,
+    ) : EditorBottomSheetState
+}
+
 /** Core ViewModel for note content editing, attachments, reminders, and auto-save logic. */
 open class NoteModel(
     protected val app: Application,
@@ -113,6 +148,7 @@ open class NoteModel(
 ) : AndroidViewModel(app) {
 
     val activeDialog = MutableStateFlow<EditorDialogState?>(null)
+    val activeBottomSheet = MutableStateFlow<EditorBottomSheetState?>(null)
 
     protected val database = NotallyDatabase.getDatabase(app)
     protected var baseNoteDao: BaseNoteDao? = null

@@ -1,81 +1,59 @@
 package com.philkes.notallyx.feature.editor.bottomsheet
 
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import androidx.annotation.ColorInt
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.ComposeView
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.philkes.notallyx.core.preference.NotallyXPreferences
+import androidx.compose.ui.tooling.preview.Preview
+import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
-/** Helper to create [BottomSheetDialogFragment] to display actions using Compose. */
-open class ActionBottomSheet(
-    private val actions: Collection<Action>,
-    @ColorInt private val color: Int? = null,
-    private val sheetTitle: String? = null,
-    private val sheetOnReset: (() -> Unit)? = null,
-) : BottomSheetDialogFragment() {
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?,
-    ): View {
-        val preferences = NotallyXPreferences.getInstance(requireActivity())
-
-        return ComposeView(requireContext()).apply {
-            setContent {
-                NotallyXTheme(theme = preferences.theme.value) {
-                    ActionBottomSheetContent(
-                        actions =
-                            actions.map { action ->
-                                ActionItem(
-                                    labelResId = action.labelResId,
-                                    drawableResId = action.drawableResId,
-                                    label = action.label,
-                                    showDividerAbove = action.showDividerAbove,
-                                    isSelected = action.isSelected,
-                                    onClick = {
-                                        if (action.callback(this@ActionBottomSheet)) {
-                                            dismiss()
-                                        }
-                                    },
-                                )
-                            },
-                        title = sheetTitle,
-                        onReset = sheetOnReset,
-                        backgroundColor = color?.let { Color(it) },
-                        onDismissRequest = { dismiss() },
-                    )
-                }
-            }
-        }
-    }
-
-    fun hide() {
-        dismiss()
-    }
-
-    override fun dismiss() {
-        if (isAdded) {
-            super.dismiss()
-        }
-    }
+/** Helper composable to display actions using Jetpack Compose [ActionModalBottomSheet]. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ActionBottomSheet(
+    actions: List<ActionItem>,
+    modifier: Modifier = Modifier,
+    title: String? = null,
+    onReset: (() -> Unit)? = null,
+    backgroundColor: Color? = null,
+    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    onDismissRequest: () -> Unit,
+) {
+    ActionModalBottomSheet(
+        actions = actions,
+        modifier = modifier,
+        title = title,
+        onReset = onReset,
+        backgroundColor = backgroundColor,
+        sheetState = sheetState,
+        onDismissRequest = onDismissRequest,
+    )
 }
 
-data class Action(
-    val labelResId: Int,
-    val drawableResId: Int? = null,
-    val label: String? = null,
-    val showDividerAbove: Boolean = false,
-    val isSelected: Boolean = false,
-    /**
-     * On click callback.
-     *
-     * @returns whether or not the BottomSheet should be hidden
-     */
-    val callback: (actionBottomSheet: ActionBottomSheet) -> Boolean,
-)
+typealias Action = ActionItem
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun ActionBottomSheetPreview() {
+    NotallyXTheme {
+        ActionBottomSheet(
+            title = "Sample Actions",
+            actions =
+                listOf(
+                    ActionItem(
+                        label = "Option 1",
+                        drawableResId = R.drawable.add,
+                    ) {},
+                    ActionItem(
+                        label = "Option 2",
+                        drawableResId = R.drawable.delete,
+                        showDividerAbove = true,
+                    ) {},
+                ),
+        ) {}
+    }
+}

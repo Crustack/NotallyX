@@ -145,14 +145,12 @@ private fun ActionBottomSheetContentPreview() {
                     ActionItem(
                         label = "Option 1",
                         drawableResId = R.drawable.add,
-                        onClick = {},
-                    ),
+                    ) {},
                     ActionItem(
                         label = "Option 2",
                         drawableResId = R.drawable.delete,
                         showDividerAbove = true,
-                        onClick = {},
-                    ),
+                    ) {},
                 ),
         )
     }
@@ -166,7 +164,7 @@ fun ActionModalBottomSheet(
     title: String? = null,
     onReset: (() -> Unit)? = null,
     backgroundColor: Color? = null,
-    sheetState: SheetState = rememberModalBottomSheetState(),
+    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     onDismissRequest: () -> Unit,
 ) {
     ModalBottomSheet(
@@ -185,7 +183,7 @@ fun ActionModalBottomSheet(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun ActionModalBottomSheetPreview() {
     NotallyXTheme {
@@ -196,10 +194,8 @@ private fun ActionModalBottomSheetPreview() {
                     ActionItem(
                         label = "Option 1",
                         drawableResId = R.drawable.add,
-                        onClick = {},
-                    )
+                    ) {}
                 ),
-            onDismissRequest = {},
-        )
+        ) {}
     }
 }
