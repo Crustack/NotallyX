@@ -17,15 +17,15 @@
 </h2>
 
 <div style="display: flex; justify-content: space-between; width: 100%;">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" alt="Image 6" style="width: 32%;"/>
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" alt="Image 2" style="width: 32%;"/>
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" alt="Image 3" style="width: 32%;"/>
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/01_ManageAndOrganize.png" alt="Image 6" style="width: 32%;"/>
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/02_ManageAndOrganize.png" alt="Image 2" style="width: 32%;"/>
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/03_TaskLists.png" alt="Image 3" style="width: 32%;"/>
 </div>
 
 <div style="display: flex; justify-content: space-between; width: 100%;">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" alt="Image 4" style="width: 32%;"/>
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5.png" alt="Image 5" style="width: 32%;"/>
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/7.png" alt="Image 7" style="width: 32%;"/>
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/05_ImagesAndFiles.png" alt="Image 4" style="width: 32%;"/>
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/06_Widgets.png" alt="Image 5" style="width: 32%;"/>
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/08_DarkMode.png" alt="Image 7" style="width: 32%;"/>
 </div>
 
 

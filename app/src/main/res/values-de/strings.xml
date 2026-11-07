@@ -432,6 +432,7 @@
 
     <!-- App Store Marketing Headlines -->
     <string name="store_headline_manage_and_organize">Organisiere und verwalte alle deine Notizen</string>
+    <string name="store_headline_alternatively_also_in_a_grid">Alternativ auch im Raster</string>
     <string name="store_headline_task_lists">Behalte den Überblick über deine Aufgabenlisten</string>
     <string name="store_headline_rich_text">Formatiere deine Notizen mit Rich-Text</string>
     <string name="store_headline_images_and_files">Erweitere deine Notizen mit Bildern und Dateien</string>

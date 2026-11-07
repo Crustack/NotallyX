@@ -8,12 +8,12 @@ import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.feature.main.MainScreen
 import com.philkes.notallyx.feature.main.routes.NotesGridScreen
+import com.philkes.notallyx.misc.appstore.AppStorePreview
+import com.philkes.notallyx.misc.appstore.AppStoreSampleData
 import com.philkes.notallyx.misc.appstore.DeviceFrame
-import com.philkes.notallyx.misc.appstore.MarketingPreview
-import com.philkes.notallyx.misc.appstore.MarketingSampleData
 
 /** 1. Manage and organize all your notes */
-@MarketingPreview
+@AppStorePreview
 @PreviewTest
 @Composable
 fun `01_ManageAndOrganize`() {
@@ -27,7 +27,7 @@ fun `01_ManageAndOrganize`() {
                     showSearchOption = true,
                     content = {
                         NotesGridScreen(
-                            items = MarketingSampleData.MAIN_NOTES,
+                            items = AppStoreSampleData.MAIN_NOTES,
                             displayConfig = NoteCardDisplayConfig(maxLines = 7),
                         )
                     },
