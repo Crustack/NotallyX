@@ -19,6 +19,9 @@ import com.philkes.notallyx.feature.main.routes.deleted.DeletedAction
 import com.philkes.notallyx.feature.main.routes.deleted.DeletedDialogState
 import com.philkes.notallyx.feature.main.routes.deleted.DeletedSideEffect
 import com.philkes.notallyx.feature.main.routes.deleted.DeletedViewModel
+import com.philkes.notallyx.feature.main.routes.labels.DisplayLabelAction
+import com.philkes.notallyx.feature.main.routes.labels.DisplayLabelSideEffect
+import com.philkes.notallyx.feature.main.routes.labels.DisplayLabelViewModel
 import com.philkes.notallyx.feature.main.routes.labels.UnlabeledAction
 import com.philkes.notallyx.feature.main.routes.labels.UnlabeledSideEffect
 import com.philkes.notallyx.feature.main.routes.labels.UnlabeledViewModel
@@ -220,6 +223,31 @@ class FolderViewModelsTest {
             viewModel.onAction(UnlabeledAction.ReminderClicked(note))
             val reminderEffect = viewModel.sideEffects.first()
             assertThat(reminderEffect).isInstanceOf(UnlabeledSideEffect.OpenReminder::class.java)
+        }
+    }
+
+    @Test
+    fun displayLabelViewModel_actionsAndState() {
+        runBlocking {
+            val note = createTestNote(5L, "Label item", Folder.NOTES, listOf("Work"))
+            database.getBaseNoteDao().insert(listOf(note))
+            drainTasks()
+
+            val viewModel = DisplayLabelViewModel(application, preferences, actionMode)
+            viewModel.onAction(DisplayLabelAction.SetLabel("Work"))
+            drainTasks()
+
+            viewModel.onAction(DisplayLabelAction.NoteClicked(note, 0))
+            val clickEffect = viewModel.sideEffects.first()
+            assertThat(clickEffect).isInstanceOf(DisplayLabelSideEffect.OpenNote::class.java)
+
+            viewModel.onAction(DisplayLabelAction.NoteLongClicked(note, 0, emptyList()))
+            val longClickEffect = viewModel.sideEffects.first()
+            assertThat(longClickEffect).isInstanceOf(DisplayLabelSideEffect.SelectNote::class.java)
+
+            viewModel.onAction(DisplayLabelAction.ReminderClicked(note))
+            val reminderEffect = viewModel.sideEffects.first()
+            assertThat(reminderEffect).isInstanceOf(DisplayLabelSideEffect.OpenReminder::class.java)
         }
     }
 }

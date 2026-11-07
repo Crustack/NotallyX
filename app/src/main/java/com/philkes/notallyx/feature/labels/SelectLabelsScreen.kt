@@ -24,19 +24,13 @@ import com.philkes.notallyx.core.ui.dialog.TextInputDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.data.model.Label
 
-/** Composable replacing activity_label.xml layout. */
+/** MVI Composable replacing activity_label.xml layout. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun SelectLabelsScreen(
-    labels: List<Label>,
-    selectedLabels: List<String>,
+    state: SelectLabelsUiState,
+    onAction: (SelectLabelsAction) -> Unit,
     modifier: Modifier = Modifier,
-    dialogState: LabelDialogState? = null,
-    onLabelToggle: (String, Boolean) -> Unit = { _, _ -> },
-    onAddLabelClick: () -> Unit = {},
-    onBackClick: () -> Unit = {},
-    onDismissDialog: () -> Unit = {},
-    onConfirmAddLabel: (String) -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -44,7 +38,7 @@ internal fun SelectLabelsScreen(
             TopAppBar(
                 title = { Text(text = stringResource(R.string.select_labels)) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = { onAction(SelectLabelsAction.BackClicked) }) {
                         Icon(
                             painter = painterResource(id = R.drawable.arrow_back),
                             contentDescription = stringResource(R.string.back),
@@ -52,7 +46,7 @@ internal fun SelectLabelsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onAddLabelClick) {
+                    IconButton(onClick = { onAction(SelectLabelsAction.RequestAddLabel) }) {
                         Icon(
                             painter = painterResource(id = R.drawable.add),
                             contentDescription = stringResource(R.string.add_label),
@@ -66,7 +60,7 @@ internal fun SelectLabelsScreen(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
             contentAlignment = Alignment.Center,
         ) {
-            if (labels.isEmpty()) {
+            if (state.labels.isEmpty()) {
                 Text(
                     text = stringResource(R.string.empty_labels),
                     style = MaterialTheme.typography.bodyMedium,
@@ -74,12 +68,14 @@ internal fun SelectLabelsScreen(
                 )
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(labels, key = { it.value }) { label ->
-                        val isChecked = selectedLabels.contains(label.value)
+                    items(state.labels, key = { it.value }) { label ->
+                        val isChecked = state.selectedLabels.contains(label.value)
                         SelectableLabelRow(
                             label = label.value,
                             isChecked = isChecked,
-                            onCheckedChange = { checked -> onLabelToggle(label.value, checked) },
+                            onCheckedChange = { checked ->
+                                onAction(SelectLabelsAction.ToggleLabel(label.value, checked))
+                            },
                         )
                         HorizontalDivider()
                     }
@@ -88,17 +84,51 @@ internal fun SelectLabelsScreen(
         }
     }
 
-    if (dialogState is LabelDialogState.Add) {
+    if (state.activeDialog is LabelDialogState.Add) {
         TextInputDialog(
             title = stringResource(R.string.add_label),
-            onDismissRequest = onDismissDialog,
+            onDismissRequest = { onAction(SelectLabelsAction.DismissDialog) },
             onConfirm = { value ->
                 if (value.isNotEmpty()) {
-                    onConfirmAddLabel(value)
+                    onAction(SelectLabelsAction.ConfirmAddLabel(value))
                 }
             },
         )
     }
+}
+
+/** Backwards-compatible overload for existing preview tests. */
+@Composable
+internal fun SelectLabelsScreen(
+    labels: List<Label>,
+    selectedLabels: List<String>,
+    modifier: Modifier = Modifier,
+    dialogState: LabelDialogState? = null,
+    onLabelToggle: (String, Boolean) -> Unit = { _, _ -> },
+    onAddLabelClick: () -> Unit = {},
+    onBackClick: () -> Unit = {},
+    onDismissDialog: () -> Unit = {},
+    onConfirmAddLabel: (String) -> Unit = {},
+) {
+    SelectLabelsScreen(
+        state =
+            SelectLabelsUiState(
+                labels = labels,
+                selectedLabels = selectedLabels.toSet(),
+                activeDialog = dialogState,
+            ),
+        onAction = { action ->
+            when (action) {
+                is SelectLabelsAction.ToggleLabel -> onLabelToggle(action.label, action.isChecked)
+                is SelectLabelsAction.RequestAddLabel -> onAddLabelClick()
+                is SelectLabelsAction.DismissDialog -> onDismissDialog()
+                is SelectLabelsAction.ConfirmAddLabel -> onConfirmAddLabel(action.label)
+                is SelectLabelsAction.BackClicked -> onBackClick()
+                is SelectLabelsAction.Init -> Unit
+            }
+        },
+        modifier = modifier,
+    )
 }
 
 @Preview(showBackground = true)
@@ -106,8 +136,12 @@ internal fun SelectLabelsScreen(
 private fun SelectLabelsScreenPreview() {
     NotallyXTheme {
         SelectLabelsScreen(
-            labels = listOf(Label("Personal", 0), Label("Work", 1)),
-            selectedLabels = listOf("Work"),
+            state =
+                SelectLabelsUiState(
+                    labels = listOf(Label("Personal", 0), Label("Work", 1)),
+                    selectedLabels = setOf("Work"),
+                ),
+            onAction = {},
         )
     }
 }

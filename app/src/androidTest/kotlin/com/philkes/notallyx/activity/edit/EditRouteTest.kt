@@ -128,7 +128,6 @@ class EditRouteTest : UiTestBase() {
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("label")).fetchSemanticsNodes().isNotEmpty()
         }
-        composeTestRule.onAllNodes(hasText("label"))[0].performClick()
 
         composeTestRule.onNodeWithContentDescription(backLabel).performClick()
 
