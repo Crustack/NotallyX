@@ -201,4 +201,49 @@ class ChangeHistoryTest {
         // No redo available after pushes
         assertFalse(changeHistory.canRedo.value)
     }
+
+    @Test
+    fun `peek returns null when empty`() {
+        assertEquals(null, changeHistory.peek())
+    }
+
+    @Test
+    fun `peek returns top change on push`() {
+        val c1 = TestChange()
+        val c2 = TestChange()
+
+        changeHistory.push(c1)
+        assertEquals(c1, changeHistory.peek())
+
+        changeHistory.push(c2)
+        assertEquals(c2, changeHistory.peek())
+    }
+
+    @Test
+    fun `peek returns previous change after undo and null after undoAll`() {
+        val c1 = TestChange()
+        val c2 = TestChange()
+
+        changeHistory.push(c1)
+        changeHistory.push(c2)
+
+        changeHistory.undo()
+        assertEquals(c1, changeHistory.peek())
+
+        changeHistory.undo()
+        assertEquals(null, changeHistory.peek())
+    }
+
+    @Test
+    fun `default maxSize is 100`() {
+        val history = ChangeHistory()
+        repeat(100) { history.push(TestChange()) }
+        // At 100, lookUp(99) is the oldest (first) item
+        assertEquals(true, history.canUndo.value)
+        // Pushing 101st item evicts the 1st
+        val c101 = TestChange()
+        history.push(c101)
+        assertEquals(c101, history.peek())
+        assertThrows(ChangeHistory.ChangeHistoryException::class.java) { history.lookUp(100) }
+    }
 }

@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 class ChangeHistory(
     /** Maximum number of changes to keep in memory. Oldest entries are evicted when full. */
-    private val maxSize: Int = 1000
+    private val maxSize: Int = 500
 ) {
     private val changeStack = ArrayList<Change>()
     val stackPointer: StateFlow<Int>
@@ -74,6 +74,15 @@ class ChangeHistory(
     fun reset() {
         changeStack.clear()
         updateStackPointer(-1)
+    }
+
+    fun peek(): Change? {
+        val ptr = stackPointer.value
+        return if (ptr in 0 until changeStack.size) {
+            changeStack[ptr]
+        } else {
+            null
+        }
     }
 
     internal fun lookUp(position: Int = 0): Change {

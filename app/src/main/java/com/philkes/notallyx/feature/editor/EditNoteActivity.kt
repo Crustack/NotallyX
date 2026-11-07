@@ -32,7 +32,8 @@ import com.philkes.notallyx.data.model.extensions.getNoteIdFromUrl
 import com.philkes.notallyx.data.model.extensions.getNoteTypeFromUrl
 import com.philkes.notallyx.data.model.extensions.isNoteUrl
 import com.philkes.notallyx.feature.editor.formatting.getFormattingState
-import com.philkes.notallyx.feature.editor.history.changes.NoteBodyChange
+import com.philkes.notallyx.feature.editor.history.changes.NoteBodyDeltaChange
+import com.philkes.notallyx.feature.editor.history.computeBodyDelta
 import com.philkes.notallyx.feature.editor.screens.EditChangeHandlers
 import com.philkes.notallyx.feature.editor.screens.EditClickHandlers
 import com.philkes.notallyx.feature.editor.screens.EditNotePreferences
@@ -60,14 +61,25 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
 
     override fun selectSearchResult(resultPos: Int) {}
 
+    private fun pushBodyChange(change: NoteBodyDeltaChange) {
+        val top = changeHistory.peek()
+        if (
+            !changeHistory.canRedo.value && (top is NoteBodyDeltaChange) && top.tryMergeWith(change)
+        ) {
+            // Merged into top change
+        } else {
+            changeHistory.push(change)
+        }
+    }
+
     private fun applyBodyChange(newBody: TextFieldValue) {
         val oldBody = bodyValueState.value
         if (newBody.annotatedString != oldBody.annotatedString) {
-            changeHistory.push(
-                NoteBodyChange(
+            val delta =
+                computeBodyDelta(
+                    oldValue = oldBody,
+                    newValue = newBody,
                     notallyModel = notallyModel,
-                    oldBody = oldBody,
-                    newBody = newBody,
                     onBodyUpdated = { restored ->
                         bodyValueState.value = restored
                         if (isSearchActiveState.value) {
@@ -76,7 +88,9 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                         resetIdleTimer()
                     },
                 )
-            )
+            if (delta != null) {
+                pushBodyChange(delta)
+            }
         }
         bodyValueState.value = newBody
         notallyModel.body = newBody
@@ -190,11 +204,11 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                         }
                         val updatedValue = bodyValue.preserveStylesFrom(bodyValueState.value)
                         if (updatedValue.annotatedString != bodyValueState.value.annotatedString) {
-                            changeHistory.push(
-                                NoteBodyChange(
+                            val delta =
+                                computeBodyDelta(
+                                    oldValue = bodyValueState.value,
+                                    newValue = updatedValue,
                                     notallyModel = notallyModel,
-                                    oldBody = bodyValueState.value,
-                                    newBody = updatedValue,
                                     onBodyUpdated = { restored ->
                                         bodyValueState.value = restored
                                         if (isSearchActiveState.value) {
@@ -203,7 +217,9 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                                         resetIdleTimer()
                                     },
                                 )
-                            )
+                            if (delta != null) {
+                                pushBodyChange(delta)
+                            }
                         }
                         bodyValueState.value = updatedValue
                         notallyModel.body = updatedValue

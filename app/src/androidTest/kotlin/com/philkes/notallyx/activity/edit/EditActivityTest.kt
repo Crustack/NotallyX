@@ -415,18 +415,21 @@ class EditActivityTest : UiTestBase() {
         composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
 
         // Step 2: Perform second edit
+        Thread.sleep(1050)
         composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput("B")
         composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("AB")
         composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
         composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
 
         // Step 3: Perform third edit
+        Thread.sleep(1050)
         composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput("C")
         composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("ABC")
         composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
         composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
 
         // Step 4: Perform fourth edit
+        Thread.sleep(1050)
         composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput("D")
         composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("ABCD")
         composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
@@ -491,12 +494,44 @@ class EditActivityTest : UiTestBase() {
         composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
 
         // Perform a new modification: type "E" -> "ABCE"
+        Thread.sleep(1050)
         composeTestRule.onNodeWithContentDescription(bodyLabel).performTextInput("E")
         composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("ABCE")
 
         // Verify redo stack was cleared: Redo button must now be disabled!
         composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
         composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+
+        // --- Test: Formatting Undo and Redo ---
+        val editLabel = context.getString(R.string.edit)
+        val boldLabel = context.getString(R.string.bold)
+        val cancelLabel = context.getString(R.string.cancel)
+        val bodyNode = composeTestRule.onNodeWithContentDescription(bodyLabel)
+
+        // Open formatting bar
+        composeTestRule.onNodeWithContentDescription(editLabel).performClick()
+
+        // Select "ABCE" and format as bold
+        bodyNode.performTextInputSelection(TextRange(0, 4))
+        composeTestRule.onNodeWithContentDescription(boldLabel).performClick()
+
+        // Validate "ABCE" is bold
+        bodyNode.assertSubtextIsBold("ABCE")
+
+        // Collapse selection and close formatting bar so undo/redo buttons in bottom bar are
+        // visible
+        bodyNode.performTextInputSelection(TextRange(4, 4))
+        composeTestRule.onNodeWithContentDescription(cancelLabel).performClick()
+        composeTestRule.onNodeWithContentDescription(undoLabel).assertIsEnabled()
+
+        // Undo formatting -> "ABCE" has no formatting
+        composeTestRule.onNodeWithContentDescription(undoLabel).performClick()
+        bodyNode.assertSubtextHasNoFormatting("ABCE")
+        composeTestRule.onNodeWithContentDescription(redoLabel).assertIsEnabled()
+
+        // Redo formatting -> "ABCE" is bold again
+        composeTestRule.onNodeWithContentDescription(redoLabel).performClick()
+        bodyNode.assertSubtextIsBold("ABCE")
 
         // Leaving note and re-entering to verify persistence
         composeTestRule.onNodeWithContentDescription(backLabel).performClick()
@@ -511,9 +546,10 @@ class EditActivityTest : UiTestBase() {
                 .isNotEmpty()
         }
 
-        // Verify state is preserved: body is "ABCE", undo and redo are disabled on freshly opened
-        // note
+        // Verify state is preserved: body is "ABCE" with bold formatting preserved, undo and redo
+        // are disabled
         composeTestRule.onNodeWithContentDescription(bodyLabel).assertTextEquals("ABCE")
+        bodyNode.assertSubtextIsBold("ABCE")
         composeTestRule.onNodeWithContentDescription(undoLabel).assertIsNotEnabled()
         composeTestRule.onNodeWithContentDescription(redoLabel).assertIsNotEnabled()
 
