@@ -33,6 +33,7 @@ import com.philkes.notallyx.core.ui.extensions.repeatOnLifecycleScope
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
+import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.feature.editor.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
 import com.philkes.notallyx.feature.editor.EditListActivity
@@ -64,6 +65,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     private val currentTitleFlow = MutableStateFlow("")
 
     private var isStartViewFragment = false
+    private var lastSelectedNotePosition = -1
     private val actionModeCancelCallback =
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -93,7 +95,7 @@ class MainActivity : LockedActivity<ComposeBinding>() {
                 onStartViewChanged = { isStartView -> isStartViewFragment = isStartView },
                 onPrepareNewNoteIntent = { intent -> prepareNewNoteIntent(intent) },
                 onNoteClick = { note, pos -> handleNoteClick(note, pos) },
-                onNoteLongClick = { note, pos -> handleNoteLongClick(note, pos) },
+                onNoteLongClick = { note, pos, items -> handleNoteLongClick(note, pos, items) },
                 onReminderClick = { note -> handleReminderClick(note) },
                 onExportNotes = { mimeType -> exportSelectedNotes(mimeType) },
                 onMoveSelectedNotes = { folderTo -> moveSelectedNotes(folderTo) },
@@ -126,6 +128,13 @@ class MainActivity : LockedActivity<ComposeBinding>() {
 
         repeatOnLifecycleScope {
             launch { preferences.alwaysShowSearchBar.flow.collect { invalidateOptionsMenu() } }
+            launch {
+                notallyFragmentModel.actionMode.enabled.collect { enabled ->
+                    if (!enabled) {
+                        lastSelectedNotePosition = -1
+                    }
+                }
+            }
         }
 
         ConverterErrorReporter.errors.collectIn(this@MainActivity) { throwable ->
@@ -190,12 +199,42 @@ class MainActivity : LockedActivity<ComposeBinding>() {
         }
     }
 
-    private fun handleNoteLongClick(note: BaseNote, position: Int) {
-        if (notallyFragmentModel.actionMode.selectedNotes.isNotEmpty()) {
-            if (notallyFragmentModel.actionMode.selectedNotes.contains(note.id)) {
-                notallyFragmentModel.actionMode.remove(note.id)
+    private fun handleNoteLongClick(
+        note: BaseNote,
+        position: Int,
+        items: List<Item> = emptyList(),
+    ) {
+        val selectedNotes = notallyFragmentModel.actionMode.selectedNotes
+        if (selectedNotes.isNotEmpty()) {
+            val anchorPosition =
+                if (
+                    lastSelectedNotePosition != -1 &&
+                        items.getOrNull(lastSelectedNotePosition)?.let {
+                            it is BaseNote && selectedNotes.contains(it.id)
+                        } == true
+                ) {
+                    lastSelectedNotePosition
+                } else if (items.isNotEmpty()) {
+                    items.indexOfFirst { it is BaseNote && selectedNotes.contains(it.id) }
+                } else {
+                    -1
+                }
+
+            if (anchorPosition != -1 && items.isNotEmpty()) {
+                val start = minOf(anchorPosition, position)
+                val end = maxOf(anchorPosition, position)
+                val notesToAdd =
+                    (start..end)
+                        .mapNotNull { pos -> items.getOrNull(pos) as? BaseNote }
+                        .filter { !selectedNotes.contains(it.id) }
+                if (notesToAdd.isNotEmpty()) {
+                    notallyFragmentModel.actionMode.add(notesToAdd)
+                } else if (!selectedNotes.contains(note.id)) {
+                    notallyFragmentModel.actionMode.add(note.id, note)
+                }
+                lastSelectedNotePosition = position
             } else {
-                notallyFragmentModel.actionMode.add(note.id, note)
+                handleNoteSelection(note.id, position, note)
             }
         } else {
             handleNoteSelection(note.id, position, note)
@@ -205,8 +244,12 @@ class MainActivity : LockedActivity<ComposeBinding>() {
     private fun handleNoteSelection(id: Long, position: Int, baseNote: BaseNote) {
         if (notallyFragmentModel.actionMode.selectedNotes.contains(id)) {
             notallyFragmentModel.actionMode.remove(id)
+            if (notallyFragmentModel.actionMode.isEmpty()) {
+                lastSelectedNotePosition = -1
+            }
         } else {
             notallyFragmentModel.actionMode.add(id, baseNote)
+            lastSelectedNotePosition = position
         }
     }
 

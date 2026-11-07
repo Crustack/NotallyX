@@ -80,12 +80,23 @@ class MainActivityTest : UiTestBase() {
                             body = "Body",
                             pinned = true,
                             labels = listOf("label"),
+                            timestamp = 3000L,
+                            modifiedTimestamp = 3000L,
                         ),
                         createBaseNote(
-                            title = "List",
+                            title = "List A",
                             pinned = true,
                             items =
                                 listOf(createListItem("A"), createListItem("B", isChild = true)),
+                            timestamp = 2000L,
+                            modifiedTimestamp = 2000L,
+                        ),
+                        createBaseNote(
+                            title = "List B",
+                            pinned = true,
+                            items = listOf(createListItem("C"), createListItem("D")),
+                            timestamp = 1000L,
+                            modifiedTimestamp = 1000L,
                         ),
                     )
                 )
@@ -95,17 +106,23 @@ class MainActivityTest : UiTestBase() {
 
         // 1. longclick the first note ("Test")
         composeTestRule.onNodeWithText("Test").performTouchInput { longClick() }
-        // 2. click the 2nd note ("List") to also select it
-        composeTestRule.onNodeWithText("List").performClick()
+        // 2. longclick the 3rd note ("List B") to also select List A and List B
+        composeTestRule.onNodeWithText("List B").performTouchInput { longClick() }
 
-        // 3. Press unpin action to unpin both notes
+        // Assert all 3 notes are selected (action mode count is 3)
+        composeTestRule.onNodeWithText("3").assertIsDisplayed()
+
+        // 3. Press unpin action to unpin all notes
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.unpin))
             .performClick()
 
-        // 4. longclick first note again and click second note to select them
+        // 4. Select all notes again in reverse direction (longclick List B, then longclick Test)
+        composeTestRule.onNodeWithText("List B").performTouchInput { longClick() }
         composeTestRule.onNodeWithText("Test").performTouchInput { longClick() }
-        composeTestRule.onNodeWithText("List").performClick()
+
+        // Assert all 3 notes are selected again
+        composeTestRule.onNodeWithText("3").assertIsDisplayed()
 
         // 5. click labels action
         composeTestRule
@@ -125,7 +142,9 @@ class MainActivityTest : UiTestBase() {
         composeTestRule.waitUntil(10_000) {
             composeTestRule.onAllNodes(hasText("label")).fetchSemanticsNodes().size >= 3
         }
+        composeTestRule.onAllNodes(hasText("label"))[0].assertIsDisplayed()
         composeTestRule.onAllNodes(hasText("label"))[1].assertIsDisplayed()
+        composeTestRule.onAllNodes(hasText("label"))[2].assertIsDisplayed()
 
         scenario.close()
     }

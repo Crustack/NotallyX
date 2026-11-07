@@ -9,6 +9,7 @@ import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.preference.NotesView
 import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.data.model.BaseNote
+import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel
 import com.philkes.notallyx.feature.main.routes.notes.NotesFragmentViewModel.Companion.CURRENT_LABEL_EMPTY
 import com.philkes.notallyx.feature.reminder.RemindersScreen
@@ -19,7 +20,7 @@ import org.koin.androidx.compose.koinViewModel
 fun RemindersRoute(
     displayConfig: NoteCardDisplayConfig,
     onNoteClick: (BaseNote, Int) -> Unit,
-    onNoteLongClick: (BaseNote, Int) -> Unit,
+    onNoteLongClick: (BaseNote, Int, List<Item>) -> Unit,
     onReminderClick: (BaseNote) -> Unit,
     modifier: Modifier = Modifier,
     remindersViewModel: RemindersViewModel = koinViewModel(),
