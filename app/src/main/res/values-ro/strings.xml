@@ -176,7 +176,7 @@
     <string name="empty_list">Listă goală</string>
     <string name="empty_note">Notă goală</string>
     <string name="empty_reminders">Încă nu există memento-uri. Creezi unul\?</string>
-    <string name="enable_lock_description">Aceasta va cripta și baza de date</string>
+
     <string name="enable_lock_title">Activează blocarea prin biometrie/PIN</string>
     <string name="enabled">Activat</string>
     <string name="encrypt_database_advice">EXPERIMENTAL: În mod implicit, activarea blocării nu criptează baza de date. Opțional, puteți activa criptarea bazei de date, care poate fi utilizată împreună cu opțiunea „date în public” pentru a păstra baza de date într-un folder public, dar criptată. Rețineți că criptarea bazei de date nu este încă stabilă.</string>

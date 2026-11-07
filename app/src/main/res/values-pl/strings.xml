@@ -188,7 +188,7 @@
     <string name="empty_list">Pusta lista</string>
     <string name="empty_note">Pusta notatka</string>
     <string name="empty_reminders">Nie masz jeszcze przypomnień. Stworzyć jedno\?</string>
-    <string name="enable_lock_description">Spowoduje to również zaszyfrowanie bazy danych</string>
+
     <string name="enable_lock_title">Włącz blokadę za pomocą biometrii/PIN-u</string>
     <string name="enabled">Włączono</string>
     <string name="encrypt_database_advice">UWAGA: Domyślnie włączenie blokady nie powoduje szyfrowania bazy danych. Opcjonalnie można włączyć szyfrowanie bazy danych, co można połączyć z opcją „data in public”, aby baza danych znajdowała się w folderze publicznym, ale była zaszyfrowana. Należy pamiętać, że szyfrowanie bazy danych nie jest jeszcze w pełni stabilne.</string>

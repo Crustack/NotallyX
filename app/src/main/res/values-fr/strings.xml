@@ -176,7 +176,7 @@
     <string name="empty_list">Liste vide</string>
     <string name="empty_note">Note vide</string>
     <string name="empty_reminders">Aucun rappel réglé. En créer un \?</string>
-    <string name="enable_lock_description">La base de donnée sera aussi chiffrée</string>
+
     <string name="enable_lock_title">Activer le verrouillage biométrique/code PIN</string>
     <string name="enabled">Activé</string>
     <string name="encrypt_database_advice">EXPÉRIMENTAL : Par défaut, l\'activation du verrouillage n\'entraîne pas le chiffrement de la base de données. Vous pouvez, si vous le souhaitez, activer le chiffrement de la base de données, ce qui peut être utilisé conjointement avec l\'option « data in public » pour que la base de données se trouve dans un dossier public, tout en restant chiffrée. Sachez toutefois que le chiffrement de la base de données n\'est pas encore stable.</string>

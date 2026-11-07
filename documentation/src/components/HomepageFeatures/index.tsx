@@ -11,35 +11,35 @@ type FeatureItem = {
 const FeatureList: FeatureItem[] = [
   {
     title: 'Easy to Use',
-    image: require('@site/static/img/phoneScreenshots/1.png').default,
+    image: require('@site/static/img/phoneScreenshots/01_ManageAndOrganize.png').default,
   },
   {
     title: 'Focus on What Matters',
-    image: require('@site/static/img/phoneScreenshots/2.png').default,
+    image: require('@site/static/img/phoneScreenshots/02_TaskLists.png').default,
   },
   {
     title: 'Rich Formatting',
-    image: require('@site/static/img/phoneScreenshots/3.png').default,
+    image: require('@site/static/img/phoneScreenshots/03_RichText.png').default,
   },
   {
     title: 'Labels & Organization',
-    image: require('@site/static/img/phoneScreenshots/4.png').default,
+    image: require('@site/static/img/phoneScreenshots/04_ImagesAndFiles.png').default,
   },
   {
     title: 'Search & Filters',
-    image: require('@site/static/img/phoneScreenshots/5.png').default,
+    image: require('@site/static/img/phoneScreenshots/05_Widgets.png').default,
   },
   {
     title: 'Dark Mode & Custom Themes',
-    image: require('@site/static/img/phoneScreenshots/6.png').default,
+    image: require('@site/static/img/phoneScreenshots/06_Reminders.png').default,
   },
   {
     title: 'Security & Backup',
-    image: require('@site/static/img/phoneScreenshots/7.png').default,
+    image: require('@site/static/img/phoneScreenshots/07_DarkMode.png').default,
   },
   {
     title: 'Extensive Settings',
-    image: require('@site/static/img/phoneScreenshots/8.png').default,
+    image: require('@site/static/img/phoneScreenshots/08_FingerprintLock.png').default,
   },
 ];
 

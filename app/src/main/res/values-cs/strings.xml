@@ -190,7 +190,7 @@
     <string name="empty_list">Prázdný seznam</string>
     <string name="empty_note">Prázdná poznámka</string>
     <string name="empty_reminders">Žádné upomínky. Vytvořit novou\?</string>
-    <string name="enable_lock_description">Toto rovněž zašifruje databázi</string>
+
     <string name="enable_lock_title">Vypnout zámek pomocí biometrických údajů/PIN</string>
     <string name="enabled">Povolit</string>
     <string name="encrypt_database_advice">EXPERIMENTÁLNÍ: Ve výchozím nastavení se při zapnutí zámku databáze nešifruje. Šifrování databáze lze volitelně zapnout; tuto funkci lze kombinovat s volbou „data in public“, díky čemuž bude databáze umístěna ve veřejné složce, ale bude zašifrována. Upozorňujeme, že šifrování databáze zatím není stabilní.</string>

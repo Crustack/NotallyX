@@ -176,7 +176,7 @@
     <string name="empty_list">Boş liste</string>
     <string name="empty_note">Boş not</string>
     <string name="empty_reminders">Henüz hatırlatma yok. Bir tane oluşturmak ister misiniz\?</string>
-    <string name="enable_lock_description">Bu işlem aynı zamanda veritabanını da şifreleyecektir</string>
+
     <string name="enable_lock_title">Biyometrik/PIN yoluyla kilitlemeyi etkinleştir</string>
     <string name="enabled">Etkinleştirildi</string>
     <string name="encrypt_database_advice">DENEME AMAÇLI: Varsayılan olarak, kilidi etkinleştirmek veritabanını şifrelemez. İsteğe bağlı olarak veritabanının şifrelenmesini etkinleştirebilirsiniz; bu, veritabanını genel bir klasörde tutmak, ancak şifreli hale getirmek için \'data in public\' seçeneğiyle birlikte kullanılabilir. Veritabanı şifrelemesinin henüz kararlı bir durumda olmadığını lütfen unutmayın.</string>

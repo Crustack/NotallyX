@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="about">About</string>
     <string name="add_images">Add images</string>
     <string name="add_item">Add Item</string>
@@ -178,7 +178,7 @@
     <string name="empty_list">Empty list</string>
     <string name="empty_note">Empty note</string>
     <string name="empty_reminders">No reminders yet. Create one\?</string>
-    <string name="enable_lock_description">This will also encrypt the database</string>
+
     <string name="enable_lock_title">Enable lock via Biometric/PIN</string>
     <string name="enabled">Enabled</string>
     <string name="encrypt_database_advice">EXPERIMENTAL: By default, enabling the lock does not encrypt the database. You can optionally enable encryption of the database, which can be used in conjunction with the \'data in public\' option to have the database in a public folder, but encrypted. Be aware that database encryption is not yet stable.</string>
@@ -434,4 +434,14 @@
     <string name="yearly">Yearly</string>
     <string name="years">Years</string>
     <string name="your_notes_associated">Your notes attached to this label will not be deleted</string>
+
+    <!-- App Store Marketing Headlines -->
+    <string name="store_headline_manage_and_organize" tools:ignore="MissingTranslation">Manage and organize all your notes</string>
+    <string name="store_headline_task_lists" tools:ignore="MissingTranslation">Keep track of your task lists</string>
+    <string name="store_headline_rich_text" tools:ignore="MissingTranslation">Format your rich text notes</string>
+    <string name="store_headline_images_and_files" tools:ignore="MissingTranslation">Enhance your notes with images and files</string>
+    <string name="store_headline_widgets" tools:ignore="MissingTranslation">Display notes as widgets</string>
+    <string name="store_headline_reminders" tools:ignore="MissingTranslation">Set reminders for important notes</string>
+    <string name="store_headline_dark_mode" tools:ignore="MissingTranslation">Battery-Saving Dark Mode</string>
+    <string name="store_headline_fingerprint_lock" tools:ignore="MissingTranslation">Lock your notes via Fingerprint</string>
 </resources>

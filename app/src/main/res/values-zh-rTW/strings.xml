@@ -176,7 +176,7 @@
     <string name="empty_list">空白清單</string>
     <string name="empty_note">空白筆記</string>
     <string name="empty_reminders">還沒有提醒。新增一個\?</string>
-    <string name="enable_lock_description">這也會加密資料庫</string>
+
     <string name="enable_lock_title">啟用生物辨識/PIN</string>
     <string name="enabled">啟用</string>
     <string name="encrypt_database_advice">實驗性功能：預設情況下，啟用鎖定功能並不會對資料庫進行加密。您可以選擇性地啟用資料庫加密功能，並可與「data in public」選項搭配使用，使資料庫存放於公共資料夾中，同時保持加密狀態。請注意，資料庫加密功能目前尚未穩定。</string>
