@@ -263,7 +263,6 @@ dependencies {
     implementation(libs.prettytime)
     implementation(libs.simple.xml) { exclude(group = "xpp3", module = "xpp3") }
     implementation(libs.bundles.commonmark)
-    implementation("com.github.luben:zstd-jni:${libs.versions.zstd.get()}@aar")
 
     // Compose
     implementation(platform(libs.androidx.compose.bom))
@@ -301,7 +300,6 @@ dependencies {
     testImplementation(libs.assertj)
     testImplementation(libs.json)
     testImplementation(libs.robolectric)
-    testImplementation(libs.zstd.jni.test)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(project(":test-lib"))
 }
