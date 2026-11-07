@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">あるいは、グリッド形式でも表示可能です</string>
+    <string name="store_headline_dark_mode">バッテリー節約ダークモード</string>
+    <string name="store_headline_fingerprint_lock">指紋認証でメモをロックする</string>
+    <string name="store_headline_images_and_files">画像やファイルを使ってノートを充実させましょう</string>
+    <string name="store_headline_manage_and_organize">すべてのメモを管理・整理する</string>
+    <string name="store_headline_reminders">重要なメモにリマインダーを設定する</string>
+    <string name="store_headline_rich_text">リッチテキストのメモの書式を設定する</string>
+    <string name="store_headline_task_lists">タスクリストを管理しましょう</string>
+    <string name="store_headline_widgets">メモをウィジェットとして表示する</string>
+    <string name="store_sample_car_service_body">定期的なオイル交換、ブレーキの点検、およびタイヤのローテーション。</string>
+    <string name="store_sample_car_service_title">カーサービス</string>
+    <string name="store_sample_daily_journal_body">日付：2024年10月19日\n\n今日は充実した一日でした！以下のことをこなすことができました：\n- 月曜日のプレゼンテーションを完成させた\n- チームミーティングに出席した\n- 30分間のランニングをした\n\nこれから訪れるゆったりとした週末が楽しみです。</string>
+    <string name="store_sample_daily_journal_title">日誌</string>
+    <string name="store_sample_dinner_bucketlist_title">「ディナー」のバケットリスト</string>
+    <string name="store_sample_dinner_burrito">&#127791; ブリトー</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; フィリー・チーズステーキ</string>
+    <string name="store_sample_dinner_pierogi">&#129375; ピエロギ</string>
+    <string name="store_sample_dinner_ramen">&#127836; ラーメン</string>
+    <string name="store_sample_doctor_appointment_body">シティ・ヘルス・クリニックでのミラー医師による年次健康診断。</string>
+    <string name="store_sample_doctor_appointment_title">医師の診察予約</string>
+    <string name="store_sample_formatting_bold">これは太字のテキストです。</string>
+    <string name="store_sample_formatting_italic">これはイタリック体のテキストです。</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">そして、これは等幅フォントで表示されたコードブロックです。</string>
+    <string name="store_sample_formatting_strikethrough">これは取り消し線付きのテキストです。</string>
+    <string name="store_sample_formatting_title">書式設定</string>
+    <string name="store_sample_grocery_bread">パン</string>
+    <string name="store_sample_grocery_breakfast">朝食</string>
+    <string name="store_sample_grocery_chips">チップス</string>
+    <string name="store_sample_grocery_cleaning">掃除</string>
+    <string name="store_sample_grocery_coffee">コーヒー</string>
+    <string name="store_sample_grocery_cookies">クッキー</string>
+    <string name="store_sample_grocery_dish_soap">食器用洗剤</string>
+    <string name="store_sample_grocery_list_title">買い物リスト</string>
+    <string name="store_sample_grocery_snacks">おやつ</string>
+    <string name="store_sample_grocery_sponge">スポンジ</string>
+    <string name="store_sample_label_health">健康</string>
+    <string name="store_sample_label_todo">ToDo</string>
+    <string name="store_sample_vacation_body">この夏、行ってみたい場所をいくつか紹介します：\n- モルディブのビーチリゾート\n- スイスでの山登り\n- 東京の市内観光</string>
+    <string name="store_sample_vacation_title">休暇</string>
+</resources>

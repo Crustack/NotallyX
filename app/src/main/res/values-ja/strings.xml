@@ -176,7 +176,6 @@
     <string name="empty_list">空のリスト</string>
     <string name="empty_note">空のノート</string>
     <string name="empty_reminders">まだリマインダーはありません。作成しますか？</string>
-
     <string name="enable_lock_title">生体認証／PINによるロックを有効にする</string>
     <string name="enabled">有効</string>
     <string name="encrypt_database_advice">実験的機能：デフォルトでは、ロックを有効にしてもデータベースは暗号化されません。必要に応じてデータベースの暗号化を有効にすることができます。これは「data in public」オプションと組み合わせて使用することで、データベースをパブリックフォルダに配置しつつ暗号化することが可能です。ただし、データベースの暗号化機能はまだ安定していない点にご注意ください。</string>

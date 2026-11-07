@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">或者也可以以網格形式呈現</string>
+    <string name="store_headline_dark_mode">省電深色模式</string>
+    <string name="store_headline_fingerprint_lock">透過指紋鎖定您的筆記</string>
+    <string name="store_headline_images_and_files">透過圖片和檔案來豐富您的筆記</string>
+    <string name="store_headline_manage_and_organize">管理並整理您所有的筆記</string>
+    <string name="store_headline_reminders">為重要筆記設定提醒</string>
+    <string name="store_headline_rich_text">格式化您的富文本筆記</string>
+    <string name="store_headline_task_lists">隨時掌握您的待辦事項清單</string>
+    <string name="store_headline_widgets">將筆記以小工具形式顯示</string>
+    <string name="store_sample_car_service_body">定期更換機油、檢查煞車及輪胎換位。</string>
+    <string name="store_sample_car_service_title">汽車維修服務</string>
+    <string name="store_sample_daily_journal_body">日期：2024年10月19日\n\n今天過得相當充實！我成功完成了以下事項：\n- 完成週一的簡報\n- 參加了團隊會議\n- 跑了30分鐘\n\n期待接下來能度過一個輕鬆的週末。</string>
+    <string name="store_sample_daily_journal_title">每日日誌</string>
+    <string name="store_sample_dinner_bucketlist_title">晚餐願望清單</string>
+    <string name="store_sample_dinner_burrito">&#127791; 墨西哥捲餅</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; 費城起司牛排</string>
+    <string name="store_sample_dinner_pierogi">&#129375; 波蘭餛飩</string>
+    <string name="store_sample_dinner_ramen">&#127836; 拉麵</string>
+    <string name="store_sample_doctor_appointment_body">在市立健康診所接受米勒醫師的年度健康檢查。</string>
+    <string name="store_sample_doctor_appointment_title">看醫生</string>
+    <string name="store_sample_formatting_bold">這是一段粗體文字。</string>
+    <string name="store_sample_formatting_italic">這是斜體文字。</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">而這是一個採用等寬字體的程式碼區塊。</string>
+    <string name="store_sample_formatting_strikethrough">這是刪除線文字。</string>
+    <string name="store_sample_formatting_title">格式設定</string>
+    <string name="store_sample_grocery_bread">麵包</string>
+    <string name="store_sample_grocery_breakfast">早餐</string>
+    <string name="store_sample_grocery_chips">薯片</string>
+    <string name="store_sample_grocery_cleaning">清潔</string>
+    <string name="store_sample_grocery_coffee">咖啡</string>
+    <string name="store_sample_grocery_cookies">Cookies</string>
+    <string name="store_sample_grocery_dish_soap">洗碗精</string>
+    <string name="store_sample_grocery_list_title">購物清單</string>
+    <string name="store_sample_grocery_snacks">零食</string>
+    <string name="store_sample_grocery_sponge">海綿</string>
+    <string name="store_sample_label_health">健康</string>
+    <string name="store_sample_label_todo">待辦事項</string>
+    <string name="store_sample_vacation_body">以下是我今年夏天想去的一些地方：\n- 馬爾地夫的海灘度假村\n- 瑞士的山區健行\n- 東京市區觀光</string>
+    <string name="store_sample_vacation_title">假期</string>
+</resources>

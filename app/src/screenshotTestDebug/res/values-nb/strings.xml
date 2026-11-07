@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">Alternativt også i et rutenett</string>
+    <string name="store_headline_dark_mode">Batterisparende mørk modus</string>
+    <string name="store_headline_fingerprint_lock">Lås notatene dine med fingeravtrykk</string>
+    <string name="store_headline_images_and_files">Berik notatene dine med bilder og filer</string>
+    <string name="store_headline_manage_and_organize">Administrer og organiser alle notatene dine</string>
+    <string name="store_headline_reminders">Sett påminnelser for viktige notater</string>
+    <string name="store_headline_rich_text">Formater notatene dine i rik tekst</string>
+    <string name="store_headline_task_lists">Hold oversikt over oppgavelistene dine</string>
+    <string name="store_headline_widgets">Vis notater som widgets</string>
+    <string name="store_sample_car_service_body">Planlagt oljeskift, bremsesjekk og dekkrotasjon.</string>
+    <string name="store_sample_car_service_title">Bilverksted</string>
+    <string name="store_sample_daily_journal_body">Dato: 19. oktober 2024\n\nI dag var en produktiv dag! Jeg rakk å:\n- Få ferdig presentasjonen til mandag\n- Delta på teammøtet\n- Ta en 30-minutters løpetur\n\nGleder meg til en avslappende helg.</string>
+    <string name="store_sample_daily_journal_title">Dagbok</string>
+    <string name="store_sample_dinner_bucketlist_title">Middags-ønskeliste</string>
+    <string name="store_sample_dinner_burrito">&#127791; Burrito</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; Philly Cheesesteak</string>
+    <string name="store_sample_dinner_pierogi">&#129375; Pierogi</string>
+    <string name="store_sample_dinner_ramen">&#127836; Ramen</string>
+    <string name="store_sample_doctor_appointment_body">Årlig helsesjekk ved City Health Clinic hos dr. Miller.</string>
+    <string name="store_sample_doctor_appointment_title">Legeavtale</string>
+    <string name="store_sample_formatting_bold">Dette er fet skrift.</string>
+    <string name="store_sample_formatting_italic">Dette er kursiv tekst.</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">Og dette er en kodeblokk skrevet med monospace-skrift.</string>
+    <string name="store_sample_formatting_strikethrough">Dette er gjennomstreket tekst.</string>
+    <string name="store_sample_formatting_title">Formatering</string>
+    <string name="store_sample_grocery_bread">Brød</string>
+    <string name="store_sample_grocery_breakfast">Frokost</string>
+    <string name="store_sample_grocery_chips">Chips</string>
+    <string name="store_sample_grocery_cleaning">Rengjøring</string>
+    <string name="store_sample_grocery_coffee">Kaffe</string>
+    <string name="store_sample_grocery_cookies">Informasjonskapsler</string>
+    <string name="store_sample_grocery_dish_soap">Oppvaskmiddel</string>
+    <string name="store_sample_grocery_list_title">Handleliste</string>
+    <string name="store_sample_grocery_snacks">Snacks</string>
+    <string name="store_sample_grocery_sponge">Svamp</string>
+    <string name="store_sample_label_health">Helse</string>
+    <string name="store_sample_label_todo">Oppgaver</string>
+    <string name="store_sample_vacation_body">Her er noen steder jeg gjerne vil besøke i sommer:\n- Strandresort på Maldivene\n- Fjellturer i Sveits\n- Byrundtur i Tokyo</string>
+    <string name="store_sample_vacation_title">Ferie</string>
+</resources>

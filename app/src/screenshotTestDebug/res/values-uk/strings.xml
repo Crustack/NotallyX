@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">Або у вигляді сітки</string>
+    <string name="store_headline_dark_mode">Енергозберігаючий темний режим</string>
+    <string name="store_headline_fingerprint_lock">Захистіть свої нотатки за допомогою відбитка пальця</string>
+    <string name="store_headline_images_and_files">Доповніть свої нотатки зображеннями та файлами</string>
+    <string name="store_headline_manage_and_organize">Керуйте та упорядковуйте всі свої нотатки</string>
+    <string name="store_headline_reminders">Налаштуйте нагадування для важливих нотаток</string>
+    <string name="store_headline_rich_text">Оформлення нотаток у форматі Rich Text</string>
+    <string name="store_headline_task_lists">Слідкуйте за своїми списками завдань</string>
+    <string name="store_headline_widgets">Відображати нотатки у вигляді віджетів</string>
+    <string name="store_sample_car_service_body">Планова заміна масла, перевірка гальм та ротація шин.</string>
+    <string name="store_sample_car_service_title">Автосервіс</string>
+    <string name="store_sample_daily_journal_body">Дата: 19 жовтня 2024 року\n\nСьогодні був продуктивний день! Мені вдалося:\n- Завершити презентацію до понеділка\n- Відвідати нараду команди\n- Пробігтися 30 хвилин\n\nЗ нетерпінням чекаю на відпочинок у вихідні.</string>
+    <string name="store_sample_daily_journal_title">Щоденник</string>
+    <string name="store_sample_dinner_bucketlist_title">Список бажань щодо вечері</string>
+    <string name="store_sample_dinner_burrito">&#127791; Буріто</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; Філадельфійський чізстейк</string>
+    <string name="store_sample_dinner_pierogi">&#129375; Перогі</string>
+    <string name="store_sample_dinner_ramen">&#127836; Рамен</string>
+    <string name="store_sample_doctor_appointment_body">Щорічний огляд у міській клініці «City Health Clinic» у лікаря Міллера.</string>
+    <string name="store_sample_doctor_appointment_title">Візит до лікаря</string>
+    <string name="store_sample_formatting_bold">Це жирний текст.</string>
+    <string name="store_sample_formatting_italic">Це текст, викладений курсивом.</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">А це блок коду, набраний моноширинним шрифтом.</string>
+    <string name="store_sample_formatting_strikethrough">Це текст із перекресленням.</string>
+    <string name="store_sample_formatting_title">Форматування</string>
+    <string name="store_sample_grocery_bread">Хліб</string>
+    <string name="store_sample_grocery_breakfast">Сніданок</string>
+    <string name="store_sample_grocery_chips">Чіпси</string>
+    <string name="store_sample_grocery_cleaning">Прибирання</string>
+    <string name="store_sample_grocery_coffee">Кава</string>
+    <string name="store_sample_grocery_cookies">Файли cookie</string>
+    <string name="store_sample_grocery_dish_soap">Засіб для миття посуду</string>
+    <string name="store_sample_grocery_list_title">Список продуктів</string>
+    <string name="store_sample_grocery_snacks">Закуски</string>
+    <string name="store_sample_grocery_sponge">Губка</string>
+    <string name="store_sample_label_health">Здоров\'я</string>
+    <string name="store_sample_label_todo">Список справ</string>
+    <string name="store_sample_vacation_body">Ось кілька місць, які я хотів би відвідати цього літа:\n- Пляжний курорт на Мальдівах\n- Гірські походи у Швейцарії\n- Екскурсія по Токіо</string>
+    <string name="store_sample_vacation_title">Відпустка</string>
+</resources>

@@ -176,7 +176,6 @@
     <string name="empty_list">Tom liste</string>
     <string name="empty_note">Tom note</string>
     <string name="empty_reminders">Der er endnu ingen påmindelser. Vil du oprette en\?</string>
-
     <string name="enable_lock_title">Aktivér lås via biometri/PIN-kode</string>
     <string name="enabled">Aktiveret</string>
     <string name="encrypt_database_advice">EKSPERIMENTELT: Som standard medfører aktivering af låsen ikke, at databasen krypteres. Du kan eventuelt aktivere kryptering af databasen, hvilket kan bruges sammen med indstillingen »data in public« for at placere databasen i en offentlig mappe, men i krypteret form. Vær opmærksom på, at databasekryptering endnu ikke er stabil.</string>

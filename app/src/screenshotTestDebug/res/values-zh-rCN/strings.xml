@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">或者也可以以网格形式呈现</string>
+    <string name="store_headline_dark_mode">省电深色模式</string>
+    <string name="store_headline_fingerprint_lock">通过指纹锁定笔记</string>
+    <string name="store_headline_images_and_files">用图片和文件丰富您的笔记</string>
+    <string name="store_headline_manage_and_organize">管理和整理您所有的笔记</string>
+    <string name="store_headline_reminders">为重要笔记设置提醒</string>
+    <string name="store_headline_rich_text">设置富文本笔记的格式</string>
+    <string name="store_headline_task_lists">跟踪您的任务列表</string>
+    <string name="store_headline_widgets">将笔记显示为小工具</string>
+    <string name="store_sample_car_service_body">计划中的换油、刹车检查和轮胎换位。</string>
+    <string name="store_sample_car_service_title">汽车服务</string>
+    <string name="store_sample_daily_journal_body">日期：2024年10月19日\n\n今天过得很有成效！我完成了以下事项：\n- 完成了周一的演示文稿\n- 参加了团队会议\n- 跑了30分钟\n\n期待接下来的轻松周末。</string>
+    <string name="store_sample_daily_journal_title">每日日记</string>
+    <string name="store_sample_dinner_bucketlist_title">晚餐愿望清单</string>
+    <string name="store_sample_dinner_burrito">&#127791; 墨西哥卷饼</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; 费城芝士牛排</string>
+    <string name="store_sample_dinner_pierogi">&#129375; 波兰饺</string>
+    <string name="store_sample_dinner_ramen">&#127836; 拉面</string>
+    <string name="store_sample_doctor_appointment_body">在市健康诊所接受米勒医生的年度体检。</string>
+    <string name="store_sample_doctor_appointment_title">看医生</string>
+    <string name="store_sample_formatting_bold">这是一段加粗的文本。</string>
+    <string name="store_sample_formatting_italic">这是斜体文字。</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">这是一个使用等宽字体的代码块。</string>
+    <string name="store_sample_formatting_strikethrough">这是带删除线的文本。</string>
+    <string name="store_sample_formatting_title">格式设置</string>
+    <string name="store_sample_grocery_bread">面包</string>
+    <string name="store_sample_grocery_breakfast">早餐</string>
+    <string name="store_sample_grocery_chips">薯片</string>
+    <string name="store_sample_grocery_cleaning">清洁</string>
+    <string name="store_sample_grocery_coffee">咖啡</string>
+    <string name="store_sample_grocery_cookies">Cookies</string>
+    <string name="store_sample_grocery_dish_soap">洗碗液</string>
+    <string name="store_sample_grocery_list_title">购物清单</string>
+    <string name="store_sample_grocery_snacks">零食</string>
+    <string name="store_sample_grocery_sponge">海绵</string>
+    <string name="store_sample_label_health">健康</string>
+    <string name="store_sample_label_todo">待办事项</string>
+    <string name="store_sample_vacation_body">以下是我今年夏天想去的一些地方：\n- 马尔代夫的海滨度假村\n- 瑞士的山地徒步\n- 东京城市游</string>
+    <string name="store_sample_vacation_title">假期</string>
+</resources>

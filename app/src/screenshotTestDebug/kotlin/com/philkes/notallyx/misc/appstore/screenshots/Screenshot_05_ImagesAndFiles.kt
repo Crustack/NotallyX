@@ -40,16 +40,17 @@ fun `05_ImagesAndFiles`() {
             statusBarColor = noteColor,
             statusBarContentColor = contentColor,
             screenContent = {
+                val vacationNote = AppStoreSampleData.vacationNote()
                 EditNoteScreen(
                     noteState =
                         EditNoteState(
-                            title = AppStoreSampleData.VACATION_NOTE.title,
-                            bodyValue = TextFieldValue(AppStoreSampleData.VACATION_NOTE.body),
-                            createdTimestamp = AppStoreSampleData.VACATION_NOTE.timestamp,
-                            modifiedTimestamp = AppStoreSampleData.VACATION_NOTE.modifiedTimestamp,
-                            images = AppStoreSampleData.VACATION_NOTE.images,
-                            files = AppStoreSampleData.VACATION_NOTE.files,
-                            reminders = AppStoreSampleData.VACATION_NOTE.reminders,
+                            title = vacationNote.title,
+                            bodyValue = TextFieldValue(vacationNote.body),
+                            createdTimestamp = vacationNote.timestamp,
+                            modifiedTimestamp = vacationNote.modifiedTimestamp,
+                            images = vacationNote.images,
+                            files = vacationNote.files,
+                            reminders = vacationNote.reminders,
                             type = Type.NOTE,
                         ),
                     preferences =

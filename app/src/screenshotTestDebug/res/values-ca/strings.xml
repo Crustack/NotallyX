@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">Alternativament també en una graella</string>
+    <string name="store_headline_dark_mode">Mode fosc estalviador de bateria</string>
+    <string name="store_headline_fingerprint_lock">Bloqueja les teves notes amb empremta dactilar</string>
+    <string name="store_headline_images_and_files">Millora les teves notes amb imatges i fitxers</string>
+    <string name="store_headline_manage_and_organize">Gestiona i organitza totes les teves notes</string>
+    <string name="store_headline_reminders">Estableix recordatoris per a notes importants</string>
+    <string name="store_headline_rich_text">Formateu les vostres notes de text enriquit</string>
+    <string name="store_headline_task_lists">Fes un seguiment de les teves llistes de tasques</string>
+    <string name="store_headline_widgets">Mostra les notes com a ginyos</string>
+    <string name="store_sample_car_service_body">Canvi d\'oli programat, inspecció de frens i rotació de pneumàtics.</string>
+    <string name="store_sample_car_service_title">Servei de cotxe</string>
+    <string name="store_sample_daily_journal_body">Data: 19 d\'octubre de 2024  Avui ha estat un dia productiu! He aconseguit: - Acabar la presentació de dilluns - Assistir a la reunió de l\'equip - Anar a córrer durant 30 minuts  Tinc ganes que arribi un cap de setmana relaxant.</string>
+    <string name="store_sample_daily_journal_title">Diari diari</string>
+    <string name="store_sample_dinner_bucketlist_title">Llista de desitjos per al sopar</string>
+    <string name="store_sample_dinner_burrito">&#127791; Burrito</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; Philly Cheesesteak</string>
+    <string name="store_sample_dinner_pierogi">&#129375; Pierogi</string>
+    <string name="store_sample_dinner_ramen">&#127836; Ramen</string>
+    <string name="store_sample_doctor_appointment_body">Revisió anual a la Clínica de Salut de la Ciutat amb el Dr. Miller.</string>
+    <string name="store_sample_doctor_appointment_title">Visita al metge</string>
+    <string name="store_sample_formatting_bold">Aquest és un text en negreta.</string>
+    <string name="store_sample_formatting_italic">Aquest és text en cursiva.</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">I aquest és un bloc de codi en una font monospaciada.</string>
+    <string name="store_sample_formatting_strikethrough">Aquest és text sobre ratllat.</string>
+    <string name="store_sample_formatting_title">Format</string>
+    <string name="store_sample_grocery_bread">Pa</string>
+    <string name="store_sample_grocery_breakfast">Esmorzar</string>
+    <string name="store_sample_grocery_chips">Xips</string>
+    <string name="store_sample_grocery_cleaning">Neteja</string>
+    <string name="store_sample_grocery_coffee">Cafè</string>
+    <string name="store_sample_grocery_cookies">Galetes</string>
+    <string name="store_sample_grocery_dish_soap">Detergent per a plats</string>
+    <string name="store_sample_grocery_list_title">Llista de la compra</string>
+    <string name="store_sample_grocery_snacks">Picades</string>
+    <string name="store_sample_grocery_sponge">Esponja</string>
+    <string name="store_sample_label_health">Salut</string>
+    <string name="store_sample_label_todo">Tot</string>
+    <string name="store_sample_vacation_body">Aquí teniu alguns llocs que m\'agradaria visitar aquest estiu:\n- Resort de platja a les Maldives\n- Excursionisme de muntanya a Suïssa\n- Visita de la ciutat de Tòquio</string>
+    <string name="store_sample_vacation_title">Vacances</string>
+</resources>

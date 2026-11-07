@@ -176,7 +176,6 @@
     <string name="empty_list">Lista vazia</string>
     <string name="empty_note">Nota vazia</string>
     <string name="empty_reminders">Nenhum lembrete ainda. Criar um\?</string>
-
     <string name="enable_lock_title">Ativar bloqueio via Biometria/PIN</string>
     <string name="enabled">Ativado</string>
     <string name="encrypt_database_advice">EXPERIMENTAL: Por padrão, ativar o bloqueio não criptografa o banco de dados. Opcionalmente, você pode ativar a criptografia do banco de dados, que pode ser usada em conjunto com a opção “dados em público” para manter o banco de dados em uma pasta pública, mas criptografado. Esteja ciente de que a criptografia do banco de dados ainda não é estável.</string>

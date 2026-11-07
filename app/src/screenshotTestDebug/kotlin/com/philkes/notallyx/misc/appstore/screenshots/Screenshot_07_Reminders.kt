@@ -28,7 +28,7 @@ fun `07_Reminders`() {
                     selectedNavKey = NotallyNavKey.Reminders,
                     content = {
                         RemindersScreen(
-                            notes = AppStoreSampleData.REMINDER_NOTES,
+                            notes = AppStoreSampleData.reminderNotes(),
                             selectedNoteIds = emptySet(),
                             isGrid = false,
                             displayConfig = NoteCardDisplayConfig(),

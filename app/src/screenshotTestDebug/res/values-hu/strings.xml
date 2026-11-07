@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">Vagy akár rácsos elrendezésben is</string>
+    <string name="store_headline_dark_mode">Akkumulátorkímélő sötét mód</string>
+    <string name="store_headline_fingerprint_lock">Zárja le a jegyzeteit ujjlenyomat segítségével</string>
+    <string name="store_headline_images_and_files">Kiegészítsd a jegyzeteidet képekkel és fájlokkal</string>
+    <string name="store_headline_manage_and_organize">Az összes jegyzeted kezelése és rendszerezése</string>
+    <string name="store_headline_reminders">Emlékeztetők beállítása a fontos jegyzetekhez</string>
+    <string name="store_headline_rich_text">A formázott szöveges jegyzetek formázása</string>
+    <string name="store_headline_task_lists">Kövesse nyomon a teendőlistáit</string>
+    <string name="store_headline_widgets">A jegyzetek megjelenítése widgetként</string>
+    <string name="store_sample_car_service_body">Rendszeres olajcsere, fékvizsgálat és gumiabroncsok cseréje.</string>
+    <string name="store_sample_car_service_title">Autószerviz</string>
+    <string name="store_sample_daily_journal_body">Dátum: 2024. október 19.\n\nA mai nap nagyon eredményes volt! Sikerült:\n- Befejeznem a hétfői prezentációt\n- Részt vennem a csapatértekezleten\n- Elmennem egy 30 perces futásra\n\nAlig várom a pihentető hétvégét.</string>
+    <string name="store_sample_daily_journal_title">Napi napló</string>
+    <string name="store_sample_dinner_bucketlist_title">Vacsora-kívánságlista</string>
+    <string name="store_sample_dinner_burrito">&#127791; Burrito</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; Philly Cheesesteak</string>
+    <string name="store_sample_dinner_pierogi">&#129375; Pierogi</string>
+    <string name="store_sample_dinner_ramen">&#127836; Ramen</string>
+    <string name="store_sample_doctor_appointment_body">Éves szűrővizsgálat a City Health Clinic-ben Dr. Millerrel.</string>
+    <string name="store_sample_doctor_appointment_title">Orvosi vizsgálat</string>
+    <string name="store_sample_formatting_bold">Ez egy vastag betűs szöveg.</string>
+    <string name="store_sample_formatting_italic">Ez dőlt betűs szöveg.</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">Ez pedig egy kódblokk monospace betűtípussal.</string>
+    <string name="store_sample_formatting_strikethrough">Ez áthúzott szöveg.</string>
+    <string name="store_sample_formatting_title">Formázás</string>
+    <string name="store_sample_grocery_bread">Kenyér</string>
+    <string name="store_sample_grocery_breakfast">Reggeli</string>
+    <string name="store_sample_grocery_chips">Chips</string>
+    <string name="store_sample_grocery_cleaning">Tisztítás</string>
+    <string name="store_sample_grocery_coffee">Kávé</string>
+    <string name="store_sample_grocery_cookies">Sütik</string>
+    <string name="store_sample_grocery_dish_soap">Mosogatószer</string>
+    <string name="store_sample_grocery_list_title">Bevásárlólista</string>
+    <string name="store_sample_grocery_snacks">Rágcsálnivalók</string>
+    <string name="store_sample_grocery_sponge">Szivacs</string>
+    <string name="store_sample_label_health">Egészség</string>
+    <string name="store_sample_label_todo">Tennivalók</string>
+    <string name="store_sample_vacation_body">Íme néhány hely, ahová szeretnék elutazni ezen a nyáron:\n- Strandüdülő a Maldív-szigeteken\n- Hegyi túra Svájcban\n- Városnézés Tokióban</string>
+    <string name="store_sample_vacation_title">Nyaralás</string>
+</resources>

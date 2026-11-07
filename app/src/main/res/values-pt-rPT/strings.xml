@@ -176,7 +176,6 @@
     <string name="empty_list">Lista vazia</string>
     <string name="empty_note">Nota vazia</string>
     <string name="empty_reminders">Ainda não há lembretes. Quer criar um\?</string>
-
     <string name="enable_lock_title">Ativar o bloqueio através de dados biométricos/PIN</string>
     <string name="enabled">Ativado</string>
     <string name="encrypt_database_advice">EXPERIMENTAL: Por predefinição, ativar o bloqueio não encripta a base de dados. É possível, opcionalmente, ativar a encriptação da base de dados, que pode ser utilizada em conjunto com a opção «dados em público» para que a base de dados fique numa pasta pública, mas encriptada. Tenha em atenção que a encriptação da base de dados ainda não é estável.</string>

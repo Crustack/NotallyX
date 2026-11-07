@@ -30,7 +30,7 @@ fun `08_DarkMode`() {
                     showSearchOption = true,
                     content = {
                         NotesGridScreen(
-                            items = AppStoreSampleData.MAIN_NOTES,
+                            items = AppStoreSampleData.mainNotes(),
                             isGrid = true,
                         )
                     },

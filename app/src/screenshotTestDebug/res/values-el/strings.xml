@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">Εναλλακτικά, και σε πλέγμα</string>
+    <string name="store_headline_dark_mode">Λειτουργία σκοτεινής οθόνης για εξοικονόμηση μπαταρίας</string>
+    <string name="store_headline_fingerprint_lock">Κλειδώστε τις σημειώσεις σας μέσω δακτυλικού αποτυπώματος</string>
+    <string name="store_headline_images_and_files">Εμπλουτίστε τις σημειώσεις σας με εικόνες και αρχεία</string>
+    <string name="store_headline_manage_and_organize">Διαχειριστείτε και οργανώστε όλες τις σημειώσεις σας</string>
+    <string name="store_headline_reminders">Ορίστε υπενθυμίσεις για σημαντικές σημειώσεις</string>
+    <string name="store_headline_rich_text">Μορφοποιήστε τις σημειώσεις σας σε μορφή εμπλουτισμένου κειμένου</string>
+    <string name="store_headline_task_lists">Παρακολουθήστε τις λίστες εργασιών σας</string>
+    <string name="store_headline_widgets">Εμφάνιση σημειώσεων ως widget</string>
+    <string name="store_sample_car_service_body">Προγραμματισμένη αλλαγή λαδιών, έλεγχος φρένων και εναλλαγή ελαστικών.</string>
+    <string name="store_sample_car_service_title">Σέρβις αυτοκινήτων</string>
+    <string name="store_sample_daily_journal_body">Ημερομηνία: 19 Οκτωβρίου 2024\n\nΣήμερα ήταν μια παραγωγική μέρα! Κατάφερα:\n- Να ολοκληρώσω την παρουσίαση για τη Δευτέρα\n- Να παρευρεθώ στη συνάντηση της ομάδας\n- Να πάω για ένα τρέξιμο 30 λεπτών\n\nΑνυπομονώ για το χαλαρωτικό Σαββατοκύριακο που με περιμένει.</string>
+    <string name="store_sample_daily_journal_title">Ημερήσιο ημερολόγιο</string>
+    <string name="store_sample_dinner_bucketlist_title">Λίστα με τα δείπνα που πρέπει να δοκιμάσω</string>
+    <string name="store_sample_dinner_burrito">&#127791; Μπουρίτο</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; Φίλι Τσίζστεκ</string>
+    <string name="store_sample_dinner_pierogi">&#129375; Πιερόγκι</string>
+    <string name="store_sample_dinner_ramen">&#127836; Ράμεν</string>
+    <string name="store_sample_doctor_appointment_body">Ετήσιος προληπτικός έλεγχος στην Κλινική Υγείας της Πόλης με τον Δρ. Μίλερ.</string>
+    <string name="store_sample_doctor_appointment_title">Ραντεβού με γιατρό</string>
+    <string name="store_sample_formatting_bold">Αυτό είναι έντονο κείμενο.</string>
+    <string name="store_sample_formatting_italic">Αυτό είναι κείμενο σε πλάγια γραφή.</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">Και αυτό είναι ένα τμήμα κώδικα με γραμματοσειρά σταθερού πλάτους.</string>
+    <string name="store_sample_formatting_strikethrough">Αυτό είναι κείμενο με διαγραφή.</string>
+    <string name="store_sample_formatting_title">Μορφοποίηση</string>
+    <string name="store_sample_grocery_bread">Ψωμί</string>
+    <string name="store_sample_grocery_breakfast">Πρωινό</string>
+    <string name="store_sample_grocery_chips">Τσιπς</string>
+    <string name="store_sample_grocery_cleaning">Καθαρισμός</string>
+    <string name="store_sample_grocery_coffee">Καφές</string>
+    <string name="store_sample_grocery_cookies">Cookies</string>
+    <string name="store_sample_grocery_dish_soap">Απορρυπαντικό πιάτων</string>
+    <string name="store_sample_grocery_list_title">Λίστα αγορών</string>
+    <string name="store_sample_grocery_snacks">Σνακ</string>
+    <string name="store_sample_grocery_sponge">Σφουγγάρι</string>
+    <string name="store_sample_label_health">Υγεία</string>
+    <string name="store_sample_label_todo">Λίστα υποχρεώσεων</string>
+    <string name="store_sample_vacation_body">Ακολουθούν μερικά μέρη που θα ήθελα να επισκεφτώ αυτό το καλοκαίρι:\n- Θαλάσσιο θέρετρο στις Μαλδίβες\n- Πεζοπορία στο βουνό στην Ελβετία\n- Περιήγηση στην πόλη του Τόκιο</string>
+    <string name="store_sample_vacation_title">Διακοπές</string>
+</resources>

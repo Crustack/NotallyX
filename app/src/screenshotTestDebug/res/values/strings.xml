@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Common / Labels -->
+    <string name="store_sample_label_todo" tools:ignore="MissingTranslation">Todo</string>
+    <string name="store_sample_label_health" tools:ignore="MissingTranslation">Health</string>
+
+    <!-- Daily Journal Note -->
+    <string name="store_sample_daily_journal_title" tools:ignore="MissingTranslation">Daily Journal</string>
+    <string name="store_sample_daily_journal_body" tools:ignore="MissingTranslation">Date: October 19, 2024\n\nToday was a productive day! I managed to:\n- Finish the presentation for Monday\n- Attend the team meeting\n- Go for a 30-minute run\n\nLooking forward to a relaxing weekend ahead.</string>
+
+    <!-- Formatting Note -->
+    <string name="store_sample_formatting_title" tools:ignore="MissingTranslation">Formatting</string>
+    <string name="store_sample_formatting_bold" tools:ignore="MissingTranslation">This is a bold text.</string>
+    <string name="store_sample_formatting_italic" tools:ignore="MissingTranslation">This is italic text.</string>
+    <string name="store_sample_formatting_strikethrough" tools:ignore="MissingTranslation">This is strikethrough text.</string>
+    <string name="store_sample_formatting_monospace" tools:ignore="MissingTranslation">And this is a code block in monospace font.</string>
+    <string name="store_sample_formatting_link" tools:ignore="MissingTranslation">https://github.com/Crustack/NotallyX</string>
+
+    <!-- Grocery List Note -->
+    <string name="store_sample_grocery_list_title" tools:ignore="MissingTranslation">Grocery List</string>
+    <string name="store_sample_grocery_breakfast" tools:ignore="MissingTranslation">Breakfast</string>
+    <string name="store_sample_grocery_coffee" tools:ignore="MissingTranslation">Coffee</string>
+    <string name="store_sample_grocery_bread" tools:ignore="MissingTranslation">Bread</string>
+    <string name="store_sample_grocery_cleaning" tools:ignore="MissingTranslation">Cleaning</string>
+    <string name="store_sample_grocery_dish_soap" tools:ignore="MissingTranslation">Dish soap</string>
+    <string name="store_sample_grocery_sponge" tools:ignore="MissingTranslation">Sponge</string>
+    <string name="store_sample_grocery_snacks" tools:ignore="MissingTranslation">Snacks</string>
+    <string name="store_sample_grocery_cookies" tools:ignore="MissingTranslation">Cookies</string>
+    <string name="store_sample_grocery_chips" tools:ignore="MissingTranslation">Chips</string>
+
+    <!-- Vacation Note -->
+    <string name="store_sample_vacation_title" tools:ignore="MissingTranslation">Vacation</string>
+    <string name="store_sample_vacation_body" tools:ignore="MissingTranslation">Here are some places I\'d like to visit this summer:\n- Beach Resort in Maldives\n- Mountain Hiking in Switzerland\n- City Tour in Tokyo</string>
+
+    <!-- Dinner Bucketlist Note -->
+    <string name="store_sample_dinner_bucketlist_title" tools:ignore="MissingTranslation">Dinner Bucketlist</string>
+    <string name="store_sample_dinner_burrito" tools:ignore="MissingTranslation">🌯 Burrito</string>
+    <string name="store_sample_dinner_philly_cheesesteak" tools:ignore="MissingTranslation">🥪 Philly Cheesesteak</string>
+    <string name="store_sample_dinner_pierogi" tools:ignore="MissingTranslation">🥟 Pierogi</string>
+    <string name="store_sample_dinner_ramen" tools:ignore="MissingTranslation">🍜 Ramen</string>
+
+    <!-- Doctor Appointment Note -->
+    <string name="store_sample_doctor_appointment_title" tools:ignore="MissingTranslation">Doctor Appointment</string>
+    <string name="store_sample_doctor_appointment_body" tools:ignore="MissingTranslation">Annual checkup at City Health Clinic with Dr. Miller.</string>
+
+    <!-- Car Service Note -->
+    <string name="store_sample_car_service_title" tools:ignore="MissingTranslation">Car Service</string>
+    <string name="store_sample_car_service_body" tools:ignore="MissingTranslation">Scheduled oil change, brake inspection, and tire rotation.</string>
+
+    <!-- App Store Marketing Headlines -->
+    <string name="store_headline_manage_and_organize" tools:ignore="MissingTranslation">Manage and organize all your notes</string>
+    <string name="store_headline_alternatively_also_in_a_grid" tools:ignore="MissingTranslation">Alternatively also in a Grid</string>
+    <string name="store_headline_task_lists" tools:ignore="MissingTranslation">Keep track of your task lists</string>
+    <string name="store_headline_rich_text" tools:ignore="MissingTranslation">Format your rich text notes</string>
+    <string name="store_headline_images_and_files" tools:ignore="MissingTranslation">Enhance your notes with images and files</string>
+    <string name="store_headline_widgets" tools:ignore="MissingTranslation">Display notes as widgets</string>
+    <string name="store_headline_reminders" tools:ignore="MissingTranslation">Set reminders for important notes</string>
+    <string name="store_headline_dark_mode" tools:ignore="MissingTranslation">Battery-Saving Dark Mode</string>
+    <string name="store_headline_fingerprint_lock" tools:ignore="MissingTranslation">Lock your notes via Fingerprint</string>
+</resources>

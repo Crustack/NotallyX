@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_headline_alternatively_also_in_a_grid">Como alternativa, também em uma grade</string>
+    <string name="store_headline_dark_mode">Modo escuro para economia de bateria</string>
+    <string name="store_headline_fingerprint_lock">Bloqueie suas anotações com a impressão digital</string>
+    <string name="store_headline_images_and_files">Enriqueça suas anotações com imagens e arquivos</string>
+    <string name="store_headline_manage_and_organize">Gerencie e organize todas as suas anotações</string>
+    <string name="store_headline_reminders">Defina lembretes para notas importantes</string>
+    <string name="store_headline_rich_text">Formate suas anotações em rich text</string>
+    <string name="store_headline_task_lists">Acompanhe suas listas de tarefas</string>
+    <string name="store_headline_widgets">Exibir notas como widgets</string>
+    <string name="store_sample_car_service_body">Troca de óleo programada, inspeção dos freios e rotação dos pneus.</string>
+    <string name="store_sample_car_service_title">Manutenção de automóveis</string>
+    <string name="store_sample_daily_journal_body">Data: 19 de outubro de 2024\n\nHoje foi um dia produtivo! Consegui:\n- Concluir a apresentação para segunda-feira\n- Participar da reunião da equipe\n- Sair para correr por 30 minutos\n\nEstou ansioso pelo fim de semana relaxante que vem por aí.</string>
+    <string name="store_sample_daily_journal_title">Diário</string>
+    <string name="store_sample_dinner_bucketlist_title">Lista de desejos para o jantar</string>
+    <string name="store_sample_dinner_burrito">&#127791; Burrito</string>
+    <string name="store_sample_dinner_philly_cheesesteak">&#129386; Philly Cheesesteak</string>
+    <string name="store_sample_dinner_pierogi">&#129375; Pierogi</string>
+    <string name="store_sample_dinner_ramen">&#127836; Ramen</string>
+    <string name="store_sample_doctor_appointment_body">Exame médico anual na Clínica Municipal de Saúde com o Dr. Miller.</string>
+    <string name="store_sample_doctor_appointment_title">Consulta médica</string>
+    <string name="store_sample_formatting_bold">Este é um texto em negrito.</string>
+    <string name="store_sample_formatting_italic">Este é um texto em itálico.</string>
+    <string name="store_sample_formatting_link">https://github.com/Crustack/NotallyX</string>
+    <string name="store_sample_formatting_monospace">E este é um bloco de código em fonte monoespaçada.</string>
+    <string name="store_sample_formatting_strikethrough">Este é um texto riscado.</string>
+    <string name="store_sample_formatting_title">Formatação</string>
+    <string name="store_sample_grocery_bread">Pão</string>
+    <string name="store_sample_grocery_breakfast">Café da manhã</string>
+    <string name="store_sample_grocery_chips">Batatas fritas</string>
+    <string name="store_sample_grocery_cleaning">Limpeza</string>
+    <string name="store_sample_grocery_coffee">Café</string>
+    <string name="store_sample_grocery_cookies">Cookies</string>
+    <string name="store_sample_grocery_dish_soap">Detergente para louça</string>
+    <string name="store_sample_grocery_list_title">Lista de compras</string>
+    <string name="store_sample_grocery_snacks">Lanches</string>
+    <string name="store_sample_grocery_sponge">Esponja</string>
+    <string name="store_sample_label_health">Saúde</string>
+    <string name="store_sample_label_todo">Tarefas</string>
+    <string name="store_sample_vacation_body">Aqui estão alguns lugares que eu gostaria de visitar neste verão:\n- Resort de praia nas Maldivas\n- Caminhada nas montanhas da Suíça\n- Passeio pela cidade de Tóquio</string>
+    <string name="store_sample_vacation_title">Férias</string>
+</resources>

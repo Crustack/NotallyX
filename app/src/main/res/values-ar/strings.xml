@@ -176,7 +176,6 @@
     <string name="empty_list">قائمة فارغة</string>
     <string name="empty_note">ملاحظة فارغة</string>
     <string name="empty_reminders">لا توجد تذكيرات بعد. هل تريد إنشاء واحد؟</string>
-
     <string name="enable_lock_title">تفعيل القفل باستخدام البصمة/رمز PIN</string>
     <string name="enabled">مفعّل</string>
     <string name="encrypt_database_advice">تجريبي: بشكل افتراضي، لا يؤدي تمكين القفل إلى تشفير قاعدة البيانات. يمكنك اختيارياً تمكين تشفير قاعدة البيانات، وهو ما يمكن استخدامه بالاقتران مع الخيار «البيانات في المجلد العام» لوضع قاعدة البيانات في مجلد عام، ولكن بشكل مشفر. يرجى العلم بأن تشفير قاعدة البيانات ليس مستقراً بعد.</string>
