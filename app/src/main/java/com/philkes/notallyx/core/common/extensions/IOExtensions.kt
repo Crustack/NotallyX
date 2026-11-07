@@ -361,17 +361,15 @@ fun Context.deleteAttachments(
     if (attachments.isNotEmpty()) {
         (progress as? MutableStateFlow<Progress?>)?.value =
             DeleteAttachmentProgress(total = attachments.size)
-        val imageRoot = getExternalImagesDirectory()
-        val audioRoot = getExternalAudioDirectory()
-        val fileRoot = getExternalFilesDirectory()
         attachments.forEachIndexed { index, attachment ->
             val file =
                 when (attachment) {
-                    is Audio -> if (audioRoot != null) File(audioRoot, attachment.name) else null
+                    is Audio -> resolveAttachmentFile(SUBFOLDER_AUDIOS, attachment.name)
 
                     is FileAttachment -> {
-                        val root = if (attachment.isImage) imageRoot else fileRoot
-                        if (root != null) File(root, attachment.localName) else null
+                        val subfolder =
+                            if (attachment.isImage) SUBFOLDER_IMAGES else SUBFOLDER_FILES
+                        resolveAttachmentFile(subfolder, attachment.localName)
                     }
                 }
             if (file != null && file.exists()) {
