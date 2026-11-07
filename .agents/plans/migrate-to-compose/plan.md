@@ -203,18 +203,18 @@ Convert legacy Android RemoteViews widgets to **AndroidX Glance**:
 - [x] Verify Gradle sync and build.
 
 ### Phase 1: Small Reusable UI Views & List Item ViewHolders
-- [ ] Implement `DrawerHeaderView.kt` (`drawer_header.xml`).
-- [ ] Implement `MenuItemRow.kt` (`menu_item.xml`).
-- [ ] Implement `LabelChip.kt` (`label.xml`).
-- [ ] Implement `ErrorStateCard.kt` (`error.xml`).
-- [ ] Implement `SectionHeaderItem.kt` (`recycler_header.xml`).
-- [ ] Implement `ToggleOptionItem.kt` (`recycler_toggle.xml`).
-- [ ] Implement `ColorSwatchItem.kt` (`recycler_color.xml`).
-- [ ] Implement `LabelItemRow.kt` (`recycler_label.xml`, `recycler_selectable_label.xml`).
-- [ ] Implement `ReminderChipItem.kt` (`recycler_reminder.xml`, `recycler_note_reminder.xml`).
-- [ ] Implement `FileAttachmentPreviewChip.kt` (`recycler_preview_file.xml`, `recycler_preview_image.xml`).
-- [ ] Implement `ChecklistItemRow.kt` (`recycler_list_item.xml`).
-- [ ] Implement `BaseNoteCard.kt` (`recycler_base_note.xml`).
+- [x] Implement `DrawerHeaderView.kt` (`drawer_header.xml`).
+- [x] Implement `MenuItemRow.kt` (`menu_item.xml`).
+- [x] Implement `LabelChip.kt` (`label.xml`).
+- [x] Implement `ErrorStateCard.kt` (`error.xml`).
+- [x] Implement `SectionHeaderItem.kt` (`recycler_header.xml`).
+- [x] Implement `ToggleOptionItem.kt` (`recycler_toggle.xml`).
+- [x] Implement `ColorSwatchItem.kt` (`recycler_color.xml`).
+- [x] Implement `LabelItemRow.kt` (`recycler_label.xml`, `recycler_selectable_label.xml`).
+- [x] Implement `ReminderChipItem.kt` (`recycler_reminder.xml`, `recycler_note_reminder.xml`).
+- [x] Implement `FileAttachmentPreviewChip.kt` (`recycler_preview_file.xml`, `recycler_preview_image.xml`).
+- [x] Implement `ChecklistItemRow.kt` (`recycler_list_item.xml`).
+- [x] Implement `BaseNoteCard.kt` (`recycler_base_note.xml`).
 
 ### Phase 2: Simple Utility & Media Display Activities
 - [ ] Migrate `PickNoteActivity` to `PickNoteScreen.kt` (`activity_pick_note.xml`).
