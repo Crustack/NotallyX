@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.android.tools.screenshot.PreviewTest
-import com.philkes.notallyx.R
+import com.philkes.notallyx.app.R as AppR
 import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.preference.NotesSortBy
@@ -35,7 +35,7 @@ fun `03_TaskLists`() {
 
     NotallyXTheme {
         DeviceFrame(
-            title = stringResource(R.string.store_headline_task_lists),
+            title = stringResource(AppR.string.store_headline_task_lists),
             statusBarColor = noteColor,
             statusBarContentColor = contentColor,
             screenContent = {

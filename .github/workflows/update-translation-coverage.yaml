@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - app/src/main/res/values*/strings.xml
+      - shared/src/androidMain/res/values*/strings.xml
   workflow_dispatch:
 
 jobs:

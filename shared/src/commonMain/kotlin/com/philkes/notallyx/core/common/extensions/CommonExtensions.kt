@@ -1,0 +1,128 @@
+package com.philkes.notallyx.core.common.extensions
+
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import kotlin.math.abs
+import kotlin.time.Duration
+
+fun CharSequence.truncate(limit: Int): CharSequence {
+    return if (length > limit) {
+        val truncated = take(limit)
+        val remainingCharacters = length - limit
+        "$truncated... ($remainingCharacters more characters)"
+    } else {
+        this
+    }
+}
+
+fun CharSequence.startsWithAnyOf(vararg s: String): Boolean {
+    s.forEach { if (startsWith(it)) return true }
+    return false
+}
+
+fun CharSequence.fromCamelCaseToEnumName(): String {
+    return this.fold(StringBuilder()) { acc, char ->
+            if (char.isUpperCase() && acc.isNotEmpty()) {
+                acc.append("_")
+            }
+            acc.append(char.uppercase())
+        }
+        .toString()
+}
+
+/** Calculates the character limit for a given MB size (in worst case). */
+fun Double.charLimit(): Int {
+    val totalBytes = (this * 1024 * 1024).toInt()
+    val minChars = totalBytes / 4 // Every character is an Emoji/Complex
+    return minChars
+}
+
+fun String.findAllOccurrences(
+    search: String,
+    caseSensitive: Boolean = false,
+): List<Pair<Int, Int>> {
+    val limit = 20_000
+    if (search.isEmpty()) return emptyList()
+    val result = mutableListOf<Pair<Int, Int>>()
+    var startIndex = 0
+    while (startIndex < length) {
+        val index = this.indexOf(search, startIndex, ignoreCase = !caseSensitive)
+        if (index == -1) break
+        result.add(index to (index + search.length))
+        if (result.size >= limit) break
+        startIndex = index + search.length
+    }
+    return result
+}
+
+fun String.toCamelCase(): String {
+    return this.lowercase()
+        .split("_")
+        .mapIndexed { index, word ->
+            if (index == 0) word
+            else
+                word.replaceFirstChar {
+                    if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString()
+                }
+        }
+        .joinToString("")
+}
+
+val String.toPreservedByteArray: ByteArray
+    get() {
+        return this.toByteArray(Charsets.ISO_8859_1)
+    }
+
+val ByteArray.toPreservedString: String
+    get() {
+        return String(this, Charsets.ISO_8859_1)
+    }
+
+fun now(): Calendar =
+    Calendar.getInstance().apply {
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+
+typealias TimeMillis = Long
+
+fun TimeMillis.secondsBetween(other: TimeMillis): Long = abs(this - other) / 1000
+
+fun <T : Enum<T>> List<T>.serializeEnums(): String {
+    return joinToString(separator = ",") { it.name }
+}
+
+fun <T : Enum<T>> Class<T>.deserializeEnums(data: String): List<T> {
+    if (data.isEmpty()) return emptyList()
+
+    return data.split(",").mapNotNull { name ->
+        try {
+            java.lang.Enum.valueOf(this, name.trim())
+        } catch (e: IllegalArgumentException) {
+            null
+        }
+    }
+}
+
+fun uniqueCurrentMillis(): Long {
+    Thread.sleep(1)
+    return System.currentTimeMillis()
+}
+
+typealias Seconds = Long
+
+fun Seconds.toMillis() = this * 1000
+
+/**
+ * Adds a Kotlin Duration to a java.util.Date. Fully compatible with API 24+ without requiring Java
+ * 8 time APIs or desugaring.
+ */
+operator fun Date.plus(duration: Duration): Date {
+    return Date(this.time + duration.inWholeMilliseconds)
+}
+
+/** Subtracts a Kotlin Duration from a java.util.Date. */
+operator fun Date.minus(duration: Duration): Date {
+    return Date(this.time - duration.inWholeMilliseconds)
+}

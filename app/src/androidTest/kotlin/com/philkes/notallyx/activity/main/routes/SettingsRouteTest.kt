@@ -44,6 +44,7 @@ import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.PeriodicBackup
 import com.philkes.notallyx.core.preference.Theme
 import com.philkes.notallyx.core.preference.TimeFormat
+import com.philkes.notallyx.core.preference.getText
 import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.model.Folder
@@ -80,6 +81,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.FixMethodOrder
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -494,6 +496,7 @@ class SettingsRouteTest : UiTestBase() {
         assertEquals(expectedDecrypt2, fakeBiometricAuthenticator.getDecryptionCounter())
     }
 
+    @Ignore("Disabled while FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB is false")
     @Test
     fun biometricLock_with_encryption() {
         val fakeBiometricAuthenticator = initFakeBiometric()
@@ -1127,6 +1130,7 @@ class SettingsRouteTest : UiTestBase() {
         }
     }
 
+    @Ignore("Disabled while FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB is false")
     @Test
     fun encryptAndDecryptDatabaseWithPassphrase() {
         initFakeBiometric()

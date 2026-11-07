@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.android.tools.screenshot.PreviewTest
 import com.philkes.notallyx.R
+import com.philkes.notallyx.app.R as AppR
 import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.feature.main.MainScreen
@@ -21,7 +22,7 @@ import com.philkes.notallyx.navigation.NotallyNavKey
 fun `07_Reminders`() {
     NotallyXTheme {
         DeviceFrame(
-            title = stringResource(R.string.store_headline_reminders),
+            title = stringResource(AppR.string.store_headline_reminders),
             screenContent = {
                 MainScreen(
                     title = stringResource(R.string.reminders),

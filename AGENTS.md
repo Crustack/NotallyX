@@ -4,8 +4,8 @@
 
 **NotallyX** is an open-source, minimalistic, yet feature-rich note-taking Android application built with Kotlin. It provides users with a distraction-free experience for creating text notes, task lists, rich-text formatting, media attachments (images, audio, files), labels, reminders, and encrypted backups.
 
-- **Target Platform**: Android (Min SDK: 24, Compile/Target SDK: 37, JVM Target: 17).
-- **Core Architecture**: Feature-first MVI (Model-View-Intent) / Unidirectional Data Flow architecture backed by Android Jetpack components (100% Jetpack Compose, Material 3, Adaptive multi-pane, Room 3, Kotlin Coroutines Flow/StateFlow, ViewModel, Navigation 3, WorkManager), Jetpack DataStore with Google Tink AEAD encryption, Coil 3, Jetpack Media3, Koin 4.x Dependency Injection with Koin Compiler Plugin, and Jetpack Glance widgets.
+- **Target Platform**: Android (Min SDK: 24, Compile/Target SDK: 37, JVM Target: 17) via Kotlin Multiplatform (KMP) architecture.
+- **Core Architecture**: Modular Kotlin Multiplatform architecture (`:shared`, `:composeApp`, `:app`, `:test-lib`, `:build-logic`) implementing Feature-first MVI (Model-View-Intent) / Unidirectional Data Flow backed by Android Jetpack components (100% Jetpack Compose, Material 3, Adaptive multi-pane, Room 3, Kotlin Coroutines Flow/StateFlow, ViewModel, Navigation 3, WorkManager), Jetpack DataStore with Google Tink AEAD encryption, Coil 3, Jetpack Media3, Koin 4.x Dependency Injection with Koin Compiler Plugin, and Jetpack Glance widgets.
 - **Key Tenets**: User privacy, offline-first reliability, non-destructive data handling, robust backup/restore mechanisms, and clean Kotlin idioms.
 
 ---
@@ -41,7 +41,7 @@
   - `Dispatchers.Default`: Intensive CPU calculations (e.g. search occurrences, text delta calculations).
 
 ### Database & Storage Patterns
-- **Database**: Room 3 Database (`NotallyDatabase`, versioned with KSP schema exports in `app/schemas/`). Uses Room SQLite Driver (`BackupSQLiteDriver`) via `DatabaseDriverFactory` (`AndroidDatabaseDriverFactory` on Android, `JvmBundledDatabaseDriverFactory` using `BundledSQLiteDriver` on JVM/Desktop), `@ColumnTypeConverters(Converters::class)`, and `RoomRawQuery`.
+- **Database**: Room 3 Database (`NotallyDatabase`, versioned with KSP schema exports in `shared/schemas/`). Uses Room SQLite Driver (`BackupSQLiteDriver`) via `DatabaseDriverFactory` (`AndroidDatabaseDriverFactory` on Android, `JvmBundledDatabaseDriverFactory` using `BundledSQLiteDriver` on JVM/Desktop), `@ColumnTypeConverters(Converters::class)`, and `RoomRawQuery`.
 - **Migrations**: Incremental Room schema migrations defined as `Migration(from, to)` in `NotallyDatabase.kt`. High-level application data migrations (attachment relocation, note splitting) in `core/database/DataSchemaMigrations.kt`.
 - **Preferences & Encryption**:
   - General preferences: Jetpack DataStore (`androidx.datastore.preferences`, `UserPreferences`).
@@ -52,7 +52,7 @@
   - Internal storage for private app data and default SQLite database on Android, or OS standard application data directories on Desktop.
   - Optional external storage mode (`dataInPublicFolder`).
   - Strict WAL checkpointing: `NotallyDatabase.checkpoint()` executes `RoomRawQuery("pragma wal_checkpoint(TRUNCATE)")` to ensure WAL is flushed before any database export, backup, or replacement.
-- **Type Converters**: `core/database/Converters.kt` converts complex models (spans, attachments, folders, reminders, labels) to/from JSON strings using `kotlinx.serialization.json`.
+- **Type Converters**: `Converters.kt` converts complex models (spans, attachments, folders, reminders, labels) to/from JSON strings using `kotlinx.serialization.json`.
 
 ### App Documentation
 - **Docusaurus Website**: App user and developer documentation is located in `@documentation` (`/documentation`). It is a Docusaurus website containing feature guides, setup instructions, FAQs, settings, security & privacy details, and contribution docs.
@@ -63,39 +63,33 @@
 
 ```
 NotallyX/
-├── app/
+├── shared/                                            # KMP Domain & Data Module
 │   ├── schemas/                                       # Room schema exports
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── AndroidManifest.xml                    # Manifest, permissions, activities, receivers, services
-│   │   │   ├── java/com/philkes/notallyx/
-│   │   │   │   ├── NotallyXApplication.kt             # Application entry point & Koin initialization
-│   │   │   │   ├── core/                              # Core domain & infrastructure
-│   │   │   │   │   ├── common/                        # Extensions, results (Progress), error screens, BaseViewModel
-│   │   │   │   │   ├── database/                      # Room 3 DB (NotallyDatabase), SQLite drivers, migrations, converters
-│   │   │   │   │   ├── preference/                    # NotallyXPreferences, DataStore models (UserPreferences, SecurePreferences)
-│   │   │   │   │   ├── security/                      # Biometrics, SQLCipher, Tink AEAD, LockedActivity
-│   │   │   │   │   └── ui/                            # Compose theme, BaseNoteCard, dialogs, UI components
-│   │   │   │   ├── data/                              # Data layer
-│   │   │   │   │   ├── dao/                           # Room 3 DAOs (BaseNoteDao, LabelDao, CommonDao)
-│   │   │   │   │   └── model/                         # Entities & models (BaseNote, Label, Folder, Item)
-│   │   │   │   ├── di/                                # Koin modules (AppModule, FeatureModule, DatabaseModule, PreferencesModule)
-│   │   │   │   ├── feature/                           # Feature-first MVI modules
-│   │   │   │   │   ├── editor/                        # Note & list editing (EditNoteRoute, EditListRoute, EditTextPlainRoute, EditScreen)
-│   │   │   │   │   ├── labels/                        # Labels screen, selector, viewmodels, models, routes
-│   │   │   │   │   ├── main/                          # MainActivity, NotallyApp, routes/ (notes, archived, deleted, search, picknote)
-│   │   │   │   │   ├── media/                         # Audio recording/playback (AudioPlayService), image viewer (ViewImageRoute)
-│   │   │   │   │   ├── migration/                     # Backup, restore, exporters, external importers (Keep, Evernote, etc.)
-│   │   │   │   │   ├── reminder/                      # Reminders screen, notifications, alarm receivers, routes
-│   │   │   │   │   ├── settings/                      # Settings screen, preference rows, dialogs, route, viewmodel
-│   │   │   │   │   └── widget/                        # Jetpack Glance widgets (NoteWidget)
-│   │   │   │   └── navigation/                        # Navigation 3 keys (NotallyNavKey), Navigator, ListDetailScene
-│   │   │   └── res/                                   # Resources (strings, drawables, XML descriptors)
-│   │   ├── test/                                      # Unit & Robolectric test suite, Roborazzi screenshot tests
-│   │   ├── androidTest/                               # Instrumented UI tests extending UiTestBase
-│   │   └── screenshotTestDebug/                       # Compose Screenshot Testing previews
-│   └── build.gradle.kts                               # App build configurations & dependencies
+│   └── src/
+│       ├── commonMain/kotlin/                         # Platform-agnostic domain models, Room DAOs, contracts, utilities
+│       ├── androidMain/                               # Android Room DB, DataStore/preferences, platform impls, shared res
+│       │   ├── java/                                  # Java utilities (SQLCipherUtils)
+│       │   ├── kotlin/                                # Android implementations, DI modules (DatabaseModule, PreferencesModule)
+│       │   └── res/                                   # Shared Android resources (strings, drawables, colors, styles)
+│       ├── commonTest/kotlin/                         # Multiplatform domain & utility unit tests
+│       └── androidHostTest/kotlin/                    # Android host unit tests for database, converters, preferences
+├── composeApp/                                        # KMP Presentation & UI Module
+│   └── src/
+│       ├── commonMain/kotlin/                         # Navigation keys (NotallyNavKey), Navigator, UI platform contracts
+│       ├── androidMain/kotlin/                        # Compose UI screens, routes, ViewModels, core/ui components, themes
+│       ├── commonTest/kotlin/                         # Multiplatform presentation unit tests (NavigatorTest)
+│       └── androidHostTest/kotlin/                    # Shared ViewModel & presentation host unit tests
+├── app/                                               # Lean Android Application Host Module
+│   └── src/
+│       ├── main/
+│       │   ├── AndroidManifest.xml                    # Android manifest & component registrations
+│       │   ├── java/com/philkes/notallyx/             # Application class, Activities, Services, Receivers, widgets
+│       │   └── res/                                   # App-specific resources (launcher icons/mipmaps, widgets, shortcuts)
+│       ├── test/                                      # Host unit, Robolectric & Roborazzi screenshot tests
+│       ├── screenshotTestDebug/                       # Compose screenshot preview tests
+│       └── androidTest/                               # Instrumented UI tests
 ├── test-lib/                                          # Shared test utilities (UiTestBase, UiUtils, Fakes)
+├── build-logic/                                       # Gradle convention plugins (Kotlin, Compose, Localization, ktfmt)
 ├── documentation/                                     # Docusaurus website for app documentation (@documentation)
 ├── build.gradle.kts                                   # Root build configuration
 └── settings.gradle.kts                                # Project & repository settings
@@ -420,23 +414,30 @@ When modifying Room entities (`BaseNote`, `Label`, etc.):
    }
    ```
 4. Add the migration object to `addMigrations(...)` in `NotallyDatabase.builder`.
-5. Run `./gradlew kspDebugKotlin` to regenerate the Room schema JSON in `app/schemas/`.
-6. Write migration verification tests in `app/src/test/kotlin/com/philkes/notallyx/data/` or `app/src/androidTest/kotlin/com/philkes/notallyx/utils/DataSchemaMigrationsTest.kt`.
+5. Run `./gradlew :shared:kspAndroidHostTestKotlin` to regenerate the Room schema JSON in `shared/schemas/`.
+6. Write migration verification tests in `shared/src/androidHostTest/kotlin/com/philkes/notallyx/data/` or `app/src/androidTest/kotlin/com/philkes/notallyx/utils/DataSchemaMigrationsTest.kt`.
 
 ---
 
 ### 3. Writing and Running Tests
 
 #### Test Types & Targets:
-- **Unit & Robolectric Tests**: `app/src/test/` for business logic, ViewModels, formatters, importers, and Robolectric lifecycle tests.
+- **Shared Domain & Data Tests**: `shared/src/commonTest/` (multiplatform unit tests) and `shared/src/androidHostTest/` (Room database, migrations, converters, importers, preferences).
+- **ComposeApp Presentation Tests**: `composeApp/src/commonTest/` (Navigator tests) and `composeApp/src/androidHostTest/` (shared ViewModel and list manager tests).
+- **App Host Unit & Robolectric Tests**: `app/src/test/` for `:app` ViewModels, workers, and Robolectric lifecycle tests.
 - **Roborazzi Screenshot Tests**: `app/src/test/kotlin/.../ScreenshotTests.kt` with reference images in `app/src/screenshots/`.
 - **Compose Screenshot Tests**: `app/src/screenshotTestDebug/` validating composable previews against references.
 - **Instrumented UI Tests**: `app/src/androidTest/` extending `UiTestBase` from `:test-lib` for end-to-end user flows.
 
 #### Running Tests via CLI:
 ```bash
-# Run unit and Robolectric tests
-./gradlew testDebugUnitTest
+# Run all multi-module unit tests (:shared, :composeApp, :app)
+./gradlew test
+
+# Or run per-module unit tests:
+./gradlew :shared:testAndroidHostTest
+./gradlew :composeApp:testAndroidHostTest
+./gradlew :app:testDebugUnitTest
 
 # Roborazzi screenshot tests
 ./gradlew verifyRoborazziDebug          # Verify against reference images

@@ -21,11 +21,13 @@ class AuthenticatorProviderTest {
 
     @Before
     fun setUp() {
+        AuthenticatorProvider.factory = { SystemBiometricAuthenticator() }
         AuthenticatorProvider.reset()
     }
 
     @After
     fun tearDown() {
+        AuthenticatorProvider.factory = { SystemBiometricAuthenticator() }
         AuthenticatorProvider.reset()
     }
 

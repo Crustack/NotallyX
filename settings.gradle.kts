@@ -24,5 +24,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "NotallyX"
+include(":shared")
+include(":composeApp")
 include(":app")
 include(":test-lib")

@@ -28,7 +28,7 @@ plugins {
 }
 
 android {
-    namespace = "com.philkes.notallyx"
+    namespace = "com.philkes.notallyx.app"
     compileSdk = libs.versions.compileSdk.get().toInt()
     ndkVersion = libs.versions.ndk.get()
     defaultConfig {
@@ -159,16 +159,14 @@ screenshotTests {
     imageDifferenceThreshold = 0.00025f // 0.025%
 }
 
-ksp {
-    arg("room.generateKotlin", "true")
-    arg("room.schemaLocation", "$projectDir/schemas")
-}
-
 ktfmt { kotlinLangStyle() }
 
 autoTranslate {
     provider = deepL { authKey = providers.gradleProperty("DEEPL_API_KEY") }
-    translateStringsXml { enabled = true }
+    translateStringsXml {
+        enabled = true
+        resDirectory.set(layout.projectDirectory.dir("../shared/src/androidMain/res"))
+    }
     translateFastlane {
         enabled = false
         targetLanguages = setOf("de-DE", "ru-RU")
@@ -238,6 +236,9 @@ roborazzi {
 }
 
 dependencies {
+    implementation(project(":composeApp"))
+    implementation(project(":shared"))
+
     implementation(libs.androidx.documentfile)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
@@ -246,7 +247,6 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.datastore.tink)
     implementation(libs.tink.android)
-    ksp(libs.androidx.room3.compiler)
     implementation(libs.androidx.room3.common)
     implementation(libs.androidx.room3.runtime)
     implementation(libs.androidx.room3.sqlite.wrapper)
@@ -313,3 +313,5 @@ configurations
                 .using(module("androidx.sqlite:sqlite-bundled-jvm:${libs.versions.sqlite.get()}"))
         }
     }
+
+tasks.withType<Test>().configureEach { forkEvery = 1 }

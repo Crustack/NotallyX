@@ -1,7 +1,7 @@
 package com.philkes.notallyx.core.platform
 
 import android.os.Build
-import com.philkes.notallyx.BuildConfig
+import com.philkes.notallyx.app.BuildConfig
 
 class AndroidAppInfo : AppInfo {
     override val versionCode: Int = BuildConfig.VERSION_CODE

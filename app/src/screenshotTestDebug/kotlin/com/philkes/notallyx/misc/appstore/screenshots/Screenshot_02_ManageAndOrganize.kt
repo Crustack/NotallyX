@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.android.tools.screenshot.PreviewTest
 import com.philkes.notallyx.R
+import com.philkes.notallyx.app.R as AppR
 import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.feature.main.MainScreen
@@ -19,7 +20,7 @@ import com.philkes.notallyx.misc.appstore.DeviceFrame
 fun `02_ManageAndOrganize`() {
     NotallyXTheme {
         DeviceFrame(
-            title = stringResource(R.string.store_headline_alternatively_also_in_a_grid),
+            title = stringResource(AppR.string.store_headline_alternatively_also_in_a_grid),
             screenContent = {
                 MainScreen(
                     title = stringResource(R.string.notes),

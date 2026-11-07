@@ -5,7 +5,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
 import com.android.tools.screenshot.PreviewTest
-import com.philkes.notallyx.R
+import com.philkes.notallyx.app.R as AppR
 import com.philkes.notallyx.core.preference.DateFormat
 import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.preference.NotesSortBy
@@ -36,7 +36,7 @@ fun `05_ImagesAndFiles`() {
 
     NotallyXTheme {
         DeviceFrame(
-            title = stringResource(R.string.store_headline_images_and_files),
+            title = stringResource(AppR.string.store_headline_images_and_files),
             statusBarColor = noteColor,
             statusBarContentColor = contentColor,
             screenContent = {

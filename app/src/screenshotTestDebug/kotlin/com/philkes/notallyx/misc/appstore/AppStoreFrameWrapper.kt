@@ -2,7 +2,7 @@ package com.philkes.notallyx.misc.appstore
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
-import com.philkes.notallyx.R
+import com.philkes.notallyx.app.R
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Color
 import com.philkes.notallyx.data.model.FileAttachment

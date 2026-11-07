@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.deleteAttachments
+import com.philkes.notallyx.core.common.extensions.exportNotes
 import com.philkes.notallyx.core.common.extensions.generateBaseNote
 import com.philkes.notallyx.core.common.extensions.getNavKey
 import com.philkes.notallyx.core.common.extensions.log
@@ -38,7 +39,6 @@ import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel.Compan
 import com.philkes.notallyx.feature.main.routes.notes.NotesRouteViewModel.Companion.CURRENT_LABEL_NONE
 import com.philkes.notallyx.feature.migration.ExportMimeType
 import com.philkes.notallyx.feature.migration.backup.DatabaseTransitionActivity
-import com.philkes.notallyx.feature.migration.backup.exportNotes
 import com.philkes.notallyx.feature.migration.progress.MigrationProgress
 import com.philkes.notallyx.navigation.NotallyNavKey
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.android.tools.screenshot.PreviewTest
 import com.philkes.notallyx.R
+import com.philkes.notallyx.app.R as AppR
 import com.philkes.notallyx.core.preference.BiometricLock
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.feature.main.MainScreen
@@ -30,7 +31,7 @@ fun `09_FingerprintLock`() {
     NotallyXTheme {
         val backgroundColor = Color.Black.copy(alpha = 0.4f)
         DeviceFrame(
-            title = stringResource(R.string.store_headline_fingerprint_lock),
+            title = stringResource(AppR.string.store_headline_fingerprint_lock),
             statusBarColor = backgroundColor,
             screenContent = {
                 Box(modifier = Modifier.fillMaxSize()) {

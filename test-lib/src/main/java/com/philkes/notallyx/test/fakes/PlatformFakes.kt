@@ -4,7 +4,6 @@ import androidx.room3.RoomDatabase
 import androidx.sqlite.SQLiteDriver
 import com.philkes.notallyx.core.database.DatabaseDriverFactory
 import com.philkes.notallyx.core.database.JvmBundledDatabaseDriverFactory
-import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.platform.DesktopPathProvider
 import com.philkes.notallyx.core.platform.FileStorage
 import com.philkes.notallyx.core.platform.JvmFileStorage
@@ -45,11 +44,11 @@ class FakeDatabaseDriverFactory(
 ) : DatabaseDriverFactory {
     private val delegate = JvmBundledDatabaseDriverFactory(pathProvider)
 
-    override fun createBuilder(
+    override fun <T : RoomDatabase> createBuilder(
         databaseName: String,
         dataInPublicFolder: Boolean,
         inMemory: Boolean,
-    ): RoomDatabase.Builder<NotallyDatabase> {
+    ): RoomDatabase.Builder<T> {
         return delegate.createBuilder(databaseName, dataInPublicFolder, inMemory)
     }
 

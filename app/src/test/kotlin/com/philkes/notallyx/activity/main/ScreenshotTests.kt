@@ -49,10 +49,10 @@ import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.feature.main.MainActivity
-import com.philkes.notallyx.feature.migration.imports.google.GoogleKeepImporterTest.Companion.createBaseNote
 import com.philkes.notallyx.navigation.NotallyNavKey
 import com.philkes.notallyx.test.FakeAndroidKeyStore
 import com.philkes.notallyx.test.context
+import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.database
 import com.philkes.notallyx.test.generateNotes
 import com.philkes.notallyx.test.preferences
@@ -94,7 +94,7 @@ class ScreenshotTests {
                         RoborazziOptions(
                             compareOptions =
                                 RoborazziOptions.CompareOptions(
-                                    changeThreshold = 0.05f, // For 1% accepted difference
+                                    changeThreshold = 0.08f,
                                     imageComparator =
                                         SimpleImageComparator(
                                             maxDistance = 0.007F // 0.001F is

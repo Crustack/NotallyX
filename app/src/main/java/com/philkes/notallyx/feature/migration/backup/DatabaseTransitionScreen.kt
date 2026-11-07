@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import com.philkes.notallyx.R
+import com.philkes.notallyx.app.R as AppR
 import com.philkes.notallyx.core.ui.dialog.ErrorDialog
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
@@ -47,7 +48,7 @@ internal fun DatabaseTransitionScreen(
     val context = LocalContext.current
     val appIconPainter =
         remember(context) {
-            val drawable = ContextCompat.getDrawable(context, R.drawable.app_icon)
+            val drawable = ContextCompat.getDrawable(context, AppR.drawable.app_icon)
             if (drawable != null) {
                 val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else 200
                 val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else 200

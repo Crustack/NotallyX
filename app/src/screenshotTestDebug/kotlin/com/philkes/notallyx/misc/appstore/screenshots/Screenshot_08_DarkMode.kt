@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.android.tools.screenshot.PreviewTest
 import com.philkes.notallyx.R
+import com.philkes.notallyx.app.R as AppR
 import com.philkes.notallyx.core.preference.Theme
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.feature.main.MainScreen
@@ -20,7 +21,7 @@ import com.philkes.notallyx.misc.appstore.DeviceFrame
 fun `08_DarkMode`() {
     NotallyXTheme(theme = Theme.SUPER_DARK) {
         DeviceFrame(
-            title = stringResource(R.string.store_headline_dark_mode),
+            title = stringResource(AppR.string.store_headline_dark_mode),
             statusBarColor = Color.Black,
             statusBarContentColor = Color.White,
             screenContent = {

@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.android.tools.screenshot.PreviewTest
 import com.philkes.notallyx.R
+import com.philkes.notallyx.app.R as AppR
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.misc.appstore.AppStorePreview
 import com.philkes.notallyx.misc.appstore.AppStoreSampleData
@@ -45,7 +46,7 @@ import com.philkes.notallyx.misc.appstore.DeviceFrame
 fun `06_Widgets`() {
     NotallyXTheme {
         DeviceFrame(
-            title = stringResource(R.string.store_headline_widgets),
+            title = stringResource(AppR.string.store_headline_widgets),
             statusBarColor = Color(0xFF0F0F19),
             statusBarContentColor = Color.White,
             screenContent = { WidgetHomeScreenMockup() },

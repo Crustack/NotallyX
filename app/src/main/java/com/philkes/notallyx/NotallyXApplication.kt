@@ -69,6 +69,10 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
         super.onCreate()
         com.philkes.notallyx.core.platform.AppInfoProvider.current =
             com.philkes.notallyx.core.platform.AndroidAppInfo()
+        com.philkes.notallyx.core.security.AuthenticatorProvider.factory = {
+            com.philkes.notallyx.core.security.SystemBiometricAuthenticator()
+        }
+        com.philkes.notallyx.core.security.AuthenticatorProvider.reset()
         if (GlobalContext.getOrNull() == null) {
             startKoin {
                 androidLogger(Level.DEBUG)

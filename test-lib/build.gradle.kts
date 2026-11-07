@@ -15,6 +15,8 @@ android {
 }
 
 dependencies {
+    api(project(":shared"))
+    api(project(":composeApp"))
     compileOnly(project(":app"))
 
     // Shared test dependencies used by both unit tests (test) and instrumented tests (androidTest)

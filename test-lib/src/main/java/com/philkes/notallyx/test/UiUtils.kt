@@ -839,15 +839,23 @@ fun ComposeTestRule.enableBiometricLock(encryptDb: Boolean = false) {
     waitUntil(10_000) { onAllNodes(hasText(continueText)).fetchSemanticsNodes().isNotEmpty() }
     onNodeWithText(continueText).performClick()
 
-    if (encryptDb) {
-        val encryptText = context.getString(R.string.encrypt_database_via_biometric)
-        waitUntil(10_000) { onAllNodes(hasText(encryptText)).fetchSemanticsNodes().isNotEmpty() }
-        onNodeWithText(encryptText).performClick()
+    if (NotallyDatabase.FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB) {
+        if (encryptDb) {
+            val encryptText = context.getString(R.string.encrypt_database_via_biometric)
+            waitUntil(10_000) {
+                onAllNodes(hasText(encryptText)).fetchSemanticsNodes().isNotEmpty()
+            }
+            onNodeWithText(encryptText).performClick()
+        }
+        onNodeWithText(continueText).performClick()
     }
-    onNodeWithText(continueText).performClick()
 
     val expectedValueResId =
-        if (encryptDb) R.string.biometric_lock_enabled_with_encryption else R.string.enabled
+        if (NotallyDatabase.FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB && encryptDb) {
+            R.string.biometric_lock_enabled_with_encryption
+        } else {
+            R.string.enabled
+        }
     waitUntilSettingsValue(R.string.biometric_lock, expectedValueResId)
 }
 
