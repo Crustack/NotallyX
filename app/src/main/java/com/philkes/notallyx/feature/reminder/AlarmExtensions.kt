@@ -70,7 +70,7 @@ private fun Context.scheduleReminder(noteId: Long, reminderId: Long, dateTime: D
     }
 }
 
-fun Array<StatusBarNotification>.noneExceptFor(noteId: Long, reminderId: Long) = none {
+private fun Array<StatusBarNotification>.noneExceptFor(noteId: Long, reminderId: Long) = none {
     ReminderReceiver.isReminderNotification(it.tag) &&
         !(it.tag == ReminderReceiver.reminderNotificationTag(noteId) && it.id == reminderId.toInt())
 }

@@ -195,10 +195,6 @@ fun List<ListItem>.areAllChecked(except: ListItem? = null): Boolean {
     return this.none { !it.checked && (except == null || it.id != except.id) }
 }
 
-fun MutableList<ListItem>.containsId(id: Int): Boolean {
-    return this.any { it.id == id }
-}
-
 fun Collection<ListItem>.toReadableString(): String {
     return map { "$it order: ${it.order} id: ${it.id}" }.joinToString("\n")
 }
@@ -222,23 +218,4 @@ fun List<ListItem>.findParentPosition(childPosition: Int): Int? {
         }
     }
     return null
-}
-
-fun MutableList<ListItem>.deleteCheckedItems(): Set<Int> {
-    return mapIndexed { index, listItem -> Pair(index, listItem) }
-        .filter { (_, item) -> item.checked }
-        .sortedBy { (_, item) -> item.isChild }
-        .onEach { (_, item) ->
-            removeFromParent(item)
-            remove(item)
-        }
-        .map { (index, _) -> index }
-        .toSet()
-}
-
-fun List<ListItem>.removeFromParent(child: ListItem): ListItem? {
-    if (!child.isChild) {
-        return null
-    }
-    return findParent(child)?.second?.also { it.children.remove(child) }
 }

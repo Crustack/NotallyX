@@ -13,13 +13,5 @@ data class SpanRepresentation(
     var strikethrough: Boolean = false,
 ) {
 
-    fun isNotUseless(): Boolean {
-        return bold || link || italic || monospace || strikethrough
-    }
-
-    fun isEqualInSize(representation: SpanRepresentation): Boolean {
-        return start == representation.start && end == representation.end
-    }
-
     fun isInsideBounds(): Boolean = start < MAX_BODY_CHAR_LENGTH && end <= MAX_BODY_CHAR_LENGTH
 }

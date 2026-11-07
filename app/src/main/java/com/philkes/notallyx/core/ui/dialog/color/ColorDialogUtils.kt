@@ -35,15 +35,3 @@ internal fun parseColorOrNull(hex: String): Int? {
 internal fun colorIntToHex(colorInt: Int): String {
     return String.format("#%06X", 0xFFFFFF and colorInt)
 }
-
-internal fun colorToHsv(colorInt: Int): FloatArray {
-    val hsv = FloatArray(3)
-    Color.colorToHSV(colorInt, hsv)
-    return hsv
-}
-
-internal fun hsvToColorInt(h: Float, s: Float, v: Float): Int {
-    return Color.HSVToColor(
-        floatArrayOf(h.coerceIn(0f, 360f), s.coerceIn(0f, 1f), v.coerceIn(0f, 1f))
-    )
-}

@@ -639,7 +639,11 @@ fun ComposeTestRule.navigateTo(navKey: NotallyNavKey) {
 fun ComposeTestRule.navigateTo(stringResId: Int) {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
     onNodeWithContentDescription(context.getString(R.string.app_name)).performClick()
-    onNodeWithText(context.getString(stringResId)).performClick()
+    onNode(
+            hasText(context.getString(stringResId)) and
+                SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)
+        )
+        .performClick()
 }
 
 fun Int.byId(viewMatcher: Matcher<View>? = null, checkDisplayed: Boolean = true): ViewInteraction {
