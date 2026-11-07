@@ -256,3 +256,4 @@ When modifying Room entities (`BaseNote`, `Label`, etc.):
 - **UI Testing Guide**: Standardized patterns for instrumented Compose and hybrid tests (`UiTestBase`, `UiUtils`, `runBlocking` seeding). See `.agents/skills/write-ui-tests/SKILL.md`.
 - **Roborazzi Screenshot Tests**: Workflow and best practices for JVM screenshot tests. See `.agents/skills/roborazzi/SKILL.md`.
 - **Compose UI Elements (Creation & Evaluation)**: Canonical templates, guidelines, and audit checklists for creating new Compose screens, routes, components, and dialogs. See [.agents/skills/create-compose-ui-elements/SKILL.md](.agents/skills/create-compose-ui-elements/SKILL.md).
+- **Create Route & Destination**: Best practices and canonical templates for creating new Routes and features following MVI / Unidirectional Data Flow (Model, ViewModel, Screen, Route). See [.agents/skills/create-route/SKILL.md](.agents/skills/create-route/SKILL.md).

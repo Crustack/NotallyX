@@ -24,3 +24,5 @@ skills-lock.json
 !.agents/skills/migrate-livedata-to-stateflow/
 !.agents/skills/roborazzi/
 !.agents/skills/write-ui-tests/
+!.agents/skills/create-route/
+

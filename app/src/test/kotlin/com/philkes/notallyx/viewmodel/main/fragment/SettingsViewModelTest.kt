@@ -16,6 +16,8 @@ import com.philkes.notallyx.core.ui.extensions.*
 import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.ShadowContextImplMedia
 import com.philkes.notallyx.data.model.extensions.*
+import com.philkes.notallyx.feature.settings.SettingsAction
+import com.philkes.notallyx.feature.settings.SettingsDialogState
 import com.philkes.notallyx.feature.settings.SettingsViewModel
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
@@ -101,5 +103,39 @@ class SettingsViewModelTest {
         assertThat(preferences.periodicBackups.value.periodInDays).isEqualTo(0)
         assertThat(viewModel.showRefreshBackupsFolderAfterThemeChange).isFalse()
         assertThat(viewModel.previousBackupsFolder).isNull()
+    }
+
+    @Test
+    fun onAction_setTheme_updatesThemeAndDynamicColorsInUiState() {
+        viewModel.onAction(SettingsAction.SetTheme(Theme.DARK, true))
+        waitUntil {
+            viewModel.uiState.value.preferences.theme == Theme.DARK &&
+                viewModel.uiState.value.preferences.useDynamicColors
+        }
+
+        assertThat(viewModel.uiState.value.preferences.theme).isEqualTo(Theme.DARK)
+        assertThat(viewModel.uiState.value.preferences.useDynamicColors).isTrue()
+    }
+
+    @Test
+    fun onAction_dialogWorkflow_setsAndDismissesActiveDialog() {
+        assertThat(viewModel.uiState.value.activeDialog).isNull()
+
+        viewModel.onAction(SettingsAction.ShowNotesViewDialog)
+        waitUntil { viewModel.uiState.value.activeDialog != null }
+        assertThat(viewModel.uiState.value.activeDialog)
+            .isInstanceOf(SettingsDialogState.SingleSelection::class.java)
+
+        viewModel.onAction(SettingsAction.DismissDialog)
+        waitUntil { viewModel.uiState.value.activeDialog == null }
+        assertThat(viewModel.uiState.value.activeDialog).isNull()
+    }
+
+    @Test
+    fun onAction_updateAutoRemoveDays_updatesPreference() {
+        viewModel.onAction(SettingsAction.UpdateAutoRemoveDays(7))
+        waitUntil { preferences.autoRemoveDeletedNotesAfterDays.value == 7 }
+
+        assertThat(preferences.autoRemoveDeletedNotesAfterDays.value).isEqualTo(7)
     }
 }
