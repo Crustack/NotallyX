@@ -1,6 +1,6 @@
 package com.philkes.notallyx.recyclerview.listmanager
 
-import com.philkes.notallyx.presentation.viewmodel.preference.ListItemSort
+import com.philkes.notallyx.core.preference.ListItemSort
 import com.philkes.notallyx.test.assertChecked
 import com.philkes.notallyx.test.assertIds
 import com.philkes.notallyx.test.assertOrder

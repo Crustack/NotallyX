@@ -1,5 +1,6 @@
 package com.philkes.notallyx.utils
 
+import com.philkes.notallyx.core.common.extensions.CompressUtility
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.test.mockAndroidLog
 import org.junit.Assert.assertEquals

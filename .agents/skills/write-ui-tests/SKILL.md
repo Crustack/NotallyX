@@ -346,7 +346,7 @@ import com.kaspersky.components.composesupport.config.withComposeSupport
 import com.kaspersky.kaspresso.kaspresso.Kaspresso
 import com.kaspersky.kaspresso.screens.ComposeScreen
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
-import com.philkes.notallyx.presentation.activity.main.MainActivity
+import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.createBaseNote
 import kotlinx.coroutines.runBlocking
@@ -406,7 +406,7 @@ import com.kaspersky.kaspresso.kaspresso.Kaspresso
 import com.kaspersky.kaspresso.screens.ComposeScreen
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import com.philkes.notallyx.R
-import com.philkes.notallyx.presentation.activity.main.MainActivity
+import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.byContentDescription
 import com.philkes.notallyx.test.byId

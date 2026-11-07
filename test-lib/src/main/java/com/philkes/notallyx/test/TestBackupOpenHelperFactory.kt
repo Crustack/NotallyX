@@ -4,7 +4,7 @@ import android.content.ContextWrapper
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
-import com.philkes.notallyx.data.BackupOpenHelperFactory
+import com.philkes.notallyx.core.database.BackupOpenHelperFactory
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**

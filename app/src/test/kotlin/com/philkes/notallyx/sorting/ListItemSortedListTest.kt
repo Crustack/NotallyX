@@ -2,12 +2,12 @@
 //
 // import androidx.recyclerview.widget.RecyclerView
 // import
-// com.philkes.notallyx.presentation.view.note.listitem.sorting.ListItemSortedByCheckedCallback
-// import com.philkes.notallyx.presentation.view.note.listitem.sorting.ListItemSortedList
-// import com.philkes.notallyx.presentation.view.note.listitem.sorting.find
-// import com.philkes.notallyx.presentation.view.note.listitem.sorting.indices
-// import com.philkes.notallyx.presentation.view.note.listitem.sorting.init
-// import com.philkes.notallyx.presentation.view.note.listitem.sorting.splitByChecked
+// com.philkes.notallyx.feature.editor.listitem.sorting.ListItemSortedByCheckedCallback
+// import com.philkes.notallyx.feature.editor.listitem.sorting.ListItemSortedList
+// import com.philkes.notallyx.feature.editor.listitem.sorting.find
+// import com.philkes.notallyx.feature.editor.listitem.sorting.indices
+// import com.philkes.notallyx.feature.editor.listitem.sorting.init
+// import com.philkes.notallyx.feature.editor.listitem.sorting.splitByChecked
 // import com.philkes.notallyx.test.assertChildren
 // import com.philkes.notallyx.test.assertOrder
 // import com.philkes.notallyx.test.assertSize

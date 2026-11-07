@@ -1,5 +1,6 @@
-package com.philkes.notallyx.presentation.activity.main.fragments
+package com.philkes.notallyx.activity.main.fragments
 
+// import com.philkes.notallyx.R
 import android.app.Activity
 import android.app.Instrumentation
 import android.content.Intent
@@ -34,10 +35,21 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
-import com.philkes.notallyx.R
-import com.philkes.notallyx.presentation.activity.main.MainActivity
-import com.philkes.notallyx.presentation.activity.note.refreshStatusBarPin
-import com.philkes.notallyx.presentation.viewmodel.preference.PeriodicBackup
+import com.philkes.notallyx.activity.note.refreshStatusBarPin
+import com.philkes.notallyx.core.common.error.*
+import com.philkes.notallyx.core.common.extensions.*
+import com.philkes.notallyx.core.common.result.*
+import com.philkes.notallyx.core.database.*
+import com.philkes.notallyx.core.preference.*
+import com.philkes.notallyx.core.security.*
+import com.philkes.notallyx.core.ui.components.*
+import com.philkes.notallyx.core.ui.dialog.*
+import com.philkes.notallyx.core.ui.extensions.*
+import com.philkes.notallyx.core.ui.views.*
+import com.philkes.notallyx.data.model.extensions.*
+import com.philkes.notallyx.feature.main.MainActivity
+import com.philkes.notallyx.feature.migration.backup.ON_SAVE_BACKUP_FILE
+import com.philkes.notallyx.feature.migration.backup.PERIODIC_BACKUP_FILE_PREFIX
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.assertLogAppeared
 import com.philkes.notallyx.test.byId
@@ -55,12 +67,6 @@ import com.philkes.notallyx.test.navigateTo
 import com.philkes.notallyx.test.waitUntil
 import com.philkes.notallyx.test.waitUntilSettingsValue
 import com.philkes.notallyx.test.waitUntilSucceeds
-import com.philkes.notallyx.utils.backup.ON_SAVE_BACKUP_FILE
-import com.philkes.notallyx.utils.backup.PERIODIC_BACKUP_FILE_PREFIX
-import com.philkes.notallyx.utils.getExternalBackupsDirectory
-import com.philkes.notallyx.utils.getExternalMediaDirectory
-import com.philkes.notallyx.utils.getUriForFile
-import com.philkes.notallyx.utils.listZipFiles
 import java.io.File
 import java.util.Date
 import kotlinx.coroutines.Dispatchers

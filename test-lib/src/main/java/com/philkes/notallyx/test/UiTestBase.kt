@@ -1,18 +1,24 @@
 package com.philkes.notallyx.test
 
+// import com.philkes.notallyx.R
 import android.Manifest
 import android.content.ContextWrapper
 import android.os.Build
 import androidx.test.espresso.ViewInteraction
-import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
-import com.philkes.notallyx.R
-import com.philkes.notallyx.data.NotallyDatabase
-import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
-import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.EMPTY_PATH
-import com.philkes.notallyx.presentation.viewmodel.preference.PeriodicBackup
-import org.hamcrest.Matchers.allOf
+import com.philkes.notallyx.core.common.error.*
+import com.philkes.notallyx.core.common.extensions.*
+import com.philkes.notallyx.core.common.result.*
+import com.philkes.notallyx.core.database.*
+import com.philkes.notallyx.core.preference.*
+import com.philkes.notallyx.core.preference.NotallyXPreferences.Companion.EMPTY_PATH
+import com.philkes.notallyx.core.security.*
+import com.philkes.notallyx.core.ui.components.*
+import com.philkes.notallyx.core.ui.dialog.*
+import com.philkes.notallyx.core.ui.extensions.*
+import com.philkes.notallyx.core.ui.views.*
+import com.philkes.notallyx.data.model.extensions.*
 import org.junit.Before
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get

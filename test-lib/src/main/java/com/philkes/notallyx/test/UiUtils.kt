@@ -1,5 +1,6 @@
 package com.philkes.notallyx.test
 
+// import com.philkes.notallyx.R
 import android.graphics.Point
 import android.graphics.Typeface
 import android.os.SystemClock
@@ -37,7 +38,6 @@ import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.action.ViewActions.typeText
-import androidx.test.espresso.action.ViewActions.typeTextIntoFocusedView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.BoundedMatcher
 import androidx.test.espresso.matcher.RootMatchers.isDialog
@@ -64,8 +64,16 @@ import androidx.test.uiautomator.Until
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import cn.leaqi.drawer.SwipeDrawer
-import com.philkes.notallyx.R
-import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.core.common.error.*
+import com.philkes.notallyx.core.common.extensions.*
+import com.philkes.notallyx.core.common.result.*
+import com.philkes.notallyx.core.database.*
+import com.philkes.notallyx.core.preference.*
+import com.philkes.notallyx.core.security.*
+import com.philkes.notallyx.core.ui.components.*
+import com.philkes.notallyx.core.ui.dialog.*
+import com.philkes.notallyx.core.ui.extensions.*
+import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
@@ -75,8 +83,7 @@ import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.utils.security.AuthenticatorProvider
-import java.security.SecureRandom
+import com.philkes.notallyx.data.model.extensions.*
 import junit.framework.TestCase.assertTrue
 import org.hamcrest.Description
 import org.hamcrest.Matcher
@@ -85,6 +92,7 @@ import org.hamcrest.Matchers.anyOf
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.not
 import org.hamcrest.TypeSafeMatcher
+import java.security.SecureRandom
 
 fun onLabelItem(labelText: String): ViewInteraction =
     onView(

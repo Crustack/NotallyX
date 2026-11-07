@@ -1,0 +1,255 @@
+package com.philkes.notallyx.feature.migration.imports
+
+import android.app.Application
+import android.net.Uri
+import android.util.Log
+import androidx.core.net.toUri
+import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.NoteSplitUtils
+import com.philkes.notallyx.core.common.extensions.MIME_TYPE_ZIP
+import com.philkes.notallyx.core.common.result.ImportProgress
+import com.philkes.notallyx.core.common.result.ImportStage
+import com.philkes.notallyx.core.common.result.Progress
+import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
+import com.philkes.notallyx.data.model.Audio
+import com.philkes.notallyx.data.model.FileAttachment
+import com.philkes.notallyx.data.model.Label
+import com.philkes.notallyx.data.model.Type
+import com.philkes.notallyx.data.model.extensions.toText
+import com.philkes.notallyx.feature.editor.NoteModel
+import com.philkes.notallyx.feature.migration.backup.importAudio
+import com.philkes.notallyx.feature.migration.backup.importFile
+import com.philkes.notallyx.feature.migration.backup.importImage
+import com.philkes.notallyx.feature.migration.imports.evernote.EvernoteImporter
+import com.philkes.notallyx.feature.migration.imports.google.GoogleKeepImporter
+import com.philkes.notallyx.feature.migration.imports.json.JsonImporter
+import com.philkes.notallyx.feature.migration.imports.quillpad.QuillpadImporter
+import com.philkes.notallyx.feature.migration.imports.txt.PlainTextImporter
+import java.io.File
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.flow.MutableStateFlow
+
+data class ImportResult(val inserted: Int, val duplicates: Int, val corruptedNotes: Int)
+
+class NotesImporter(private val app: Application, private val database: NotallyDatabase) {
+
+    suspend fun import(
+        uri: Uri,
+        importSource: ImportSource,
+        progress: MutableStateFlow<Progress?>? = null,
+    ): ImportResult {
+        val tempDir = File(app.cacheDir, "${IMPORT_CACHE_FOLDER}_${UUID.randomUUID()}")
+        if (!tempDir.exists()) {
+            tempDir.mkdirs()
+        }
+        try {
+            val (notes, importDataFolder) =
+                try {
+                    when (importSource) {
+                        ImportSource.GOOGLE_KEEP -> GoogleKeepImporter()
+                        ImportSource.QUILLPAD -> QuillpadImporter()
+                        ImportSource.EVERNOTE -> EvernoteImporter()
+                        ImportSource.PLAIN_TEXT -> PlainTextImporter()
+                        ImportSource.JSON -> JsonImporter()
+                    }.import(app, uri, tempDir, progress)
+                } catch (e: Exception) {
+                    Log.e(TAG, "import: failed", e)
+                    progress?.value = ImportProgress(inProgress = false)
+                    throw e
+                }
+            val labelDao = database.getLabelDao()
+            val maxOrder = labelDao.getMaxOrder() ?: -1
+            labelDao.insert(
+                notes
+                    .flatMap { it.labels }
+                    .distinct()
+                    .sorted()
+                    .mapIndexed { index, value -> Label(value, maxOrder + 1 + index) }
+            )
+            val files = notes.flatMap { it.files }.distinct()
+            val images = notes.flatMap { it.images }.distinct()
+            val audios = notes.flatMap { it.audios }.distinct()
+            val totalFiles = files.size + images.size + audios.size
+            val counter = AtomicInteger(1)
+            progress?.value = ImportProgress(total = totalFiles, stage = ImportStage.IMPORT_FILES)
+            importDataFolder?.let {
+                importFiles(files, it, NoteModel.FileType.ANY, progress, totalFiles, counter)
+                importFiles(images, it, NoteModel.FileType.IMAGE, progress, totalFiles, counter)
+                importAudios(audios, it, progress, totalFiles, counter)
+            }
+            // Insert notes with split handling for oversized text notes, skipping duplicates
+            val dao = database.getBaseNoteDao()
+            var insertedCount = 0
+            var corruptedCount = 0
+            val totalCandidates = notes.size
+            notes.forEach { note ->
+                val dup = findDuplicateId(note)
+                if (dup == null) {
+                    try {
+                        if (note.type == Type.NOTE && note.body.length > MAX_BODY_CHAR_LENGTH) {
+                            // Split into parts, preserving spans and adding navigation links
+                            NoteSplitUtils.splitAndInsertForImport(note, dao)
+                        } else {
+                            // Regular insert; ensure id is auto-generated
+                            dao.insert(note.copy(id = 0))
+                        }
+                        insertedCount++
+                    } catch (e: Exception) {
+                        Log.e(
+                            "Import",
+                            "Failed to import note ${note.title} (id: ${note.id}), skipping it as corrupted",
+                            e,
+                        )
+                        corruptedCount++
+                    }
+                }
+            }
+            progress?.value = ImportProgress(inProgress = false)
+            return ImportResult(
+                inserted = insertedCount,
+                duplicates = (totalCandidates - insertedCount - corruptedCount),
+                corruptedNotes = corruptedCount,
+            )
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    private suspend fun importFiles(
+        files: List<FileAttachment>,
+        sourceFolder: File,
+        fileType: NoteModel.FileType,
+        progress: MutableStateFlow<Progress?>?,
+        total: Int?,
+        counter: AtomicInteger?,
+    ) {
+        files.forEach { file ->
+            val uri = File(sourceFolder, file.localName).toUri()
+            val (fileAttachment, error) =
+                if (fileType == NoteModel.FileType.IMAGE) app.importImage(uri, file.mimeType)
+                else app.importFile(uri, file.mimeType)
+            fileAttachment?.let {
+                file.localName = fileAttachment.localName
+                file.originalName = fileAttachment.originalName
+                file.mimeType = fileAttachment.mimeType
+            }
+            error?.let { Log.e(TAG, "Failed to import: $error") }
+            progress?.value =
+                ImportProgress(
+                    current = counter!!.getAndIncrement(),
+                    total = total!!,
+                    stage = ImportStage.IMPORT_FILES,
+                )
+        }
+    }
+
+    private suspend fun importAudios(
+        audios: List<Audio>,
+        sourceFolder: File,
+        progress: MutableStateFlow<Progress?>?,
+        totalFiles: Int,
+        counter: AtomicInteger,
+    ) {
+        audios.forEach { originalAudio ->
+            val file = File(sourceFolder, originalAudio.name)
+            val audio = app.importAudio(file, false)
+            originalAudio.name = audio.name
+            originalAudio.duration = if (audio.duration == 0L) null else audio.duration
+            originalAudio.timestamp = audio.timestamp
+            progress?.value =
+                ImportProgress(
+                    current = counter.getAndIncrement(),
+                    total = totalFiles,
+                    stage = ImportStage.IMPORT_FILES,
+                )
+        }
+    }
+
+    companion object {
+        private const val TAG = "NotesImporter"
+        const val IMPORT_CACHE_FOLDER = "imports"
+    }
+
+    private fun findDuplicateId(note: com.philkes.notallyx.data.model.BaseNote): Long? {
+        val dao = database.getBaseNoteDao()
+        val titleMatches = dao.getByTitle(note.title)
+        if (titleMatches.isEmpty()) return null
+        val target = normalizeContent(note)
+        return titleMatches
+            .firstOrNull { existing ->
+                existing.type == note.type && normalizeContent(existing) == target
+            }
+            ?.id
+    }
+
+    private fun normalizeContent(note: com.philkes.notallyx.data.model.BaseNote): String {
+        val raw = if (note.type == Type.NOTE) note.body else note.items.toText()
+        return raw.replace("\r\n", "\n")
+            .replace("\r", "\n")
+            .trim()
+            .replace("\n+".toRegex(), "\n")
+            .replace("[\t ]+".toRegex(), " ")
+    }
+}
+
+enum class ImportSource(
+    val displayNameResId: Int,
+    val mimeType: String,
+    val helpTextResId: Int,
+    val documentationUrl: String?,
+    val iconResId: Int,
+) : Display {
+    GOOGLE_KEEP(
+        R.string.google_keep,
+        MIME_TYPE_ZIP,
+        R.string.google_keep_help,
+        "https://support.google.com/keep/answer/10017039",
+        R.drawable.icon_google_keep,
+    ),
+    EVERNOTE(
+        R.string.evernote,
+        "*/*", // 'application/enex+xml' is not recognized
+        R.string.evernote_help,
+        "https://help.evernote.com/hc/en-us/articles/209005557-Export-notes-and-notebooks-as-ENEX-or-HTML",
+        R.drawable.icon_evernote,
+    ),
+    QUILLPAD(
+        R.string.quillpad,
+        MIME_TYPE_ZIP,
+        R.string.quillpad_help,
+        "https://quillpad.github.io/",
+        R.drawable.icon_quillpad,
+    ),
+    PLAIN_TEXT(
+        R.string.plain_text_files,
+        FOLDER_OR_FILE_MIMETYPE,
+        R.string.plain_text_files_help,
+        null,
+        R.drawable.text_file,
+    ),
+    JSON(
+        R.string.json_files,
+        FOLDER_OR_FILE_MIMETYPE,
+        R.string.json_files_help,
+        null,
+        R.drawable.file_json,
+    );
+
+    override fun getTextId(): Int {
+        return displayNameResId
+    }
+
+    override fun getIconId(): Int {
+        return iconResId
+    }
+}
+
+interface Display {
+    fun getTextId(): Int
+
+    fun getIconId(): Int
+}
+
+const val FOLDER_OR_FILE_MIMETYPE = "FOLDER_OR_FILE"

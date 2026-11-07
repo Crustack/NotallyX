@@ -1,5 +1,6 @@
-package com.philkes.notallyx.presentation.activity.main
+package com.philkes.notallyx.activity.main
 
+// import com.philkes.notallyx.R
 import android.app.Activity
 import android.app.Instrumentation
 import android.content.ClipData
@@ -41,17 +42,27 @@ import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.RoborazziRule
 import com.github.takahirom.roborazzi.captureRoboImage
-import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.error.*
+import com.philkes.notallyx.core.common.extensions.*
+import com.philkes.notallyx.core.common.result.*
+import com.philkes.notallyx.core.database.*
+import com.philkes.notallyx.core.preference.*
+import com.philkes.notallyx.core.security.*
+import com.philkes.notallyx.core.ui.components.*
+import com.philkes.notallyx.core.ui.dialog.*
+import com.philkes.notallyx.core.ui.extensions.*
+import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.ShadowContextImplMedia
-import com.philkes.notallyx.data.imports.google.GoogleKeepImporterTest.Companion.createBaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.Reminder
-import com.philkes.notallyx.presentation.activity.main.MainActivity.Companion.EXTRA_FRAGMENT_TO_OPEN
-import com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment
-import com.philkes.notallyx.presentation.activity.note.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
-import com.philkes.notallyx.presentation.activity.note.EditNoteActivity
-import com.philkes.notallyx.presentation.view.components.SampleNotes
+import com.philkes.notallyx.data.model.extensions.*
+import com.philkes.notallyx.feature.editor.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
+import com.philkes.notallyx.feature.editor.EditNoteActivity
+import com.philkes.notallyx.feature.main.MainActivity
+import com.philkes.notallyx.feature.main.MainActivity.Companion.EXTRA_FRAGMENT_TO_OPEN
+import com.philkes.notallyx.feature.migration.imports.google.GoogleKeepImporterTest.Companion.createBaseNote
+import com.philkes.notallyx.feature.settings.SettingsFragment
 import com.philkes.notallyx.test.FakeAndroidKeyStore
 import com.philkes.notallyx.test.context
 import com.philkes.notallyx.test.database
@@ -59,7 +70,6 @@ import com.philkes.notallyx.test.generateNotes
 import com.philkes.notallyx.test.preferences
 import com.philkes.notallyx.test.toMillis
 import com.philkes.notallyx.test.waitUntil
-import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import io.mockk.clearStaticMockk
 import java.io.File
 import java.util.Date

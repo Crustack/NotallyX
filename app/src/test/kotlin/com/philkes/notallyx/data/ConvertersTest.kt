@@ -1,6 +1,6 @@
 package com.philkes.notallyx.data
 
-import com.philkes.notallyx.data.model.Converters
+import com.philkes.notallyx.core.database.Converters
 import com.philkes.notallyx.data.model.FileAttachment
 import org.junit.Assert.assertEquals
 import org.junit.Test

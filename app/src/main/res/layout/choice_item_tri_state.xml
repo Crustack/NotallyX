@@ -9,7 +9,7 @@
   android:paddingBottom="4dp"
   android:gravity="center_vertical">
 
-  <com.philkes.notallyx.presentation.view.misc.tristatecheckbox.TriStateCheckBox
+  <com.philkes.notallyx.core.ui.views.TriStateCheckBox
     android:id="@+id/CheckBox"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"

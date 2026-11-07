@@ -9,6 +9,10 @@ import androidx.room.RawQuery
 import androidx.room.Update
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.extensions.charLimit
+import com.philkes.notallyx.core.common.extensions.log
+import com.philkes.notallyx.core.ui.extensions.getQuantityString
+import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
@@ -17,10 +21,6 @@ import com.philkes.notallyx.data.model.LabelsInBaseNote
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.presentation.getQuantityString
-import com.philkes.notallyx.presentation.showToast
-import com.philkes.notallyx.utils.charLimit
-import com.philkes.notallyx.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

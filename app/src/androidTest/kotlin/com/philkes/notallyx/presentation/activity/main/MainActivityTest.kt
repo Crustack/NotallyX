@@ -1,5 +1,7 @@
-package com.philkes.notallyx.presentation.activity.main
+package com.philkes.notallyx.activity.main
 
+// import com.philkes.notallyx.NotallyXApplication
+// import com.philkes.notallyx.R
 import android.app.Notification
 import android.util.Log
 import androidx.compose.ui.test.assertIsDisplayed
@@ -25,16 +27,27 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.philkes.notallyx.NotallyXApplication
-import com.philkes.notallyx.R
+import com.philkes.notallyx.activity.note.refreshStatusBarPin
+import com.philkes.notallyx.core.common.error.*
+import com.philkes.notallyx.core.common.extensions.*
+import com.philkes.notallyx.core.common.result.*
+import com.philkes.notallyx.core.database.*
+import com.philkes.notallyx.core.preference.*
+import com.philkes.notallyx.core.security.*
+import com.philkes.notallyx.core.ui.components.*
+import com.philkes.notallyx.core.ui.dialog.*
+import com.philkes.notallyx.core.ui.extensions.*
+import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
-import com.philkes.notallyx.presentation.activity.note.refreshStatusBarPin
+import com.philkes.notallyx.data.model.extensions.*
+import com.philkes.notallyx.feature.main.MainActivity
+import com.philkes.notallyx.feature.reminder.PinnedNotificationManager
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.childAtPosition
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.createListItem
 import com.philkes.notallyx.test.waitUntil
-import com.philkes.notallyx.utils.PinnedNotificationManager
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async

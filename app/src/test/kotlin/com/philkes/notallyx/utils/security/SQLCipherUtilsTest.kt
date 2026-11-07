@@ -1,7 +1,10 @@
-package com.philkes.notallyx.utils.security
+package com.philkes.notallyx.core.common.security
 
 import android.content.ContextWrapper
 import androidx.test.core.app.ApplicationProvider
+import com.philkes.notallyx.core.security.SQLCipherUtils
+import com.philkes.notallyx.core.security.isEncryptedDatabase
+import com.philkes.notallyx.core.security.isUnencryptedDatabase
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets

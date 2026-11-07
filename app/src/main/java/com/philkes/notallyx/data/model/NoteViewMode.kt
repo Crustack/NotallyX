@@ -1,7 +1,7 @@
 package com.philkes.notallyx.data.model
 
 import com.philkes.notallyx.R
-import com.philkes.notallyx.presentation.viewmodel.preference.StaticTextProvider
+import com.philkes.notallyx.core.preference.StaticTextProvider
 
 enum class NoteViewMode(override val textResId: Int) : StaticTextProvider {
     READ_ONLY(R.string.read_only),

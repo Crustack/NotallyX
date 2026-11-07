@@ -1,9 +1,9 @@
 package com.philkes.notallyx.changehistory
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import com.philkes.notallyx.feature.editor.history.Change
+import com.philkes.notallyx.feature.editor.history.ChangeHistory
 import com.philkes.notallyx.test.mockAndroidLog
-import com.philkes.notallyx.utils.changehistory.Change
-import com.philkes.notallyx.utils.changehistory.ChangeHistory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows

@@ -1,4 +1,4 @@
-package com.philkes.notallyx.data.imports.quillpad
+package com.philkes.notallyx.feature.migration.imports.quillpad
 
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote

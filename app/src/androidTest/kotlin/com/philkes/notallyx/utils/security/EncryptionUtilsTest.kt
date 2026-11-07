@@ -1,8 +1,12 @@
-package com.philkes.notallyx.utils.security
+package com.philkes.notallyx.core.common.security
 
 import android.content.ContextWrapper
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.AndroidJUnit4
+import com.philkes.notallyx.core.security.decryptDatabase
+import com.philkes.notallyx.core.security.encryptDatabase
+import com.philkes.notallyx.core.security.isEncryptedDatabase
+import com.philkes.notallyx.core.security.isUnencryptedDatabase
 import java.io.File
 import java.nio.charset.StandardCharsets
 import net.zetetic.database.sqlcipher.SQLiteDatabase

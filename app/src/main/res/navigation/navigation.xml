@@ -5,7 +5,7 @@
 
     <fragment
         android:id="@+id/Notes"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.NotesOverviewFragment"
+        android:name="com.philkes.notallyx.feature.main.tab.NotesOverviewFragment"
         android:label="@string/notes">
 
         <action
@@ -19,7 +19,7 @@
 
     <fragment
         android:id="@+id/Labels"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.LabelsFragment"
+        android:name="com.philkes.notallyx.feature.labels.LabelsFragment"
         android:label="@string/labels">
 
         <action
@@ -34,7 +34,7 @@
 
     <fragment
         android:id="@+id/Deleted"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.DeletedFragment"
+        android:name="com.philkes.notallyx.feature.main.tab.DeletedFragment"
       android:label="@string/deleted" >
 
         <action
@@ -48,7 +48,7 @@
 
     <fragment
         android:id="@+id/Archived"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.ArchivedFragment"
+        android:name="com.philkes.notallyx.feature.main.tab.ArchivedFragment"
       android:label="@string/archived" >
         <action
           android:id="@+id/ArchivedToSearch"
@@ -61,18 +61,18 @@
 
     <fragment
       android:id="@+id/Reminders"
-      android:name="com.philkes.notallyx.presentation.activity.main.fragment.RemindersFragment"
+      android:name="com.philkes.notallyx.feature.reminder.RemindersFragment"
       android:label="@string/reminders">
     </fragment>
 
     <fragment
         android:id="@+id/Settings"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment"
+        android:name="com.philkes.notallyx.feature.settings.SettingsFragment"
         android:label="@string/settings" />
 
     <fragment
         android:id="@+id/Search"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.SearchFragment">
+        android:name="com.philkes.notallyx.feature.search.SearchFragment">
         <argument
           android:name="initialFolder"
           app:argType="com.philkes.notallyx.data.model.Folder" />
@@ -80,7 +80,7 @@
 
     <fragment
         android:id="@+id/DisplayLabel"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.DisplayLabelFragment"
+        android:name="com.philkes.notallyx.feature.labels.DisplayLabelFragment"
         android:label="{notallyx.intent.extra.DISPLAYED_LABEL}">
         <argument
             android:name="notallyx.intent.extra.DISPLAYED_LABEL"
@@ -89,7 +89,7 @@
 
     <fragment
         android:id="@+id/Unlabeled"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.UnlabeledFragment"
+        android:name="com.philkes.notallyx.feature.main.tab.UnlabeledFragment"
         android:label="@string/unlabeled" />
 
 </navigation>

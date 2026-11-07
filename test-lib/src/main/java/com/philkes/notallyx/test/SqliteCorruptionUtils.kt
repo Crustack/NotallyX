@@ -3,7 +3,7 @@ package com.philkes.notallyx.test
 import android.database.DatabaseErrorHandler
 import android.database.sqlite.SQLiteDatabase
 import androidx.sqlite.db.SimpleSQLiteQuery
-import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.core.database.NotallyDatabase
 import java.io.File
 import java.io.RandomAccessFile
 

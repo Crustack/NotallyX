@@ -3,20 +3,20 @@ package com.philkes.notallyx.data.dao
 import android.util.Log
 import androidx.room.Dao
 import androidx.room.Transaction
-import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.core.common.NoteSplitUtils
+import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
-import com.philkes.notallyx.data.imports.ImportResult
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.LabelsInBaseNote
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.data.model.createNoteUrl
-import com.philkes.notallyx.data.model.getNoteIdFromUrl
-import com.philkes.notallyx.data.model.getNoteTypeFromUrl
-import com.philkes.notallyx.data.model.isNoteUrl
-import com.philkes.notallyx.data.model.toText
-import com.philkes.notallyx.utils.NoteSplitUtils
+import com.philkes.notallyx.data.model.extensions.createNoteUrl
+import com.philkes.notallyx.data.model.extensions.getNoteIdFromUrl
+import com.philkes.notallyx.data.model.extensions.getNoteTypeFromUrl
+import com.philkes.notallyx.data.model.extensions.isNoteUrl
+import com.philkes.notallyx.data.model.extensions.toText
+import com.philkes.notallyx.feature.migration.imports.ImportResult
 
 @Dao
 abstract class CommonDao(private val database: NotallyDatabase) {

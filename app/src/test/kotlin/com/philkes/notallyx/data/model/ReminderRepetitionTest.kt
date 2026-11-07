@@ -1,5 +1,6 @@
 package com.philkes.notallyx.data.model
 
+import com.philkes.notallyx.data.model.extensions.nextNotification
 import java.util.Calendar
 import java.util.Date
 import org.junit.Assert.assertEquals

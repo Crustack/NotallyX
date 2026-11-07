@@ -1,5 +1,6 @@
-package com.philkes.notallyx.presentation.widget
+package com.philkes.notallyx.widget
 
+// import com.philkes.notallyx.R
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
@@ -12,10 +13,21 @@ import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiSelector
-import com.philkes.notallyx.R
+import com.philkes.notallyx.core.common.error.*
+import com.philkes.notallyx.core.common.extensions.*
+import com.philkes.notallyx.core.common.result.*
+import com.philkes.notallyx.core.database.*
+import com.philkes.notallyx.core.preference.*
+import com.philkes.notallyx.core.security.*
+import com.philkes.notallyx.core.ui.components.*
+import com.philkes.notallyx.core.ui.dialog.*
+import com.philkes.notallyx.core.ui.extensions.*
+import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.presentation.activity.ConfigureWidgetActivity
-import com.philkes.notallyx.presentation.activity.main.MainActivity
+import com.philkes.notallyx.data.model.extensions.*
+import com.philkes.notallyx.feature.main.MainActivity
+import com.philkes.notallyx.feature.widget.ConfigureWidgetActivity
+import com.philkes.notallyx.feature.widget.WidgetProvider
 import com.philkes.notallyx.test.UiTestBase
 import com.philkes.notallyx.test.byId
 import com.philkes.notallyx.test.byText

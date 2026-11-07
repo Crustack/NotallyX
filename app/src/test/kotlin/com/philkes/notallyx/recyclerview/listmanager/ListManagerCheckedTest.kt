@@ -1,10 +1,10 @@
 package com.philkes.notallyx.recyclerview.listmanager
 
-import com.philkes.notallyx.presentation.view.note.listitem.ListState
-import com.philkes.notallyx.presentation.view.note.listitem.cloneList
-import com.philkes.notallyx.presentation.view.note.listitem.printList
-import com.philkes.notallyx.presentation.view.note.listitem.toMutableList
-import com.philkes.notallyx.presentation.viewmodel.preference.ListItemSort
+import com.philkes.notallyx.core.preference.ListItemSort
+import com.philkes.notallyx.feature.editor.listitem.ListState
+import com.philkes.notallyx.feature.editor.listitem.cloneList
+import com.philkes.notallyx.feature.editor.listitem.printList
+import com.philkes.notallyx.feature.editor.listitem.toMutableList
 import com.philkes.notallyx.test.assertChecked
 import com.philkes.notallyx.test.assertOrder
 import com.philkes.notallyx.test.assertOrderValues
