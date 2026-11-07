@@ -11,7 +11,6 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.extensions.copyToClipBoard
 import com.philkes.notallyx.core.common.extensions.findAllOccurrences
 import com.philkes.notallyx.core.common.extensions.openNote
 import com.philkes.notallyx.core.common.extensions.wrapWithChooser
@@ -370,19 +369,9 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
             val intent = Intent(Intent.ACTION_VIEW, uri).wrapWithChooser(this)
             try {
                 startActivity(intent)
-            } catch (exception: Exception) {
+            } catch (_: Exception) {
                 showToast(R.string.cant_open_link)
             }
         }
-    }
-
-    private fun copyLink(url: String) {
-        copyToClipBoard(url)
-        showToast(R.string.copied_link)
-    }
-
-    companion object {
-        private const val EXTRA_SELECTION_START = "notallyx.intent.extra.EXTRA_SELECTION_START"
-        private const val EXTRA_SELECTION_END = "notallyx.intent.extra.EXTRA_SELECTION_END"
     }
 }

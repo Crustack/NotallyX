@@ -16,7 +16,6 @@ import com.philkes.notallyx.core.common.extensions.toReadablePath
 import com.philkes.notallyx.core.common.extensions.viewFile
 import com.philkes.notallyx.core.common.result.Progress
 import com.philkes.notallyx.core.database.NotallyDatabase
-import com.philkes.notallyx.core.preference.BasePreference
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.extensions.createItemsFromNotes
 import com.philkes.notallyx.core.ui.extensions.getQuantityString
@@ -144,25 +143,12 @@ class NotesRouteViewModel(app: Application, preferences: NotallyXPreferences) :
         viewModelScope.launch(Dispatchers.IO) { dao.updateColor(ids, color) }
     }
 
-    fun changeColor(oldColor: String, newColor: String) {
-        val dao = baseNoteDao ?: return
-        val defaultColor = preferences.defaultNoteColor.value
-        if (oldColor == defaultColor) {
-            preferences.defaultNoteColor.save(newColor)
-        }
-        viewModelScope.launch(Dispatchers.IO) { dao.updateColor(oldColor, newColor) }
-    }
-
     fun updateBaseNotesLabels(notesLabels: List<Pair<Long, List<String>>>) {
         val dao = baseNoteDao ?: return
         actionMode.close(true)
         viewModelScope.launch(Dispatchers.IO) {
             notesLabels.forEach { (id, labels) -> dao.updateLabels(id, labels) }
         }
-    }
-
-    fun updateBaseNoteLabels(labels: List<String>, id: Long) {
-        updateBaseNotesLabels(listOf(id to labels))
     }
 
     suspend fun deleteSelectedBaseNotes(): Collection<BaseNote> {
@@ -215,10 +201,6 @@ class NotesRouteViewModel(app: Application, preferences: NotallyXPreferences) :
     fun saveNotes(notes: List<BaseNote>) {
         val dao = baseNoteDao ?: return
         viewModelScope.launch(Dispatchers.IO) { dao.insert(notes) }
-    }
-
-    fun <T> savePreference(preference: BasePreference<T>, value: T) {
-        viewModelScope.launch(Dispatchers.IO) { preference.save(value) }
     }
 
     fun exportNoteToFile(fileUri: Uri, note: BaseNote, snackbarView: View) {

@@ -10,7 +10,6 @@ import androidx.compose.runtime.setValue
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.viewModelScope
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.extensions.executeAsyncWithCallback
 import com.philkes.notallyx.core.common.extensions.log
 import com.philkes.notallyx.core.common.extensions.toReadablePath
 import com.philkes.notallyx.core.common.extensions.viewFile
@@ -18,19 +17,13 @@ import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.extensions.getQuantityString
 import com.philkes.notallyx.core.ui.extensions.showSnackbar
 import com.philkes.notallyx.core.ui.extensions.showToast
-import com.philkes.notallyx.data.dao.CommonDao
-import com.philkes.notallyx.data.dao.LabelDao
 import com.philkes.notallyx.data.model.BaseNote
-import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.deepCopy
 import com.philkes.notallyx.feature.migration.ExportMimeType
 import com.philkes.notallyx.feature.migration.backup.exportPdfFile
 import com.philkes.notallyx.feature.migration.backup.exportPlainTextFile
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -46,14 +39,7 @@ class EditActivityViewModel(app: Application, preferences: NotallyXPreferences) 
     var uiState by mutableStateOf<UiState>(UiState.Loading)
         private set
 
-    private val labelDao: LabelDao by lazy { database.value!!.getLabelDao() }
-    private val commonDao: CommonDao by lazy { database.value!!.getCommonDao() }
-
     var selectedExportMimeType: ExportMimeType = ExportMimeType.TXT
-
-    val allLabels: StateFlow<List<Label>> by lazy {
-        labelDao.getAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    }
 
     fun changeUiState(uiState: UiState) {
         this.uiState = uiState
@@ -110,14 +96,6 @@ class EditActivityViewModel(app: Application, preferences: NotallyXPreferences) 
         showSnackbar(msg, R.string.open_link) { app.viewFile(fileUri, mimeType.mimeType) }
     }
 
-    fun changeColor(oldColor: String, newColor: String) {
-        val defaultColor = preferences.defaultNoteColor.value
-        if (oldColor == defaultColor) {
-            preferences.defaultNoteColor.save(newColor)
-        }
-        viewModelScope.launch(Dispatchers.IO) { baseNoteDao?.updateColor(oldColor, newColor) }
-    }
-
     suspend fun duplicateNote(note: BaseNote) = duplicateNotes(listOf(note)).first()
 
     suspend fun duplicateNotes(notes: Collection<BaseNote>): List<Long> {
@@ -136,26 +114,6 @@ class EditActivityViewModel(app: Application, preferences: NotallyXPreferences) 
                 )
         }
         return withContext(Dispatchers.IO) { baseNoteDao!!.insert(copies) }
-    }
-
-    suspend fun getAllLabels(): Array<String> =
-        withContext(Dispatchers.IO) { labelDao.getArrayOfAll() }
-
-    fun insertLabel(label: String, onComplete: (success: Boolean) -> Unit) =
-        executeAsyncWithCallback(
-            { labelDao.insert(Label(label, (labelDao.getMaxOrder() ?: -1) + 1)) },
-            onComplete,
-        )
-
-    fun updateLabel(oldValue: String, newValue: String, onComplete: (success: Boolean) -> Unit) {
-        executeAsyncWithCallback({ commonDao.updateLabel(oldValue, newValue) }, onComplete)
-        val labelsHiddenPreference = preferences.labelsHidden
-        val labelsHidden = labelsHiddenPreference.value.toMutableSet()
-        if (labelsHidden.contains(oldValue)) {
-            labelsHidden.remove(oldValue)
-            labelsHidden.add(newValue)
-            viewModelScope.launch(Dispatchers.IO) { labelsHiddenPreference.save(labelsHidden) }
-        }
     }
 
     companion object {

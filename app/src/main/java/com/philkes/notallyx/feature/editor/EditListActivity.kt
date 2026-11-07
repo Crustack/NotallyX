@@ -344,10 +344,4 @@ class EditListActivity : EditActivity(Type.LIST) {
             }
         return occurrences.size
     }
-
-    companion object {
-        private const val EXTRA_ITEM_POS = "notallyx.intent.extra.EXTRA_ITEM_POS"
-        private const val EXTRA_SELECTION_START = "notallyx.intent.extra.EXTRA_SELECTION_START"
-        private const val EXTRA_SELECTION_END = "notallyx.intent.extra.EXTRA_SELECTION_END"
-    }
 }

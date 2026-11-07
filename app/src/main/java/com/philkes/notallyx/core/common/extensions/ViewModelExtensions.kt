@@ -16,7 +16,7 @@ fun ViewModel.executeAsyncWithCallback(
             try {
                 withContext(Dispatchers.IO) { function() }
                 true
-            } catch (exception: SQLiteConstraintException) {
+            } catch (_: SQLiteConstraintException) {
                 false
             }
         callback(success)

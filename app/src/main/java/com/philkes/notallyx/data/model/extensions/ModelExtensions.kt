@@ -18,7 +18,6 @@ import com.philkes.notallyx.core.ui.extensions.getQuantityStringPlain
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.core.ui.extensions.toHtml
 import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
-import com.philkes.notallyx.data.dao.NoteIdReminder
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.BaseNote.Companion.COLOR_DEFAULT
 import com.philkes.notallyx.data.model.ColorString
@@ -29,7 +28,6 @@ import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Repetition
 import com.philkes.notallyx.data.model.RepetitionTimeUnit
-import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.feature.editor.NoteModel
 import com.philkes.notallyx.feature.migration.imports.utils.createMarkdownFromBodyAndSpans
@@ -75,10 +73,6 @@ val FileAttachment.isImage: Boolean
 val String.isImageMimeType: Boolean
     get() {
         return startsWith("image/")
-    }
-val String.isAudioMimeType: Boolean
-    get() {
-        return startsWith("audio/")
     }
 
 fun BaseNote.toTxt(includeTitle: Boolean = true, includeCreationDate: Boolean = true) =
@@ -173,7 +167,7 @@ fun String.toBaseNote(): BaseNote {
 private fun JSONObject.getStringOrDefault(key: String, defaultValue: String): String {
     return try {
         getString(key)
-    } catch (exception: JSONException) {
+    } catch (_: JSONException) {
         defaultValue
     }
 }
@@ -283,8 +277,6 @@ fun BaseNote.toHtml(showDateCreated: Boolean, imagesRootFolder: File?) = buildSt
     append("</body></html>")
 }
 
-fun List<BaseNote>.toNoteIdReminders() = map { NoteIdReminder(it.id, it.reminders) }
-
 fun BaseNote.toMarkdown(): String = buildString {
     when (type) {
         Type.NOTE -> {
@@ -302,72 +294,6 @@ private fun List<ListItem>.toMarkdownChecklist(): String = buildString {
         val indent = if (item.isChild) "    " else ""
         appendLine("$indent- $check ${item.body}")
     }
-}
-
-private fun String.toMarkdownWithSpans(spans: List<SpanRepresentation>): String {
-    if (spans.isEmpty()) return this
-    val before = Array(this.length + 1) { StringBuilder() }
-    val after = Array(this.length + 1) { StringBuilder() }
-
-    // Prioritize links: avoid adding other markers within link ranges to reduce nesting issues
-    val linkRanges = spans.filter { it.link }.map { it.start to it.end }
-    fun inLinkRange(index: Int): Boolean = linkRanges.any {
-        index >= it.first && index <= it.second
-    }
-
-    // Add markers for non-link spans first
-    spans
-        .filter { !it.link }
-        .forEach { s ->
-            val start = s.start.coerceIn(0, this.length)
-            val end = s.end.coerceIn(0, this.length)
-            if (start >= end) return@forEach
-            if (!inLinkRange(start) && !inLinkRange(end)) {
-                if (s.bold) {
-                    before[start].append("**")
-                    after[end].insert(0, "**")
-                }
-                if (s.italic) {
-                    before[start].append("_")
-                    after[end].insert(0, "_")
-                }
-                if (s.monospace) {
-                    before[start].append("`")
-                    after[end].insert(0, "`")
-                }
-                if (s.strikethrough) {
-                    before[start].append("~~")
-                    after[end].insert(0, "~~")
-                }
-            }
-        }
-
-    // Add link markers
-    spans
-        .filter { it.link }
-        .forEach { s ->
-            val start = s.start.coerceIn(0, this.length)
-            val end = s.end.coerceIn(0, this.length)
-            if (start >= end) return@forEach
-            before[start].append("[")
-            val url = s.linkData ?: this.safeSubstring(start, end)
-            after[end].append("](${url})")
-        }
-
-    // Build output
-    val out = StringBuilder()
-    for (i in 0..this.length) {
-        out.append(before[i])
-        if (i < this.length) out.append(this[i])
-        out.append(after[i])
-    }
-    return out.toString()
-}
-
-private fun String.safeSubstring(start: Int, end: Int): String {
-    val s = start.coerceIn(0, this.length)
-    val e = end.coerceIn(0, this.length)
-    return if (s < e) this.substring(s, e) else ""
 }
 
 fun BaseNote.attachmentsDifferFrom(other: BaseNote): Boolean {
@@ -616,7 +542,7 @@ fun ColorString.isValid() =
             try {
                 android.graphics.Color.parseColor(this)
                 true
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 false
             }
     }

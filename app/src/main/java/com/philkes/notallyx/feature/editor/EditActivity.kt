@@ -7,7 +7,6 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.MenuItem
-import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -81,10 +80,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
     }
 
     internal lateinit var changeHistory: ChangeHistory
-    protected var undo: View? = null
-    protected var redo: View? = null
-    protected var jumpToTop: View? = null
-    protected var jumpToBottom: View? = null
 
     internal var colorInt: Int = -1
     protected var inputMethodManager: InputMethodManager? = null
@@ -113,9 +108,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
     }
 
     @Composable open fun RenderScreen() {}
-
-    protected val canEdit
-        get() = notallyModel.viewMode.value == NoteViewMode.EDIT
 
     private val autoSaveHandler = Handler(Looper.getMainLooper())
     private val autoSaveRunnable = Runnable {
@@ -324,8 +316,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
     protected open fun initChangeHistory() {
         changeHistory =
             ChangeHistory().apply {
-                canUndo.collectIn(this@EditActivity) { canUndo -> undo?.isEnabled = canUndo }
-                canRedo.collectIn(this@EditActivity) { canRedo -> redo?.isEnabled = canRedo }
                 stackPointer.collectIn(this@EditActivity) { _ -> resetIdleTimer() }
             }
     }
@@ -414,10 +404,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
         }
     }
 
-    protected fun isInSearchMode(): Boolean = isSearchActiveState.value || search.query.isNotEmpty()
-
-    protected fun updateJumpButtonsVisibility(manualSize: Int? = null) {}
-
     protected open fun initBottomMenu() {}
 
     protected open fun openMoreOptionsBottomSheet() {
@@ -489,7 +475,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
         search.results
             .combine(search.resultPos) { amount, pos -> Pair(amount, pos) }
             .drop(1)
-            .collectIn(this) { (amount, pos) ->
+            .collectIn(this) { (amount, _) ->
                 val hasResults = amount > 0
                 search.nextMenuItem?.isEnabled = hasResults
                 search.prevMenuItem?.isEnabled = hasResults
@@ -810,11 +796,9 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ComposeBind
         const val REQUEST_AUDIO_PERMISSION = 0
 
         const val EXTRA_SELECTED_BASE_NOTE = "notallyx.intent.extra.EXTRA_SELECTED_BASE_NOTE"
-        const val EXTRA_SELECTED_LABELS = "notallyx.intent.extra.EXTRA_SELECTED_LABELS"
         const val EXTRA_NOTE_ID = "notallyx.intent.extra.EXTRA_NOTE_ID"
         const val EXTRA_FOLDER_FROM = "notallyx.intent.extra.EXTRA_FOLDER_FROM"
         const val EXTRA_FOLDER_TO = "notallyx.intent.extra.EXTRA_FOLDER_TO"
-        const val EXTRA_INITIAL_SEARCH_QUERY = "notallyx.intent.extra.EXTRA_INITIAL_SEARCH_QUERY"
 
         val DEFAULT_EXCEPTION_HANDLER = Thread.getDefaultUncaughtExceptionHandler()
     }

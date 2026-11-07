@@ -210,7 +210,7 @@ private fun Context.logToFile(
         val (outputStream, logFileContents) =
             try {
                 Pair(contentResolver.openOutputStream(file.uri, "wa"), null)
-            } catch (e: UnsupportedOperationException) {
+            } catch (_: UnsupportedOperationException) {
                 Pair(
                     contentResolver.openOutputStream(file.uri, "w"),
                     contentResolver.readFileContents(file.uri),
@@ -264,7 +264,7 @@ fun Context.reportBug(stackTrace: String?) {
 fun Context.catchNoBrowserInstalled(callback: () -> Unit) {
     try {
         callback()
-    } catch (exception: ActivityNotFoundException) {
+    } catch (_: ActivityNotFoundException) {
         showToast(R.string.install_a_browser)
     }
 }

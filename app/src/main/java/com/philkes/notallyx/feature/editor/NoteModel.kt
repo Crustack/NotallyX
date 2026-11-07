@@ -22,7 +22,6 @@ import com.philkes.notallyx.core.database.DatabaseNotConnectedException
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.preference.NotallyXPreferences
-import com.philkes.notallyx.core.preference.TextSizeSp
 import com.philkes.notallyx.core.ui.extensions.showToast
 import com.philkes.notallyx.core.ui.extensions.toAnnotatedString
 import com.philkes.notallyx.core.ui.extensions.toSpanRepresentations
@@ -153,7 +152,6 @@ open class NoteModel(
     protected val database = NotallyDatabase.getDatabase(app)
     protected var baseNoteDao: BaseNoteDao? = null
     private val attachmentMutex = Mutex()
-    val textSize: TextSizeSp = preferences.textSizeNoteEditor.value
 
     var isNewNote = true
 

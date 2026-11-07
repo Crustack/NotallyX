@@ -6,36 +6,20 @@ import android.app.AlarmManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.ColorStateList
-import android.content.res.Resources
 import android.graphics.Color
-import android.graphics.Typeface
-import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import android.text.Editable
-import android.text.Spannable
-import android.text.style.CharacterStyle
-import android.text.style.StrikethroughSpan
-import android.text.style.StyleSpan
-import android.text.style.TypefaceSpan
-import android.text.style.URLSpan
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
 import android.view.Window
 import android.view.WindowManager
-import android.view.inputmethod.InputMethodManager
-import android.widget.RadioButton
-import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -48,21 +32,12 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.core.graphics.ColorUtils
-import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.DividerItemDecoration
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.shape.MaterialShapeDrawable
-import com.google.android.material.shape.RelativeCornerSize
-import com.google.android.material.shape.RoundedCornerTreatment
-import com.google.android.material.shape.ShapeAppearanceModel
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getUrl
 import com.philkes.notallyx.core.common.extensions.putNavKey
@@ -87,8 +62,6 @@ import java.util.Date
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import me.zhanghai.android.fastscroll.FastScrollerBuilder
-import me.zhanghai.android.fastscroll.PopupStyles
 
 fun AnnotatedString.Builder.setSpan(style: SpanStyle, start: Int, end: Int) {
     val s = start.coerceIn(0, length)
@@ -141,68 +114,6 @@ fun String.applySpans(representations: List<SpanRepresentation>): AnnotatedStrin
     }
     return builder.toAnnotatedString()
 }
-
-@Deprecated("Legacy Bold StyleSpan for old views")
-fun createBoldSpan() =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        StyleSpan(Typeface.BOLD, FontWeight.Bold.weight)
-    } else {
-        StyleSpan(Typeface.BOLD)
-    }
-
-/**
- * Adjusts or removes spans based on the selection range.
- *
- * @param selectionStart the start index of the selection
- * @param selectionEnd the end index of the selection
- */
-fun Editable.removeSelectionFromSpans(
-    selectionStart: Int,
-    selectionEnd: Int,
-    spans: Collection<CharacterStyle> =
-        getSpans(selectionStart, selectionEnd, CharacterStyle::class.java).toList(),
-) {
-    for (span in spans) {
-        val spanStart = getSpanStart(span)
-        val spanEnd = getSpanEnd(span)
-
-        when {
-            // Case 1: Selection is exactly the span's range (remove entire span)
-            selectionStart <= spanStart && selectionEnd >= spanEnd -> {
-                removeSpan(span)
-            }
-            // Case 2: Selection is part of the span (split the span)
-            selectionStart > spanStart && selectionEnd < spanEnd -> {
-                // Remove the original span
-                removeSpan(span)
-                // Reapply two new spans: one for the part before the selection, and one for the
-                // part after
-                val newSpan = span.cloneSpan()
-                setSpan(span, spanStart, selectionStart, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                setSpan(newSpan, selectionEnd, spanEnd, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-            }
-            // Case 3: Selection overlaps the start of the span (trim the span)
-            selectionStart <= spanStart && selectionEnd < spanEnd -> {
-                removeSpan(span)
-                setSpan(span, selectionEnd, spanEnd, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-            }
-            // Case 4: Selection overlaps the end of the span (trim the span)
-            else -> {
-                removeSpan(span)
-                setSpan(span, spanStart, selectionStart, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-            }
-        }
-    }
-}
-
-fun CharacterStyle.cloneSpan(): CharacterStyle =
-    when (this) {
-        is StyleSpan -> StyleSpan(this.style)
-        is StrikethroughSpan -> StrikethroughSpan()
-        is TypefaceSpan -> TypefaceSpan(this.family)
-        is URLSpan -> URLSpan(this.url)
-        else -> this
-    }
 
 fun String.toAnnotatedString(spans: List<SpanRepresentation>): AnnotatedString = applySpans(spans)
 
@@ -887,18 +798,8 @@ fun Menu.add(
     return menuItem
 }
 
-val Int.toDp: Int
-    get() = (this * Resources.getSystem().displayMetrics.density + 0.5f).toInt()
-
-val Float.toDpFloat: Int
-    get() = (this * Resources.getSystem().displayMetrics.density + 0.5f).toInt()
-
 fun View.getString(id: Int, vararg formatArgs: String): String {
     return context.resources.getString(id, *formatArgs)
-}
-
-fun View.getQuantityString(id: Int, quantity: Int, vararg formatArgs: Any): String {
-    return context.getQuantityString(id, quantity, *formatArgs)
 }
 
 fun Folder.movedToResId(): Int {
@@ -907,20 +808,6 @@ fun Folder.movedToResId(): Int {
         Folder.ARCHIVED -> R.plurals.archived_selected_notes
         Folder.NOTES -> R.plurals.restored_selected_notes
     }
-}
-
-fun RadioGroup.checkedTag(): Any? {
-    return this.findViewById<RadioButton?>(this.checkedRadioButtonId)?.tag
-}
-
-fun Context.showKeyboard(view: View) {
-    ContextCompat.getSystemService(this, InputMethodManager::class.java)
-        ?.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
-}
-
-fun Context.hideKeyboard(view: View) {
-    ContextCompat.getSystemService(this, InputMethodManager::class.java)
-        ?.hideSoftInputFromWindow(view.windowToken, 0)
 }
 
 inline fun LifecycleOwner.repeatOnLifecycleScope(
@@ -1035,16 +922,6 @@ fun Context.getQuantityStringPlain(id: Int, quantity: Int): String {
     return resources.getQuantityString(id, quantity)
 }
 
-@ColorInt
-fun @receiver:ColorInt Int.withAlpha(alpha: Float): Int {
-    return Color.argb(
-        (255 * alpha).toInt(),
-        Color.red(this),
-        Color.green(this),
-        Color.blue(this),
-    )
-}
-
 fun Context.getColorFromAttr(@AttrRes attr: Int): Int {
     val typedValue = TypedValue()
     val resolved = theme.resolveAttribute(attr, typedValue, true)
@@ -1060,34 +937,6 @@ fun Context.getColorFromAttr(@AttrRes attr: Int): Int {
     }
 }
 
-var counter = 0
-
-private class HandleDescriptor(val resourceFieldName: String, val selectHandleFieldName: String)
-
-private val handles =
-    arrayOf(
-        HandleDescriptor(
-            resourceFieldName = "mTextSelectHandleRes",
-            selectHandleFieldName = "mSelectHandleCenter",
-        ),
-        HandleDescriptor(
-            resourceFieldName = "mTextSelectHandleLeftRes",
-            selectHandleFieldName = "mSelectHandleLeft",
-        ),
-        HandleDescriptor(
-            resourceFieldName = "mTextSelectHandleRightRes",
-            selectHandleFieldName = "mSelectHandleRight",
-        ),
-    )
-
-fun Drawable.withTint(@ColorInt color: Int): Drawable {
-    val oldDrawable = DrawableCompat.unwrap<Drawable>(this)
-    val newDrawable = oldDrawable.constantState?.newDrawable()?.mutate() ?: oldDrawable.mutate()
-    val wrappedDrawable = DrawableCompat.wrap(newDrawable)
-    DrawableCompat.setTint(wrappedDrawable, color)
-    return wrappedDrawable
-}
-
 @ColorInt
 fun Context.getContrastFontColor(@ColorInt backgroundColor: Int): Int {
     return if (backgroundColor.isLightColor()) ContextCompat.getColor(this, R.color.TextDark)
@@ -1095,16 +944,6 @@ fun Context.getContrastFontColor(@ColorInt backgroundColor: Int): Int {
 }
 
 fun @receiver:ColorInt Int.isLightColor() = ColorUtils.calculateLuminance(this) > 0.5
-
-@ColorInt
-fun @receiver:ColorInt Int.getSlightContrastColor(): Int {
-    val overlayColor = if (this.isLightColor()) Color.BLACK else Color.WHITE
-    // Composite black/white over the background color
-    return ColorUtils.compositeColors(
-        ColorUtils.setAlphaComponent(overlayColor, 15), // ~10% alpha
-        this,
-    )
-}
 
 fun Context.showToast(messageResId: Int) =
     ContextCompat.getMainExecutor(this).execute {
@@ -1152,65 +991,10 @@ fun Context.extractColor(color: String): Int {
     }
 }
 
-fun ViewGroup.addFastScroll(context: Context, @ColorInt colorInt: Int) {
-    FastScrollerBuilder(this).useColoredStyle(context, colorInt).build()
-}
-
-fun FastScrollerBuilder.useColoredStyle(
-    context: Context,
-    @ColorInt colorInt: Int,
-): FastScrollerBuilder {
-    AppCompatResources.getDrawable(context, me.zhanghai.android.fastscroll.R.drawable.afs_md2_thumb)
-        ?.mutate()
-        ?.let {
-            DrawableCompat.setTint(it, colorInt)
-            setThumbDrawable(it)
-        }
-    ContextCompat.getDrawable(context, R.drawable.scroll_track)?.let { setTrackDrawable(it) }
-    setPadding(0, 0, 2.toDp, 0)
-    setPopupStyle(PopupStyles.MD2)
-    return this
-}
-
 fun Window.setLightStatusAndNavBar(value: Boolean, view: View = decorView) {
     val windowInsetsControllerCompat = WindowInsetsControllerCompat(this, view)
     windowInsetsControllerCompat.isAppearanceLightStatusBars = value
     windowInsetsControllerCompat.isAppearanceLightNavigationBars = value
-}
-
-private fun getOutlinedDrawable(context: Context): MaterialShapeDrawable {
-    val model =
-        ShapeAppearanceModel.builder()
-            .setAllCorners(RoundedCornerTreatment())
-            .setAllCornerSizes(RelativeCornerSize(0.5f))
-            .build()
-
-    return MaterialShapeDrawable(model).apply {
-        fillColor = ColorStateList.valueOf(0)
-        strokeWidth = context.resources.displayMetrics.density
-        strokeColor = ContextCompat.getColorStateList(context, R.color.chip_stroke)
-    }
-}
-
-fun RecyclerView.initListView(context: Context) {
-    setHasFixedSize(true)
-    layoutManager = LinearLayoutManager(context)
-    addItemDecoration(DividerItemDecoration(context, RecyclerView.VERTICAL))
-    setPadding(0, 0, 0, 0)
-}
-
-val RecyclerView.focusedViewHolder
-    get() = focusedChild?.let { view ->
-        val position = getChildAdapterPosition(view)
-        if (position == RecyclerView.NO_POSITION) {
-            null
-        } else {
-            findViewHolderForAdapterPosition(position)
-        }
-    }
-
-fun MaterialAutoCompleteTextView.select(value: CharSequence) {
-    setText(value, false)
 }
 
 fun Context.exportedText(notesAndAttachments: NotesAndAttachments) =

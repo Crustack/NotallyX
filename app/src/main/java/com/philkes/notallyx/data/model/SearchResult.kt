@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -19,8 +18,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 
 class SearchResult(
@@ -34,9 +31,6 @@ class SearchResult(
 
     private val searchParams = MutableStateFlow<SearchParams?>(null)
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     private val resultFlow: Flow<List<Item>> =
         searchParams
@@ -44,20 +38,15 @@ class SearchResult(
             .distinctUntilChanged()
             .flatMapLatest { params ->
                 if (params == null) {
-                    _isLoading.value = false
                     flowOf(emptyList())
                 } else {
-                    _isLoading.value = true
                     baseNoteDao
                         .getByKeyword(params.keyword, params.folder, params.label)
                         .map { transform(it) }
-                        .onEach { _isLoading.value = false }
                         .catch {
-                            _isLoading.value = false
                             context.log(TAG, throwable = it)
                             emit(emptyList())
                         }
-                        .onCompletion { _isLoading.value = false }
                 }
             }
             .flowOn(Dispatchers.IO)
@@ -80,6 +69,3 @@ class SearchResult(
         private const val TAG = "SearchResult"
     }
 }
-
-val SearchResult?.isEmpty: Boolean
-    get() = this?.value?.isEmpty() == true

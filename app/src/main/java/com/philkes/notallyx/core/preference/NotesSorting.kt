@@ -14,7 +14,7 @@ class NotesSortPreference(sharedPreferences: SharedPreferences) :
             sortedByName?.let {
                 try {
                     NotesSortBy.fromValue(sortedByName)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     defaultValue.sortedBy
                 }
             } ?: defaultValue.sortedBy
@@ -23,7 +23,7 @@ class NotesSortPreference(sharedPreferences: SharedPreferences) :
             sortDirectionName?.let {
                 try {
                     SortDirection.valueOf(sortDirectionName)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     defaultValue.sortDirection
                 }
             } ?: defaultValue.sortDirection

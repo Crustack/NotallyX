@@ -240,9 +240,4 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
             finish()
         }
     }
-
-    companion object {
-        private const val EXTRA_SELECTION_START = "notallyx.intent.extra.EXTRA_SELECTION_START"
-        private const val EXTRA_SELECTION_END = "notallyx.intent.extra.EXTRA_SELECTION_END"
-    }
 }

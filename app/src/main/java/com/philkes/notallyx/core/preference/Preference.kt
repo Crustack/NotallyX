@@ -15,8 +15,6 @@ import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.feature.editor.listitem.sorting.ListItemCheckedTimestampSortCallback
-import com.philkes.notallyx.feature.editor.listitem.sorting.ListItemParentSortCallback
 import java.security.SecureRandom
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -402,12 +400,6 @@ enum class TimeFormat(val format: (Date) -> String) : TextProvider {
 
 typealias TextSizeSp = Float
 
-val TextSizeSp.editBodySize: Float
-    get() = this
-
-val TextSizeSp.editTitleSize: Float
-    get() = (this + 4)
-
 val TextSizeSp.displayBodySize: Float
     get() = (this - 2)
 
@@ -427,12 +419,6 @@ val ListItemSort.isAutoSortChecked
     get() =
         this in
             setOf(ListItemSort.AUTO_SORT_BY_CHECKED, ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP)
-
-fun ListItemSort.callback() =
-    when (this) {
-        ListItemSort.AUTO_SORT_BY_CHECKED_TIMESTAMP -> ListItemCheckedTimestampSortCallback()
-        else -> ListItemParentSortCallback()
-    }
 
 enum class DefaultListNoteViewMode(override val textResId: Int) : StaticTextProvider {
     READ_ONLY(R.string.read_only),
