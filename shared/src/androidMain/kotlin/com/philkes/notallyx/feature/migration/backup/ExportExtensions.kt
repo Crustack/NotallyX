@@ -19,8 +19,8 @@ import com.philkes.notallyx.core.common.extensions.createChannelIfNotExists
 import com.philkes.notallyx.core.common.extensions.getCurrentMediaRoot
 import com.philkes.notallyx.core.common.extensions.getQuantityString
 import com.philkes.notallyx.core.common.extensions.log
-import com.philkes.notallyx.core.common.extensions.md5Hash
 import com.philkes.notallyx.core.common.extensions.resolveAttachmentFile
+import com.philkes.notallyx.core.common.extensions.sha256Hash
 import com.philkes.notallyx.core.common.extensions.verify
 import com.philkes.notallyx.core.common.result.Progress
 import com.philkes.notallyx.core.database.Converters
@@ -170,17 +170,17 @@ suspend fun ContextWrapper.exportAsZip(
             }
         }
         // Guard against null/IO issues when immediately reopening fileUri via SAF
-        val sourceMd5 = runCatching { zipFile.file.md5Hash() }.getOrNull()
-        val targetMd5 = runCatching { md5Hash(fileUri) }.getOrNull()
-        if (sourceMd5 == null || targetMd5 == null || !targetMd5.contentEquals(sourceMd5)) {
-            log(TAG, stackTrace = "Exported zipFile '$fileUri' has wrong MD5 hash!")
+        val sourceHash = runCatching { zipFile.file.sha256Hash() }.getOrNull()
+        val targetHash = runCatching { sha256Hash(fileUri) }.getOrNull()
+        if (sourceHash == null || targetHash == null || !targetHash.contentEquals(sourceHash)) {
+            log(TAG, stackTrace = "Exported zipFile '$fileUri' has wrong SHA-256 hash!")
             if (retryOnFail) {
                 zipFile.file.delete()
                 log(TAG, stackTrace = "Retrying to export ZIP to $fileUri...")
                 return exportAsZip(fileUri, compress, password, backupProgress, false)
             } else {
                 throw IOException(
-                    "exportAsZip failed because created '$fileUri' has wrong or unverifiable MD5 hash!"
+                    "exportAsZip failed because created '$fileUri' has wrong or unverifiable SHA-256 hash!"
                 )
             }
         }
