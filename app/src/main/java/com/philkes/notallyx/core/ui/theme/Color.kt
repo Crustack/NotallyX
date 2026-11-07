@@ -1,6 +1,7 @@
 package com.philkes.notallyx.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 
 // Primary & Accent Colors
 val MdThemePrimary = Color(0xFF7285D0)
@@ -49,3 +50,10 @@ val MdThemeOutlineVariant = Color(0xFFC6C5D0)
 val MdThemeInverseSurface = Color(0xFF2F3036)
 val MdThemeInverseOnSurface = Color(0xFFF1F0F7)
 val MdThemeInversePrimary = Color(0xFFB7C4FF)
+
+fun contentColorFor(backgroundColor: Color): Color =
+    if (backgroundColor.luminance() > 0.5f) {
+        MdThemeOnBackgroundLight
+    } else {
+        MdThemeOnBackgroundDark
+    }

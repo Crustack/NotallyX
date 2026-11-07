@@ -30,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -52,9 +51,8 @@ import com.philkes.notallyx.core.preference.displayBodySize
 import com.philkes.notallyx.core.preference.displaySmallerSize
 import com.philkes.notallyx.core.preference.displayTitleSize
 import com.philkes.notallyx.core.ui.extensions.format
-import com.philkes.notallyx.core.ui.theme.MdThemeOnBackgroundDark
-import com.philkes.notallyx.core.ui.theme.MdThemeOnBackgroundLight
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
+import com.philkes.notallyx.core.ui.theme.contentColorFor
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
@@ -385,14 +383,6 @@ private fun BaseNote.getEmptyMessage() =
     when (type) {
         Type.NOTE -> R.string.empty_note
         Type.LIST -> R.string.empty_list
-    }
-
-@Composable
-private fun contentColorFor(backgroundColor: Color): Color =
-    if (backgroundColor.luminance() > 0.5f) {
-        MdThemeOnBackgroundLight
-    } else {
-        MdThemeOnBackgroundDark
     }
 
 @Composable

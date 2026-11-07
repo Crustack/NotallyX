@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -32,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
+import com.philkes.notallyx.core.ui.theme.contentColorFor
 
 data class TextFormattingState(
     val isBold: Boolean = false,
@@ -105,6 +107,7 @@ fun TextFormattingBar(
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = backgroundColor,
+        contentColor = contentColorFor(backgroundColor),
         tonalElevation = 0.dp,
     ) {
         Row(
@@ -131,7 +134,7 @@ fun TextFormattingBar(
                         contentDescription = stringResource(id = R.string.link),
                         tint =
                             if (formattingState.isLink) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface,
+                            else LocalContentColor.current,
                     )
                 }
 
@@ -144,7 +147,7 @@ fun TextFormattingBar(
                         contentDescription = stringResource(id = R.string.bold),
                         tint =
                             if (formattingState.isBold) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface,
+                            else LocalContentColor.current,
                     )
                 }
 
@@ -157,7 +160,7 @@ fun TextFormattingBar(
                         contentDescription = stringResource(id = R.string.italic),
                         tint =
                             if (formattingState.isItalic) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface,
+                            else LocalContentColor.current,
                     )
                 }
 
@@ -170,7 +173,7 @@ fun TextFormattingBar(
                         contentDescription = stringResource(id = R.string.strikethrough),
                         tint =
                             if (formattingState.isStrikethrough) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface,
+                            else LocalContentColor.current,
                     )
                 }
 
@@ -183,7 +186,7 @@ fun TextFormattingBar(
                         contentDescription = stringResource(id = R.string.monospace),
                         tint =
                             if (formattingState.isMonospace) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface,
+                            else LocalContentColor.current,
                     )
                 }
 

@@ -91,6 +91,7 @@ import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.extensions.extractColor
 import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
+import com.philkes.notallyx.core.ui.theme.contentColorFor
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Folder
@@ -184,6 +185,7 @@ private fun SearchTopAppBar(
     onCloseSearch: () -> Unit,
     backgroundColor: Color,
 ) {
+    val contentColor = contentColorFor(backgroundColor)
     TopAppBar(
         title = {
             Row(
@@ -195,22 +197,16 @@ private fun SearchTopAppBar(
                     value = searchState.query,
                     onValueChange = onQueryChange,
                     modifier = Modifier.weight(1f).semantics { contentDescription = searchHint },
-                    textStyle =
-                        MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurface
-                        ),
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = contentColor),
                     singleLine = true,
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    cursorBrush = SolidColor(contentColor),
                     decorationBox = { innerTextField ->
                         Box {
                             if (searchState.query.isEmpty()) {
                                 Text(
                                     text = searchHint,
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color =
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                            alpha = 0.6f
-                                        ),
+                                    color = contentColor.copy(alpha = 0.6f),
                                 )
                             }
                             innerTextField()
@@ -232,7 +228,7 @@ private fun SearchTopAppBar(
                 Text(
                     text = countText,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = contentColor.copy(alpha = 0.7f),
                     modifier = Modifier.padding(horizontal = 8.dp),
                 )
 
@@ -265,7 +261,13 @@ private fun SearchTopAppBar(
                 )
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor),
+        colors =
+            TopAppBarDefaults.topAppBarColors(
+                containerColor = backgroundColor,
+                navigationIconContentColor = contentColor,
+                actionIconContentColor = contentColor,
+                titleContentColor = contentColor,
+            ),
     )
 }
 
@@ -478,6 +480,7 @@ private fun EditScreenAudioSection(
         Text(
             text = stringResource(id = R.string.audio_recordings),
             style = MaterialTheme.typography.titleMedium,
+            color = LocalContentColor.current,
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
         )
 
@@ -485,6 +488,8 @@ private fun EditScreenAudioSection(
             AudioItemRow(
                 dateText = audio.name,
                 lengthText = "${(audio.duration ?: 0L) / 1000}s",
+                contentColor = LocalContentColor.current,
+                lengthColor = LocalContentColor.current.copy(alpha = 0.7f),
                 onClick = { onAudioClick(audio) },
             )
         }
@@ -511,9 +516,11 @@ internal fun EditScreen(
 ) {
     var fileToDelete by remember { mutableStateOf<FileAttachment?>(null) }
 
+    val contentColor = contentColorFor(backgroundColor)
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = backgroundColor,
+        contentColor = contentColor,
         topBar = {
             if (searchState.isActive) {
                 SearchTopAppBar(
@@ -553,7 +560,13 @@ internal fun EditScreen(
                             )
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor),
+                    colors =
+                        TopAppBarDefaults.topAppBarColors(
+                            containerColor = backgroundColor,
+                            navigationIconContentColor = contentColor,
+                            actionIconContentColor = contentColor,
+                            titleContentColor = contentColor,
+                        ),
                 )
             }
         },
@@ -680,19 +693,16 @@ internal fun EditScreen(
                         },
                     textStyle =
                         MaterialTheme.typography.headlineSmall.copy(
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = LocalContentColor.current
                         ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    cursorBrush = SolidColor(LocalContentColor.current),
                     decorationBox = { innerTextField ->
                         Box {
                             if (noteState.title.isEmpty()) {
                                 Text(
                                     text = stringResource(id = R.string.title),
                                     style = MaterialTheme.typography.headlineSmall,
-                                    color =
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                            alpha = 0.6f
-                                        ),
+                                    color = LocalContentColor.current.copy(alpha = 0.6f),
                                 )
                             }
                             innerTextField()
@@ -734,8 +744,7 @@ internal fun EditScreen(
                             Text(
                                 text = formattedDateText,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color =
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                color = LocalContentColor.current.copy(alpha = 0.7f),
                             )
                         }
 
@@ -934,18 +943,15 @@ internal fun EditNoteScreen(
                         }
                         .semantics { contentDescription = bodyDesc },
                 textStyle =
-                    MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    MaterialTheme.typography.bodyLarge.copy(color = LocalContentColor.current),
+                cursorBrush = SolidColor(LocalContentColor.current),
                 decorationBox = { innerTextField ->
                     Box {
                         if (bodyValue.text.isEmpty()) {
                             Text(
                                 text = stringResource(id = R.string.note),
                                 style = MaterialTheme.typography.bodyLarge,
-                                color =
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                color = LocalContentColor.current.copy(alpha = 0.6f),
                             )
                         }
                         innerTextField()
@@ -1136,13 +1142,13 @@ internal fun EditListScreen(
                 Icon(
                     painter = painterResource(id = R.drawable.add),
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = LocalContentColor.current.copy(alpha = 0.7f),
                     modifier = Modifier.padding(end = 12.dp),
                 )
                 Text(
                     text = stringResource(id = R.string.add_item),
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = LocalContentColor.current.copy(alpha = 0.7f),
                 )
             }
 
@@ -1208,6 +1214,7 @@ private fun createSearchHighlightListItemTransformation(
 }
 
 @Preview(showBackground = true)
+@Preview(name = "Dark Mode", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun EditNoteScreenPreview() {
     NotallyXTheme {
@@ -1287,6 +1294,7 @@ private fun EditNoteScreenPreview() {
 }
 
 @Preview(showBackground = true)
+@Preview(name = "Dark Mode", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun EditListScreenPreview() {
     NotallyXTheme {
