@@ -32,6 +32,7 @@ import com.philkes.notallyx.data.model.extensions.getNoteIdFromUrl
 import com.philkes.notallyx.data.model.extensions.getNoteTypeFromUrl
 import com.philkes.notallyx.data.model.extensions.isNoteUrl
 import com.philkes.notallyx.feature.editor.formatting.getFormattingState
+import com.philkes.notallyx.feature.editor.history.changes.NoteBodyChange
 import com.philkes.notallyx.feature.editor.screens.EditChangeHandlers
 import com.philkes.notallyx.feature.editor.screens.EditClickHandlers
 import com.philkes.notallyx.feature.editor.screens.EditNotePreferences
@@ -59,34 +60,47 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
 
     override fun selectSearchResult(resultPos: Int) {}
 
+    private fun applyBodyChange(newBody: TextFieldValue) {
+        val oldBody = bodyValueState.value
+        if (newBody.annotatedString != oldBody.annotatedString) {
+            changeHistory.push(
+                NoteBodyChange(
+                    notallyModel = notallyModel,
+                    oldBody = oldBody,
+                    newBody = newBody,
+                    onBodyUpdated = { restored ->
+                        bodyValueState.value = restored
+                        if (isSearchActiveState.value) {
+                            updateSearchResults(searchQueryState.value)
+                        }
+                        resetIdleTimer()
+                    },
+                )
+            )
+        }
+        bodyValueState.value = newBody
+        notallyModel.body = newBody
+        resetIdleTimer()
+    }
+
     private fun applyOrToggleBold() {
-        val updated = bodyValueState.value.toggleBold()
-        bodyValueState.value = updated
-        notallyModel.body = updated
+        applyBodyChange(bodyValueState.value.toggleBold())
     }
 
     private fun applyOrToggleItalic() {
-        val updated = bodyValueState.value.toggleItalic()
-        bodyValueState.value = updated
-        notallyModel.body = updated
+        applyBodyChange(bodyValueState.value.toggleItalic())
     }
 
     private fun applyOrToggleStrikethrough() {
-        val updated = bodyValueState.value.toggleStrikethrough()
-        bodyValueState.value = updated
-        notallyModel.body = updated
+        applyBodyChange(bodyValueState.value.toggleStrikethrough())
     }
 
     private fun applyOrToggleMonospace() {
-        val updated = bodyValueState.value.toggleMonospace()
-        bodyValueState.value = updated
-        notallyModel.body = updated
+        applyBodyChange(bodyValueState.value.toggleMonospace())
     }
 
     private fun clearFormatting() {
-        val updated = bodyValueState.value.clearFormatting()
-        bodyValueState.value = updated
-        notallyModel.body = updated
+        applyBodyChange(bodyValueState.value.clearFormatting())
     }
 
     @Composable
@@ -175,6 +189,22 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                             isFormattingMenuVisible.value = true
                         }
                         val updatedValue = bodyValue.preserveStylesFrom(bodyValueState.value)
+                        if (updatedValue.annotatedString != bodyValueState.value.annotatedString) {
+                            changeHistory.push(
+                                NoteBodyChange(
+                                    notallyModel = notallyModel,
+                                    oldBody = bodyValueState.value,
+                                    newBody = updatedValue,
+                                    onBodyUpdated = { restored ->
+                                        bodyValueState.value = restored
+                                        if (isSearchActiveState.value) {
+                                            updateSearchResults(searchQueryState.value)
+                                        }
+                                        resetIdleTimer()
+                                    },
+                                )
+                            )
+                        }
                         bodyValueState.value = updatedValue
                         notallyModel.body = updatedValue
                     }
@@ -352,15 +382,11 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
     }
 
     private fun applyLink(url: String, displayText: String, range: TextRange? = null) {
-        val updated = bodyValueState.value.addOrUpdateLink(url, displayText, range)
-        bodyValueState.value = updated
-        notallyModel.body = updated
+        applyBodyChange(bodyValueState.value.addOrUpdateLink(url, displayText, range))
     }
 
     private fun removeLink(range: TextRange) {
-        val updated = bodyValueState.value.removeLink(range)
-        bodyValueState.value = updated
-        notallyModel.body = updated
+        applyBodyChange(bodyValueState.value.removeLink(range))
     }
 
     private fun openLink(url: String) {
