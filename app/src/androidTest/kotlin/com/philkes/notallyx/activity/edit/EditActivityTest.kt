@@ -24,6 +24,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.text.TextRange
+import androidx.core.content.IntentCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.intent.Intents
@@ -65,6 +66,7 @@ import com.philkes.notallyx.test.waitUntil
 import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.Matchers.allOf
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.FixMethodOrder
@@ -662,25 +664,7 @@ class EditActivityTest : UiTestBase() {
         }
 
         Intents.init()
-        val exportFile = File(context.cacheDir, "export_test.txt").apply { if (exists()) delete() }
         try {
-            val exportUri = context.getUriForFile(exportFile)
-            val exportResult =
-                Instrumentation.ActivityResult(
-                    Activity.RESULT_OK,
-                    Intent().apply { data = exportUri },
-                )
-            intending(
-                    allOf(
-                        hasAction(Intent.ACTION_CHOOSER),
-                        hasExtra(
-                            Intent.EXTRA_INTENT,
-                            hasAction(Intent.ACTION_CREATE_DOCUMENT),
-                        ),
-                    )
-                )
-                .respondWith(exportResult)
-
             val shareResult = Instrumentation.ActivityResult(Activity.RESULT_OK, null)
             intending(
                     allOf(
@@ -793,32 +777,7 @@ class EditActivityTest : UiTestBase() {
                 .onNodeWithContentDescription(context.getString(R.string.note))
                 .assert(hasText("Options Test Body"))
 
-            // 4. Export
-            composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
-            composeTestRule.onNodeWithText(context.getString(R.string.export)).performClick()
-            composeTestRule.waitUntil(10_000) {
-                composeTestRule
-                    .onAllNodes(hasText(ExportMimeType.TXT.name))
-                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
-                    .isNotEmpty()
-            }
-            composeTestRule.onNodeWithText(ExportMimeType.TXT.name).performClick()
-            intended(
-                allOf(
-                    hasAction(Intent.ACTION_CHOOSER),
-                    hasExtra(
-                        Intent.EXTRA_INTENT,
-                        hasAction(Intent.ACTION_CREATE_DOCUMENT),
-                    ),
-                )
-            )
-            waitUntil(10_000) { exportFile.exists() && exportFile.length() > 0 }
-            assertTrue(
-                "Exported TXT file should exist and contain note body",
-                exportFile.exists() && exportFile.readText().contains("Options Test Body"),
-            )
-
-            // 5. Share
+            // 4. Share
             composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
             composeTestRule.onNodeWithText(context.getString(R.string.share)).performClick()
             intended(
@@ -831,7 +790,7 @@ class EditActivityTest : UiTestBase() {
                 )
             )
 
-            // 6. Duplicate
+            // 5. Duplicate
             composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
             composeTestRule.onNodeWithText(context.getString(R.string.duplicate)).performClick()
             composeTestRule.waitUntil(10_000) {
@@ -861,7 +820,7 @@ class EditActivityTest : UiTestBase() {
                     .isNotEmpty()
             }
 
-            // 7. Archive
+            // 6. Archive
             composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
             composeTestRule.onNodeWithText(context.getString(R.string.archive)).performClick()
             composeTestRule.waitUntil(10_000) {
@@ -910,7 +869,7 @@ class EditActivityTest : UiTestBase() {
                     .isNotEmpty()
             }
 
-            // 8. Delete
+            // 7. Delete
             composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
             composeTestRule.onNodeWithText(context.getString(R.string.delete)).performClick()
             composeTestRule.waitUntil(10_000) {
@@ -935,7 +894,7 @@ class EditActivityTest : UiTestBase() {
                     .isNotEmpty()
             }
 
-            // 9. Delete Forever
+            // 8. Delete Forever
             composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
             composeTestRule
                 .onNodeWithText(context.getString(R.string.delete_forever))
@@ -955,8 +914,157 @@ class EditActivityTest : UiTestBase() {
 
             scenario.close()
         } finally {
-            exportFile.delete()
             Intents.release()
+        }
+    }
+
+    @Test
+    fun export() {
+        var note = createBaseNote(title = "Export Test Note", body = "Export Test Body")
+        runBlocking {
+            database.clearAllTables()
+            val id = database.getBaseNoteDao().insert(note)
+            note = note.copy(id = id)
+        }
+
+        val exportFiles =
+            ExportMimeType.entries.associateWith { mimeType ->
+                File(
+                        context.cacheDir,
+                        "export_test_${mimeType.name.lowercase()}.${mimeType.fileExtension}",
+                    )
+                    .apply { if (exists()) delete() }
+            }
+
+        Intents.init()
+        try {
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(
+                            Intent.EXTRA_INTENT,
+                            hasAction(Intent.ACTION_CREATE_DOCUMENT),
+                        ),
+                    )
+                )
+                .respondWithFunction { intent ->
+                    val innerIntent =
+                        IntentCompat.getParcelableExtra(
+                            intent,
+                            Intent.EXTRA_INTENT,
+                            Intent::class.java,
+                        )
+                    val mimeType = ExportMimeType.entries.first { it.mimeType == innerIntent?.type }
+                    val exportFile = exportFiles.getValue(mimeType)
+                    Instrumentation.ActivityResult(
+                        Activity.RESULT_OK,
+                        Intent().apply { data = context.getUriForFile(exportFile) },
+                    )
+                }
+
+            val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+            // Open existing note
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("Export Test Note"))
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("Export Test Note").performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(
+                        hasContentDescription(context.getString(R.string.tap_for_more_options))
+                    )
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
+            }
+
+            for (mimeType in ExportMimeType.entries) {
+                exportNote(mimeType)
+                verifyExportIntent(note, mimeType)
+                assertExportedFile(note, mimeType, exportFiles.getValue(mimeType))
+            }
+
+            scenario.close()
+        } finally {
+            exportFiles.values.forEach { it.delete() }
+            Intents.release()
+        }
+    }
+
+    private fun exportNote(mimeType: ExportMimeType) {
+        val moreOptionsLabel = context.getString(R.string.tap_for_more_options)
+        composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+        composeTestRule.onNodeWithText(context.getString(R.string.export)).performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodes(hasText(mimeType.name))
+                .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(mimeType.name).performClick()
+    }
+
+    private fun verifyExportIntent(note: BaseNote, mimeType: ExportMimeType) {
+        intended(
+            allOf(
+                hasAction(Intent.ACTION_CHOOSER),
+                hasExtra(
+                    Intent.EXTRA_INTENT,
+                    allOf(
+                        hasAction(Intent.ACTION_CREATE_DOCUMENT),
+                        hasType(mimeType.mimeType),
+                        hasExtra(Intent.EXTRA_TITLE, "${note.title}.${mimeType.fileExtension}"),
+                    ),
+                ),
+            )
+        )
+    }
+
+    private fun assertExportedFile(note: BaseNote, mimeType: ExportMimeType, file: File) {
+        waitUntil(10_000) { file.exists() && file.length() > 0 }
+        assertTrue(
+            "Exported ${mimeType.name} file should exist and not be empty",
+            file.exists() && file.length() > 0,
+        )
+        when (mimeType) {
+            ExportMimeType.TXT -> {
+                val content = file.readText()
+                assertTrue(
+                    "Exported TXT file should contain note body",
+                    content.contains(note.body),
+                )
+            }
+            ExportMimeType.MD -> {
+                val content = file.readText()
+                assertTrue(
+                    "Exported MD file should contain note body",
+                    content.contains(note.body),
+                )
+            }
+            ExportMimeType.JSON -> {
+                val json = JSONObject(file.readText())
+                assertEquals(note.title, json.getString("title"))
+                assertEquals(note.body, json.getString("body"))
+                assertEquals(note.type.name, json.getString("type"))
+            }
+            ExportMimeType.HTML -> {
+                val content = file.readText()
+                assertTrue(
+                    "Exported HTML file should contain note title heading",
+                    content.contains("<h2>${note.title}</h2>"),
+                )
+                assertTrue(
+                    "Exported HTML file should contain note body",
+                    content.contains(note.body),
+                )
+            }
+            ExportMimeType.PDF -> {
+                val header = file.readBytes().copyOf(4).toString(Charsets.US_ASCII)
+                assertEquals("%PDF", header)
+            }
         }
     }
 
