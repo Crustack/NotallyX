@@ -1,53 +1,60 @@
 package com.philkes.notallyx.data.dao
 
-import android.content.Context
-import android.content.ContextWrapper
-import androidx.room3.Room
-import androidx.test.core.app.ApplicationProvider
-import com.philkes.notallyx.core.database.BackupSQLiteDriver
+import com.philkes.notallyx.core.database.DesktopDatabaseDriverFactory
 import com.philkes.notallyx.core.database.NotallyDatabase
+import com.philkes.notallyx.core.platform.DesktopPathProvider
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.Folder
+import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.extensions.createNoteUrl
-import kotlinx.coroutines.runBlocking
+import java.io.File
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
-@RunWith(RobolectricTestRunner::class)
-@Config(manifest = Config.NONE, sdk = [35])
-class CommonDaoTest {
+/**
+ * Multiplatform unit tests for [CommonDao] running against in-memory SQLite with
+ * BundledSQLiteDriver.
+ */
+class CommonDaoCommonTest {
 
+    private lateinit var tempDir: File
     private lateinit var db: NotallyDatabase
     private lateinit var baseNoteDao: BaseNoteDao
+    private lateinit var labelDao: LabelDao
     private lateinit var commonDao: CommonDao
 
     @Before
     fun setUp() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        db =
-            Room.inMemoryDatabaseBuilder(context, NotallyDatabase::class.java)
-                .setDriver(BackupSQLiteDriver(context as ContextWrapper))
-                .build()
+        tempDir =
+            File(
+                    System.getProperty("java.io.tmpdir"),
+                    "commondao-test-${System.nanoTime()}",
+                )
+                .apply { mkdirs() }
+        val pathProvider = DesktopPathProvider(baseDirOverride = tempDir)
+        val driverFactory = DesktopDatabaseDriverFactory(pathProvider)
+        db = NotallyDatabase.createDatabase(driverFactory, inMemory = true)
         baseNoteDao = db.getBaseNoteDao()
+        labelDao = db.getLabelDao()
         commonDao = db.getCommonDao()
     }
 
     @After
     fun tearDown() {
         db.close()
+        tempDir.deleteRecursively()
     }
 
     private fun createTestNote(
@@ -56,6 +63,7 @@ class CommonDaoTest {
         type: Type = Type.NOTE,
         spans: List<SpanRepresentation> = emptyList(),
         items: List<ListItem> = emptyList(),
+        labels: List<String> = emptyList(),
     ): BaseNote =
         BaseNote(
             id = 0,
@@ -66,7 +74,7 @@ class CommonDaoTest {
             pinned = false,
             timestamp = System.currentTimeMillis(),
             modifiedTimestamp = System.currentTimeMillis(),
-            labels = emptyList(),
+            labels = labels,
             body = body,
             spans = spans,
             items = items,
@@ -79,7 +87,54 @@ class CommonDaoTest {
         )
 
     @Test
-    fun importBackup_remapsInternalNoteLinks() = runBlocking {
+    fun deleteLabel_removesLabelFromNotesAndLabelTable() = runTest {
+        labelDao.insert(Label("Work", 0))
+        labelDao.insert(Label("Personal", 1))
+
+        val noteId =
+            baseNoteDao.insert(
+                createTestNote(
+                    title = "Work Note",
+                    labels = listOf("Work", "Personal"),
+                )
+            )
+
+        commonDao.deleteLabel("Work")
+
+        val labels = labelDao.getAll().first()
+        assertEquals(1, labels.size)
+        assertEquals("Personal", labels.first().value)
+
+        val note = baseNoteDao.get(noteId)
+        assertNotNull(note)
+        assertEquals(listOf("Personal"), note!!.labels)
+    }
+
+    @Test
+    fun updateLabel_renamesLabelInNotesAndLabelTable() = runTest {
+        labelDao.insert(Label("OldWork", 0))
+
+        val noteId =
+            baseNoteDao.insert(
+                createTestNote(
+                    title = "Work Note",
+                    labels = listOf("OldWork"),
+                )
+            )
+
+        commonDao.updateLabel("OldWork", "NewWork")
+
+        val labels = labelDao.getAll().first()
+        assertEquals(1, labels.size)
+        assertEquals("NewWork", labels.first().value)
+
+        val note = baseNoteDao.get(noteId)
+        assertNotNull(note)
+        assertEquals(listOf("NewWork"), note!!.labels)
+    }
+
+    @Test
+    fun importBackup_remapsInternalNoteLinks() = runTest {
         val oldNote1Id = 101L
         val oldNote2Id = 102L
         val oldListNoteId = 103L
@@ -188,7 +243,7 @@ class CommonDaoTest {
     }
 
     @Test
-    fun importBackup_remapsInternalNoteLinks_toExistingDuplicates() = runBlocking {
+    fun importBackup_remapsInternalNoteLinks_toExistingDuplicates() = runTest {
         // Pre-insert target note into database as existing note
         val existingTarget =
             createTestNote(
@@ -246,7 +301,7 @@ class CommonDaoTest {
     }
 
     @Test
-    fun importBackup_unmatchedInternalNoteLink_remainsUnchanged() = runBlocking {
+    fun importBackup_unmatchedInternalNoteLink_remainsUnchanged() = runTest {
         val oldNoteId = 601L
         val missingTargetId = 9999L
         val originalUrl = missingTargetId.createNoteUrl(Type.NOTE)

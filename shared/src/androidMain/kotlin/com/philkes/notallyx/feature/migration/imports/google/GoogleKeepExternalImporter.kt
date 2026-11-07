@@ -3,22 +3,14 @@ package com.philkes.notallyx.feature.migration.imports.google
 import android.app.Application
 import android.net.Uri
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.extensions.*
-import com.philkes.notallyx.core.common.result.*
-import com.philkes.notallyx.core.database.*
-import com.philkes.notallyx.core.preference.*
-import com.philkes.notallyx.core.security.*
-import com.philkes.notallyx.data.model.Audio
+import com.philkes.notallyx.core.common.extensions.listFilesRecursive
+import com.philkes.notallyx.core.common.extensions.log
+import com.philkes.notallyx.core.common.result.ImportProgress
+import com.philkes.notallyx.core.common.result.ImportStage
+import com.philkes.notallyx.core.common.result.Progress
 import com.philkes.notallyx.data.model.BaseNote
-import com.philkes.notallyx.data.model.FileAttachment
-import com.philkes.notallyx.data.model.Folder
-import com.philkes.notallyx.data.model.ListItem
-import com.philkes.notallyx.data.model.NoteViewMode
-import com.philkes.notallyx.data.model.Type
-import com.philkes.notallyx.data.model.extensions.*
 import com.philkes.notallyx.feature.migration.imports.ExternalImporter
 import com.philkes.notallyx.feature.migration.imports.ImportException
-import com.philkes.notallyx.feature.migration.imports.utils.parseBodyAndSpansFromHtml
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -26,18 +18,8 @@ import java.io.InputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.InternalSerializationApi
-import kotlinx.serialization.json.Json
 
-@OptIn(InternalSerializationApi::class, ExperimentalSerializationApi::class)
-class GoogleKeepImporter : ExternalImporter {
-
-    private val json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-        allowTrailingComma = true
-    }
+class GoogleKeepExternalImporter : GoogleKeepImporter(), ExternalImporter {
 
     override fun import(
         app: Application,
@@ -91,82 +73,6 @@ class GoogleKeepImporter : ExternalImporter {
                 }
                 .toList()
         return Pair(baseNotes, dataFolder)
-    }
-
-    fun String.parseToBaseNote(relativePath: String? = null): BaseNote {
-        val googleKeepNote = json.decodeFromString<GoogleKeepNote>(this)
-        val (body, spans) =
-            parseBodyAndSpansFromHtml(
-                googleKeepNote.textContentHtml,
-                paragraphsAsNewLine = true,
-            )
-
-        val images =
-            googleKeepNote.attachments
-                .filter { it.mimetype.startsWith("image") }
-                .map { attachment ->
-                    FileAttachment(
-                        "${relativePath?.let { "$it/" } ?: ""}${attachment.filePath}",
-                        attachment.filePath,
-                        attachment.mimetype,
-                    )
-                }
-        val files =
-            googleKeepNote.attachments
-                .filter { !it.mimetype.startsWith("audio") && !it.mimetype.startsWith("image") }
-                .map { attachment ->
-                    FileAttachment(
-                        "${relativePath?.let { "$it/" } ?: ""}${attachment.filePath}",
-                        attachment.filePath,
-                        attachment.mimetype,
-                    )
-                }
-        val audios =
-            googleKeepNote.attachments
-                .filter { it.mimetype.startsWith("audio") }
-                .map { attachment ->
-                    Audio(
-                        "${relativePath?.let { "$it/" } ?: ""}${attachment.filePath}",
-                        0L,
-                        System.currentTimeMillis(),
-                    )
-                }
-        val items =
-            googleKeepNote.listContent.mapIndexed { index, item ->
-                ListItem(
-                    body = item.text,
-                    checked = item.isChecked,
-                    isChild = false, // Google Keep doesn't have explicit child/indentation info
-                    order = index,
-                    children = mutableListOf(),
-                )
-            }
-
-        return BaseNote(
-            id = 0L, // Auto-generated
-            type = if (googleKeepNote.listContent.isNotEmpty()) Type.LIST else Type.NOTE,
-            folder =
-                when {
-                    googleKeepNote.isTrashed -> Folder.DELETED
-                    googleKeepNote.isArchived -> Folder.ARCHIVED
-                    else -> Folder.NOTES
-                },
-            color = BaseNote.COLOR_DEFAULT, // Ignoring color mapping
-            title = googleKeepNote.title,
-            pinned = googleKeepNote.isPinned,
-            timestamp = googleKeepNote.createdTimestampUsec / 1000,
-            modifiedTimestamp = googleKeepNote.userEditedTimestampUsec / 1000,
-            labels = googleKeepNote.labels.map { it.name },
-            body = body,
-            spans = spans,
-            items = items,
-            images = images,
-            files = files,
-            audios = audios,
-            reminders = mutableListOf(),
-            NoteViewMode.EDIT,
-            false,
-        )
     }
 
     private fun newFile(destinationDir: File, zipEntry: ZipEntry): File {

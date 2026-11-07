@@ -80,7 +80,13 @@ kotlin {
             implementation("androidx.compose.ui:ui-test-manifest")
         }
 
-        named("desktopMain") { dependencies {} }
+        named("desktopMain") {
+            dependencies {
+                implementation(compose.desktop.currentOs)
+                implementation(compose.materialIconsExtended)
+                implementation(libs.compose.material3.desktop)
+            }
+        }
         named("desktopTest") {
             dependencies {
                 implementation(
@@ -139,18 +145,11 @@ configurations
                     )
                 )
         }
-    }
-
-configurations
-    .matching {
-        it.name.contains("desktopTestRuntimeClasspath") ||
-            it.name.contains("DesktopTestRuntimeClasspath")
-    }
-    .configureEach {
         exclude(group = "androidx.compose.ui")
         exclude(group = "androidx.compose.foundation")
         exclude(group = "androidx.compose.material")
         exclude(group = "androidx.compose.material3")
+        exclude(group = "androidx.compose.material3.adaptive")
         exclude(group = "androidx.compose.animation")
         exclude(group = "androidx.compose", module = "compose-bom")
     }

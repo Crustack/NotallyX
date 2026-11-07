@@ -24,6 +24,24 @@ kotlin {
                 implementation(libs.koin.core)
             }
         }
+        named("desktopTest") {
+            dependencies {
+                implementation(libs.junit)
+                implementation(libs.assertj)
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(
+                    "org.jetbrains.compose.ui:ui-test-junit4:${libs.versions.composeMultiplatform.get()}"
+                )
+                implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+                implementation("org.jetbrains.skiko:skiko-awt-runtime-linux-x64:0.150.2")
+                implementation("org.jetbrains.skiko:skiko-awt-runtime-macos-x64:0.150.2")
+                implementation("org.jetbrains.skiko:skiko-awt-runtime-macos-arm64:0.150.2")
+                implementation("org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.150.2")
+                implementation(libs.compose.desktop.currentOs)
+                implementation(libs.compose.material3.desktop)
+                implementation(libs.koin.test)
+            }
+        }
     }
 }
 
@@ -48,7 +66,32 @@ tasks.register("verifyDesktopBuild") {
 }
 
 configurations
-    .matching { it.name == "desktopRuntimeClasspath" }
+    .matching { it.name.contains("Desktop") || it.name.contains("desktop") }
+    .configureEach {
+        resolutionStrategy.dependencySubstitution {
+            substitute(module("androidx.compose.ui:ui-test"))
+                .using(
+                    module(
+                        "org.jetbrains.compose.ui:ui-test:${libs.versions.composeMultiplatform.get()}"
+                    )
+                )
+            substitute(module("androidx.compose.ui:ui-test-junit4"))
+                .using(
+                    module(
+                        "org.jetbrains.compose.ui:ui-test-junit4:${libs.versions.composeMultiplatform.get()}"
+                    )
+                )
+            substitute(module("androidx.compose.material3:material3"))
+                .using(
+                    module(
+                        "org.jetbrains.compose.material3:material3-desktop:${libs.versions.composeMaterial3.get()}"
+                    )
+                )
+        }
+    }
+
+configurations
+    .matching { it.name.contains("Desktop") || it.name.contains("desktop") }
     .configureEach {
         exclude(group = "androidx.compose.ui")
         exclude(group = "androidx.compose.foundation")

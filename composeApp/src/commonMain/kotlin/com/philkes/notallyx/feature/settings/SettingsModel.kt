@@ -15,11 +15,14 @@ import com.philkes.notallyx.core.preference.NotesView
 import com.philkes.notallyx.core.preference.PeriodicBackup
 import com.philkes.notallyx.core.preference.Theme
 import com.philkes.notallyx.core.preference.TimeFormat
+import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.core.ui.dialog.IconListItem
 import com.philkes.notallyx.core.ui.dialog.SelectionItem
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.feature.migration.backup.DatabaseAction
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class PreferencesUiModel(
     val notesView: NotesView = NotesView.LIST,
     val theme: Theme = Theme.FOLLOW_SYSTEM,
@@ -54,6 +57,19 @@ data class PreferencesUiModel(
     val dataInPublicFolder: Boolean = false,
     val appVersion: String = "",
 )
+
+fun PreferencesUiModel.toNoteCardDisplayConfig(): NoteCardDisplayConfig =
+    NoteCardDisplayConfig(
+        dateFormat = dateFormatOverview,
+        timeFormat = timeFormatOverview,
+        sortBy = notesSort.sortedBy,
+        textSize = textSizeOverview,
+        maxTitleLines = maxTitle,
+        maxLines = maxLines,
+        maxItems = maxItems,
+        hideLabels = labelTagsHiddenInOverview,
+        hideImages = imagesHiddenInOverview,
+    )
 
 sealed interface SettingsDialogState {
     data class SingleSelection<T>(

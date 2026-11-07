@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.model.Folder
@@ -33,6 +34,7 @@ fun SearchRoute(
     onOpenNote: (Long) -> Unit,
     onOpenList: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    displayConfig: NoteCardDisplayConfig = NoteCardDisplayConfig(),
     onBack: () -> Unit = {},
     initialKeyword: String = "",
     initialFolder: Folder? = Folder.NOTES,
@@ -56,12 +58,13 @@ fun SearchRoute(
         }
 
     val state =
-        remember(filteredNotes, keyword, selectedFolder) {
+        remember(filteredNotes, keyword, selectedFolder, displayConfig) {
             SearchUiState(
                 items = filteredNotes,
                 searchKeyword = keyword,
                 selectedFolder = selectedFolder,
                 isGrid = true,
+                displayConfig = displayConfig,
             )
         }
 

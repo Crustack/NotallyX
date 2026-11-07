@@ -79,7 +79,10 @@ fun LabelItemRow(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        IconButton(onClick = onDelete) {
+        IconButton(
+            onClick = onDelete,
+            modifier = Modifier.testTag(TestTags.LABEL_DELETE),
+        ) {
             Icon(
                 painter = painterResource(Res.drawable.delete),
                 contentDescription = stringResource(Res.string.delete),

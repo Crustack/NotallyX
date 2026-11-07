@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import com.philkes.notallyx.Res
+import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.model.Folder
@@ -36,16 +37,18 @@ fun UnlabeledRoute(
     onOpenNote: (Long) -> Unit,
     onOpenList: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    displayConfig: NoteCardDisplayConfig = NoteCardDisplayConfig(),
     onOpenDrawer: () -> Unit = {},
 ) {
     val notes by noteDao.getByFolder(Folder.NOTES).collectAsState(initial = emptyList())
     val unlabeledNotes = remember(notes) { notes.filter { it.labels.isEmpty() } }
 
     val state =
-        remember(unlabeledNotes) {
+        remember(unlabeledNotes, displayConfig) {
             UnlabeledUiState(
                 items = unlabeledNotes,
                 isGrid = true,
+                displayConfig = displayConfig,
             )
         }
 

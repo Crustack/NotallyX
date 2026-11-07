@@ -29,6 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.Res
@@ -49,6 +50,7 @@ fun LabelsRoute(
     onLabelClick: (String) -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
     val labels by labelDao.getAll().collectAsState(initial = emptyList())
     var newLabelText by remember { mutableStateOf("") }
     var activeDialog by remember { mutableStateOf<LabelDialogState?>(null) }
@@ -60,6 +62,7 @@ fun LabelsRoute(
                 labelDao.insert(Label(value = trimmed, order = labels.size))
             }
             newLabelText = ""
+            focusManager.clearFocus()
         }
     }
 

@@ -17,12 +17,6 @@ constructor(
     @field:Attribute(name = "export-date", required = false)
     @param:Attribute(name = "export-date", required = false)
     val exportDate: String = "",
-    //    @field:Attribute(name = "application", required = false)
-    //    @param:Attribute(name = "application", required = false)
-    //    val application: String = "",
-    //    @field:Attribute(name = "version", required = false)
-    //    @param:Attribute(name = "version", required = false)
-    //    val version: String = "",
     @field:ElementList(name = "note", inline = true)
     @param:ElementList(name = "note", inline = true)
     val notes: List<EvernoteNote> = listOf(),
@@ -92,10 +86,6 @@ constructor(
     @field:Element(name = "file-name", required = false)
     @param:Element(name = "file-name", required = false)
     val fileName: String = ""
-
-    //    @field:Element(name = "source-url", required = false)
-    //    @param:Element(name = "source-url", required = false)
-    //    val sourceUrl: String= ""
 )
 
 @Root(name = "task", strict = false)
@@ -105,44 +95,14 @@ constructor(
     @field:Element(name = "title", required = false)
     @param:Element(name = "title", required = false)
     val title: String = "",
-    //
-    //    @field:Element(name = "created") @param:Element(name = "created")
-    //    val created: String = "",
-    //
-    //    @field:Element(name = "updated") @param:Element(name = "updated")
-    //    val updated: String = "",
-    //
     @field:Element(name = "taskStatus", required = false)
     @param:Element(name = "taskStatus", required = false)
     @field:Convert(TaskStatusConverter::class)
     @param:Convert(TaskStatusConverter::class)
     val taskStatus: TaskStatus = TaskStatus.OPEN,
-    //
-    //    @field:Element(name = "taskFlag") @param:Element(name = "taskFlag")
-    //    val taskFlag: Boolean = false,
-    //
     @field:Element(name = "sortWeight", required = false)
     @param:Element(name = "sortWeight", required = false)
     val sortWeight: String = "",
-    //
-    //    @field:Element(name = "noteLevelID") @param:Element(name = "noteLevelID")
-    //    val noteLevelID: String = "",
-    //
-    //    @field:Element(name = "taskGroupNoteLevelID") @param:Element(name =
-    // "taskGroupNoteLevelID")
-    //    val taskGroupNoteLevelID: String = "",
-    //
-    //    @field:Element(name = "dueDate") @param:Element(name = "dueDate")
-    //    val dueDate: String = "",
-    //
-    //    @field:Element(name = "statusUpdated") @param:Element(name = "statusUpdated")
-    //    val statusUpdated: String = "",
-    //
-    //    @field:Element(name = "creator") @param:Element(name = "creator")
-    //    val creator: String = "",
-    //
-    //    @field:Element(name = "lastEditor") @param:Element(name = "lastEditor")
-    //    val lastEditor: String = ""
 )
 
 enum class TaskStatus(val status: String) {

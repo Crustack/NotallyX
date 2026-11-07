@@ -20,9 +20,9 @@ import com.philkes.notallyx.core.preference.Theme
  * @param content The composable content to render within the theme.
  */
 @Composable
-fun NotallyXTheme(
-    theme: Theme = Theme.FOLLOW_SYSTEM,
-    dynamicColor: Boolean = false,
+actual fun NotallyXTheme(
+    theme: Theme,
+    dynamicColor: Boolean,
     content: @Composable () -> Unit,
 ) {
     val systemInDark = isSystemInDarkTheme()

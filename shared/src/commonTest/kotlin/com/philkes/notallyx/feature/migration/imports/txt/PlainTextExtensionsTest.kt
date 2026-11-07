@@ -1,8 +1,8 @@
 package com.philkes.notallyx.feature.migration.imports.txt
 
-import junit.framework.TestCase.assertNotNull
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.groups.Tuple
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 class PlainTextExtensionsTest {

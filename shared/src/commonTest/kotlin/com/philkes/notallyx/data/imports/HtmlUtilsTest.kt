@@ -181,6 +181,13 @@ class HtmlUtilsTest {
                     it.linkData.equals("https://github.com/Crustack/NotallyX")
             }
     }
+
+    @Test
+    fun `parseBodyAndSpansFromHtml empty string returns empty`() {
+        val (body, spans) = parseBodyAndSpansFromHtml("")
+        assertThat(body).isEmpty()
+        assertThat(spans).isEmpty()
+    }
 }
 
 fun String.substringOfSpan(span: SpanRepresentation): String {

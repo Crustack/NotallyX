@@ -19,6 +19,7 @@ import com.philkes.notallyx.core.ui.platform.FilePicker
 import com.philkes.notallyx.core.ui.platform.PermissionChecker
 import com.philkes.notallyx.core.ui.platform.ShareHandler
 import com.philkes.notallyx.desktop.DesktopAppInfo
+import com.philkes.notallyx.desktop.DesktopPreferencesStore
 import com.philkes.notallyx.feature.media.audio.AudioPlayer
 import com.philkes.notallyx.feature.media.audio.AudioRecorder
 import com.philkes.notallyx.feature.media.audio.NoOpAudioPlayer
@@ -43,6 +44,7 @@ val desktopPlatformModule = module {
     single<AudioPlayer> { NoOpAudioPlayer() }
     single<AudioRecorder> { NoOpAudioRecorder() }
     single<PdfExporter> { NoOpPdfExporter() }
+    single<DesktopPreferencesStore> { DesktopPreferencesStore(get()) }
 }
 
 val desktopDatabaseModule = module {

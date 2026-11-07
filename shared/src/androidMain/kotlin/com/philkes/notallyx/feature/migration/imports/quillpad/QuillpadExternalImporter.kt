@@ -3,42 +3,22 @@ package com.philkes.notallyx.feature.migration.imports.quillpad
 import android.app.Application
 import android.net.Uri
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.common.extensions.getMimeType
 import com.philkes.notallyx.core.common.extensions.moveAllFiles
-import com.philkes.notallyx.core.common.extensions.toMillis
 import com.philkes.notallyx.core.common.result.ImportProgress
 import com.philkes.notallyx.core.common.result.ImportStage
 import com.philkes.notallyx.core.common.result.Progress
-import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
-import com.philkes.notallyx.data.model.FileAttachment
-import com.philkes.notallyx.data.model.Folder
-import com.philkes.notallyx.data.model.ListItem
-import com.philkes.notallyx.data.model.NoteViewMode
-import com.philkes.notallyx.data.model.Reminder
-import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.feature.migration.imports.ExternalImporter
 import com.philkes.notallyx.feature.migration.imports.ImportException
-import com.philkes.notallyx.feature.migration.imports.utils.parseBodyAndSpansFromMarkdown
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
-import java.util.Date
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.Json
 
-@OptIn(ExperimentalSerializationApi::class)
-class QuillpadImporter : ExternalImporter {
-
-    internal val json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-        allowTrailingComma = true
-    }
+class QuillpadExternalImporter : QuillpadImporter(), ExternalImporter {
 
     override fun import(
         app: Application,
@@ -87,96 +67,6 @@ class QuillpadImporter : ExternalImporter {
             }
 
         return Pair(baseNotes, dataFolder)
-    }
-
-    fun QuillpadNote.toBaseNote(notebookMap: Map<Long, String>): BaseNote {
-        val (body, spans) =
-            if (!isList && content != null) {
-                parseBodyAndSpansFromMarkdown(content)
-            } else {
-                Pair("", emptyList())
-            }
-
-        val items =
-            taskList?.mapIndexed { index, task ->
-                ListItem(
-                    body = task.content,
-                    checked = task.isDone,
-                    isChild = false,
-                    order = index,
-                    children = mutableListOf(),
-                )
-            } ?: emptyList()
-
-        val images = mutableListOf<FileAttachment>()
-        val files = mutableListOf<FileAttachment>()
-        val audios = mutableListOf<Audio>()
-
-        attachments?.forEach { attachment ->
-            when (attachment.type) {
-                "AUDIO" ->
-                    audios.add(
-                        Audio(
-                            name = attachment.fileName,
-                            duration = null,
-                            timestamp = modifiedDate.toMillis(),
-                        )
-                    )
-                else -> {
-                    val mimetype = attachment.fileName.getMimeType()
-                    if (mimetype?.startsWith("image/") == true) {
-                        images.add(
-                            FileAttachment(
-                                localName = attachment.fileName,
-                                originalName = attachment.description ?: attachment.fileName,
-                                mimeType = mimetype,
-                            )
-                        )
-                    } else {
-                        files.add(
-                            FileAttachment(
-                                localName = attachment.fileName,
-                                originalName = attachment.description ?: attachment.fileName,
-                                mimeType = mimetype ?: "application/octet-stream",
-                            )
-                        )
-                    }
-                }
-            }
-        }
-
-        val labels = mutableSetOf<String>()
-        notebookId?.let { notebookId -> notebookMap[notebookId]?.let { labels.add(it) } }
-        tags?.forEach { labels.add(it.name) }
-
-        val reminders =
-            this.reminders.map { Reminder(id = it.id, dateTime = Date(it.date), repetition = null) }
-
-        return BaseNote(
-            id = 0L,
-            type = if (isList) Type.LIST else Type.NOTE,
-            folder =
-                when {
-                    isDeleted -> Folder.DELETED
-                    isArchived -> Folder.ARCHIVED
-                    else -> Folder.NOTES
-                },
-            color = BaseNote.COLOR_DEFAULT,
-            title = title ?: "",
-            pinned = isPinned,
-            timestamp = creationDate.toMillis(),
-            modifiedTimestamp = modifiedDate.toMillis(),
-            labels = labels.sorted().toList(),
-            body = body,
-            spans = spans,
-            items = items,
-            images = images,
-            files = files,
-            audios = audios,
-            reminders = reminders,
-            viewMode = NoteViewMode.EDIT,
-            isPinnedToStatus = false,
-        )
     }
 
     private fun unzip(destinationPath: File, inputStream: InputStream): File {

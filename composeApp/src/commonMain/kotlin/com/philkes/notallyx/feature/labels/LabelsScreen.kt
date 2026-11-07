@@ -89,8 +89,14 @@ fun LabelsScreen(
                 )
             }
         } else {
+            val dragModifier =
+                if (state.activeDialog == null) {
+                    Modifier.dragContainer(dragDropState)
+                } else {
+                    Modifier
+                }
             LazyColumn(
-                modifier = Modifier.fillMaxSize().dragContainer(dragDropState),
+                modifier = Modifier.fillMaxSize().then(dragModifier),
                 state = listState,
             ) {
                 itemsIndexed(currentLabels, key = { _, label -> label.value }) { index, label ->

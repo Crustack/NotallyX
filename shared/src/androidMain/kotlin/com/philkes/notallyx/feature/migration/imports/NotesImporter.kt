@@ -21,10 +21,10 @@ import com.philkes.notallyx.data.model.extensions.toText
 import com.philkes.notallyx.feature.migration.backup.importAudio
 import com.philkes.notallyx.feature.migration.backup.importFile
 import com.philkes.notallyx.feature.migration.backup.importImage
-import com.philkes.notallyx.feature.migration.imports.evernote.EvernoteImporter
-import com.philkes.notallyx.feature.migration.imports.google.GoogleKeepImporter
+import com.philkes.notallyx.feature.migration.imports.evernote.EvernoteExternalImporter
+import com.philkes.notallyx.feature.migration.imports.google.GoogleKeepExternalImporter
 import com.philkes.notallyx.feature.migration.imports.json.JsonImporter
-import com.philkes.notallyx.feature.migration.imports.quillpad.QuillpadImporter
+import com.philkes.notallyx.feature.migration.imports.quillpad.QuillpadExternalImporter
 import com.philkes.notallyx.feature.migration.imports.txt.PlainTextImporter
 import java.io.File
 import java.util.UUID
@@ -46,9 +46,9 @@ class NotesImporter(private val app: Application, private val database: NotallyD
             val (notes, importDataFolder) =
                 try {
                     when (importSource) {
-                        ImportSource.GOOGLE_KEEP -> GoogleKeepImporter()
-                        ImportSource.QUILLPAD -> QuillpadImporter()
-                        ImportSource.EVERNOTE -> EvernoteImporter()
+                        ImportSource.GOOGLE_KEEP -> GoogleKeepExternalImporter()
+                        ImportSource.QUILLPAD -> QuillpadExternalImporter()
+                        ImportSource.EVERNOTE -> EvernoteExternalImporter()
                         ImportSource.PLAIN_TEXT -> PlainTextImporter()
                         ImportSource.JSON -> JsonImporter()
                     }.import(app, uri, tempDir, progress)

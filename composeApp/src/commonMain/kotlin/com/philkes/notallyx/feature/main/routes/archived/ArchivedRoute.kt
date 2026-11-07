@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.model.Folder
@@ -35,16 +36,18 @@ fun ArchivedRoute(
     onOpenNote: (Long) -> Unit,
     onOpenList: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    displayConfig: NoteCardDisplayConfig = NoteCardDisplayConfig(),
     onBack: () -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     val notes by noteDao.getByFolder(Folder.ARCHIVED).collectAsState(initial = emptyList())
 
     val state =
-        remember(notes) {
+        remember(notes, displayConfig) {
             ArchivedUiState(
                 items = notes,
                 isGrid = true,
+                displayConfig = displayConfig,
             )
         }
 

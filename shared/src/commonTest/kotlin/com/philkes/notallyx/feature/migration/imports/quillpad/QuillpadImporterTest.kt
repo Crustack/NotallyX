@@ -25,7 +25,6 @@ class QuillpadImporterTest {
 
     @Test
     fun `parseToBaseNote text note with labels`() {
-        // language=json
         val json =
             """
             {
@@ -59,7 +58,6 @@ class QuillpadImporterTest {
 
     @Test
     fun `parseToBaseNote trashed note`() {
-        // language=json
         val json =
             """
             {
@@ -83,8 +81,6 @@ class QuillpadImporterTest {
 
     @Test
     fun `parseToBaseNote archived note`() {
-
-        // language=json
         val json =
             """
             {
@@ -107,7 +103,6 @@ class QuillpadImporterTest {
 
     @Test
     fun `parseToBaseNote pinned note`() {
-        // language=json
         val json =
             """
             {
@@ -127,7 +122,6 @@ class QuillpadImporterTest {
 
     @Test
     fun `parseToBaseNote list note`() {
-        // language=json
         val json =
             """
              {
@@ -168,7 +162,6 @@ class QuillpadImporterTest {
 
     @Test
     fun `parseToBaseNote note with images`() {
-        // language=json
         val json =
             """
             {
@@ -196,36 +189,8 @@ class QuillpadImporterTest {
             )
     }
 
-    // TODO: in Quillpad not possible to attach non-image file?
-    //    @Test
-    //    fun `parseToBaseNote note with files`() {
-    //        val json =
-    //            """
-    //            {
-    //              "title": "File Note",
-    //              "attachments": [
-    //                {
-    //                  "filePath": "document.doc",
-    //                  "mimetype": "application/msword"
-    //                }
-    //              ],
-    //            }
-    //        """
-    //                .trimIndent()
-    //
-    //        val actual = with(importer) { json.parseToBaseNote() }
-    //
-    //        assertThat(actual)
-    //            .extracting("title", "files")
-    //            .containsExactly(
-    //                "File Note",
-    //                listOf(FileAttachment("document.doc", "document.doc", "application/msword")),
-    //            )
-    //    }
-
     @Test
     fun `parseToBaseNote note with audio`() {
-        // language=json
         val json =
             """
              {
@@ -252,7 +217,6 @@ class QuillpadImporterTest {
 
     @Test
     fun `parseToBaseNote note with reminder`() {
-        // language=json
         val json =
             """
             {

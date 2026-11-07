@@ -28,6 +28,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.VisualTransformation
@@ -138,9 +145,23 @@ fun EditListScreen(
             changeHandlers.onItemMove(fromIndex, toIndex, originalItem)
         }
 
+    val keyboardShortcutModifier = Modifier.onPreviewKeyEvent { event ->
+        if (event.type == KeyEventType.KeyDown && (event.isCtrlPressed || event.isMetaPressed)) {
+            when (event.key) {
+                Key.S -> {
+                    wrappedClickHandlers.onBackClick()
+                    true
+                }
+                else -> false
+            }
+        } else {
+            false
+        }
+    }
+
     EditScreen(
         noteState = noteState.copy(type = Type.LIST),
-        modifier = modifier,
+        modifier = modifier.then(keyboardShortcutModifier),
         preferences = preferences,
         searchState = searchState,
         backgroundColor = backgroundColor,

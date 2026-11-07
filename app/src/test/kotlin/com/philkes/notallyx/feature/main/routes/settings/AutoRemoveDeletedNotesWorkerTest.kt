@@ -107,7 +107,7 @@ class AutoRemoveDeletedNotesWorkerTest {
     @Test
     fun removeOldDeletedNotes_deletesNotesOlderThanDaysAndKeepsRecentAndActiveNotes() =
         runBlocking {
-            preferences.autoRemoveDeletedNotesAfterDays.save(30)
+            preferences.autoRemoveDeletedNotesAfterDays.update(30)
 
             val noteOldDeleted =
                 createTestNote(title = "Old Deleted", folder = Folder.DELETED, daysAgo = 35)
@@ -139,7 +139,7 @@ class AutoRemoveDeletedNotesWorkerTest {
 
     @Test
     fun removeOldDeletedNotes_cleansUpAssociatedAttachments() = runBlocking {
-        preferences.autoRemoveDeletedNotesAfterDays.save(7)
+        preferences.autoRemoveDeletedNotesAfterDays.update(7)
 
         val imageDir = File(application.getPrivateAttachmentsRoot(), SUBFOLDER_IMAGES)
         val fileDir = File(application.getPrivateAttachmentsRoot(), SUBFOLDER_FILES)

@@ -10,6 +10,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.philkes.notallyx.core.preference.EditAction
+import com.philkes.notallyx.core.preference.EditListAction as PrefEditListAction
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
@@ -19,6 +20,7 @@ import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.toColorString
 import com.philkes.notallyx.feature.editor.screens.EditListScreen
 import com.philkes.notallyx.feature.editor.screens.EditNotePreferences
+import com.philkes.notallyx.feature.editor.screens.SearchState
 import com.philkes.notallyx.navigation.NotallyNavKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -38,6 +40,15 @@ fun EditListRoute(
     var pinned by remember { mutableStateOf(false) }
     var activeDialog by remember { mutableStateOf<EditorDialogState?>(null) }
     var activeBottomSheet by remember { mutableStateOf<EditorBottomSheetState?>(null) }
+
+    val undoStack = remember { mutableStateListOf<List<ListItem>>() }
+    val redoStack = remember { mutableStateListOf<List<ListItem>>() }
+    var searchState by remember { mutableStateOf(SearchState()) }
+
+    fun recordUndo() {
+        undoStack.add(items.toList())
+        redoStack.clear()
+    }
 
     LaunchedEffect(noteId) {
         if (noteId > 0L) {
@@ -100,9 +111,18 @@ fun EditListRoute(
         remember(noteId) {
             val topActions =
                 if (noteId > 0L) {
-                    listOf(EditAction.CHANGE_COLOR, EditAction.DELETE, EditAction.PIN)
+                    listOf(
+                        EditAction.SEARCH,
+                        EditAction.CHANGE_COLOR,
+                        EditAction.DELETE,
+                        EditAction.PIN,
+                    )
                 } else {
-                    listOf(EditAction.CHANGE_COLOR, EditAction.PIN)
+                    listOf(
+                        EditAction.SEARCH,
+                        EditAction.CHANGE_COLOR,
+                        EditAction.PIN,
+                    )
                 }
             EditNotePreferences(topActions = topActions)
         }
@@ -118,6 +138,9 @@ fun EditListRoute(
             color = color,
             pinned = pinned,
             type = Type.LIST,
+            canUndo = undoStack.isNotEmpty(),
+            canRedo = redoStack.isNotEmpty(),
+            searchState = searchState,
             preferences = preferences,
             activeDialog = activeDialog,
             activeBottomSheet = activeBottomSheet,
@@ -131,6 +154,7 @@ fun EditListRoute(
                     title = action.title
                 }
                 is EditListAction.AddItemClicked -> {
+                    recordUndo()
                     val nextId = (items.maxOfOrNull { it.id } ?: -1) + 1
                     items.add(
                         ListItem(
@@ -148,7 +172,8 @@ fun EditListRoute(
                         if (action.item.id >= 0) it.id == action.item.id
                         else it.body == action.item.body
                     }
-                    if (index != -1) {
+                    if (index != -1 && items[index].body != action.newText) {
+                        recordUndo()
                         items[index] = items[index].copy(body = action.newText)
                     }
                 }
@@ -158,10 +183,12 @@ fun EditListRoute(
                         else it.body == action.item.body
                     }
                     if (index != -1) {
+                        recordUndo()
                         items[index] = items[index].copy(checked = action.checked)
                     }
                 }
                 is EditListAction.ItemDeleted -> {
+                    recordUndo()
                     if (action.item.id >= 0) {
                         items.removeAll { it.id == action.item.id }
                     } else {
@@ -169,15 +196,126 @@ fun EditListRoute(
                         if (index != -1) items.removeAt(index)
                     }
                 }
+                is EditListAction.ItemSwipeRight -> {
+                    val index = items.indexOfFirst {
+                        if (action.item.id >= 0) it.id == action.item.id
+                        else it.body == action.item.body
+                    }
+                    if (index > 0) {
+                        recordUndo()
+                        items[index] = items[index].copy(isChild = true)
+                    }
+                }
+                is EditListAction.ItemSwipeLeft -> {
+                    val index = items.indexOfFirst {
+                        if (action.item.id >= 0) it.id == action.item.id
+                        else it.body == action.item.body
+                    }
+                    if (index != -1) {
+                        recordUndo()
+                        items[index] = items[index].copy(isChild = false)
+                    }
+                }
                 is EditListAction.ItemMove -> {
                     if (action.fromIndex in items.indices && action.toIndex in items.indices) {
+                        recordUndo()
                         val moved = items.removeAt(action.fromIndex)
                         items.add(action.toIndex, moved)
+                        items.forEachIndexed { idx, itm -> items[idx] = itm.copy(order = idx) }
+                    }
+                }
+                is EditListAction.Undo -> {
+                    if (undoStack.isNotEmpty()) {
+                        redoStack.add(items.toList())
+                        val prev = undoStack.removeAt(undoStack.lastIndex)
+                        items.clear()
+                        items.addAll(prev)
+                    }
+                }
+                is EditListAction.Redo -> {
+                    if (redoStack.isNotEmpty()) {
+                        undoStack.add(items.toList())
+                        val next = redoStack.removeAt(redoStack.lastIndex)
+                        items.clear()
+                        items.addAll(next)
+                    }
+                }
+                is EditListAction.MoreOptionsClicked -> {
+                    activeBottomSheet =
+                        EditorBottomSheetState.MoreList(
+                            topActions = preferences.topActions,
+                            bottomAction = preferences.bottomAction,
+                        )
+                }
+                is EditListAction.ListActionClicked -> {
+                    when (action.action) {
+                        PrefEditListAction.CHECK_ALL -> {
+                            recordUndo()
+                            val updated = items.map { it.copy(checked = true) }
+                            items.clear()
+                            items.addAll(updated)
+                            activeBottomSheet = null
+                        }
+                        PrefEditListAction.UNCHECK_ALL -> {
+                            recordUndo()
+                            val updated = items.map { it.copy(checked = false) }
+                            items.clear()
+                            items.addAll(updated)
+                            activeBottomSheet = null
+                        }
+                        PrefEditListAction.DELETE_CHECKED -> {
+                            recordUndo()
+                            items.removeAll { it.checked }
+                            activeBottomSheet = null
+                        }
                     }
                 }
                 is EditListAction.ActionClicked -> {
                     when (action.action) {
                         EditAction.PIN -> pinned = !pinned
+                        EditAction.CONVERT -> {
+                            val markdown =
+                                items.joinToString("\n") { item ->
+                                    val prefix = if (item.isChild) "    " else ""
+                                    val check = if (item.checked) "x" else " "
+                                    "$prefix- [$check] ${item.body}"
+                                }
+                            val now = System.currentTimeMillis()
+                            scope.launch(Dispatchers.IO) {
+                                val convertedNote =
+                                    existingNote?.copy(
+                                        type = Type.NOTE,
+                                        title = title,
+                                        body = markdown,
+                                        items = emptyList(),
+                                        color = color,
+                                        pinned = pinned,
+                                        modifiedTimestamp = now,
+                                    )
+                                        ?: BaseNote(
+                                            id = if (noteId > 0L) noteId else 0L,
+                                            type = Type.NOTE,
+                                            folder = Folder.NOTES,
+                                            color = color,
+                                            title = title,
+                                            pinned = pinned,
+                                            timestamp = now,
+                                            modifiedTimestamp = now,
+                                            labels = emptyList(),
+                                            body = markdown,
+                                            spans = emptyList(),
+                                            items = emptyList(),
+                                            images = emptyList(),
+                                            files = emptyList(),
+                                            audios = emptyList(),
+                                            reminders = emptyList(),
+                                            viewMode = NoteViewMode.EDIT,
+                                            isPinnedToStatus = false,
+                                        )
+                                noteDao.insertSafe(convertedNote)
+                                onBack()
+                            }
+                        }
                         EditAction.CHANGE_COLOR -> {
                             activeDialog =
                                 EditorDialogState.ColorPicker(

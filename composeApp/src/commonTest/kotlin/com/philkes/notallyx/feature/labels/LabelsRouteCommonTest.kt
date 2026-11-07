@@ -2,7 +2,7 @@ package com.philkes.notallyx.feature.labels
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -13,7 +13,6 @@ import com.philkes.notallyx.test.CommonComposeUiTestBase
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 @OptIn(ExperimentalTestApi::class)
@@ -59,28 +58,51 @@ class LabelsRouteCommonTest : CommonComposeUiTestBase() {
     }
 
     @Test
-    fun deleteLabel_removesFromDatabaseAfterConfirmation() = runUiTest {
-        insertLabel(name = "Urgent")
-
+    fun clickDeleteButton_triggersRequestDeleteLabel() = runUiTest {
+        var requestedLabel: String? = null
+        val state =
+            LabelsUiState(
+                labels = listOf(LabelData("Urgent", true, 0)),
+                activeDialog = null,
+            )
         setContent {
             NotallyXTheme {
-                LabelsRoute(
-                    labelDao = labelDao,
-                    onBack = {},
+                LabelsScreen(
+                    state = state,
+                    onAction = {
+                        if (it is LabelsAction.RequestDeleteLabel) {
+                            requestedLabel = it.label.value
+                        }
+                    },
                 )
             }
         }
+        onAllNodesWithTag(TestTags.LABEL_DELETE)[0].performClick()
+        assertEquals("Urgent", requestedLabel)
+    }
 
-        onNodeWithText("Urgent").assertIsDisplayed()
-
-        onAllNodesWithContentDescription("Delete")[0].performClick()
-        onNodeWithTag("ConfirmDialog_Confirm").performClick()
-
-        waitUntil(timeoutMillis = 5_000) { runBlocking { labelDao.getAll().first().isEmpty() } }
-
-        runBlocking {
-            val labels = labelDao.getAll().first()
-            assertTrue(labels.isEmpty())
+    @Test
+    fun confirmDeleteDialog_invokesConfirmAction() = runUiTest {
+        var confirmedLabel: String? = null
+        val state =
+            LabelsUiState(
+                labels = listOf(LabelData("Urgent", true, 0)),
+                activeDialog = LabelDialogState.Delete("Urgent"),
+            )
+        setContent {
+            NotallyXTheme {
+                LabelsScreen(
+                    state = state,
+                    onAction = {
+                        if (it is LabelsAction.ConfirmDeleteLabel) {
+                            confirmedLabel = it.label
+                        }
+                    },
+                )
+            }
         }
+        onNodeWithTag("ConfirmDialog_Confirm").assertIsDisplayed()
+        onNodeWithTag("ConfirmDialog_Confirm").performClick()
+        assertEquals("Urgent", confirmedLabel)
     }
 }

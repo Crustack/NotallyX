@@ -43,6 +43,7 @@ object TestTags {
     const val ADD_LABEL_BUTTON = "AddLabelButton"
     const val ADD_LABEL_INPUT = "AddLabelInput"
     const val CONFIRM_LABEL_BUTTON = "ConfirmLabelButton"
+    const val LABEL_DELETE = "LabelDelete"
 
     // Deleted & Archived
     const val DELETE_ALL_BUTTON = "DeleteAllButton"

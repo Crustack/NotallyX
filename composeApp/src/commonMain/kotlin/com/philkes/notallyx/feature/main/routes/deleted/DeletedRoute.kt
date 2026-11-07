@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.philkes.notallyx.core.ui.components.NoteCardDisplayConfig
 import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.model.Folder
@@ -35,6 +36,7 @@ import kotlinx.coroutines.launch
 fun DeletedRoute(
     noteDao: BaseNoteDao,
     modifier: Modifier = Modifier,
+    displayConfig: NoteCardDisplayConfig = NoteCardDisplayConfig(),
     onBack: () -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
@@ -42,10 +44,11 @@ fun DeletedRoute(
     var activeDialog by remember { mutableStateOf<DeletedDialogState?>(null) }
 
     val state =
-        remember(notes, activeDialog) {
+        remember(notes, activeDialog, displayConfig) {
             DeletedUiState(
                 items = notes,
                 isGrid = true,
+                displayConfig = displayConfig,
                 activeDialog = activeDialog,
             )
         }

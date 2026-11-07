@@ -45,6 +45,7 @@ fun RemindersRoute(
     onOpenNote: (Long) -> Unit,
     onOpenList: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    displayConfig: NoteCardDisplayConfig = NoteCardDisplayConfig(),
     onOpenDrawer: () -> Unit = {},
 ) {
     val notes by noteDao.getByFolder(Folder.NOTES).collectAsState(initial = emptyList())
@@ -78,7 +79,7 @@ fun RemindersRoute(
             items = filteredItems,
             filterMode = filterMode,
             isGrid = true,
-            displayConfig = NoteCardDisplayConfig(),
+            displayConfig = displayConfig,
             canScheduleExactAlarms = true,
             isNotificationPermissionGranted = true,
         )

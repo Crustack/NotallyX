@@ -34,22 +34,30 @@ import org.jetbrains.compose.resources.stringResource
 fun SettingsRoute(
     database: NotallyDatabase,
     modifier: Modifier = Modifier,
+    initialPreferences: PreferencesUiModel = PreferencesUiModel(),
+    onPreferencesChanged: ((PreferencesUiModel) -> Unit)? = null,
     onBack: () -> Unit = {},
 ) {
-    var preferences by remember { mutableStateOf(PreferencesUiModel()) }
+    var preferences by remember(initialPreferences) { mutableStateOf(initialPreferences) }
     var activeDialog by remember { mutableStateOf<SettingsDialogState?>(null) }
+
+    fun updatePreferences(newPrefs: PreferencesUiModel) {
+        preferences = newPrefs
+        onPreferencesChanged?.invoke(newPrefs)
+    }
 
     fun onAction(action: SettingsAction) {
         when (action) {
             is SettingsAction.BackClicked -> onBack()
             is SettingsAction.DismissDialog -> activeDialog = null
             is SettingsAction.ShowNotesViewDialog -> {
-                preferences =
+                updatePreferences(
                     preferences.copy(
                         notesView =
                             if (preferences.notesView == NotesView.GRID) NotesView.LIST
                             else NotesView.GRID
                     )
+                )
             }
             is SettingsAction.ShowThemeDialog -> {
                 activeDialog =
@@ -57,37 +65,71 @@ fun SettingsRoute(
                         initialTheme = preferences.theme,
                         initialUseDynamicColors = preferences.useDynamicColors,
                         onConfirm = { theme, dynamicColors ->
-                            preferences =
+                            updatePreferences(
                                 preferences.copy(
                                     theme = theme,
                                     useDynamicColors = dynamicColors,
                                 )
+                            )
                             activeDialog = null
                         },
                     )
             }
             is SettingsAction.SetTextSizeNoteEditor -> {
-                preferences = preferences.copy(textSizeNoteEditor = action.textSize)
+                updatePreferences(preferences.copy(textSizeNoteEditor = action.textSize))
             }
             is SettingsAction.SetTextSizeOverview -> {
-                preferences = preferences.copy(textSizeOverview = action.textSize)
+                updatePreferences(preferences.copy(textSizeOverview = action.textSize))
             }
             is SettingsAction.ShowAlwaysShowSearchBarDialog -> {
-                preferences =
+                updatePreferences(
                     preferences.copy(alwaysShowSearchBar = !preferences.alwaysShowSearchBar)
+                )
             }
             is SettingsAction.ShowNotesSortDialog -> {
                 activeDialog =
                     SettingsDialogState.NotesSort(
                         currentSort = preferences.notesSort,
                         onConfirm = { sort ->
-                            preferences = preferences.copy(notesSort = sort)
+                            updatePreferences(preferences.copy(notesSort = sort))
+                            activeDialog = null
+                        },
+                    )
+            }
+            is SettingsAction.ShowDateFormatOverviewDialog -> {
+                activeDialog =
+                    SettingsDialogState.DateTimeFormat(
+                        initialDate = preferences.dateFormatOverview,
+                        initialTime = preferences.timeFormatOverview,
+                        onConfirm = { date, time ->
+                            updatePreferences(
+                                preferences.copy(
+                                    dateFormatOverview = date,
+                                    timeFormatOverview = time,
+                                )
+                            )
+                            activeDialog = null
+                        },
+                    )
+            }
+            is SettingsAction.ShowDateFormatNoteViewDialog -> {
+                activeDialog =
+                    SettingsDialogState.DateTimeFormat(
+                        initialDate = preferences.dateFormatNoteView,
+                        initialTime = preferences.timeFormatNoteView,
+                        onConfirm = { date, time ->
+                            updatePreferences(
+                                preferences.copy(
+                                    dateFormatNoteView = date,
+                                    timeFormatNoteView = time,
+                                )
+                            )
                             activeDialog = null
                         },
                     )
             }
             is SettingsAction.ShowListItemSortingDialog -> {
-                preferences =
+                updatePreferences(
                     preferences.copy(
                         listItemSorting =
                             when (preferences.listItemSorting) {
@@ -98,9 +140,10 @@ fun SettingsRoute(
                                     ListItemSort.NO_AUTO_SORT
                             }
                     )
+                )
             }
             is SettingsAction.ShowDefaultListNoteViewModeDialog -> {
-                preferences =
+                updatePreferences(
                     preferences.copy(
                         defaultListNoteViewMode =
                             when (preferences.defaultListNoteViewMode) {
@@ -110,40 +153,45 @@ fun SettingsRoute(
                                     DefaultListNoteViewMode.READ_ONLY
                             }
                     )
+                )
             }
             is SettingsAction.SetAutoSaveAfterIdleTime -> {
-                preferences = preferences.copy(autoSaveAfterIdleTime = action.seconds)
+                updatePreferences(preferences.copy(autoSaveAfterIdleTime = action.seconds))
             }
             is SettingsAction.UpdateAutoRemoveDays -> {
-                preferences = preferences.copy(autoRemoveDeletedNotesAfterDays = action.days)
+                updatePreferences(preferences.copy(autoRemoveDeletedNotesAfterDays = action.days))
             }
             is SettingsAction.SetMaxTitle -> {
-                preferences = preferences.copy(maxTitle = action.maxTitle)
+                updatePreferences(preferences.copy(maxTitle = action.maxTitle))
             }
             is SettingsAction.SetMaxItems -> {
-                preferences = preferences.copy(maxItems = action.maxItems)
+                updatePreferences(preferences.copy(maxItems = action.maxItems))
             }
             is SettingsAction.SetMaxLines -> {
-                preferences = preferences.copy(maxLines = action.maxLines)
+                updatePreferences(preferences.copy(maxLines = action.maxLines))
             }
             is SettingsAction.SetMaxLabels -> {
-                preferences = preferences.copy(maxLabels = action.maxLabels)
+                updatePreferences(preferences.copy(maxLabels = action.maxLabels))
             }
             is SettingsAction.ShowLabelTagsHiddenDialog -> {
-                preferences =
+                updatePreferences(
                     preferences.copy(
                         labelTagsHiddenInOverview = !preferences.labelTagsHiddenInOverview
                     )
+                )
             }
             is SettingsAction.ShowImagesHiddenDialog -> {
-                preferences =
+                updatePreferences(
                     preferences.copy(imagesHiddenInOverview = !preferences.imagesHiddenInOverview)
+                )
             }
             is SettingsAction.ShowSecureFlagDialog -> {
-                preferences = preferences.copy(secureFlag = !preferences.secureFlag)
+                updatePreferences(preferences.copy(secureFlag = !preferences.secureFlag))
             }
             is SettingsAction.ShowDataInPublicFolderDialog -> {
-                preferences = preferences.copy(dataInPublicFolder = !preferences.dataInPublicFolder)
+                updatePreferences(
+                    preferences.copy(dataInPublicFolder = !preferences.dataInPublicFolder)
+                )
             }
             else -> {}
         }

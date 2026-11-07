@@ -2,6 +2,12 @@ package com.philkes.notallyx.test
 
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.SemanticsNodeInteractionCollection
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
 import com.philkes.notallyx.core.database.DatabaseDriverFactory
 import com.philkes.notallyx.core.database.DesktopDatabaseDriverFactory
@@ -13,11 +19,14 @@ import com.philkes.notallyx.data.dao.LabelDao
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
+import com.philkes.notallyx.data.model.ListItem
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
 import java.io.File
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.getString
 import org.junit.After
 import org.junit.Before
 import org.koin.core.context.GlobalContext
@@ -96,7 +105,7 @@ abstract class CommonComposeUiTestBase : BaseComposeTest() {
         color: String = BaseNote.COLOR_DEFAULT,
         pinned: Boolean = false,
         labels: List<String> = emptyList(),
-        items: List<com.philkes.notallyx.data.model.ListItem> = emptyList(),
+        items: List<ListItem> = emptyList(),
     ): Long = runBlocking {
         val now = System.currentTimeMillis()
         val note =
@@ -123,7 +132,113 @@ abstract class CommonComposeUiTestBase : BaseComposeTest() {
         noteDao.insertSafe(note)
     }
 
+    protected fun insertChecklistNote(
+        title: String = "Checklist Note",
+        itemBodies: List<String> = listOf("Item 1", "Item 2"),
+        folder: Folder = Folder.NOTES,
+        pinned: Boolean = false,
+        labels: List<String> = emptyList(),
+    ): Long {
+        val listItems = itemBodies.mapIndexed { index, body ->
+            ListItem(
+                id = index,
+                body = body,
+                checked = false,
+                isChild = false,
+                order = index,
+                children = mutableListOf(),
+            )
+        }
+        return insertNote(
+            title = title,
+            folder = folder,
+            type = Type.LIST,
+            pinned = pinned,
+            labels = labels,
+            items = listItems,
+        )
+    }
+
+    protected fun insertArchivedNote(
+        title: String = "Archived Note",
+        body: String = "Archived Body",
+    ): Long = insertNote(title = title, body = body, folder = Folder.ARCHIVED)
+
+    protected fun insertDeletedNote(
+        title: String = "Deleted Note",
+        body: String = "Deleted Body",
+    ): Long = insertNote(title = title, body = body, folder = Folder.DELETED)
+
+    protected fun insertLabeledNote(
+        title: String = "Labeled Note",
+        labels: List<String>,
+        body: String = "Labeled Body",
+    ): Long {
+        labels.forEach { insertLabel(it) }
+        return insertNote(title = title, body = body, labels = labels)
+    }
+
     protected fun insertLabel(name: String): Unit = runBlocking {
         labelDao.insert(Label(value = name, order = 0))
+    }
+
+    protected fun ComposeUiTest.onNodeWithTextRes(
+        res: StringResource,
+        substring: Boolean = false,
+        ignoreCase: Boolean = false,
+        useUnmergedTree: Boolean = false,
+    ): SemanticsNodeInteraction {
+        val text = runBlocking { getString(res) }
+        return onNodeWithText(
+            text = text,
+            substring = substring,
+            ignoreCase = ignoreCase,
+            useUnmergedTree = useUnmergedTree,
+        )
+    }
+
+    protected fun ComposeUiTest.onNodeWithContentDescriptionRes(
+        res: StringResource,
+        substring: Boolean = false,
+        ignoreCase: Boolean = false,
+        useUnmergedTree: Boolean = false,
+    ): SemanticsNodeInteraction {
+        val text = runBlocking { getString(res) }
+        return onNodeWithContentDescription(
+            label = text,
+            substring = substring,
+            ignoreCase = ignoreCase,
+            useUnmergedTree = useUnmergedTree,
+        )
+    }
+
+    protected fun ComposeUiTest.onAllNodesWithTextRes(
+        res: StringResource,
+        substring: Boolean = false,
+        ignoreCase: Boolean = false,
+        useUnmergedTree: Boolean = false,
+    ): SemanticsNodeInteractionCollection {
+        val text = runBlocking { getString(res) }
+        return onAllNodesWithText(
+            text = text,
+            substring = substring,
+            ignoreCase = ignoreCase,
+            useUnmergedTree = useUnmergedTree,
+        )
+    }
+
+    protected fun ComposeUiTest.onAllNodesWithContentDescriptionRes(
+        res: StringResource,
+        substring: Boolean = false,
+        ignoreCase: Boolean = false,
+        useUnmergedTree: Boolean = false,
+    ): SemanticsNodeInteractionCollection {
+        val text = runBlocking { getString(res) }
+        return onAllNodesWithContentDescription(
+            label = text,
+            substring = substring,
+            ignoreCase = ignoreCase,
+            useUnmergedTree = useUnmergedTree,
+        )
     }
 }
