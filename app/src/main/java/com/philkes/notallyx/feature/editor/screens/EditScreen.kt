@@ -86,6 +86,7 @@ import com.philkes.notallyx.core.preference.TimeFormat
 import com.philkes.notallyx.core.ui.components.ImageCountChip
 import com.philkes.notallyx.core.ui.components.LabelChip
 import com.philkes.notallyx.core.ui.components.ReminderChip
+import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
 import com.philkes.notallyx.core.ui.extensions.extractColor
 import com.philkes.notallyx.core.ui.extensions.format
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
@@ -326,6 +327,8 @@ internal interface EditClickHandlers {
 
     fun onFileClick(file: FileAttachment) {}
 
+    fun onFileDelete(file: FileAttachment) {}
+
     fun onAudioClick(audio: Audio) {}
 
     fun onReminderClick(reminder: Reminder) = onActionClick(EditAction.REMINDERS)
@@ -509,6 +512,8 @@ internal fun EditScreen(
     bottomLeftActions: @Composable RowScope.() -> Unit = {},
     content: @Composable ColumnScope.() -> Unit = {},
 ) {
+    var fileToDelete by remember { mutableStateOf<FileAttachment?>(null) }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = backgroundColor,
@@ -760,6 +765,7 @@ internal fun EditScreen(
                             FileAttachmentPreviewChip(
                                 fileName = fileAttachment.originalName,
                                 onClick = { clickHandlers.onFileClick(fileAttachment) },
+                                onLongClick = { fileToDelete = fileAttachment },
                             )
                         }
                     }
@@ -793,6 +799,19 @@ internal fun EditScreen(
                     onAudioClick = { clickHandlers.onAudioClick(it) },
                 )
             }
+        }
+
+        fileToDelete?.let { file ->
+            ConfirmDialog(
+                message = stringResource(R.string.delete_file, file.originalName),
+                positiveButtonText = stringResource(R.string.delete),
+                onDismissRequest = { fileToDelete = null },
+                onConfirm = {
+                    val toDelete = file
+                    fileToDelete = null
+                    clickHandlers.onFileDelete(toDelete)
+                },
+            )
         }
     }
 }

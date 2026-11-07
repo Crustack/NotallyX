@@ -268,6 +268,10 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                         actionHandler.viewFile(file)
                     }
 
+                    override fun onFileDelete(file: FileAttachment) {
+                        notallyModel.deleteFiles(arrayListOf(file))
+                    }
+
                     override fun onAudioClick(audio: Audio) {
                         actionHandler.playAudio(audio)
                     }

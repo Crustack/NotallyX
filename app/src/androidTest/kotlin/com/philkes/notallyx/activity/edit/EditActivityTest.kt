@@ -8,12 +8,14 @@ import android.content.Intent
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog as isComposeDialog
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -651,6 +653,348 @@ class EditActivityTest : UiTestBase() {
         file.outputStream().use { out ->
             out.write(header)
             out.write(ByteArray(pcmDataSize))
+        }
+    }
+
+    @Test
+    fun attachmentDeletionAndImageViewer() {
+        runBlocking { database.clearAllTables() }
+
+        val testContext = InstrumentationRegistry.getInstrumentation().context
+        val catFile = File(context.cacheDir, "cat_del.jpg")
+        val dogFile = File(context.cacheDir, "dog_del.jpg")
+        val textFile = File(context.cacheDir, "text_del.txt")
+
+        testContext.classLoader.getResourceAsStream("attachments/cat.jpg")!!.use { input ->
+            catFile.outputStream().use { output -> input.copyTo(output) }
+        }
+        testContext.classLoader.getResourceAsStream("attachments/dog.jpg")!!.use { input ->
+            dogFile.outputStream().use { output -> input.copyTo(output) }
+        }
+        testContext.classLoader.getResourceAsStream("attachments/text.txt")!!.use { input ->
+            textFile.outputStream().use { output -> input.copyTo(output) }
+        }
+
+        val catUri = context.getUriForFile(catFile)
+        val dogUri = context.getUriForFile(dogFile)
+        val textUri = context.getUriForFile(textFile)
+
+        Intents.init()
+        try {
+            val attachFileResult =
+                Instrumentation.ActivityResult(
+                    Activity.RESULT_OK,
+                    Intent().apply { data = textUri },
+                )
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(
+                            Intent.EXTRA_INTENT,
+                            allOf(hasAction(Intent.ACTION_GET_CONTENT), hasType("*/*")),
+                        ),
+                    )
+                )
+                .respondWith(attachFileResult)
+
+            val addImagesClipData =
+                ClipData.newUri(context.contentResolver, "image", catUri).apply {
+                    addItem(ClipData.Item(dogUri))
+                }
+            val addImagesResult =
+                Instrumentation.ActivityResult(
+                    Activity.RESULT_OK,
+                    Intent().apply { this.clipData = addImagesClipData },
+                )
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(
+                            Intent.EXTRA_INTENT,
+                            allOf(hasAction(Intent.ACTION_GET_CONTENT), hasType("image/*")),
+                        ),
+                    )
+                )
+                .respondWith(addImagesResult)
+
+            val shareResult = Instrumentation.ActivityResult(Activity.RESULT_OK, null)
+            intending(
+                    allOf(
+                        hasAction(Intent.ACTION_CHOOSER),
+                        hasExtra(Intent.EXTRA_INTENT, hasAction(Intent.ACTION_SEND)),
+                    )
+                )
+                .respondWith(shareResult)
+
+            val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+            // 1. Create a new note and add title/body
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.take_note))
+                .performClick()
+
+            val noteTitle = "Attachment Deletion Test Note"
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.title))
+                .performTextInput(noteTitle)
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.note))
+                .performTextInput("Testing attachments deletion and image viewer")
+
+            val noteId = runBlocking { database.getBaseNoteDao().getAll().first().id }
+
+            // 2. Add images
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.add_item))
+                .performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.add_images)).performClick()
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText("1/2")).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("1/2").assertIsDisplayed()
+
+            // 3. Attach file
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.add_item))
+                .performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.attach_file)).performClick()
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("text_del.txt", substring = true))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("text_del.txt", substring = true).assertIsDisplayed()
+
+            // 4. Test File Attachment Deletion:
+            // 4a. Long-click file chip and cancel deletion
+            composeTestRule.onNodeWithText("text_del.txt", substring = true).performTouchInput {
+                longClick()
+            }
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.delete_file, "text_del.txt")))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(context.getString(R.string.cancel)).performClick()
+
+            // Verify file is still present
+            composeTestRule.onNodeWithText("text_del.txt", substring = true).assertIsDisplayed()
+
+            // 4b. Long-click file chip again and confirm deletion
+            composeTestRule.onNodeWithText("text_del.txt", substring = true).performTouchInput {
+                longClick()
+            }
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.delete_file, "text_del.txt")))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule
+                .onNode(
+                    hasText(context.getString(R.string.delete)) and
+                        hasAnyAncestor(isComposeDialog())
+                )
+                .performClick()
+
+            // Wait until file chip is removed from EditScreen UI
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText("text_del.txt", substring = true))
+                    .fetchSemanticsNodes()
+                    .isEmpty()
+            }
+
+            // Verify file removal from database
+            val noteAfterFileDelete = runBlocking { database.getBaseNoteDao().get(noteId) }
+            assertTrue(
+                "Note should exist and have no file attachments in database",
+                noteAfterFileDelete != null && noteAfterFileDelete.files.isEmpty(),
+            )
+
+            // 5. Test Full-Screen Image Viewer Interactions:
+            // Swipe left on Image Pager to switch to 2nd image ("2/2")
+            composeTestRule.onNodeWithContentDescription("Image Pager").performTouchInput {
+                swipeLeft()
+            }
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText("2/2")).fetchSemanticsNodes().isNotEmpty()
+            }
+
+            // Click image to open ViewImageActivity at 2nd image
+            composeTestRule.onNodeWithText("2/2").performClick()
+
+            // ViewImageActivity opens showing "2 / 2"
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText("2 / 2")).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("2 / 2").assertIsDisplayed()
+
+            // 5a. Test swipe navigation in ViewImageActivity
+            composeTestRule.onNode(hasScrollAction()).performTouchInput { swipeRight() }
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText("1 / 2")).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("1 / 2").assertIsDisplayed()
+
+            // 5b. Test Share Image action
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.share))
+                .performClick()
+            intended(
+                allOf(
+                    hasAction(Intent.ACTION_CHOOSER),
+                    hasExtra(
+                        Intent.EXTRA_INTENT,
+                        allOf(hasAction(Intent.ACTION_SEND), hasType("image/jpeg")),
+                    ),
+                )
+            )
+
+            // 5c. Test Delete Image - cancel in dialog
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.delete))
+                .performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.delete_image_forever)))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(context.getString(R.string.cancel)).performClick()
+            // Still shows "1 / 2"
+            composeTestRule.onNodeWithText("1 / 2").assertIsDisplayed()
+
+            // 5d. Test Delete Image - confirm deletion of 1st image
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.delete))
+                .performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.delete_image_forever)))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule
+                .onNode(
+                    hasText(context.getString(R.string.delete)) and
+                        hasAnyAncestor(isComposeDialog())
+                )
+                .performClick()
+
+            // Wait until title updates to "1 / 1" in ViewImageActivity
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText("1 / 1")).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("1 / 1").assertIsDisplayed()
+
+            // 5e. Navigate back to EditScreen and verify 1 image remains
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.back))
+                .performClick()
+
+            // Wait until back in EditScreen
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+            }
+            // Image count chip "1/2" or "2/2" should no longer be displayed because only 1 image
+            // remains
+            assertTrue(
+                "Image count chip 1/2 should not be displayed when only 1 image remains",
+                composeTestRule.onAllNodes(hasText("1/2")).fetchSemanticsNodes().isEmpty(),
+            )
+            assertTrue(
+                "Image count chip 2/2 should not be displayed when only 1 image remains",
+                composeTestRule.onAllNodes(hasText("2/2")).fetchSemanticsNodes().isEmpty(),
+            )
+
+            // Verify in DB that only 1 image remains
+            val noteWithOneImage = runBlocking { database.getBaseNoteDao().get(noteId) }
+            assertTrue(
+                "Note should have exactly 1 image in database",
+                noteWithOneImage != null && noteWithOneImage.images.size == 1,
+            )
+
+            // 5f. Open ViewImageActivity again on the remaining image
+            composeTestRule
+                .onNode(hasClickAction() and hasAnyAncestor(hasContentDescription("Image Pager")))
+                .performClick()
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText("1 / 1")).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("1 / 1").assertIsDisplayed()
+
+            // Delete the last remaining image
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.delete))
+                .performClick()
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasText(context.getString(R.string.delete_image_forever)))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            composeTestRule
+                .onNode(
+                    hasText(context.getString(R.string.delete)) and
+                        hasAnyAncestor(isComposeDialog())
+                )
+                .performClick()
+
+            // Since last image was deleted, ViewImageActivity auto-finishes back to EditScreen
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+            }
+
+            // Verify image pager is completely removed from EditScreen UI
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule
+                    .onAllNodes(hasContentDescription("Image Pager"))
+                    .fetchSemanticsNodes()
+                    .isEmpty()
+            }
+
+            // 6. Navigate back to MainActivity and verify database and disk cleanup
+            composeTestRule
+                .onNodeWithContentDescription(context.getString(R.string.back))
+                .performClick()
+
+            composeTestRule.waitUntil(10_000) {
+                composeTestRule.onAllNodes(hasText(noteTitle)).fetchSemanticsNodes().isNotEmpty()
+            }
+
+            val finalNote = runBlocking { database.getBaseNoteDao().get(noteId) }
+            assertTrue(
+                "Final note should exist in database",
+                finalNote != null,
+            )
+            assertEquals(
+                "Final note should have saved title in database",
+                noteTitle,
+                finalNote?.title,
+            )
+            assertTrue(
+                "Final note should have empty images in database",
+                finalNote!!.images.isEmpty(),
+            )
+            assertTrue(
+                "Final note should have empty files in database",
+                finalNote.files.isEmpty(),
+            )
+
+            scenario.close()
+        } finally {
+            Intents.release()
+            catFile.delete()
+            dogFile.delete()
+            textFile.delete()
         }
     }
 
