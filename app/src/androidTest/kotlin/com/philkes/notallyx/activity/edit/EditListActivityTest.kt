@@ -62,7 +62,9 @@ class EditListActivityTest : UiTestBase() {
 
     private fun ComposeTestRule.scrollToTop() {
         try {
-            repeat(5) { onNode(hasScrollAction()).performTouchInput { swipeDown() } }
+            onNode(hasScrollAction()).performTouchInput {
+                repeat(5) { swipeDown(startY = centerY, endY = bottom - 10f) }
+            }
             waitForIdle()
         } catch (ignored: Throwable) {
             // Ignore if no scroll container is active
@@ -82,10 +84,10 @@ class EditListActivityTest : UiTestBase() {
         )
     }
 
-    private fun assertIsChild(itemText: String) {
+    private fun assertIsChild(itemText: String, referenceParentText: String = "Shopping List") {
         composeTestRule.scrollToTop()
         val rootParentNode =
-            composeTestRule.onAllNodes(itemNode("Shopping List")).onFirst().scrollToIfNeeded()
+            composeTestRule.onAllNodes(itemNode(referenceParentText)).onFirst().scrollToIfNeeded()
         val rootParentX = rootParentNode.fetchSemanticsNode().positionInWindow.x
         val itemNode = composeTestRule.onAllNodes(itemNode(itemText)).onFirst().scrollToIfNeeded()
         val itemX = itemNode.fetchSemanticsNode().positionInWindow.x
@@ -95,10 +97,10 @@ class EditListActivityTest : UiTestBase() {
         )
     }
 
-    private fun assertIsParent(itemText: String) {
+    private fun assertIsParent(itemText: String, referenceParentText: String = "Shopping List") {
         composeTestRule.scrollToTop()
         val rootParentNode =
-            composeTestRule.onAllNodes(itemNode("Shopping List")).onFirst().scrollToIfNeeded()
+            composeTestRule.onAllNodes(itemNode(referenceParentText)).onFirst().scrollToIfNeeded()
         val rootParentX = rootParentNode.fetchSemanticsNode().positionInWindow.x
         val itemNode = composeTestRule.onAllNodes(itemNode(itemText)).onFirst().scrollToIfNeeded()
         val itemX = itemNode.fetchSemanticsNode().positionInWindow.x
@@ -408,8 +410,8 @@ class EditListActivityTest : UiTestBase() {
         assertIsChild("Bananas")
 
         Log.d("ListItem", "Move Bananas List to Cherries")
-        // 6. Drag child item "Bananas" up below parent item "Cherries"
-        composeTestRule.dragAndDropItem("Bananas", "Cherries")
+        // 6. Drag child item "Bananas" up below parent item "Cherries" (onto Dates)
+        composeTestRule.dragAndDropItem("Bananas", "Dates")
         composeTestRule.waitForIdle()
 
         // Assert updated item order: Cherries -> Bananas -> Dates -> Shopping List -> Apples
@@ -466,6 +468,73 @@ class EditListActivityTest : UiTestBase() {
         assertIsParent("Dates")
         assertIsParent("Shopping List")
         assertIsChild("Apples")
+
+        scenario.close()
+    }
+
+    @Test
+    fun dragParentWithChildrenDown() {
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        val makeListLabel = context.getString(R.string.make_list)
+        val addItemLabel = context.getString(R.string.add_item)
+
+        // 1. Open List Editor
+        composeTestRule.onNodeWithContentDescription(makeListLabel).performClick()
+        composeTestRule.onAllNodes(hasSetTextAction()).onLast().performTextInput("Parent B")
+
+        composeTestRule.onNodeWithText(addItemLabel).performClick()
+        composeTestRule.onAllNodes(hasSetTextAction()).onLast().performTextInput("Child C")
+
+        composeTestRule.onNodeWithText(addItemLabel).performClick()
+        composeTestRule.onAllNodes(hasSetTextAction()).onLast().performTextInput("Parent D")
+
+        composeTestRule.onNodeWithText(addItemLabel).performClick()
+        composeTestRule.onAllNodes(hasSetTextAction()).onLast().performTextInput("Parent E")
+
+        androidx.test.espresso.Espresso.closeSoftKeyboard()
+        composeTestRule.waitForIdle()
+
+        // 2. Make Child C a child of Parent B
+        composeTestRule.swipeItemRight("Child C")
+
+        // Assert initial order & parent/child status
+        assertIsParent("Parent B", "Parent B")
+        assertIsChild("Child C", "Parent B")
+        assertIsParent("Parent D", "Parent B")
+        assertIsParent("Parent E", "Parent B")
+
+        assertIsAbove("Parent B", "Child C")
+        assertIsAbove("Child C", "Parent D")
+        assertIsAbove("Parent D", "Parent E")
+
+        // 3. Drag Parent B down below Parent D
+        composeTestRule.dragAndDropItem("Parent B", "Parent D")
+        composeTestRule.waitForIdle()
+
+        // Assert order: Parent D -> Parent B -> Child C -> Parent E
+        assertIsAbove("Parent D", "Parent B")
+        assertIsAbove("Parent B", "Child C")
+        assertIsAbove("Child C", "Parent E")
+
+        assertIsParent("Parent D", "Parent B")
+        assertIsParent("Parent B", "Parent B")
+        assertIsChild("Child C", "Parent B")
+        assertIsParent("Parent E", "Parent B")
+
+        // 4. Drag Parent B further down below Parent E
+        composeTestRule.dragAndDropItem("Parent B", "Parent E")
+        composeTestRule.waitForIdle()
+
+        // Assert order: Parent D -> Parent E -> Parent B -> Child C
+        assertIsAbove("Parent D", "Parent E")
+        assertIsAbove("Parent E", "Parent B")
+        assertIsAbove("Parent B", "Child C")
+
+        assertIsParent("Parent D", "Parent B")
+        assertIsParent("Parent E", "Parent B")
+        assertIsParent("Parent B", "Parent B")
+        assertIsChild("Child C", "Parent B")
 
         scenario.close()
     }

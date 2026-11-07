@@ -205,6 +205,10 @@ class EditListActivity : EditActivity(Type.LIST) {
                                     originalItem,
                                 )
                             }
+                            Log.d(
+                                "TEST_DRAG",
+                                "After move, items: ${notallyModel.items.map { "${it.body}(isChild=${it.isChild})" }}",
+                            )
                         }
                     }
                 },
