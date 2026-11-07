@@ -1327,7 +1327,8 @@ private fun EditListScreenPreview() {
                             ),
                             ListItem(
                                 id = 2,
-                                body = "Whole Grain Bread",
+                                body =
+                                    "Whole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain BreadWhole Grain Bread",
                                 checked = false,
                                 isChild = false,
                                 order = 3,

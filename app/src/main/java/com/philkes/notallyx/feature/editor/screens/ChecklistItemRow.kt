@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -145,7 +146,7 @@ internal fun ChecklistItemRow(
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             Row(
                 modifier = Modifier.fillMaxWidth().then(swipeModifier).padding(vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
             ) {
                 if (isChild) {
                     Spacer(modifier = Modifier.width(20.dp))
@@ -153,8 +154,7 @@ internal fun ChecklistItemRow(
 
                 if (showDragHandle) {
                     Box(
-                        modifier =
-                            Modifier.padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                        modifier = Modifier.height(48.dp).padding(start = 12.dp, end = 4.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
@@ -211,7 +211,7 @@ internal fun ChecklistItemRow(
                         onValueChange = onValueChange,
                         modifier = textFieldModifier,
                         textStyle = textStyle,
-                        singleLine = true,
+                        singleLine = false,
                         visualTransformation = visualTransformation,
                         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -221,12 +221,12 @@ internal fun ChecklistItemRow(
                                 value = value,
                                 innerTextField = innerTextField,
                                 enabled = true,
-                                singleLine = true,
+                                singleLine = false,
                                 visualTransformation = visualTransformation,
                                 interactionSource = remember { MutableInteractionSource() },
                                 placeholder = { Text(stringResource(R.string.item)) },
                                 container = {},
-                                contentPadding = PaddingValues(0.dp),
+                                contentPadding = PaddingValues(top = 12.dp, bottom = 12.dp),
                             )
                         },
                     )
@@ -346,6 +346,20 @@ private fun ChecklistItemRowEmptyPreview() {
     NotallyXTheme {
         ChecklistItemRow(
             value = "",
+            onValueChange = {},
+            isChecked = false,
+            onCheckedChange = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ChecklistItemRowMultilinePreview() {
+    NotallyXTheme {
+        ChecklistItemRow(
+            value =
+                "This is a very long checklist item that wraps across multiple lines to verify that the drag handle and checkbox remain centered on the first line.",
             onValueChange = {},
             isChecked = false,
             onCheckedChange = {},
