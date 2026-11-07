@@ -70,7 +70,12 @@ fun NotallyApp(
     labelsViewModel: LabelsViewModel = koinViewModel(),
     preferences: NotallyXPreferences = notallyFragmentModel.preferences,
 ) {
-    NotallyXTheme(theme = preferences.theme.value) {
+    val currentTheme by preferences.theme.flow.collectAsStateWithLifecycle(preferences.theme.value)
+    val useDynamicColors by
+        preferences.useDynamicColors.flow.collectAsStateWithLifecycle(
+            preferences.useDynamicColors.value
+        )
+    NotallyXTheme(theme = currentTheme, dynamicColor = useDynamicColors) {
         val backStack = rememberNavBackStack(startKey)
         val currentKey = (backStack.lastOrNull() as? NotallyNavKey) ?: startKey
 
