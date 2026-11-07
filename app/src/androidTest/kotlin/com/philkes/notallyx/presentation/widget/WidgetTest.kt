@@ -4,15 +4,15 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiSelector
-import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.error.*
 import com.philkes.notallyx.core.common.extensions.*
 import com.philkes.notallyx.core.common.result.*
@@ -25,21 +25,22 @@ import com.philkes.notallyx.core.ui.extensions.*
 import com.philkes.notallyx.core.ui.views.*
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.extensions.*
+import com.philkes.notallyx.feature.editor.EditNoteActivity
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.widget.ConfigureWidgetActivity
 import com.philkes.notallyx.feature.widget.WidgetProvider
 import com.philkes.notallyx.test.UiTestBase
-import com.philkes.notallyx.test.byId
+import com.philkes.notallyx.test.appendText
 import com.philkes.notallyx.test.byText
 import com.philkes.notallyx.test.createBaseNote
 import com.philkes.notallyx.test.createListItem
-import com.philkes.notallyx.test.typeTextAtEnd
 import com.philkes.notallyx.test.waitUntil
 import com.philkes.notallyx.test.waitUntilSucceeds
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.FixMethodOrder
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -47,6 +48,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder
 class WidgetTest : UiTestBase() {
+
+    @get:Rule val composeTestRule = createAndroidComposeRule<EditNoteActivity>()
 
     @Test
     fun addWidgetToHomeScreenAndSelectNote() {
@@ -155,7 +158,7 @@ class WidgetTest : UiTestBase() {
             val appendedText = " Updated"
             val expectedUpdatedTitle = "$noteTitle2$appendedText"
 
-            R.id.EnterTitle.byId().typeTextAtEnd(appendedText).perform(closeSoftKeyboard())
+            composeTestRule.onNodeWithTag("EnterTitle").appendText(appendedText)
 
             // Exit EditNoteActivity to trigger save & widget update
             toolbarBackButton.perform(click())
@@ -212,7 +215,7 @@ class WidgetTest : UiTestBase() {
             val appendedText = " Updated"
             val expectedUpdatedTitle = "$noteTitle2$appendedText"
 
-            R.id.EnterTitle.byId().typeTextAtEnd(appendedText).perform(closeSoftKeyboard())
+            composeTestRule.onNodeWithTag("EnterTitle").appendText(appendedText)
 
             toolbarBackButton.perform(click())
 

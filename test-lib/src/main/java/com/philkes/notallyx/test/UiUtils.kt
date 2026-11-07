@@ -14,6 +14,10 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.widget.EditText
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasTestTag
@@ -25,6 +29,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextInputSelection
+import androidx.compose.ui.text.TextRange
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
@@ -482,7 +488,7 @@ fun ComposeTestRule.navigateTo(fragmentId: Int) {
             R.id.Settings -> R.string.settings
             else -> error("Unknown fragmentId: $fragmentId")
         }
-    onNodeWithContentDescription(context.getString(R.string.app_name)).performClick()
+    onNodeWithTag("NavigationDrawerButton").performClick()
     onNodeWithText(context.getString(stringResId)).performClick()
 }
 
@@ -677,12 +683,19 @@ fun UiTestBase.initFakeBiometric(): FakeBiometricAuthenticator {
 fun ComposeTestRule.checkAndUpdateNoteTitle(textToMatch: String, textToAdd: String) {
     waitUntil(10_000) { onAllNodes(hasText(textToMatch)).fetchSemanticsNodes().isNotEmpty() }
     onNodeWithText(textToMatch).performClick()
-    onNodeWithTag("EnterTitle").performTextInput(textToAdd)
-    Espresso.pressBack()
+    onNodeWithTag("EnterTitle").appendText(textToAdd)
+    onNodeWithTag("BackButton").performClick()
     waitUntil(10_000) {
         onAllNodes(hasText(textToMatch + textToAdd)).fetchSemanticsNodes().isNotEmpty()
     }
     onNodeWithText(textToMatch + textToAdd).assertIsDisplayed()
+}
+
+fun SemanticsNodeInteraction.appendText(textToAppend: String) {
+    val currentText = fetchSemanticsNode()
+        .config.getOrNull(SemanticsProperties.EditableText)?.text ?: ""
+    performTextInputSelection(TextRange(currentText.length))
+    performTextInput(textToAppend)
 }
 
 fun ComposeTestRule.waitUntilSettingsValue(

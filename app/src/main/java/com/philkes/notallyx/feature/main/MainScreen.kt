@@ -277,7 +277,8 @@ internal fun MainScreen(
                                         if (drawerState.isClosed) drawerState.open()
                                         else drawerState.close()
                                     }
-                                }
+                                },
+                                modifier = Modifier.testTag("NavigationDrawerButton"),
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.menu),

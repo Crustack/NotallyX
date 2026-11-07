@@ -84,10 +84,10 @@ internal fun ImportNotesDialog(
                     onConfirm(text.trim(), checkDuplicates)
                     onDismissRequest()
                 },
-                enabled = text.trim().isNotEmpty(),
-                modifier = Modifier.testTag("button1"),
+                enabled = true,
+                modifier = Modifier.testTag("ImportButton"),
             ) {
-                Text(stringResource(R.string.save))
+                Text(stringResource(R.string.import_backup))
             }
         },
         dismissButton = {
