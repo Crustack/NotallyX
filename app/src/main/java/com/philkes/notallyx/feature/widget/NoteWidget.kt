@@ -7,6 +7,7 @@ import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -19,6 +20,7 @@ import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalContext
 import androidx.glance.action.actionParametersOf
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.CheckBox
@@ -46,6 +48,8 @@ import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
+import androidx.glance.preview.ExperimentalGlancePreviewApi
+import androidx.glance.preview.Preview
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextDecoration
@@ -58,6 +62,7 @@ import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.preference.Theme
 import com.philkes.notallyx.core.preference.displayBodySize
 import com.philkes.notallyx.core.preference.displayTitleSize
+import com.philkes.notallyx.core.ui.components.SampleNotes
 import com.philkes.notallyx.core.ui.extensions.extractColor
 import com.philkes.notallyx.core.ui.extensions.getContrastFontColor
 import com.philkes.notallyx.data.model.BaseNote
@@ -80,7 +85,7 @@ class NoteWidget : GlanceAppWidget() {
         val appWidgetId =
             try {
                 GlanceAppWidgetManager(context).getAppWidgetId(id)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 AppWidgetManager.INVALID_APPWIDGET_ID
             }
 
@@ -91,11 +96,13 @@ class NoteWidget : GlanceAppWidget() {
                 noteId = preferences.getWidgetData(appWidgetId)
             }
 
+            val updatedAt = prefs[UpdatedAtKey] ?: 0L
+
             val lockedState = app.locked.collectAsState()
             val locked = preferences.isLockEnabled && lockedState.value
 
             val noteState =
-                produceState<BaseNote?>(initialValue = null, key1 = noteId) {
+                produceState<BaseNote?>(initialValue = null, key1 = noteId, key2 = updatedAt) {
                     value =
                         withContext(Dispatchers.IO) {
                             if (noteId != 0L) {
@@ -105,281 +112,25 @@ class NoteWidget : GlanceAppWidget() {
                         }
                 }
 
+            val titleTextSize = preferences.textSizeNoteEditor.value.displayTitleSize.sp
+            val bodyTextSize = preferences.textSizeNoteEditor.value.displayBodySize.sp
+            val theme = preferences.theme.value
+
             NoteWidgetContent(
-                context = context,
                 appWidgetId = appWidgetId,
                 note = noteState.value,
                 locked = locked,
-                preferences = preferences,
+                theme = theme,
+                titleTextSize = titleTextSize,
+                bodyTextSize = bodyTextSize,
             )
-        }
-    }
-
-    @Composable
-    private fun NoteWidgetContent(
-        context: Context,
-        appWidgetId: Int,
-        note: BaseNote?,
-        locked: Boolean,
-        preferences: NotallyXPreferences,
-    ) {
-        if (note == null) {
-            EmptyWidgetView(context, appWidgetId)
-            return
-        }
-
-        if (locked) {
-            LockedWidgetView(context, note)
-            return
-        }
-
-        val (backgroundColorInt, controlsColorInt) =
-            context.extractWidgetColors(note.color, preferences)
-        val backgroundColor = Color(backgroundColorInt)
-        val controlsColor = Color(controlsColorInt)
-
-        val openIntent = createOpenNoteIntent(context, note)
-        val selectNoteIntent = createSelectNoteIntent(context, appWidgetId)
-
-        Column(
-            modifier =
-                GlanceModifier.fillMaxSize()
-                    .appWidgetBackground()
-                    .background(backgroundColor)
-                    .padding(12.dp)
-                    .cornerRadius(16.dp)
-        ) {
-            if (note.type == Type.NOTE) {
-                NoteContentView(
-                    note = note,
-                    controlsColor = controlsColor,
-                    openIntent = openIntent,
-                    selectNoteIntent = selectNoteIntent,
-                    preferences = preferences,
-                )
-            } else {
-                ListContentView(
-                    note = note,
-                    controlsColor = controlsColor,
-                    openIntent = openIntent,
-                    selectNoteIntent = selectNoteIntent,
-                    preferences = preferences,
-                )
-            }
-        }
-    }
-
-    @Composable
-    private fun EmptyWidgetView(context: Context, appWidgetId: Int) {
-        val selectNoteIntent = createSelectNoteIntent(context, appWidgetId)
-        Box(
-            modifier =
-                GlanceModifier.fillMaxSize()
-                    .appWidgetBackground()
-                    .background(Color.DarkGray)
-                    .padding(12.dp)
-                    .clickable(actionStartActivity(selectNoteIntent)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = context.getString(R.string.select_note),
-                style =
-                    TextStyle(
-                        color = ColorProvider(day = Color.White, night = Color.White),
-                        fontWeight = FontWeight.Medium,
-                    ),
-            )
-        }
-    }
-
-    @Composable
-    private fun LockedWidgetView(context: Context, note: BaseNote) {
-        val openIntent = createOpenNoteIntent(context, note)
-        Column(
-            modifier =
-                GlanceModifier.fillMaxSize()
-                    .appWidgetBackground()
-                    .background(Color.DarkGray)
-                    .padding(12.dp)
-                    .clickable(actionStartActivity(openIntent)),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Image(
-                provider = ImageProvider(R.drawable.lock_big),
-                contentDescription = null,
-                modifier = GlanceModifier.size(48.dp),
-            )
-            Spacer(modifier = GlanceModifier.height(8.dp))
-            Text(
-                text = context.getString(R.string.locked),
-                style =
-                    TextStyle(
-                        color = ColorProvider(day = Color.White, night = Color.White),
-                        fontWeight = FontWeight.Bold,
-                    ),
-            )
-        }
-    }
-
-    @Composable
-    private fun NoteContentView(
-        note: BaseNote,
-        controlsColor: Color,
-        openIntent: Intent,
-        selectNoteIntent: Intent,
-        preferences: NotallyXPreferences,
-    ) {
-        val titleTextSize = preferences.textSizeNoteEditor.value.displayTitleSize.sp
-        val bodyTextSize = preferences.textSizeNoteEditor.value.displayBodySize.sp
-
-        Column(modifier = GlanceModifier.fillMaxSize().clickable(actionStartActivity(openIntent))) {
-            Row(
-                modifier = GlanceModifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = note.title,
-                    style =
-                        TextStyle(
-                            color = ColorProvider(day = controlsColor, night = controlsColor),
-                            fontSize = titleTextSize,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    modifier = GlanceModifier.defaultWeight(),
-                    maxLines = 1,
-                )
-                Image(
-                    provider = ImageProvider(R.drawable.settings),
-                    contentDescription = null,
-                    modifier =
-                        GlanceModifier.size(20.dp).clickable(actionStartActivity(selectNoteIntent)),
-                )
-            }
-            if (note.body.isNotEmpty()) {
-                Spacer(modifier = GlanceModifier.height(8.dp))
-                Text(
-                    text = note.body,
-                    style =
-                        TextStyle(
-                            color = ColorProvider(day = controlsColor, night = controlsColor),
-                            fontSize = bodyTextSize,
-                        ),
-                )
-            }
-        }
-    }
-
-    @Composable
-    private fun ListContentView(
-        note: BaseNote,
-        controlsColor: Color,
-        openIntent: Intent,
-        selectNoteIntent: Intent,
-        preferences: NotallyXPreferences,
-    ) {
-        val titleTextSize = preferences.textSizeNoteEditor.value.displayTitleSize.sp
-        val bodyTextSize = preferences.textSizeNoteEditor.value.displayBodySize.sp
-
-        Column(modifier = GlanceModifier.fillMaxSize()) {
-            Row(
-                modifier =
-                    GlanceModifier.fillMaxWidth()
-                        .padding(bottom = 8.dp)
-                        .clickable(actionStartActivity(openIntent)),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = note.title,
-                    style =
-                        TextStyle(
-                            color = ColorProvider(day = controlsColor, night = controlsColor),
-                            fontSize = titleTextSize,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    modifier = GlanceModifier.defaultWeight(),
-                    maxLines = 1,
-                )
-                Image(
-                    provider = ImageProvider(R.drawable.settings),
-                    contentDescription = null,
-                    modifier =
-                        GlanceModifier.size(20.dp).clickable(actionStartActivity(selectNoteIntent)),
-                )
-            }
-            LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
-                itemsIndexed(note.items) { index, item ->
-                    ListItemRow(
-                        noteId = note.id,
-                        index = index,
-                        item = item,
-                        controlsColor = controlsColor,
-                        bodyTextSize = bodyTextSize,
-                    )
-                }
-            }
-        }
-    }
-
-    @Composable
-    private fun ListItemRow(
-        noteId: Long,
-        index: Int,
-        item: ListItem,
-        controlsColor: Color,
-        bodyTextSize: TextUnit,
-    ) {
-        val startPadding = if (item.isChild) 24.dp else 0.dp
-        Row(
-            modifier =
-                GlanceModifier.fillMaxWidth()
-                    .padding(start = startPadding, top = 4.dp, bottom = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            CheckBox(
-                checked = item.checked,
-                onCheckedChange =
-                    actionRunCallback<ToggleChecklistAction>(
-                        actionParametersOf(
-                            ToggleChecklistAction.NoteIdKey to noteId,
-                            ToggleChecklistAction.PositionKey to index,
-                        )
-                    ),
-                modifier = GlanceModifier.padding(end = 8.dp),
-            )
-            Text(
-                text = item.body,
-                style =
-                    TextStyle(
-                        color = ColorProvider(day = controlsColor, night = controlsColor),
-                        fontSize = bodyTextSize,
-                        textDecoration =
-                            if (item.checked) TextDecoration.LineThrough else TextDecoration.None,
-                    ),
-            )
-        }
-    }
-
-    private fun createOpenNoteIntent(context: Context, note: BaseNote): Intent {
-        val clazz =
-            if (note.type == Type.LIST) EditListActivity::class.java
-            else EditNoteActivity::class.java
-        return Intent(context, clazz).apply {
-            putExtra(EXTRA_SELECTED_BASE_NOTE, note.id)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        }
-    }
-
-    private fun createSelectNoteIntent(context: Context, appWidgetId: Int): Intent {
-        return Intent(context, ConfigureWidgetActivity::class.java).apply {
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         }
     }
 
     companion object {
         val NoteIdKey = longPreferencesKey("widget_note_id")
         val NoteTypeKey = stringPreferencesKey("widget_note_type")
+        val UpdatedAtKey = longPreferencesKey("widget_updated_at")
 
         fun updateWidgets(context: Context, noteIds: LongArray? = null) {
             MainScope().launch(Dispatchers.IO) { updateWidgetsSuspend(context, noteIds) }
@@ -392,7 +143,19 @@ class NoteWidget : GlanceAppWidget() {
 
                 val updatableWidgets = preferences.getUpdatableWidgets(noteIds)
                 if (updatableWidgets.isEmpty()) {
-                    NoteWidget().updateAll(context)
+                    val manager = GlanceAppWidgetManager(context)
+                    val glanceWidget = NoteWidget()
+                    try {
+                        val glanceIds = manager.getGlanceIds(NoteWidget::class.java)
+                        for (glanceId in glanceIds) {
+                            updateAppWidgetState(context, glanceId) { prefs ->
+                                prefs[UpdatedAtKey] = System.currentTimeMillis()
+                            }
+                        }
+                        glanceWidget.updateAll(context)
+                    } catch (_: Exception) {
+                        glanceWidget.updateAll(context)
+                    }
                 } else {
                     updatableWidgets.forEach { (appWidgetId, nId) ->
                         val type = preferences.getWidgetNoteType(appWidgetId)
@@ -433,10 +196,11 @@ class NoteWidget : GlanceAppWidget() {
                         updateAppWidgetState(context, glanceId) { prefs ->
                             prefs[NoteIdKey] = targetNoteId
                             prefs[NoteTypeKey] = targetNoteType.name
+                            prefs[UpdatedAtKey] = System.currentTimeMillis()
                         }
                     }
                     glanceWidget.update(context, glanceId)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     try {
                         val glanceIds = manager.getGlanceIds(NoteWidget::class.java)
                         var updated = false
@@ -452,6 +216,7 @@ class NoteWidget : GlanceAppWidget() {
                                     updateAppWidgetState(context, glanceId) { prefs ->
                                         prefs[NoteIdKey] = targetNoteId
                                         prefs[NoteTypeKey] = targetNoteType.name
+                                        prefs[UpdatedAtKey] = System.currentTimeMillis()
                                     }
                                 }
                                 glanceWidget.update(context, glanceId)
@@ -460,6 +225,11 @@ class NoteWidget : GlanceAppWidget() {
                             }
                         }
                         if (!updated) {
+                            for (glanceId in glanceIds) {
+                                updateAppWidgetState(context, glanceId) { prefs ->
+                                    prefs[UpdatedAtKey] = System.currentTimeMillis()
+                                }
+                            }
                             glanceWidget.updateAll(context)
                         }
                     } catch (_: Exception) {
@@ -477,14 +247,31 @@ class NoteWidget : GlanceAppWidget() {
             context.sendBroadcast(intent)
         }
 
+        fun createOpenNoteIntent(context: Context, note: BaseNote): Intent {
+            val clazz =
+                if (note.type == Type.LIST) EditListActivity::class.java
+                else EditNoteActivity::class.java
+            return Intent(context, clazz).apply {
+                putExtra(EXTRA_SELECTED_BASE_NOTE, note.id)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+        }
+
+        fun createSelectNoteIntent(context: Context, appWidgetId: Int): Intent {
+            return Intent(context, ConfigureWidgetActivity::class.java).apply {
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+        }
+
         fun Context.extractWidgetColors(
             color: String,
-            preferences: NotallyXPreferences,
+            theme: Theme,
         ): Pair<Int, Int> {
             val backgroundColor =
                 if (color == BaseNote.COLOR_DEFAULT) {
                     val id =
-                        when (preferences.theme.value) {
+                        when (theme) {
                             Theme.DARK -> R.color.ContainerDark
                             Theme.SUPER_DARK -> R.color.ContainerSuperDark
                             Theme.LIGHT -> R.color.ContainerLight
@@ -498,7 +285,335 @@ class NoteWidget : GlanceAppWidget() {
             return Pair(backgroundColor, getContrastFontColor(backgroundColor))
         }
 
+        fun Context.extractWidgetColors(
+            color: String,
+            preferences: NotallyXPreferences,
+        ): Pair<Int, Int> = extractWidgetColors(color, preferences.theme.value)
+
         const val ACTION_NOTES_MODIFIED = "com.philkes.notallyx.ACTION_NOTE_MODIFIED"
         const val EXTRA_MODIFIED_NOTES = "com.philkes.notallyx.EXTRA_MODIFIED_NOTES"
     }
+}
+
+@Composable
+internal fun NoteWidgetContent(
+    appWidgetId: Int,
+    note: BaseNote?,
+    locked: Boolean,
+    theme: Theme,
+    titleTextSize: TextUnit,
+    bodyTextSize: TextUnit,
+    modifier: GlanceModifier = GlanceModifier,
+) {
+    if (note == null) {
+        EmptyWidgetView(appWidgetId = appWidgetId, modifier = modifier)
+        return
+    }
+
+    if (locked) {
+        LockedWidgetView(note = note, modifier = modifier)
+        return
+    }
+
+    val context = LocalContext.current
+    val (backgroundColorInt, controlsColorInt) =
+        remember(note.color, theme) {
+            with(NoteWidget) { context.extractWidgetColors(note.color, theme) }
+        }
+    val backgroundColor = Color(backgroundColorInt)
+    val controlsColor = Color(controlsColorInt)
+
+    val openIntent = NoteWidget.createOpenNoteIntent(context, note)
+    val selectNoteIntent = NoteWidget.createSelectNoteIntent(context, appWidgetId)
+
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .appWidgetBackground()
+                .background(backgroundColor)
+                .padding(12.dp)
+                .cornerRadius(16.dp)
+    ) {
+        if (note.type == Type.NOTE) {
+            NoteContentView(
+                note = note,
+                controlsColor = controlsColor,
+                openIntent = openIntent,
+                selectNoteIntent = selectNoteIntent,
+                titleTextSize = titleTextSize,
+                bodyTextSize = bodyTextSize,
+            )
+        } else {
+            ListContentView(
+                note = note,
+                controlsColor = controlsColor,
+                openIntent = openIntent,
+                selectNoteIntent = selectNoteIntent,
+                titleTextSize = titleTextSize,
+                bodyTextSize = bodyTextSize,
+            )
+        }
+    }
+}
+
+@Composable
+internal fun EmptyWidgetView(
+    appWidgetId: Int,
+    modifier: GlanceModifier = GlanceModifier,
+) {
+    val context = LocalContext.current
+    val selectNoteIntent = NoteWidget.createSelectNoteIntent(context, appWidgetId)
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .appWidgetBackground()
+                .background(Color.DarkGray)
+                .padding(12.dp)
+                .clickable(actionStartActivity(selectNoteIntent)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = context.getString(R.string.select_note),
+            style =
+                TextStyle(
+                    color = ColorProvider(day = Color.White, night = Color.White),
+                    fontWeight = FontWeight.Medium,
+                ),
+        )
+    }
+}
+
+@Composable
+internal fun LockedWidgetView(
+    note: BaseNote,
+    modifier: GlanceModifier = GlanceModifier,
+) {
+    val context = LocalContext.current
+    val openIntent = NoteWidget.createOpenNoteIntent(context, note)
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .appWidgetBackground()
+                .background(Color.DarkGray)
+                .padding(12.dp)
+                .clickable(actionStartActivity(openIntent)),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Image(
+            provider = ImageProvider(R.drawable.lock_big),
+            contentDescription = null,
+            modifier = GlanceModifier.size(48.dp),
+        )
+        Spacer(modifier = GlanceModifier.height(8.dp))
+        Text(
+            text = context.getString(R.string.locked),
+            style =
+                TextStyle(
+                    color = ColorProvider(day = Color.White, night = Color.White),
+                    fontWeight = FontWeight.Bold,
+                ),
+        )
+    }
+}
+
+@Composable
+internal fun NoteContentView(
+    note: BaseNote,
+    controlsColor: Color,
+    openIntent: Intent,
+    selectNoteIntent: Intent,
+    titleTextSize: TextUnit,
+    bodyTextSize: TextUnit,
+    modifier: GlanceModifier = GlanceModifier,
+) {
+    val context = LocalContext.current
+    Column(modifier = modifier.fillMaxSize().clickable(actionStartActivity(openIntent))) {
+        Row(
+            modifier = GlanceModifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = note.title,
+                style =
+                    TextStyle(
+                        color = ColorProvider(day = controlsColor, night = controlsColor),
+                        fontSize = titleTextSize,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                modifier = GlanceModifier.defaultWeight(),
+                maxLines = 1,
+            )
+            Image(
+                provider = ImageProvider(R.drawable.notebook),
+                contentDescription = context.getString(R.string.select_note),
+                modifier =
+                    GlanceModifier.size(24.dp).clickable(actionStartActivity(selectNoteIntent)),
+            )
+        }
+        if (note.body.isNotEmpty()) {
+            Spacer(modifier = GlanceModifier.height(8.dp))
+            Text(
+                text = note.body,
+                style =
+                    TextStyle(
+                        color = ColorProvider(day = controlsColor, night = controlsColor),
+                        fontSize = bodyTextSize,
+                    ),
+            )
+        }
+    }
+}
+
+@Composable
+internal fun ListContentView(
+    note: BaseNote,
+    controlsColor: Color,
+    openIntent: Intent,
+    selectNoteIntent: Intent,
+    titleTextSize: TextUnit,
+    bodyTextSize: TextUnit,
+    modifier: GlanceModifier = GlanceModifier,
+) {
+    val context = LocalContext.current
+    Column(modifier = modifier.fillMaxSize()) {
+        Row(
+            modifier =
+                GlanceModifier.fillMaxWidth()
+                    .padding(bottom = 8.dp)
+                    .clickable(actionStartActivity(openIntent)),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = note.title,
+                style =
+                    TextStyle(
+                        color = ColorProvider(day = controlsColor, night = controlsColor),
+                        fontSize = titleTextSize,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                modifier = GlanceModifier.defaultWeight(),
+                maxLines = 1,
+            )
+            Image(
+                provider = ImageProvider(R.drawable.notebook),
+                contentDescription = context.getString(R.string.select_note),
+                modifier =
+                    GlanceModifier.size(24.dp).clickable(actionStartActivity(selectNoteIntent)),
+            )
+        }
+        LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
+            itemsIndexed(
+                items = note.items,
+                itemId = { index, item ->
+                    if (item.id != -1) item.id.toLong() else (note.id * 31L + index)
+                },
+            ) { index, item ->
+                ListItemRow(
+                    noteId = note.id,
+                    index = index,
+                    item = item,
+                    controlsColor = controlsColor,
+                    bodyTextSize = bodyTextSize,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+internal fun ListItemRow(
+    noteId: Long,
+    index: Int,
+    item: ListItem,
+    controlsColor: Color,
+    bodyTextSize: TextUnit,
+    modifier: GlanceModifier = GlanceModifier,
+) {
+    val startPadding = if (item.isChild) 24.dp else 0.dp
+    Row(
+        modifier = modifier.fillMaxWidth().padding(start = startPadding, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CheckBox(
+            checked = item.checked,
+            onCheckedChange =
+                actionRunCallback<ToggleChecklistAction>(
+                    actionParametersOf(
+                        ToggleChecklistAction.NoteIdKey to noteId,
+                        ToggleChecklistAction.PositionKey to index,
+                    )
+                ),
+            modifier = GlanceModifier.padding(end = 8.dp),
+        )
+        Text(
+            text = item.body,
+            style =
+                TextStyle(
+                    color = ColorProvider(day = controlsColor, night = controlsColor),
+                    fontSize = bodyTextSize,
+                    textDecoration =
+                        if (item.checked) TextDecoration.LineThrough else TextDecoration.None,
+                ),
+        )
+    }
+}
+
+@OptIn(ExperimentalGlancePreviewApi::class)
+@Preview
+@Composable
+private fun LockedWidgetViewPreview() {
+    LockedWidgetView(note = SampleNotes.LOREM_IPSUM_NOTE)
+}
+
+@OptIn(ExperimentalGlancePreviewApi::class)
+@Preview
+@Composable
+private fun ListItemRowPreview() {
+    ListItemRow(
+        noteId = 1L,
+        index = 0,
+        item =
+            ListItem(
+                body = "Sample Item",
+                checked = false,
+                isChild = false,
+                order = 0,
+                children = mutableListOf(),
+                id = 1,
+            ),
+        controlsColor = Color.Black,
+        bodyTextSize = 14.sp,
+    )
+}
+
+@OptIn(ExperimentalGlancePreviewApi::class)
+@Preview
+@Composable
+private fun NoteWidgetContentPreview() {
+    NoteWidgetContent(
+        appWidgetId = 1,
+        note = SampleNotes.LOREM_IPSUM_NOTE,
+        locked = false,
+        theme = Theme.FOLLOW_SYSTEM,
+        titleTextSize = 18.sp,
+        bodyTextSize = 14.sp,
+    )
+}
+
+@OptIn(ExperimentalGlancePreviewApi::class)
+@Preview
+@Composable
+private fun NoteListWidgetContentPreview() {
+    NoteWidgetContent(
+        appWidgetId = 1,
+        note = SampleNotes.GENERATED_LIST_NOTE,
+        locked = false,
+        theme = Theme.FOLLOW_SYSTEM,
+        titleTextSize = 18.sp,
+        bodyTextSize = 14.sp,
+    )
 }

@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.glance.GlanceId
 import androidx.glance.action.ActionParameters
 import androidx.glance.appwidget.action.ActionCallback
+import androidx.glance.appwidget.state.updateAppWidgetState
 import com.philkes.notallyx.core.database.NotallyDatabase
 import com.philkes.notallyx.data.dao.BaseNoteDao
 import com.philkes.notallyx.data.model.BaseNote
@@ -42,6 +43,9 @@ class ToggleChecklistAction : ActionCallback {
             }
         }
 
+        updateAppWidgetState(context, glanceId) { prefs ->
+            prefs[NoteWidget.UpdatedAtKey] = System.currentTimeMillis()
+        }
         NoteWidget().update(context, glanceId)
     }
 
