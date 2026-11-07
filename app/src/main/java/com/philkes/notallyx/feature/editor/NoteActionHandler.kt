@@ -36,6 +36,8 @@ import com.philkes.notallyx.data.model.extensions.createNoteUrl
 import com.philkes.notallyx.feature.editor.NoteActionHandler.Companion.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS
 import com.philkes.notallyx.feature.editor.bottomsheet.ExportBottomSheet
 import com.philkes.notallyx.feature.labels.SelectLabelsActivity
+import com.philkes.notallyx.feature.main.MainActiveDialog
+import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.main.PickNoteActivity
 import com.philkes.notallyx.feature.main.PickNoteActivity.Companion.EXTRA_EXCLUDE_NOTE_ID
 import com.philkes.notallyx.feature.main.PickNoteActivity.Companion.EXTRA_PICKED_NOTE_ID
@@ -258,6 +260,10 @@ class NoteActionHandler(
             activity.checkNotificationPermission(
                 REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
                 alsoCheckAlarmPermission = false,
+                onShowRationale = { msgResId, onConfirm ->
+                    notallyModel.activeDialog.value =
+                        EditorDialogState.PermissionRationale(msgResId, onConfirm)
+                },
             ) {
                 notallyModel.isPinnedToStatus = true
                 activity.bindPinned()
@@ -535,6 +541,19 @@ fun Activity.refreshStatusBarPin(note: BaseNote) {
         checkNotificationPermission(
             REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS,
             alsoCheckAlarmPermission = false,
+            onShowRationale = { msgResId, onConfirm ->
+                if (this is EditActivity) {
+                    notallyModel.activeDialog.value =
+                        EditorDialogState.PermissionRationale(msgResId, onConfirm)
+                } else if (this is MainActivity) {
+                    mainActivityViewModel.activeDialog.value =
+                        MainActiveDialog.Confirm(
+                            message = getString(msgResId),
+                            positiveButtonText = getString(R.string.continue_),
+                            onConfirm = onConfirm,
+                        )
+                }
+            },
         ) {
             refresh()
         }

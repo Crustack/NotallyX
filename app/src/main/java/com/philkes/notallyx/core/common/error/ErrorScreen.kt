@@ -331,7 +331,7 @@ private fun ErrorScreenDialogs(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun ErrorScreenDialogsPreview() {
     NotallyXTheme {

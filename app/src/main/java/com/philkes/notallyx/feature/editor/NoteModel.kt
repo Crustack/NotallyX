@@ -78,6 +78,11 @@ sealed interface EditorDialogState {
 
     data class AudioPermissionRationale(val onConfirm: () -> Unit) : EditorDialogState
 
+    data class PermissionRationale(
+        val messageResId: Int,
+        val onConfirm: () -> Unit,
+    ) : EditorDialogState
+
     data class RejectionConfirm(
         val msgResId: Int,
         val onConfirm: () -> Unit,

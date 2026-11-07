@@ -3,10 +3,7 @@ package com.philkes.notallyx.core.ui.extensions
 import android.Manifest
 import android.app.Activity
 import android.app.AlarmManager
-import android.app.Dialog
 import android.content.Context
-import android.content.ContextWrapper
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
@@ -33,7 +30,6 @@ import android.text.style.URLSpan
 import android.util.TypedValue
 import android.view.ContextThemeWrapper
 import android.view.KeyEvent
-import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -58,8 +54,6 @@ import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatTextView
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.core.graphics.ColorUtils
@@ -74,16 +68,11 @@ import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.lifecycle.setViewTreeLifecycleOwner
-import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.savedstate.SavedStateRegistryOwner
-import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
@@ -97,15 +86,8 @@ import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.getUrl
 import com.philkes.notallyx.core.common.extensions.putNavKey
-import com.philkes.notallyx.core.common.result.ImportProgress
-import com.philkes.notallyx.core.common.result.ImportStage
-import com.philkes.notallyx.core.common.result.Progress
 import com.philkes.notallyx.core.preference.DateFormat
-import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.preference.TimeFormat
-import com.philkes.notallyx.core.ui.dialog.ConfirmDialog
-import com.philkes.notallyx.core.ui.dialog.TextInputDialog
-import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.core.ui.views.StylableEditTextWithHistory
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Folder
@@ -114,18 +96,15 @@ import com.philkes.notallyx.data.model.Item
 import com.philkes.notallyx.data.model.SpanRepresentation
 import com.philkes.notallyx.data.model.extensions.findNextNotificationDate
 import com.philkes.notallyx.data.model.extensions.haveAnyRepetition
-import com.philkes.notallyx.feature.editor.EditActivityViewModel
 import com.philkes.notallyx.feature.editor.history.ChangeHistory
 import com.philkes.notallyx.feature.editor.history.changes.EditTextState
 import com.philkes.notallyx.feature.editor.history.changes.EditTextWithHistoryChange
-import com.philkes.notallyx.feature.labels.LabelsViewModel
 import com.philkes.notallyx.feature.main.MainActivity
 import com.philkes.notallyx.feature.migration.backup.NotesAndAttachments
 import com.philkes.notallyx.navigation.NotallyNavKey
 import java.util.Date
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import me.zhanghai.android.fastscroll.FastScrollNestedScrollView
 import me.zhanghai.android.fastscroll.FastScrollerBuilder
@@ -403,144 +382,55 @@ inline fun <T> Flow<T>.collectIn(
     }
 }
 
-@JvmName("setupProgressDialogStateFlow")
-fun StateFlow<out Progress?>.setupProgressDialog(activity: Activity) {
-    setupProgressDialog(activity, activity.layoutInflater, activity as LifecycleOwner)
-}
-
-@JvmName("setupImportProgressDialogStateFlow")
-fun StateFlow<out Progress?>.setupImportProgressDialog(fragment: Fragment) {
-    setupProgressDialog(
-        fragment.requireContext(),
-        fragment.layoutInflater,
-        fragment.viewLifecycleOwner,
-    ) { context, progress ->
-        val importProgress = progress as ImportProgress
-        val stageStr =
-            context.getString(
-                when (importProgress.stage) {
-                    ImportStage.IMPORT_NOTES -> R.string.imported_notes
-                    ImportStage.EXTRACT_FILES -> R.string.extracted_files
-                    ImportStage.IMPORT_FILES -> R.string.imported_files
-                }
-            )
-        "${context.getString(R.string.count, importProgress.current, importProgress.total)} $stageStr"
-    }
-}
-
-private fun <T : Progress> StateFlow<T?>.setupProgressDialog(
-    context: Context,
-    layoutInflater: LayoutInflater,
-    viewLifecycleOwner: LifecycleOwner,
-    renderProgressMessage: ((context: Context, progress: T) -> String)? = null,
-) {
-    val activity = context as? Activity ?: return
-    val preferences = NotallyXPreferences.getInstance(activity)
-    val composeView = ComposeView(context)
-    val dialog =
-        createComposeDialog(context, composeView, viewLifecycleOwner).apply { setCancelable(false) }
-
-    viewLifecycleOwner.repeatOnLifecycleScope {
-        collect { progress ->
-            if (progress == null || !progress.inProgress) {
-                dialog.dismiss()
-                return@collect
-            }
-
-            val msg =
-                when {
-                    progress.indeterminate -> context.getString(R.string.calculating)
-                    renderProgressMessage != null -> renderProgressMessage.invoke(context, progress)
-                    else ->
-                        context.getString(R.string.count, progress.current, progress.total) +
-                            (progress.countSuffix?.let { " $it" } ?: "")
-                }
-
-            val progressValue =
-                if (progress.indeterminate || progress.total == 0) null
-                else progress.current.toFloat() / progress.total.toFloat()
-
-            composeView.setContent {
-                NotallyXTheme(theme = preferences.theme.value) {
-                    com.philkes.notallyx.core.ui.dialog.ProgressDialog(
-                        title = stringResource(progress.titleId),
-                        message = msg,
-                        progress = progressValue,
-                    )
-                }
-            }
-            if (!dialog.isShowing) {
-                dialog.show()
-            }
-        }
-    }
-}
-
 fun Activity.checkNotificationPermission(
     requestCode: Int,
     alsoCheckAlarmPermission: Boolean = false,
     alarmPermissionResultLauncher: ActivityResultLauncher<Intent>? = null,
+    onShowRationale: ((messageResId: Int, onConfirm: () -> Unit) -> Unit)? = null,
     onSuccess: () -> Unit,
 ) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         val permission = Manifest.permission.POST_NOTIFICATIONS
         if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
             if (shouldShowRequestPermissionRationale(permission)) {
-                val composeView = ComposeView(this)
-                val dialog = createComposeDialog(this, composeView)
-                val preferences = NotallyXPreferences.getInstance(this)
-                composeView.setContent {
-                    NotallyXTheme(theme = preferences.theme.value) {
-                        ConfirmDialog(
-                            message = stringResource(R.string.please_grant_notally_notification),
-                            positiveButtonText = stringResource(R.string.continue_),
-                            negativeButtonText = stringResource(R.string.cancel),
-                            onDismissRequest = { dialog.dismiss() },
-                            onConfirm = { requestPermissions(arrayOf(permission), requestCode) },
-                        )
-                    }
+                val onConfirm = { requestPermissions(arrayOf(permission), requestCode) }
+                if (onShowRationale != null) {
+                    onShowRationale(R.string.please_grant_notally_notification, onConfirm)
+                } else {
+                    onConfirm()
                 }
-                dialog.show()
             } else requestPermissions(arrayOf(permission), requestCode)
         } else if (alsoCheckAlarmPermission)
-            checkAlarmPermission(alarmPermissionResultLauncher, onSuccess)
+            checkAlarmPermission(alarmPermissionResultLauncher, onShowRationale, onSuccess)
         else onSuccess()
     } else if (alsoCheckAlarmPermission)
-        checkAlarmPermission(alarmPermissionResultLauncher, onSuccess)
+        checkAlarmPermission(alarmPermissionResultLauncher, onShowRationale, onSuccess)
     else onSuccess()
 }
 
 fun Activity.checkAlarmPermission(
     resultLauncher: ActivityResultLauncher<Intent>?,
+    onShowRationale: ((messageResId: Int, onConfirm: () -> Unit) -> Unit)? = null,
     onSuccess: () -> Unit,
 ) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         if (getSystemService<AlarmManager>()!!.canScheduleExactAlarms()) {
             onSuccess()
         } else {
-            val composeView = ComposeView(this)
-            val dialog = createComposeDialog(this, composeView)
-            val preferences = NotallyXPreferences.getInstance(this)
-            composeView.setContent {
-                NotallyXTheme(theme = preferences.theme.value) {
-                    ConfirmDialog(
-                        message = stringResource(R.string.please_grant_notally_alarm),
-                        positiveButtonText = stringResource(R.string.continue_),
-                        negativeButtonText = stringResource(R.string.cancel),
-                        onDismissRequest = { dialog.dismiss() },
-                        onConfirm = {
-                            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                            intent.data = Uri.parse("package:$packageName")
-                            if (resultLauncher != null) {
-                                resultLauncher.launch(intent)
-                            } else {
-                                startActivity(intent)
-                            }
-                        },
-                    )
+            val onConfirm = {
+                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                intent.data = Uri.parse("package:$packageName")
+                if (resultLauncher != null) {
+                    resultLauncher.launch(intent)
+                } else {
+                    startActivity(intent)
                 }
             }
-            dialog.show()
+            if (onShowRationale != null) {
+                onShowRationale(R.string.please_grant_notally_alarm, onConfirm)
+            } else {
+                onConfirm()
+            }
         }
     } else onSuccess()
 }
@@ -554,73 +444,6 @@ fun Activity.setEnabledSecureFlag(enabled: Boolean) {
     } else {
         window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
-}
-
-fun Fragment.displayEditLabelDialog(
-    oldValue: String,
-    viewModel: LabelsViewModel,
-    onUpdateLabel: ((oldLabel: String, newLabel: String) -> Unit)? = null,
-) {
-    requireContext().displayEditLabelDialog(oldValue, viewModel, layoutInflater, onUpdateLabel)
-}
-
-fun Activity.displayEditLabelDialog(
-    oldValue: String,
-    viewModel: EditActivityViewModel,
-    onUpdateLabel: ((oldLabel: String, newLabel: String) -> Unit)? = null,
-) {
-    displayEditLabelDialog(oldValue, viewModel, layoutInflater, onUpdateLabel)
-}
-
-fun Context.displayEditLabelDialog(
-    oldValue: String,
-    viewModel: LabelsViewModel,
-    layoutInflater: LayoutInflater,
-    onUpdateLabel: ((oldLabel: String, newLabel: String) -> Unit)? = null,
-) {
-    displayEditLabelDialog(oldValue, viewModel::updateLabel, layoutInflater, onUpdateLabel)
-}
-
-fun Context.displayEditLabelDialog(
-    oldValue: String,
-    viewModel: EditActivityViewModel,
-    layoutInflater: LayoutInflater,
-    onUpdateLabel: ((oldLabel: String, newLabel: String) -> Unit)? = null,
-) {
-    displayEditLabelDialog(oldValue, viewModel::updateLabel, layoutInflater, onUpdateLabel)
-}
-
-fun Context.displayEditLabelDialog(
-    oldValue: String,
-    updateLabel: (oldValue: String, newValue: String, onComplete: (Boolean) -> Unit) -> Unit,
-    layoutInflater: LayoutInflater,
-    onUpdateLabel: ((oldLabel: String, newLabel: String) -> Unit)? = null,
-) {
-    val activity = (this as? Activity) ?: return
-    val preferences = NotallyXPreferences.getInstance(activity)
-    val composeView = ComposeView(activity)
-    val dialog = createComposeDialog(activity, composeView)
-
-    composeView.setContent {
-        NotallyXTheme(theme = preferences.theme.value) {
-            TextInputDialog(
-                title = stringResource(R.string.edit_label),
-                initialValue = oldValue,
-                onDismissRequest = { dialog.dismiss() },
-                onConfirm = { value ->
-                    if (value.isNotEmpty()) {
-                        updateLabel(oldValue, value) { success ->
-                            if (success) {
-                                onUpdateLabel?.invoke(oldValue, value)
-                                dialog.dismiss()
-                            } else showToast(R.string.label_exists)
-                        }
-                    }
-                },
-            )
-        }
-    }
-    dialog.show()
 }
 
 fun Date.format(
@@ -864,151 +687,6 @@ fun @receiver:ColorInt Int.getSlightContrastColor(): Int {
         ColorUtils.setAlphaComponent(overlayColor, 15), // ~10% alpha
         this,
     )
-}
-
-@Deprecated("Use StateFlow/State flags and render dialogs declaratively inside Composable screen")
-fun Fragment.showDialog(
-    messageResId: Int,
-    positiveButtonTextResId: Int,
-    onPositiveButtonClickListener: DialogInterface.OnClickListener,
-    neutralButtonTextResId: Int? = null,
-    onNeutralButtonClickListener: DialogInterface.OnClickListener? = null,
-    fullSize: Boolean = false,
-) =
-    requireContext()
-        .showDialog(
-            messageResId,
-            positiveButtonTextResId,
-            onPositiveButtonClickListener,
-            neutralButtonTextResId,
-            onNeutralButtonClickListener,
-            fullSize,
-        )
-
-@Deprecated("Use StateFlow/State flags and render dialogs declaratively inside Composable screen")
-fun Fragment.showDialog(
-    message: String,
-    positiveButtonTextResId: Int,
-    onPositiveButtonClickListener: DialogInterface.OnClickListener,
-    neutralButtonTextResId: Int? = null,
-    onNeutralButtonClickListener: DialogInterface.OnClickListener? = null,
-    fullSize: Boolean = false,
-) =
-    requireContext()
-        .showDialog(
-            message,
-            positiveButtonTextResId,
-            onPositiveButtonClickListener,
-            neutralButtonTextResId,
-            onNeutralButtonClickListener,
-            fullSize,
-        )
-
-@Deprecated("Use StateFlow/State flags and render dialogs declaratively inside Composable screen")
-fun Context.showDialog(
-    messageResId: Int,
-    positiveButtonTextResId: Int,
-    onPositiveButtonClickListener: DialogInterface.OnClickListener,
-    neutralButtonTextResId: Int? = null,
-    onNeutralButtonClickListener: DialogInterface.OnClickListener? = null,
-    fullSize: Boolean = false,
-) {
-    showDialog(
-        message = getString(messageResId),
-        positiveButtonTextResId = positiveButtonTextResId,
-        onPositiveButtonClickListener = onPositiveButtonClickListener,
-        neutralButtonTextResId = neutralButtonTextResId,
-        onNeutralButtonClickListener = onNeutralButtonClickListener,
-        fullSize = fullSize,
-    )
-}
-
-@Deprecated("Use StateFlow/State flags and render dialogs declaratively inside Composable screen")
-fun createComposeDialog(
-    context: Context,
-    composeView: ComposeView,
-    lifecycleOwner: LifecycleOwner? = null,
-): Dialog {
-    var owner = lifecycleOwner
-    var currContext: Context? = context
-    while (owner == null && currContext != null) {
-        if (currContext is LifecycleOwner) {
-            owner = currContext
-        } else if (currContext is ContextWrapper) {
-            currContext = currContext.baseContext
-        } else {
-            currContext = null
-        }
-    }
-
-    var viewModelStoreOwner: ViewModelStoreOwner? = owner as? ViewModelStoreOwner
-    currContext = context
-    while (viewModelStoreOwner == null && currContext != null) {
-        if (currContext is ViewModelStoreOwner) {
-            viewModelStoreOwner = currContext
-        } else if (currContext is ContextWrapper) {
-            currContext = currContext.baseContext
-        } else {
-            currContext = null
-        }
-    }
-
-    var savedStateRegistryOwner: SavedStateRegistryOwner? = owner as? SavedStateRegistryOwner
-    currContext = context
-    while (savedStateRegistryOwner == null && currContext != null) {
-        if (currContext is SavedStateRegistryOwner) {
-            savedStateRegistryOwner = currContext
-        } else if (currContext is ContextWrapper) {
-            currContext = currContext.baseContext
-        } else {
-            currContext = null
-        }
-    }
-
-    return Dialog(context).apply {
-        requestWindowFeature(Window.FEATURE_NO_TITLE)
-        window?.setBackgroundDrawableResource(android.R.color.transparent)
-        setContentView(composeView)
-        window?.decorView?.let { decorView ->
-            owner?.let { decorView.setViewTreeLifecycleOwner(it) }
-            viewModelStoreOwner?.let { decorView.setViewTreeViewModelStoreOwner(it) }
-            savedStateRegistryOwner?.let { decorView.setViewTreeSavedStateRegistryOwner(it) }
-        }
-    }
-}
-
-fun Context.showDialog(
-    message: String,
-    positiveButtonTextResId: Int,
-    onPositiveButtonClickListener: DialogInterface.OnClickListener,
-    neutralButtonTextResId: Int? = null,
-    onNeutralButtonClickListener: DialogInterface.OnClickListener? = null,
-    fullSize: Boolean = false,
-) {
-    val activity = (this as? Activity) ?: return
-    val preferences = NotallyXPreferences.getInstance(activity)
-    val composeView = ComposeView(activity)
-    val dialog = createComposeDialog(activity, composeView)
-
-    composeView.setContent {
-        NotallyXTheme(theme = preferences.theme.value) {
-            ConfirmDialog(
-                message = message,
-                positiveButtonText = stringResource(positiveButtonTextResId),
-                negativeButtonText = stringResource(R.string.cancel),
-                neutralButtonText = neutralButtonTextResId?.let { stringResource(it) },
-                onNeutralButtonClick =
-                    onNeutralButtonClickListener?.let { listener ->
-                        { listener.onClick(dialog, DialogInterface.BUTTON_NEUTRAL) }
-                    },
-                onDismissRequest = { dialog.dismiss() },
-                onConfirm = {
-                    onPositiveButtonClickListener.onClick(dialog, DialogInterface.BUTTON_POSITIVE)
-                },
-            )
-        }
-    }
-    dialog.show()
 }
 
 fun Fragment.showToast(messageResId: Int) = requireContext().showToast(messageResId)
