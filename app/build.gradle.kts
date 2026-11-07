@@ -140,6 +140,12 @@ android {
             )
     }
 
+    sourceSets.getByName("main") {
+        kotlin.directories.add(
+            "${layout.buildDirectory.get().asFile}/generated/source/localesPreview/kotlin"
+        )
+    }
+
     testOptions { unitTests.isIncludeAndroidResources = true }
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
 }
@@ -399,7 +405,114 @@ tasks.register("copyScreenshotsToDocumentation") {
     }
 }
 
-tasks.preBuild.dependsOn(tasks.named("installLocalGitHooks"), tasks.exportTranslationsToExcel)
+val defaultRegionMap =
+    mapOf(
+        "en" to "en-US",
+        "de" to "de-DE",
+        "ru" to "ru-RU",
+        "fr" to "fr-FR",
+        "es" to "es-ES",
+        "it" to "it-IT",
+        "ja" to "ja-JP",
+        "pl" to "pl-PL",
+        "tr" to "tr-TR",
+        "nl" to "nl-NL",
+        "da" to "da-DK",
+        "cs" to "cs-CZ",
+        "el" to "el-GR",
+        "hu" to "hu-HU",
+        "sv" to "sv-SE",
+        "nb" to "no-NO",
+        "ro" to "ro-RO",
+        "sk" to "sk-SK",
+        "sl" to "sl-SI",
+        "uk" to "uk-UA",
+        "vi" to "vi-VN",
+        "id" to "id-ID",
+        "ar" to "ar-SA",
+        "ca" to "ca-ES",
+        "tl" to "fil-PH",
+        "my" to "my-MM",
+    )
+
+val generateLocalesPreview =
+    tasks.register("generateLocalesPreview") {
+        group = "build"
+        description =
+            "Generates AppStorePreview multi-preview annotation for all locales in res/values-*/strings.xml"
+
+        val resDir = file("src/main/res")
+        val outputDir = layout.buildDirectory.dir("generated/source/localesPreview/kotlin")
+
+        inputs.dir(resDir).withPathSensitivity(PathSensitivity.RELATIVE)
+        outputs.dir(outputDir)
+
+        doLast {
+            val localeDirs =
+                resDir
+                    .listFiles { f ->
+                        f.isDirectory &&
+                            f.name.startsWith("values-") &&
+                            !f.name.startsWith("values-v") &&
+                            f.name != "values-night" &&
+                            File(f, "strings.xml").exists()
+                    }
+                    ?.sortedBy { it.name } ?: emptyList()
+
+            val locales = mutableListOf("en" to "en-US", "de" to "de-DE")
+            // TODO: check which locales should really be included
+//            localeDirs.forEach { dir ->
+//                val rawTag = dir.name.removePrefix("values-")
+//                val tag = rawTag.replace("-r", "-")
+//                val name = defaultRegionMap[rawTag] ?: defaultRegionMap[tag] ?: tag
+//                locales.add(tag to name)
+//            }
+
+            val annotations =
+                locales.joinToString("\n") { (code, label) ->
+                    """@Preview(name = "$label", locale = "$code", showBackground = true)"""
+                }
+
+            val outputFile =
+                outputDir
+                    .get()
+                    .asFile
+                    .resolve("com/philkes/notallyx/misc/appstore/AppStorePreview.kt")
+            outputFile.parentFile.mkdirs()
+
+            val generatedContent =
+                """
+package com.philkes.notallyx.misc.appstore
+
+import androidx.compose.ui.tooling.preview.Preview
+
+/**
+ * Multi-preview annotation for generating app store screenshots across multiple locales.
+ * Auto-generated during build from res/values-* folders by the generateLocalesPreview task.
+ */
+@Retention(AnnotationRetention.BINARY)
+@Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.FUNCTION)
+$annotations
+annotation class AppStorePreview
+
+typealias LocalesPreview = AppStorePreview
+"""
+                    .trimStart()
+
+            if (!outputFile.exists() || outputFile.readText() != generatedContent) {
+                outputFile.writeText(generatedContent)
+                logger.lifecycle(
+                    "Generated AppStorePreview with ${locales.size} locales at: ${outputFile.absolutePath}"
+                )
+            }
+        }
+    }
+
+tasks.preBuild.dependsOn(
+    tasks.named("installLocalGitHooks"),
+    tasks.exportTranslationsToExcel,
+    generateLocalesPreview,
+)
 
 tasks.register("generateChangelogs") {
     doLast {
