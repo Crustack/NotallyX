@@ -678,18 +678,45 @@ internal fun EditListScreen(
     clickHandlers: EditClickHandlers = object : EditClickHandlers {},
     focusFirstItem: Boolean = false,
 ) {
-
     val focusRequester = remember { FocusRequester() }
-
+    var itemToFocusId by remember { mutableStateOf<Int?>(null) }
     var hasFocusedOnce by rememberSaveable { mutableStateOf(false) }
+    var shouldFocusNewItem by remember { mutableStateOf(false) }
 
-    LaunchedEffect(focusFirstItem) {
-        if (focusFirstItem && !hasFocusedOnce) {
+    val wrappedClickHandlers =
+        remember(clickHandlers) {
+            object : EditClickHandlers by clickHandlers {
+                override fun onAddItemClick() {
+                    clickHandlers.onAddItemClick()
+                    shouldFocusNewItem = true
+                }
+            }
+        }
+
+    LaunchedEffect(focusFirstItem, noteState.items) {
+        if (focusFirstItem && !hasFocusedOnce && noteState.items.isNotEmpty()) {
             hasFocusedOnce = true
-            awaitFrame() // Ensures layout pass is ready before requesting focus
-            focusRequester.requestFocus()
+            itemToFocusId = noteState.items.first().id
         }
     }
+
+    LaunchedEffect(shouldFocusNewItem, noteState.items) {
+        if (shouldFocusNewItem && noteState.items.isNotEmpty()) {
+            shouldFocusNewItem = false
+            itemToFocusId = noteState.items.maxByOrNull { it.id }?.id
+        }
+    }
+
+    LaunchedEffect(itemToFocusId) {
+        val id = itemToFocusId
+        if (id != null) {
+            awaitFrame() // Ensures layout pass is ready before requesting focus
+            try {
+                focusRequester.requestFocus()
+            } catch (_: Exception) {}
+        }
+    }
+
     EditScreen(
         noteState = noteState.copy(type = Type.LIST),
         modifier = modifier,
@@ -698,7 +725,7 @@ internal fun EditListScreen(
         canUndo = canUndo,
         canRedo = canRedo,
         changeHandlers = changeHandlers,
-        clickHandlers = clickHandlers,
+        clickHandlers = wrappedClickHandlers,
         bottomLeftActions = {},
         content = {
             // Checklist Unchecked Items
@@ -714,12 +741,18 @@ internal fun EditListScreen(
                     onCheckedChange = { checked ->
                         changeHandlers.onItemCheckedChange(item, checked)
                     },
-                    onEnterKey = { clickHandlers.onAddItemClick() },
-                    onBackspaceOnEmpty = { changeHandlers.onItemDelete(item) },
+                    onEnterKey = { wrappedClickHandlers.onAddItemClick() },
+                    onBackspaceOnEmpty = {
+                        val prevItem = if (index > 0) noteState.items[index - 1] else null
+                        if (prevItem != null) {
+                            itemToFocusId = prevItem.id
+                        }
+                        changeHandlers.onItemDelete(item)
+                    },
                     onDelete = { changeHandlers.onItemDelete(item) },
                     onSwipeRight = { changeHandlers.onItemSwipeRight(item) },
                     onSwipeLeft = { changeHandlers.onItemSwipeLeft(item) },
-                    focusRequester = if (index == 0) focusRequester else null,
+                    focusRequester = if (item.id == itemToFocusId) focusRequester else null,
                 )
             }
 
@@ -728,7 +761,7 @@ internal fun EditListScreen(
                 Row(
                     modifier =
                         Modifier.fillMaxWidth()
-                            .clickable { clickHandlers.onAddItemClick() }
+                            .clickable { wrappedClickHandlers.onAddItemClick() }
                             .padding(horizontal = 20.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -765,11 +798,12 @@ internal fun EditListScreen(
                         onCheckedChange = { checked ->
                             changeHandlers.onItemCheckedChange(item, checked)
                         },
-                        onEnterKey = { clickHandlers.onAddItemClick() },
+                        onEnterKey = { wrappedClickHandlers.onAddItemClick() },
                         onBackspaceOnEmpty = { changeHandlers.onItemDelete(item) },
                         onDelete = { changeHandlers.onItemDelete(item) },
                         onSwipeRight = { changeHandlers.onItemSwipeRight(item) },
                         onSwipeLeft = { changeHandlers.onItemSwipeLeft(item) },
+                        focusRequester = if (item.id == itemToFocusId) focusRequester else null,
                     )
                 }
             }

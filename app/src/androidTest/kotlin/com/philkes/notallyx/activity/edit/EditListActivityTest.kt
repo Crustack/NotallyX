@@ -1,6 +1,7 @@
 package com.philkes.notallyx.activity.edit
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasContentDescription
@@ -67,7 +68,7 @@ class EditListActivityTest : UiTestBase() {
 
         // 1. Open List Editor and verify the auto-added item is immediately focused
         composeTestRule.onNodeWithContentDescription(makeListLabel).performClick()
-        //        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
+        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
         composeTestRule.onAllNodes(hasSetTextAction()).onLast().performTextInput("Shopping List")
 
         composeTestRule
@@ -84,29 +85,29 @@ class EditListActivityTest : UiTestBase() {
         // 3. Add remaining items with text, testing auto-focus on "Add item" click, Enter key, and
         // Backspace deletion
         composeTestRule.onNodeWithText(addItemLabel).performScrollTo().performClick()
-        //        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
+        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
         composeTestRule.onAllNodes(hasSetTextAction()).onLast().performTextInput("Apples")
 
         // Test pressing Enter key adds a new item and immediately focuses it
         composeTestRule.onAllNodes(hasSetTextAction()).onLast().performImeAction()
-        //        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
+        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
         composeTestRule.onAllNodes(hasSetTextAction()).onLast().performTextInput("Bananas")
 
         // Test pressing Enter key to create empty item, then Backspace to delete it and return
         // focus to "Bananas"
-        //        composeTestRule.onAllNodes(hasSetTextAction()).onLast().performImeAction()
-        //        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
+        composeTestRule.onAllNodes(hasSetTextAction()).onLast().performImeAction()
+        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
         //        composeTestRule.onAllNodes(hasSetTextAction()).onLast().performKeyInput {
         //            pressKey(Key.Backspace)
         //        }
         //        composeTestRule.onNodeWithText("Bananas").assertIsFocused()
 
         composeTestRule.onNodeWithText(addItemLabel).performScrollTo().performClick()
-        //        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
+        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
         composeTestRule.onAllNodes(hasSetTextAction()).onLast().performTextInput("Cherries")
 
         composeTestRule.onNodeWithText(addItemLabel).performScrollTo().performClick()
-        //        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
+        composeTestRule.onAllNodes(hasSetTextAction()).onLast().assertIsFocused()
         composeTestRule.onAllNodes(hasSetTextAction()).onLast().performTextInput("Dates")
 
         // Assert title and items are displayed
