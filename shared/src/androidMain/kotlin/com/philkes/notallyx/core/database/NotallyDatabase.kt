@@ -157,6 +157,7 @@ actual abstract class NotallyDatabase : RoomDatabase() {
             return driverFactory
                 .createBuilder<NotallyDatabase>(DATABASE_NAME, dataInPublic, inMemory)
                 .setDriver(driverFactory.createDriver(DATABASE_NAME, dataInPublic))
+                .setJournalMode(JournalMode.TRUNCATE)
                 .addMigrations(*ALL_MIGRATIONS)
         }
 
@@ -271,6 +272,7 @@ actual abstract class NotallyDatabase : RoomDatabase() {
                         androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory(),
                     )
                 )
+                .setJournalMode(JournalMode.TRUNCATE)
                 .addMigrations(*ALL_MIGRATIONS)
         }
 

@@ -100,10 +100,11 @@ actual abstract class NotallyDatabase : RoomDatabase() {
             driverFactory: DatabaseDriverFactory,
             dataInPublic: Boolean,
             inMemory: Boolean,
-        ): RoomDatabase.Builder<NotallyDatabase> {
+        ): Builder<NotallyDatabase> {
             return driverFactory
                 .createBuilder<NotallyDatabase>(DATABASE_NAME, dataInPublic, inMemory)
                 .setDriver(driverFactory.createDriver(DATABASE_NAME, dataInPublic))
+                .setJournalMode(JournalMode.TRUNCATE)
                 .addMigrations(*ALL_MIGRATIONS)
         }
 

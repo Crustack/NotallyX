@@ -46,12 +46,18 @@ class DesktopPathProvider(
     }
 
     override fun getDatabaseFile(databaseName: String, dataInPublicFolder: Boolean): File {
-        val dbDir = File(appDataDirectory, "databases").apply { if (!exists()) mkdirs() }
+        val dbDir =
+            if (dataInPublicFolder) {
+                appDataDirectory
+            } else {
+                File(appDataDirectory, "databases").apply { if (!exists()) mkdirs() }
+            }
         return File(dbDir, databaseName)
     }
 
     override fun getDatabaseFiles(databaseName: String, dataInPublicFolder: Boolean): List<File> {
-        val dbDir = File(appDataDirectory, "databases")
+        val dbDir =
+            if (dataInPublicFolder) appDataDirectory else File(appDataDirectory, "databases")
         return listOf(
                 File(dbDir, databaseName),
                 File(dbDir, "$databaseName-shm"),
@@ -62,7 +68,12 @@ class DesktopPathProvider(
     }
 
     override fun getMediaDirectory(subFolder: String?, dataInPublicFolder: Boolean): File {
-        val root = File(appDataDirectory, "attachments").apply { if (!exists()) mkdirs() }
+        val root =
+            if (dataInPublicFolder) {
+                appDataDirectory
+            } else {
+                File(appDataDirectory, "attachments").apply { if (!exists()) mkdirs() }
+            }
         return if (subFolder.isNullOrEmpty()) {
             root
         } else {

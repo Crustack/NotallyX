@@ -38,6 +38,7 @@ class AndroidPathProvider(private val context: Context) : PathProvider {
                     File(directory, databaseName),
                     File(directory, "$databaseName-shm"),
                     File(directory, "$databaseName-wal"),
+                    File(directory, "$databaseName-journal"),
                 )
                 .filter { it.exists() }
         }
