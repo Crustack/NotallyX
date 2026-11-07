@@ -22,6 +22,7 @@ import com.philkes.notallyx.feature.editor.history.changes.ListItemsChange
 import com.philkes.notallyx.feature.editor.listitem.checkItem
 import com.philkes.notallyx.feature.editor.listitem.cloneList
 import com.philkes.notallyx.feature.editor.listitem.initChildren
+import com.philkes.notallyx.feature.editor.listitem.moveWithChildren
 import com.philkes.notallyx.feature.editor.listitem.removeWithChildren
 import com.philkes.notallyx.feature.editor.listitem.splitByChecked
 import com.philkes.notallyx.feature.editor.screens.EditChangeHandlers
@@ -125,7 +126,6 @@ class EditListActivity : EditActivity(Type.LIST) {
                 type = notallyModel.type,
                 isPinnedToStatus = notallyModel.isPinnedToStatus,
             )
-        Log.d("TEST", "noteState: ${noteState.items.joinToString(", ") { it.body }}")
         val preferencesState =
             EditNotePreferences(
                 notesSortBy = preferences.notesSorting.value.sortedBy,
@@ -189,6 +189,22 @@ class EditListActivity : EditActivity(Type.LIST) {
                     override fun onItemSwipeLeft(item: ListItem) {
                         if (item.isChild) {
                             applyListChange { item.isChild = false }
+                        }
+                    }
+
+                    override fun onItemMove(fromIndex: Int, toIndex: Int, originalItem: ListItem?) {
+                        Log.d("TEST_DRAG", "EditListActivity onItemMove: $fromIndex -> $toIndex")
+                        if (
+                            fromIndex in notallyModel.items.indices &&
+                                toIndex in 0..notallyModel.items.size
+                        ) {
+                            applyListChange {
+                                notallyModel.items.moveWithChildren(
+                                    fromIndex,
+                                    toIndex,
+                                    originalItem,
+                                )
+                            }
                         }
                     }
                 },

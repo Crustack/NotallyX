@@ -1,5 +1,6 @@
 package com.philkes.notallyx.feature.editor.listitem
 
+import android.util.Log
 import androidx.recyclerview.widget.SortedList
 import com.philkes.notallyx.core.common.extensions.filter
 import com.philkes.notallyx.core.common.extensions.forEach
@@ -129,6 +130,67 @@ fun MutableList<ListItem>.removeWithChildren(index: Int): List<ListItem> {
     return removed
 }
 
+fun MutableList<ListItem>.moveWithChildren(
+    fromIndex: Int,
+    toIndex: Int,
+    originalItem: ListItem? = null,
+) {
+    if (fromIndex !in indices || toIndex !in 0..size) {
+        return
+    }
+
+    Log.d("ListItem", "Before move from: $fromIndex to: $toIndex:\n${this.toReadableString()}")
+
+    val item = this[fromIndex]
+    val wasOriginallyChild = originalItem?.isChild ?: item.isChild
+    val wasOriginallyParent = !wasOriginallyChild
+
+    val removed =
+        if (wasOriginallyParent) {
+            if (item.children.isNotEmpty()) {
+                item + item.children
+            } else if (originalItem != null && originalItem.children.isNotEmpty()) {
+                val originalChildIds = originalItem.children.map { it.id }.toSet()
+                val childrenInList = mutableListOf<ListItem>()
+                var idx = fromIndex + 1
+                while (idx < size && this[idx].id in originalChildIds) {
+                    childrenInList.add(this[idx])
+                    idx++
+                }
+                item + childrenInList
+            } else {
+                listOf(item)
+            }
+        } else {
+            listOf(item)
+        }
+
+    removeAll(removed)
+
+    val targetIndex = toIndex.coerceIn(0, size)
+    addAll(targetIndex, removed)
+
+    val movedItem = removed.first()
+    if (targetIndex == 0) {
+        movedItem.isChild = false
+    } else {
+        val prevItem = this[targetIndex - 1]
+        val nextItem = this.getOrNull(targetIndex + removed.size)
+        if (wasOriginallyParent) {
+            val isNextChild = nextItem?.isChild == true
+            movedItem.isChild = isNextChild
+        } else {
+            val hasParentAbove = findParentPosition(targetIndex - 1) != null || !prevItem.isChild
+            movedItem.isChild = hasParentAbove
+        }
+    }
+
+    initOrders(this)
+    initChildren(this)
+
+    Log.d("ListItem", "After move from: $fromIndex to: $toIndex:\n${this.toReadableString()}")
+}
+
 fun MutableList<ListItem>.addWithChildren(item: ListItem): Pair<Int, Int> {
     val insertIdx = findInsertIdx(item)
     addAll(insertIdx, item + item.children)
@@ -223,29 +285,15 @@ fun List<ListItem>.checkItem(
 }
 
 /** Makes sure every [ListItem.order] is valid and correct */
-private fun initOrders(list: List<ListItem>): Boolean {
-    var orders = list.map { it.order }.toMutableList()
+fun initOrders(list: List<ListItem>): Boolean {
     var invalidOrderFound = false
     list.forEachIndexed { idx, item ->
-        if (item.order == null || orders.count { it == idx } > 1) {
+        if (item.order != idx) {
             invalidOrderFound = true
-            if (orders.contains(idx)) {
-                shiftAllOrdersAfterItem(list, item)
-            }
             item.order = idx
-            orders = list.map { it.order }.toMutableList()
         }
     }
     return invalidOrderFound
-}
-
-private fun shiftAllOrdersAfterItem(list: List<ListItem>, item: ListItem) {
-    // Move all orders after the item to ensure no duplicate orders
-    val sortedByOrders = list.sortedBy { it.order }
-    val position = sortedByOrders.indexOfFirst { it.id == item.id }
-    for (i in position + 1..sortedByOrders.lastIndex) {
-        sortedByOrders[i].order = sortedByOrders[i].order!! + 1
-    }
 }
 
 fun List<ListItem>.areAllChecked(except: ListItem? = null): Boolean {

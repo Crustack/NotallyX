@@ -1,6 +1,5 @@
 package com.philkes.notallyx.feature.editor.listitem
 
-import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -19,22 +18,35 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.zIndex
+import com.philkes.notallyx.data.model.ListItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 @Composable
-fun rememberDragDropState(lazyListState: LazyListState, onMove: (Int, Int) -> Unit): DragDropState {
+fun <T> rememberDragDropState(
+    lazyListState: LazyListState,
+    items: List<T>,
+    onMove: (fromIndex: Int, toIndex: Int, originalItem: T) -> Unit,
+): DragDropState<T> {
     val scope = rememberCoroutineScope()
+    val currentItems by rememberUpdatedState(items)
+    val currentOnMove by rememberUpdatedState(onMove)
     val state =
         remember(lazyListState) {
-            DragDropState(state = lazyListState, onMove = onMove, scope = scope)
+            DragDropState(
+                state = lazyListState,
+                scope = scope,
+                getItems = { currentItems },
+                onMove = { from, to, original -> currentOnMove(from, to, original) },
+            )
         }
     LaunchedEffect(state) {
         while (true) {
@@ -45,13 +57,29 @@ fun rememberDragDropState(lazyListState: LazyListState, onMove: (Int, Int) -> Un
     return state
 }
 
-class DragDropState
+@Composable
+fun rememberDragDropState(
+    lazyListState: LazyListState,
+    onMove: (fromIndex: Int, toIndex: Int) -> Unit,
+): DragDropState<Any> {
+    return rememberDragDropState(
+        lazyListState = lazyListState,
+        items = emptyList(),
+        onMove = { from, to, _ -> onMove(from, to) },
+    )
+}
+
+class DragDropState<T>
 internal constructor(
     private val state: LazyListState,
     private val scope: CoroutineScope,
-    private val onMove: (Int, Int) -> Unit,
+    private val getItems: () -> List<T>,
+    private val onMove: (fromIndex: Int, toIndex: Int, originalItem: T) -> Unit,
 ) {
     var draggingItemIndex by mutableStateOf<Int?>(null)
+        private set
+
+    var draggedOriginalItem by mutableStateOf<T?>(null)
         private set
 
     internal val scrollChannel = Channel<Float>()
@@ -79,6 +107,13 @@ internal constructor(
             ?.also {
                 draggingItemIndex = it.index
                 draggingItemInitialOffset = it.offset
+                val item = getItems().getOrNull(it.index)
+                draggedOriginalItem =
+                    if (item is ListItem) {
+                        @Suppress("UNCHECKED_CAST") (item.clone() as T)
+                    } else {
+                        item
+                    }
             }
     }
 
@@ -98,6 +133,7 @@ internal constructor(
         draggingItemDraggedDelta = 0f
         draggingItemIndex = null
         draggingItemInitialOffset = 0
+        draggedOriginalItem = null
     }
 
     internal fun onDrag(offset: Offset) {
@@ -123,9 +159,26 @@ internal constructor(
                     state.firstVisibleItemScrollOffset,
                 )
             }
-            Log.d("TEST", "from: ${draggingItem.index}, to: ${targetItem.index}")
-            onMove.invoke(draggingItem.index, targetItem.index)
-            draggingItemIndex = targetItem.index
+            val original = draggedOriginalItem
+            if (original != null) {
+                onMove.invoke(draggingItem.index, targetItem.index, original)
+            }
+            val currentItems = getItems()
+            val draggedId = (original as? ListItem)?.id
+            val updatedIndex =
+                if (draggedId != null) {
+                    currentItems.indexOfFirst { (it as? ListItem)?.id == draggedId }
+                } else if (original != null) {
+                    currentItems.indexOf(original)
+                } else {
+                    -1
+                }
+            draggingItemIndex =
+                if (updatedIndex != -1 && updatedIndex != draggingItem.index) {
+                    updatedIndex
+                } else {
+                    targetItem.index
+                }
         } else {
             val overscroll =
                 when {
@@ -145,7 +198,7 @@ internal constructor(
         get() = this.offset + this.size
 }
 
-fun Modifier.dragContainer(dragDropState: DragDropState): Modifier {
+fun Modifier.dragContainer(dragDropState: DragDropState<*>): Modifier {
     return pointerInput(dragDropState) {
         detectDragGesturesAfterLongPress(
             onDrag = { change, offset ->
@@ -161,7 +214,7 @@ fun Modifier.dragContainer(dragDropState: DragDropState): Modifier {
 
 @Composable
 fun LazyItemScope.DraggableItem(
-    dragDropState: DragDropState,
+    dragDropState: DragDropState<*>,
     index: Int,
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.(isDragging: Boolean) -> Unit,
@@ -182,7 +235,7 @@ fun LazyItemScope.DraggableItem(
 
 @Composable
 fun LazyItemScope.draggableModifier(
-    dragDropState: DragDropState,
+    dragDropState: DragDropState<*>,
     index: Int,
 ): Modifier {
     val dragging = index == dragDropState.draggingItemIndex
