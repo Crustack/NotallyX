@@ -20,7 +20,7 @@ skills-lock.json
 .agents/skills/**
 .agents/skills-lock.json
 !.agents/skills/android-di-migration/
-!.agents/skills/evaluate-jetpack-composables/
+!.agents/skills/create-compose-ui-elements/
 !.agents/skills/migrate-livedata-to-stateflow/
 !.agents/skills/roborazzi/
 !.agents/skills/write-ui-tests/
