@@ -210,7 +210,6 @@ open class NoteModel(
         and image addition
          */
         imageRoot = app.getCurrentImagesDirectory()
-        requireNotNull(imageRoot) { "imageRoot is null" }
         addFiles(uris, imageRoot!!, FileType.IMAGE)
     }
 
@@ -220,7 +219,6 @@ open class NoteModel(
         and image addition
          */
         filesRoot = app.getCurrentFilesDirectory()
-        requireNotNull(filesRoot) { "filesRoot is null" }
         addFiles(uris, filesRoot!!, FileType.ANY)
     }
 

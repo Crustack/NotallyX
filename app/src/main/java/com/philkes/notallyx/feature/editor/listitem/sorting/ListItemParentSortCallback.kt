@@ -40,7 +40,7 @@ open class ListItemParentSortCallback : SortedList.Callback<ListItem>() {
                     } else {
                         items!!.findParent(item2)!!.second
                     }
-                return when {
+                when {
                     item1.id == parent2.id -> compareItems(item1, item2)
                     else -> compare(item1, parent2)
                 }
@@ -60,7 +60,7 @@ open class ListItemParentSortCallback : SortedList.Callback<ListItem>() {
             }
 
             else -> {
-                return compareItems(item1, item2)
+                compareItems(item1, item2)
             }
         }
     }

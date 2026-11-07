@@ -15,7 +15,6 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
-import android.os.Bundle
 import android.provider.OpenableColumns
 import android.util.Log
 import android.webkit.MimeTypeMap
@@ -27,14 +26,10 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
-import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
 import com.philkes.notallyx.BuildConfig
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.extensions.getQuantityString
 import com.philkes.notallyx.core.ui.extensions.showToast
-import com.philkes.notallyx.core.ui.views.LengthFilterWithToast
-import com.philkes.notallyx.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.extensions.toText
@@ -58,24 +53,6 @@ import java.net.URLEncoder
 import java.text.DateFormat
 import java.util.Date
 import kotlinx.serialization.json.Json
-
-fun <T> createObserverSkipFirst(observer: Observer<T>): Observer<T> {
-    return object : Observer<T> {
-        private var isFirstEvent = true
-
-        override fun onChanged(value: T) {
-            if (isFirstEvent) {
-                isFirstEvent = false
-            } else {
-                observer.onChanged(value)
-            }
-        }
-    }
-}
-
-fun ClipboardManager.getLatestText(): CharSequence? {
-    return primaryClip?.let { if (it.itemCount > 0) it.getItemAt(0)!!.text else null }
-}
 
 fun Context.copyToClipBoard(text: CharSequence) {
     ContextCompat.getSystemService(this, ClipboardManager::class.java)?.let {
@@ -196,9 +173,6 @@ fun Activity.openNote(noteId: Long, noteType: Type, clearBackStack: Boolean = fa
     startActivity(intent)
 }
 
-val Activity.isInLandscapeMode
-    get() = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-
 private const val MAX_LOGS_FILE_SIZE_KB: Long = 2048
 
 private fun Context.logToFile(
@@ -266,17 +240,6 @@ private fun Context.logToFile(
     } ?: Log.e(tag, "Error: log file could not be found or created")
 }
 
-fun Fragment.getExtraBooleanFromBundleOrIntent(
-    bundle: Bundle?,
-    key: String,
-    defaultValue: Boolean,
-): Boolean {
-    return bundle.getExtraBooleanOrDefault(
-        key,
-        activity?.intent?.getBooleanExtra(key, defaultValue) ?: defaultValue,
-    )
-}
-
 fun Context.reportBug(stackTrace: String?) {
     catchNoBrowserInstalled {
         try {
@@ -296,10 +259,6 @@ fun Context.reportBug(stackTrace: String?) {
             )
         }
     }
-}
-
-fun Fragment.reportBug(stackTrace: String?) {
-    requireContext().reportBug(stackTrace)
 }
 
 fun Context.catchNoBrowserInstalled(callback: () -> Unit) {
@@ -379,8 +338,6 @@ fun ContextWrapper.toMessage(importResult: ImportResult) =
         }
         .toString()
 
-fun Context.textMaxLengthFilter() = arrayOf(LengthFilterWithToast(this, MAX_BODY_CHAR_LENGTH))
-
 private fun Context.shareNote(title: String, body: CharSequence, imageUris: List<Uri>) {
     val text = body.truncate(150_000)
     val intent =
@@ -399,11 +356,6 @@ private fun Context.shareNote(title: String, body: CharSequence, imageUris: List
             }
             .wrapWithChooser(this)
     startActivity(intent)
-}
-
-fun Intent.embedIntentExtras() {
-    val string = toUri(Intent.URI_INTENT_SCHEME)
-    data = Uri.parse(string)
 }
 
 fun Intent.putNavKey(key: NotallyNavKey): Intent = apply {
@@ -566,19 +518,6 @@ fun Activity.changeStatusAndNavigationBarColor(@ColorInt color: Int) {
         window.insetsController?.hide(android.view.WindowInsets.Type.statusBars())
         window.insetsController?.show(android.view.WindowInsets.Type.statusBars())
     }
-}
-
-fun Activity.resetApplication() {
-    val resetApplicationIntent = packageManager.getLaunchIntentForPackage(packageName)
-    resetApplicationIntent?.setFlags(
-        Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-    )
-    startActivity(resetApplicationIntent)
-    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-}
-
-fun Bundle?.getExtraBooleanOrDefault(key: String, defaultValue: Boolean): Boolean {
-    return this?.getBoolean(key, defaultValue) ?: defaultValue
 }
 
 fun ContentResolver.readFileContents(uri: Uri) =

@@ -40,7 +40,6 @@ import com.philkes.notallyx.core.common.extensions.getLogFile
 import com.philkes.notallyx.core.common.extensions.getUriForFile
 import com.philkes.notallyx.core.common.extensions.openExternalMediaFolder
 import com.philkes.notallyx.core.common.extensions.putNavKey
-import com.philkes.notallyx.core.common.extensions.reportBug
 import com.philkes.notallyx.core.common.extensions.viewLogs
 import com.philkes.notallyx.core.common.extensions.wrapWithChooser
 import com.philkes.notallyx.core.preference.BiometricLock

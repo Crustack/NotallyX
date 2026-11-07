@@ -21,7 +21,6 @@ import com.philkes.notallyx.core.common.extensions.copyToLarge
 import com.philkes.notallyx.core.common.extensions.getLogsDir
 import com.philkes.notallyx.core.common.extensions.getUriForFile
 import com.philkes.notallyx.core.common.extensions.log
-import com.philkes.notallyx.core.common.extensions.reportBug
 import com.philkes.notallyx.core.common.extensions.toMessage
 import com.philkes.notallyx.core.common.extensions.viewFile
 import com.philkes.notallyx.core.common.extensions.viewLogs

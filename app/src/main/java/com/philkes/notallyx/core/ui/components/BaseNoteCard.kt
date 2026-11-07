@@ -361,8 +361,6 @@ private fun ImagePreview(
 
 private fun BaseNote.hasNoContents() = body.isEmpty() && items.isEmpty()
 
-private fun BaseNote.isEmpty() = title.isBlank() && hasNoContents() && images.isEmpty()
-
 private fun BaseNote.getEmptyMessage() =
     when (type) {
         Type.NOTE -> R.string.empty_note

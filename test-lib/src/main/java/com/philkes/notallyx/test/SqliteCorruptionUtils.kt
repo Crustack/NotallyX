@@ -76,8 +76,7 @@ fun File.integrityCheckOnCopy(): String {
                 copy.absolutePath,
                 null,
                 SQLiteDatabase.OPEN_READONLY,
-                DatabaseErrorHandler {},
-            )
+        ) {}
             .use { db ->
                 db.rawQuery("PRAGMA integrity_check", null).use { cursor ->
                     if (!cursor.moveToFirst()) return "integrity_check returned no rows"
