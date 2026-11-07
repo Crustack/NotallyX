@@ -1,0 +1,9 @@
+{
+  "label": "Architecture",
+  "position": 4,
+  "collapsible": false,
+  "link": {
+    "type": "generated-index",
+    "description": "NotallyX multiplatform architecture, design patterns, and engineering guides."
+  }
+}

@@ -142,7 +142,10 @@ class EditListRouteTest : UiTestBase() {
     private fun ComposeTestRule.dragAndDropItem(sourceItemBody: String, targetItemBody: String) {
         scrollToTop()
         onNode(
-                hasContentDescription(context.getString(R.string.drag_handle)) and
+                hasContentDescription(
+                    context.getString(R.string.drag_handle),
+                    ignoreCase = true,
+                ) and
                     hasAnySibling(
                         hasAnyDescendant(itemNode(sourceItemBody)) or itemNode(sourceItemBody)
                     )

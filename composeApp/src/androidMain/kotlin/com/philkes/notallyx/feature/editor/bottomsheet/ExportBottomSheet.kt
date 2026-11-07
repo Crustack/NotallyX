@@ -7,7 +7,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.preference.EditAction
+import com.philkes.notallyx.core.preference.*
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 import com.philkes.notallyx.feature.migration.ExportMimeType
 

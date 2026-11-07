@@ -156,6 +156,37 @@ All platform-specific facilities required by shared ViewModels and repositories 
   3. `EditListRoute` / `EditListScreen`: Checkbox toggling, item addition, and editing for checklist notes.
 - **Data Durability**: Automatic saving of edits to SQLite database; lossless persistence across restarts.
 
-### Milestone 3 Contract (Full Route Parity)
+### Milestone 3 Contract (Full Route Parity & Cross-Platform UI Testing)
 - Remaining shared routes operational: `LabelsRoute`, `SearchRoute`, `ArchivedRoute`, `DeletedRoute`, `SettingsRoute`, and `ImportExportRoute`.
 - Mobile-specific features (biometrics, widgets, Android notification channels) remain absent and non-invocable.
+- Cross-platform Compose UI tests executing via `runComposeUiTest` in `composeApp/src/commonTest` run uniformly on both Desktop JVM and Android, verifying shared route functionality without Android Activity or emulator dependencies.
+
+---
+
+## 5. Cross-Platform UI Testing & Test Boundary Contract
+
+To avoid duplicating UI test logic and ensure complete test parity between Android and Desktop, UI tests are partitioned strictly by architectural scope:
+
+### 5.1 Test Placement & Source-Set Allocation
+
+| Test Scope | Target Source Set | Test Runner / Framework | Responsibilities & Test Scope |
+| :--- | :--- | :--- | :--- |
+| **Common Compose UI Tests** | `composeApp/src/commonTest/` | `runComposeUiTest` (`androidx.compose.ui.test` / Compose Multiplatform) | Full Compose hierarchy interaction: clicking, text typing, state checks, dialog confirmation, route navigation for Notes Overview, Note Editor, Checklist Editor, Search, Labels, Archive, Trash, and Settings. Runs identically on Desktop JVM and Android without emulator. |
+| **Pure-JVM Database & Migration Tests** | `shared/src/desktopTest/` & `shared/src/androidHostTest/` | JUnit 4 + `BundledSQLiteDriver` | In-memory Room DB, DAO CRUD operations, v1–v11 migrations, type converters, WAL checkpointing. |
+| **Android-Specific Integration Tests** | `app/src/androidTest/` | `AndroidJUnit4` + Espresso / `UiDevice` / Android test runner | Tests requiring Android OS services: Biometric authentication (`LockedActivityTest`), AlarmManager / exact alarms (`RemindersActivityTest`), Glance AppWidgets (`WidgetTest`), Crash handler (`ErrorActivityTest`), Intent filters (`EditTextPlainActivityTest`), SQLCipher database decryption (`DatabaseDecryptionMigrationTest`). |
+| **Desktop-Specific Integration Tests** | `desktopApp/src/desktopTest/` | Compose Desktop testing | Desktop window lifecycle (`onCloseRequest`, resizing), desktop file drag-and-drop, desktop application menus. |
+
+### 5.2 Decoupling Rules for Common Compose Tests
+
+1. **Replace `ActivityScenario` with `runComposeUiTest`**:
+   - Tests MUST NOT launch `MainActivity` via `ActivityScenario.launch(MainActivity::class.java)`.
+   - Tests execute inside `runComposeUiTest { setContent { NotallyApp(...) } }` or by composing route composables directly.
+2. **Replace Android Lifecycle & DI Hooks with Test Fixtures**:
+   - `NotallyDatabase` is instantiated as an in-memory database using `BundledSQLiteDriver`.
+   - Koin modules are started and stopped per-test using a shared `CommonComposeUiTestBase` harness.
+3. **Decouple String Resources**:
+   - Tests MUST NOT rely on `context.getString(R.string.x)` or Android `ContextWrapper`.
+   - Tests MUST prioritize stable `Modifier.testTag(TestTags.XYZ)` semantics for node matching, ensuring test stability across languages and platforms. Where text matching is required, shared test string constants or multiplatform resource helpers are used.
+4. **Zero Android OS / Espresso Imports in `commonTest`**:
+   - No `androidx.test.espresso.*`, `androidx.test.uiautomator.*`, `android.content.Intent`, `android.app.Activity`, or `InstrumentationRegistry` in `composeApp/src/commonTest`.
+

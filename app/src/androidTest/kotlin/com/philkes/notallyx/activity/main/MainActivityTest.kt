@@ -39,6 +39,7 @@ import com.philkes.notallyx.core.preference.NotesSort
 import com.philkes.notallyx.core.preference.NotesSortBy
 import com.philkes.notallyx.core.preference.NotesView
 import com.philkes.notallyx.core.preference.SortDirection
+import com.philkes.notallyx.core.preference.textResId
 import com.philkes.notallyx.core.ui.extensions.sortWith
 import com.philkes.notallyx.core.ui.views.TestTags
 import com.philkes.notallyx.data.model.BaseNote

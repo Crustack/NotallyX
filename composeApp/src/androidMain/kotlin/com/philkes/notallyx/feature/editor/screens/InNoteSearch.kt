@@ -10,13 +10,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import com.philkes.notallyx.core.common.extensions.findAllOccurrences
 import com.philkes.notallyx.data.model.ListItem
 
-data class SearchState(
-    val isActive: Boolean = false,
-    val query: String = "",
-    val resultsCount: Int = 0,
-    val resultPos: Int = 0,
-)
-
 internal class SearchHighlightVisualTransformation(
     private val query: String,
     private val selectedIndex: Int,

@@ -35,15 +35,15 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @ColumnTypeConverters(Converters::class)
 @Database(entities = [BaseNote::class, Label::class], version = NotallyDatabase.DATABASE_VERSION)
-abstract class NotallyDatabase : RoomDatabase() {
+actual abstract class NotallyDatabase : RoomDatabase() {
 
-    abstract fun getLabelDao(): LabelDao
+    actual abstract fun getLabelDao(): LabelDao
 
-    abstract fun getCommonDao(): CommonDao
+    actual abstract fun getCommonDao(): CommonDao
 
-    abstract fun getBaseNoteDao(): BaseNoteDao
+    actual abstract fun getBaseNoteDao(): BaseNoteDao
 
-    suspend fun checkpoint(): Boolean {
+    actual suspend fun checkpoint(): Boolean {
         return try {
             val result = getBaseNoteDao().query(RoomRawQuery("pragma wal_checkpoint(TRUNCATE)"))
             result == 0
@@ -52,15 +52,15 @@ abstract class NotallyDatabase : RoomDatabase() {
         }
     }
 
-    suspend fun ping() = getBaseNoteDao().query(RoomRawQuery("SELECT 1")) == 1
+    actual suspend fun ping() = getBaseNoteDao().query(RoomRawQuery("SELECT 1")) == 1
 
-    companion object {
+    actual companion object {
 
-        const val DATABASE_NAME = "NotallyDatabase"
-        const val DATABASE_VERSION = 11
-        const val FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB = false
+        actual const val DATABASE_NAME = "NotallyDatabase"
+        actual const val DATABASE_VERSION = 11
+        actual const val FEATURE_FLAG_BIOMETRIC_ENCRYPTS_DB = false
 
-        val ALL_MIGRATIONS: Array<Migration>
+        actual val ALL_MIGRATIONS: Array<Migration>
             get() =
                 arrayOf(
                     Migration2,
@@ -75,40 +75,40 @@ abstract class NotallyDatabase : RoomDatabase() {
                     Migration11,
                 )
 
-        val instance: StateFlow<NotallyDatabase?>
+        actual val instance: StateFlow<NotallyDatabase?>
             field = MutableStateFlow(null)
         @Volatile private var replacementInProgress = false
 
         private fun isTestRunner(): Boolean =
             android.os.Build.FINGERPRINT.equals("robolectric", ignoreCase = true)
 
-        fun getCurrentDatabaseFile(
+        actual fun getCurrentDatabaseFile(
             pathProvider: PathProvider,
-            dataInPublicFolder: Boolean = false,
+            dataInPublicFolder: Boolean,
         ): File {
             return pathProvider.getDatabaseFile(DATABASE_NAME, dataInPublicFolder)
         }
 
-        fun getCurrentDatabaseFiles(
+        actual fun getCurrentDatabaseFiles(
             pathProvider: PathProvider,
-            dataInPublicFolder: Boolean = false,
+            dataInPublicFolder: Boolean,
         ): List<File> {
             return pathProvider.getDatabaseFiles(DATABASE_NAME, dataInPublicFolder)
         }
 
-        fun getExternalDatabaseFile(pathProvider: PathProvider): File {
+        actual fun getExternalDatabaseFile(pathProvider: PathProvider): File {
             return pathProvider.getDatabaseFile(DATABASE_NAME, dataInPublicFolder = true)
         }
 
-        fun getExternalDatabaseFiles(pathProvider: PathProvider): List<File> {
+        actual fun getExternalDatabaseFiles(pathProvider: PathProvider): List<File> {
             return pathProvider.getDatabaseFiles(DATABASE_NAME, dataInPublicFolder = true)
         }
 
-        fun getInternalDatabaseFile(pathProvider: PathProvider): File {
+        actual fun getInternalDatabaseFile(pathProvider: PathProvider): File {
             return pathProvider.getDatabaseFile(DATABASE_NAME, dataInPublicFolder = false)
         }
 
-        fun getInternalDatabaseFiles(pathProvider: PathProvider): List<File> {
+        actual fun getInternalDatabaseFiles(pathProvider: PathProvider): List<File> {
             return pathProvider.getDatabaseFiles(DATABASE_NAME, dataInPublicFolder = false)
         }
 
@@ -149,10 +149,10 @@ abstract class NotallyDatabase : RoomDatabase() {
             }
         }
 
-        fun builder(
+        actual fun builder(
             driverFactory: DatabaseDriverFactory,
-            dataInPublic: Boolean = false,
-            inMemory: Boolean = false,
+            dataInPublic: Boolean,
+            inMemory: Boolean,
         ): Builder<NotallyDatabase> {
             return driverFactory
                 .createBuilder<NotallyDatabase>(DATABASE_NAME, dataInPublic, inMemory)
@@ -160,10 +160,10 @@ abstract class NotallyDatabase : RoomDatabase() {
                 .addMigrations(*ALL_MIGRATIONS)
         }
 
-        fun createDatabase(
+        actual fun createDatabase(
             driverFactory: DatabaseDriverFactory,
-            dataInPublic: Boolean = false,
-            inMemory: Boolean = false,
+            dataInPublic: Boolean,
+            inMemory: Boolean,
         ): NotallyDatabase {
             return builder(driverFactory, dataInPublic, inMemory).build()
         }
@@ -184,7 +184,7 @@ abstract class NotallyDatabase : RoomDatabase() {
             return instance
         }
 
-        fun clearInstance() {
+        actual fun clearInstance() {
             synchronized(this) {
                 instance.value?.let { database ->
                     instance.value = null
@@ -197,15 +197,15 @@ abstract class NotallyDatabase : RoomDatabase() {
             }
         }
 
-        fun startReplacement() {
+        actual fun startReplacement() {
             replacementInProgress = true
         }
 
-        fun endReplacement() {
+        actual fun endReplacement() {
             replacementInProgress = false
         }
 
-        fun isBeingReplaced() = replacementInProgress
+        actual fun isBeingReplaced() = replacementInProgress
 
         private var testInstance: NotallyDatabase? = null
 
@@ -404,7 +404,7 @@ abstract class NotallyDatabase : RoomDatabase() {
             postInstance(notallyDatabase)
         }
 
-        fun postInstance(notallyDatabase: NotallyDatabase) {
+        actual fun postInstance(notallyDatabase: NotallyDatabase) {
             synchronized(this) {
                 instance.value = notallyDatabase
                 replacementInProgress = false

@@ -344,8 +344,10 @@ class EditListViewModel(
                 }
                 viewModelScope.launch { refreshOriginalNote() }
             }
-            is EditListAction.ImagesPicked -> addImages(action.uris)
-            is EditListAction.FilesPicked -> addFiles(action.uris)
+            is EditListAction.ImagesPicked ->
+                addImages(action.uris.map { Uri.parse(it.uriString) }.toTypedArray())
+            is EditListAction.FilesPicked ->
+                addFiles(action.uris.map { Uri.parse(it.uriString) }.toTypedArray())
             is EditListAction.ExportFilePicked -> {
                 emitSideEffect(EditListSideEffect.ExportFile(action.uri, getBaseNote()))
             }
@@ -808,7 +810,12 @@ class EditListViewModel(
         val file = app.resolveAttachmentFile(SUBFOLDER_FILES, fileAttachment.localName)
         if (file != null && file.exists()) {
             val uri = app.getUriForFile(file)
-            emitSideEffect(EditListSideEffect.ViewAttachmentFile(uri, fileAttachment.mimeType))
+            emitSideEffect(
+                EditListSideEffect.ViewAttachmentFile(
+                    PlatformUri(uri.toString()),
+                    fileAttachment.mimeType,
+                )
+            )
         }
     }
 

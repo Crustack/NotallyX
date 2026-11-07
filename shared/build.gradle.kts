@@ -26,12 +26,16 @@ kotlin {
         compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
     }
 
+    jvm("desktop") { compilerOptions { jvmTarget.set(JvmTarget.JVM_17) } }
+
     sourceSets {
         commonMain.dependencies {
             api(libs.androidx.room3.common)
             api(libs.androidx.room3.runtime)
             api(libs.sqlite.bundled)
             api(libs.kotlinx.serialization)
+            api(libs.androidx.datastore)
+            api(libs.androidx.datastore.preferences)
             api(project.dependencies.platform(libs.koin.bom))
             api(libs.koin.core)
             api(libs.jsoup)
@@ -44,8 +48,6 @@ kotlin {
             api(libs.androidx.core.ktx)
             api(libs.androidx.appcompat)
             api(libs.androidx.documentfile)
-            api(libs.androidx.datastore)
-            api(libs.androidx.datastore.preferences)
             api(libs.androidx.datastore.tink)
             api(libs.tink.android)
             api(libs.androidx.room3.sqlite.wrapper)
@@ -78,6 +80,16 @@ kotlin {
             implementation(libs.androidx.test.junit)
             implementation(libs.androidx.core.testing)
         }
+
+        named("desktopMain") { dependencies {} }
+
+        named("desktopTest") {
+            dependencies {
+                implementation(libs.junit)
+                implementation(libs.assertj)
+                implementation(libs.kotlinx.coroutines.test)
+            }
+        }
     }
 }
 
@@ -86,7 +98,10 @@ ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 
-dependencies { add("kspAndroid", libs.androidx.room3.compiler) }
+dependencies {
+    add("kspAndroid", libs.androidx.room3.compiler)
+    add("kspDesktop", libs.androidx.room3.compiler)
+}
 
 ktfmt { kotlinLangStyle() }
 

@@ -24,6 +24,8 @@ kotlin {
         compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
     }
 
+    jvm("desktop") { compilerOptions { jvmTarget.set(JvmTarget.JVM_17) } }
+
     sourceSets {
         commonMain.dependencies {
             api(project(":shared"))
@@ -45,6 +47,7 @@ kotlin {
 
         androidMain.dependencies {
             api(libs.androidx.activity.compose)
+            api(libs.androidx.compose.ui.tooling)
             api(libs.koin.android)
             api(libs.koin.androidx.compose)
             api(libs.koin.compose.navigation3)
@@ -54,6 +57,8 @@ kotlin {
             implementation(libs.junit)
             implementation(libs.assertj)
             implementation(libs.kotlinx.coroutines.test)
+            implementation(kotlin("reflect"))
+            implementation("androidx.compose.ui:ui-test")
         }
 
         getByName("androidHostTest").dependencies {
@@ -70,11 +75,30 @@ kotlin {
             implementation(libs.androidx.test.junit)
             implementation(libs.androidx.core.testing)
             implementation(libs.androidx.room3.testing)
+            implementation("androidx.compose.ui:ui-test-manifest")
+        }
+
+        named("desktopMain") { dependencies {} }
+        named("desktopTest") {
+            dependencies {
+                implementation(
+                    "org.jetbrains.compose.ui:ui-test-junit4:${libs.versions.composeMultiplatform.get()}"
+                )
+                implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+                implementation("org.jetbrains.skiko:skiko-awt-runtime-linux-x64:0.150.2")
+                implementation("org.jetbrains.skiko:skiko-awt-runtime-macos-x64:0.150.2")
+                implementation("org.jetbrains.skiko:skiko-awt-runtime-macos-arm64:0.150.2")
+                implementation("org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.150.2")
+                implementation(libs.compose.desktop.currentOs)
+                implementation(libs.compose.material3.desktop)
+            }
         }
     }
 }
 
 ktfmt { kotlinLangStyle() }
+
+koinCompiler { compileSafety = false }
 
 configurations
     .matching { it.name.contains("HostTest") || it.name.contains("UnitTest") }
@@ -83,4 +107,43 @@ configurations
             substitute(module("androidx.sqlite:sqlite-bundled-android"))
                 .using(module("androidx.sqlite:sqlite-bundled-jvm:${libs.versions.sqlite.get()}"))
         }
+    }
+
+configurations
+    .matching { it.name.contains("Desktop") || it.name.contains("desktop") }
+    .configureEach {
+        resolutionStrategy.dependencySubstitution {
+            substitute(module("androidx.compose.ui:ui-test"))
+                .using(
+                    module(
+                        "org.jetbrains.compose.ui:ui-test:${libs.versions.composeMultiplatform.get()}"
+                    )
+                )
+            substitute(module("androidx.compose.ui:ui-test-junit4"))
+                .using(
+                    module(
+                        "org.jetbrains.compose.ui:ui-test-junit4:${libs.versions.composeMultiplatform.get()}"
+                    )
+                )
+            substitute(module("androidx.compose.material3:material3"))
+                .using(
+                    module(
+                        "org.jetbrains.compose.material3:material3-desktop:${libs.versions.composeMaterial3.get()}"
+                    )
+                )
+        }
+    }
+
+configurations
+    .matching {
+        it.name.contains("desktopTestRuntimeClasspath") ||
+            it.name.contains("DesktopTestRuntimeClasspath")
+    }
+    .configureEach {
+        exclude(group = "androidx.compose.ui")
+        exclude(group = "androidx.compose.foundation")
+        exclude(group = "androidx.compose.material")
+        exclude(group = "androidx.compose.material3")
+        exclude(group = "androidx.compose.animation")
+        exclude(group = "androidx.compose", module = "compose-bom")
     }

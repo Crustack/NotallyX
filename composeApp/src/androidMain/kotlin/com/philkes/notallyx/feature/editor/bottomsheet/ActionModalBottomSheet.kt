@@ -35,15 +35,6 @@ import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
-data class ActionItem(
-    val labelResId: Int? = null,
-    val drawableResId: Int? = null,
-    val label: String? = null,
-    val showDividerAbove: Boolean = false,
-    val isSelected: Boolean = false,
-    val onClick: () -> Unit,
-)
-
 @Composable
 fun ActionBottomSheetContent(
     actions: List<ActionItem>,

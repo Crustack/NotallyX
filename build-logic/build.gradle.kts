@@ -5,6 +5,7 @@ group = "com.philkes.notallyx.buildlogic"
 dependencies {
     compileOnly(libs.android.gradlePlugin)
     compileOnly(libs.kotlin.gradlePlugin)
+    compileOnly(libs.ktfmt.gradlePlugin)
     implementation(libs.commons.configuration)
 }
 

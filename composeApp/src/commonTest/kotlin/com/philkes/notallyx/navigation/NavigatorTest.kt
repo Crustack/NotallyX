@@ -3,7 +3,6 @@ package com.philkes.notallyx.navigation
 import androidx.compose.runtime.mutableStateOf
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.runtime.serialization.NavKeySerializer
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.feature.migration.ExportMimeType
 import kotlinx.coroutines.flow.first
@@ -162,7 +161,7 @@ class NavigatorTest {
 
     @Test
     fun `navKeySerializer correctly serializes and deserializes NotallyNavKeys`() {
-        val serializer = NavKeySerializer<NavKey>()
+        val serializer = NotallyNavKey.serializer()
         val json = Json
 
         val keysToTest: List<NotallyNavKey> =

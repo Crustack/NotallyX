@@ -150,3 +150,15 @@ fun NotallyXTheme(
         content = content,
     )
 }
+
+@Composable
+actual fun NotallyXTheme(
+    darkTheme: Boolean,
+    content: @Composable () -> Unit,
+) {
+    NotallyXTheme(
+        theme = if (darkTheme) Theme.DARK else Theme.LIGHT,
+        dynamicColor = false,
+        content = content,
+    )
+}

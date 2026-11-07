@@ -71,10 +71,7 @@ import coil3.compose.SubcomposeAsyncImage
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.common.extensions.findAllOccurrences
 import com.philkes.notallyx.core.common.extensions.isPreview
-import com.philkes.notallyx.core.preference.DateFormat
-import com.philkes.notallyx.core.preference.EditAction
-import com.philkes.notallyx.core.preference.NotesSortBy
-import com.philkes.notallyx.core.preference.TimeFormat
+import com.philkes.notallyx.core.preference.*
 import com.philkes.notallyx.core.ui.components.ImageCountChip
 import com.philkes.notallyx.core.ui.components.LabelChip
 import com.philkes.notallyx.core.ui.components.ReminderChip
@@ -86,9 +83,7 @@ import com.philkes.notallyx.core.ui.theme.contentColorFor
 import com.philkes.notallyx.data.model.Audio
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
-import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.ListItem
-import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Reminder
 import com.philkes.notallyx.data.model.Repetition
 import com.philkes.notallyx.data.model.RepetitionTimeUnit
@@ -111,35 +106,6 @@ import com.philkes.notallyx.navigation.LocalBackButtonVisibility
 import java.io.File
 import java.util.Date
 import kotlinx.coroutines.android.awaitFrame
-
-data class EditNoteState(
-    val title: String = "",
-    val bodyValue: TextFieldValue = TextFieldValue(),
-    val items: List<ListItem> = emptyList(),
-    val checkedItems: List<ListItem> = emptyList(),
-    val createdTimestamp: Long? = null,
-    val modifiedTimestamp: Long? = null,
-    val images: List<FileAttachment> = emptyList(),
-    val mediaRoot: File? = null,
-    val files: List<FileAttachment> = emptyList(),
-    val audios: List<Audio> = emptyList(),
-    val labels: List<String> = emptyList(),
-    val reminders: List<Reminder> = emptyList(),
-    val pinned: Boolean = false,
-    val viewMode: NoteViewMode = NoteViewMode.EDIT,
-    val folder: Folder = Folder.NOTES,
-    val type: Type = Type.NOTE,
-    val isPinnedToStatus: Boolean = false,
-)
-
-data class EditNotePreferences(
-    val notesSortBy: NotesSortBy = NotesSortBy.CREATION_DATE,
-    val dateFormat: DateFormat = DateFormat.DD_MM_YY_GER,
-    val timeFormat: TimeFormat = TimeFormat.NONE,
-    val topActions: List<EditAction> =
-        listOf(EditAction.SEARCH, EditAction.REMINDERS, EditAction.PIN),
-    val bottomAction: EditAction = EditAction.TOGGLE_VIEW_MODE,
-)
 
 interface EditChangeHandlers {
     fun onTitleChange(title: String) {}
@@ -1208,6 +1174,9 @@ fun EditListScreen(
                         focusRequester = if (item.id == itemToFocusId) focusRequester else null,
                         dragState = dragState,
                         backgroundColor = backgroundColor,
+                        dragHandleContentDescription = stringResource(R.string.drag_handle),
+                        placeholderText = stringResource(R.string.item),
+                        deleteContentDescription = stringResource(R.string.delete),
                     )
                 }
             }
@@ -1262,6 +1231,9 @@ fun EditListScreen(
                             onBackspaceOnEmpty = { changeHandlers.onItemDelete(item) },
                             onDelete = { changeHandlers.onItemDelete(item) },
                             backgroundColor = backgroundColor,
+                            dragHandleContentDescription = stringResource(R.string.drag_handle),
+                            placeholderText = stringResource(R.string.item),
+                            deleteContentDescription = stringResource(R.string.delete),
                         )
                     }
                 }

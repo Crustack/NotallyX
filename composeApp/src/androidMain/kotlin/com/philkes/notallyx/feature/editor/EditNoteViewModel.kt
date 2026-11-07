@@ -343,8 +343,10 @@ class EditNoteViewModel(
             }
             is EditNoteAction.NotePicked ->
                 handleNotePicked(action.noteId, action.noteTitle, action.noteType)
-            is EditNoteAction.ImagesPicked -> addImages(action.uris)
-            is EditNoteAction.FilesPicked -> addFiles(action.uris)
+            is EditNoteAction.ImagesPicked ->
+                addImages(action.uris.map { Uri.parse(it.uriString) }.toTypedArray())
+            is EditNoteAction.FilesPicked ->
+                addFiles(action.uris.map { Uri.parse(it.uriString) }.toTypedArray())
             is EditNoteAction.ExportFilePicked -> {
                 emitSideEffect(EditNoteSideEffect.ExportFile(action.uri, getBaseNote()))
             }
@@ -915,7 +917,12 @@ class EditNoteViewModel(
         val file = app.resolveAttachmentFile(SUBFOLDER_FILES, fileAttachment.localName)
         if (file != null && file.exists()) {
             val uri = app.getUriForFile(file)
-            emitSideEffect(EditNoteSideEffect.ViewAttachmentFile(uri, fileAttachment.mimeType))
+            emitSideEffect(
+                EditNoteSideEffect.ViewAttachmentFile(
+                    PlatformUri(uri.toString()),
+                    fileAttachment.mimeType,
+                )
+            )
         }
     }
 

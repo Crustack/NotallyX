@@ -25,9 +25,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.philkes.notallyx.R
-import com.philkes.notallyx.core.preference.NotesSort
-import com.philkes.notallyx.core.preference.NotesSortBy
-import com.philkes.notallyx.core.preference.SortDirection
+import com.philkes.notallyx.core.preference.*
 import com.philkes.notallyx.core.ui.theme.NotallyXTheme
 
 @Composable

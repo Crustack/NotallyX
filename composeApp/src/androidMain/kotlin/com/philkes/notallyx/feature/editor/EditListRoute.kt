@@ -12,11 +12,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.result.ResultEffect
 import com.philkes.notallyx.core.common.extensions.shareNote
 import com.philkes.notallyx.core.common.extensions.viewFile
 import com.philkes.notallyx.core.common.extensions.wrapWithChooser
+import com.philkes.notallyx.core.platform.PlatformUri
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.extensions.checkNotificationPermission
 import com.philkes.notallyx.core.ui.extensions.exportNote
@@ -67,7 +69,11 @@ fun EditListRoute(
                         emptyArray()
                     }
                 if (uris.isNotEmpty()) {
-                    viewModel.onAction(EditListAction.ImagesPicked(uris))
+                    viewModel.onAction(
+                        EditListAction.ImagesPicked(
+                            uris.map { PlatformUri(it.toString()) }.toTypedArray()
+                        )
+                    )
                 }
             }
         }
@@ -86,7 +92,11 @@ fun EditListRoute(
                         emptyArray()
                     }
                 if (uris.isNotEmpty()) {
-                    viewModel.onAction(EditListAction.FilesPicked(uris))
+                    viewModel.onAction(
+                        EditListAction.FilesPicked(
+                            uris.map { PlatformUri(it.toString()) }.toTypedArray()
+                        )
+                    )
                 }
             }
         }
@@ -95,7 +105,7 @@ fun EditListRoute(
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
             if (res.resultCode == Activity.RESULT_OK) {
                 res.data?.data?.let { uri ->
-                    viewModel.onAction(EditListAction.ExportFilePicked(uri))
+                    viewModel.onAction(EditListAction.ExportFilePicked(PlatformUri(uri.toString())))
                 }
             }
         }
@@ -146,7 +156,7 @@ fun EditListRoute(
                 is EditListSideEffect.ExportFile -> {
                     activity?.let { act ->
                         viewModel.exportNoteToFile(
-                            effect.uri,
+                            effect.uri.uriString.toUri(),
                             effect.note,
                             act.findViewById(android.R.id.content),
                         )
@@ -207,7 +217,7 @@ fun EditListRoute(
                     )
                 }
                 is EditListSideEffect.ViewAttachmentFile -> {
-                    context.viewFile(effect.uri, effect.mimeType)
+                    context.viewFile(effect.uri.uriString.toUri(), effect.mimeType)
                 }
                 is EditListSideEffect.NavigateBack -> {
                     onBackClick()

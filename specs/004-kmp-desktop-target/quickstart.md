@@ -70,6 +70,23 @@ Verify that all newly created and updated files strictly conform to the reposito
 
 ---
 
+### Scenario E: Cross-Platform Compose UI Test Verification (`SC-004`, `SC-005`)
+Verify that shared Compose UI tests in `composeApp/src/commonTest` execute successfully on both Desktop JVM and Android targets without requiring an Android emulator or device:
+
+```bash
+# Run Compose UI tests on Desktop JVM
+./gradlew :composeApp:desktopTest
+
+# Run Compose UI tests on Android Host / Robolectric
+./gradlew :composeApp:testAndroidHostTest
+```
+
+**Expected Outcome**:
+- All common Compose UI tests (Notes overview, text note editor, checklist editor, search, labels, archive, trash, settings) pass with zero platform-specific failures.
+- No `ActivityScenario` or `InstrumentationRegistry` dependencies are invoked during execution.
+
+---
+
 ## 3. Interactive Milestone Run Scenarios
 
 ### Milestone 1: Runnable Desktop Starter Screen (`FR-002`, `SC-001`)

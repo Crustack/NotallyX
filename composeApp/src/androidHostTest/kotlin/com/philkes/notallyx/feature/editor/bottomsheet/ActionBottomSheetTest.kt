@@ -3,6 +3,7 @@ package com.philkes.notallyx.feature.editor.bottomsheet
 import com.philkes.notallyx.R
 import com.philkes.notallyx.core.preference.EditAction
 import com.philkes.notallyx.core.preference.EditListAction
+import com.philkes.notallyx.core.preference.textResId
 import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type

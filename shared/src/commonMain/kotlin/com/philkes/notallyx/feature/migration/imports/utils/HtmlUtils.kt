@@ -1,6 +1,5 @@
 package com.philkes.notallyx.feature.migration.imports.utils
 
-import androidx.core.util.PatternsCompat
 import com.philkes.notallyx.data.model.SpanRepresentation
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -169,6 +168,9 @@ private fun handleTextSpan(
     }
 }
 
+private val WEB_URL_PATTERN =
+    Regex("""(?:https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]""")
+
 private fun StringBuilder.appendWithUrlCheck(text: String, spans: MutableList<SpanRepresentation>) {
     checkForUrlSpan(text, spans, length)
     append(text)
@@ -179,13 +181,13 @@ private fun checkForUrlSpan(
     spans: MutableList<SpanRepresentation>,
     elementOffset: Int,
 ) {
-    val matcher = PatternsCompat.WEB_URL.matcher(text)
-    if (matcher.find() && matcher.group().startsWith("http")) {
-        val url = matcher.group()
+    val match = WEB_URL_PATTERN.find(text)
+    if (match != null && match.value.startsWith("http")) {
+        val url = match.value
         spans.add(
             SpanRepresentation(
-                start = elementOffset + matcher.start(),
-                end = elementOffset + matcher.end(),
+                start = elementOffset + match.range.first,
+                end = elementOffset + match.range.last + 1,
                 link = true,
                 linkData = url,
             )

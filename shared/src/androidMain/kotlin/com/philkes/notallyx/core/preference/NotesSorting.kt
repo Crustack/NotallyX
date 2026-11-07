@@ -31,19 +31,32 @@ enum class SortDirection(val textResId: Int, val iconResId: Int) {
     DESC(R.string.descending, R.drawable.arrow_downward),
 }
 
-@Serializable
-enum class NotesSortBy(val textResId: Int, val iconResId: Int, val value: String) {
-    TITLE(R.string.title, R.drawable.sort_by_alpha, "autoSortByTitle"),
-    CREATION_DATE(R.string.creation_date, R.drawable.calendar_add_on, "autoSortByCreationDate"),
-    MODIFIED_DATE(R.string.modified_date, R.drawable.edit_calendar, "autoSortByModifiedDate"),
-    COLOR(R.string.color, R.drawable.change_color, "autoSortByColor");
-
-    companion object {
-        fun fromValue(value: String): NotesSortBy? {
-            return entries.find { it.value == value }
+val NotesSortBy.textResId: Int
+    get() =
+        when (this) {
+            NotesSortBy.TITLE -> R.string.title
+            NotesSortBy.CREATION_DATE -> R.string.creation_date
+            NotesSortBy.MODIFIED_DATE -> R.string.modified_date
+            NotesSortBy.COLOR -> R.string.color
         }
-    }
-}
+
+val NotesSortBy.iconResId: Int
+    get() =
+        when (this) {
+            NotesSortBy.TITLE -> R.drawable.sort_by_alpha
+            NotesSortBy.CREATION_DATE -> R.drawable.calendar_add_on
+            NotesSortBy.MODIFIED_DATE -> R.drawable.edit_calendar
+            NotesSortBy.COLOR -> R.drawable.change_color
+        }
+
+val NotesSortBy.value: String
+    get() =
+        when (this) {
+            NotesSortBy.TITLE -> "autoSortByTitle"
+            NotesSortBy.CREATION_DATE -> "autoSortByCreationDate"
+            NotesSortBy.MODIFIED_DATE -> "autoSortByModifiedDate"
+            NotesSortBy.COLOR -> "autoSortByColor"
+        }
 
 @Serializable
 data class NotesSort(

@@ -298,66 +298,97 @@ enum class BiometricLock(override val textResId: Int) : StaticTextProvider {
 }
 
 @Serializable
-enum class EditAction(override val textResId: Int, val drawableResId: Int) : StaticTextProvider {
-    SEARCH(R.string.search, R.drawable.search),
-    PIN(R.string.pin, R.drawable.pin),
-    REMINDERS(R.string.reminders, R.drawable.notifications),
-    LABELS(R.string.labels, R.drawable.label),
-    CHANGE_COLOR(R.string.change_color, R.drawable.change_color),
-    DUPLICATE(R.string.duplicate, R.drawable.content_copy),
-    EXPORT(R.string.export, R.drawable.export),
-    SHARE(R.string.share, R.drawable.share),
-    DELETE(R.string.delete, R.drawable.delete),
-    ARCHIVE(R.string.archive, R.drawable.archive),
-    TOGGLE_VIEW_MODE(R.string.edit, R.drawable.visibility),
-    CONVERT(R.string.convert_to_list_note, R.drawable.convert_to_text),
-    DELETE_FOREVER(R.string.delete_forever, R.drawable.delete),
-    RESTORE(R.string.restore, R.drawable.restore),
-    PIN_TO_STATUS(R.string.pin_to_status_bar, R.drawable.pinboard);
+val EditAction.textResId: Int
+    get() =
+        when (this) {
+            EditAction.SEARCH -> R.string.search
+            EditAction.PIN -> R.string.pin
+            EditAction.REMINDERS -> R.string.reminders
+            EditAction.LABELS -> R.string.labels
+            EditAction.CHANGE_COLOR -> R.string.change_color
+            EditAction.DUPLICATE -> R.string.duplicate
+            EditAction.EXPORT -> R.string.export
+            EditAction.SHARE -> R.string.share
+            EditAction.DELETE -> R.string.delete
+            EditAction.ARCHIVE -> R.string.archive
+            EditAction.TOGGLE_VIEW_MODE -> R.string.edit
+            EditAction.CONVERT -> R.string.convert_to_list_note
+            EditAction.DELETE_FOREVER -> R.string.delete_forever
+            EditAction.RESTORE -> R.string.restore
+            EditAction.PIN_TO_STATUS -> R.string.pin_to_status_bar
+        }
 
-    fun getTitleAndIcon(
-        pinned: Boolean,
-        viewMode: NoteViewMode?,
-        folder: Folder? = null,
-        type: Type? = null,
-        isPinnedToStatus: Boolean = false,
-    ): Pair<Int, Int> {
-        val icon =
-            when (this) {
-                PIN -> if (pinned) R.drawable.unpin else R.drawable.pin
-                PIN_TO_STATUS ->
-                    if (isPinnedToStatus) R.drawable.pinboard_filled else R.drawable.pinboard
-                ARCHIVE ->
-                    if (folder == Folder.ARCHIVED) R.drawable.unarchive else R.drawable.archive
-                RESTORE ->
-                    if (folder == Folder.ARCHIVED) R.drawable.unarchive else R.drawable.restore
-                TOGGLE_VIEW_MODE ->
-                    if (viewMode == NoteViewMode.READ_ONLY) R.drawable.edit
-                    else R.drawable.visibility
-                else -> drawableResId
-            }
-        val title =
-            when (this) {
-                PIN -> if (pinned) R.string.unpin else R.string.pin
-                PIN_TO_STATUS ->
-                    if (isPinnedToStatus) R.string.unpin_from_status_bar
-                    else R.string.pin_to_status_bar
-                ARCHIVE -> if (folder == Folder.ARCHIVED) R.string.unarchive else R.string.archive
-                RESTORE -> if (folder == Folder.ARCHIVED) R.string.unarchive else R.string.restore
-                TOGGLE_VIEW_MODE ->
-                    if (viewMode == NoteViewMode.READ_ONLY) R.string.edit else R.string.read_only
-                CONVERT ->
-                    if (type == Type.LIST) R.string.convert_to_text_note
-                    else R.string.convert_to_list_note
-                else -> textResId
-            }
-        return title to icon
-    }
+val EditAction.drawableResId: Int
+    get() =
+        when (this) {
+            EditAction.SEARCH -> R.drawable.search
+            EditAction.PIN -> R.drawable.pin
+            EditAction.REMINDERS -> R.drawable.notifications
+            EditAction.LABELS -> R.drawable.label
+            EditAction.CHANGE_COLOR -> R.drawable.change_color
+            EditAction.DUPLICATE -> R.drawable.content_copy
+            EditAction.EXPORT -> R.drawable.export
+            EditAction.SHARE -> R.drawable.share
+            EditAction.DELETE -> R.drawable.delete
+            EditAction.ARCHIVE -> R.drawable.archive
+            EditAction.TOGGLE_VIEW_MODE -> R.drawable.visibility
+            EditAction.CONVERT -> R.drawable.convert_to_text
+            EditAction.DELETE_FOREVER -> R.drawable.delete
+            EditAction.RESTORE -> R.drawable.restore
+            EditAction.PIN_TO_STATUS -> R.drawable.pinboard
+        }
+
+fun EditAction.getTitleAndIcon(
+    pinned: Boolean,
+    viewMode: NoteViewMode?,
+    folder: Folder? = null,
+    type: Type? = null,
+    isPinnedToStatus: Boolean = false,
+): Pair<Int, Int> {
+    val icon =
+        when (this) {
+            EditAction.PIN -> if (pinned) R.drawable.unpin else R.drawable.pin
+            EditAction.PIN_TO_STATUS ->
+                if (isPinnedToStatus) R.drawable.pinboard_filled else R.drawable.pinboard
+            EditAction.ARCHIVE ->
+                if (folder == Folder.ARCHIVED) R.drawable.unarchive else R.drawable.archive
+            EditAction.RESTORE ->
+                if (folder == Folder.ARCHIVED) R.drawable.unarchive else R.drawable.restore
+            EditAction.TOGGLE_VIEW_MODE ->
+                if (viewMode == NoteViewMode.READ_ONLY) R.drawable.edit else R.drawable.visibility
+            else -> drawableResId
+        }
+    val title =
+        when (this) {
+            EditAction.PIN -> if (pinned) R.string.unpin else R.string.pin
+            EditAction.PIN_TO_STATUS ->
+                if (isPinnedToStatus) R.string.unpin_from_status_bar else R.string.pin_to_status_bar
+            EditAction.ARCHIVE ->
+                if (folder == Folder.ARCHIVED) R.string.unarchive else R.string.archive
+            EditAction.RESTORE ->
+                if (folder == Folder.ARCHIVED) R.string.unarchive else R.string.restore
+            EditAction.TOGGLE_VIEW_MODE ->
+                if (viewMode == NoteViewMode.READ_ONLY) R.string.edit else R.string.read_only
+            EditAction.CONVERT ->
+                if (type == Type.LIST) R.string.convert_to_text_note
+                else R.string.convert_to_list_note
+            else -> textResId
+        }
+    return title to icon
 }
 
-enum class EditListAction(override val textResId: Int, val drawableResId: Int) :
-    StaticTextProvider {
-    DELETE_CHECKED(R.string.delete_checked_items, R.drawable.delete_all),
-    CHECK_ALL(R.string.check_all_items, R.drawable.checkbox_checked),
-    UNCHECK_ALL(R.string.uncheck_all_items, R.drawable.checkbox_unchecked),
-}
+val EditListAction.textResId: Int
+    get() =
+        when (this) {
+            EditListAction.DELETE_CHECKED -> R.string.delete_checked_items
+            EditListAction.CHECK_ALL -> R.string.check_all_items
+            EditListAction.UNCHECK_ALL -> R.string.uncheck_all_items
+        }
+
+val EditListAction.drawableResId: Int
+    get() =
+        when (this) {
+            EditListAction.DELETE_CHECKED -> R.drawable.delete_all
+            EditListAction.CHECK_ALL -> R.drawable.checkbox_checked
+            EditListAction.UNCHECK_ALL -> R.drawable.checkbox_unchecked
+        }

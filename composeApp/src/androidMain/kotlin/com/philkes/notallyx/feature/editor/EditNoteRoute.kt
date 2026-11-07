@@ -18,6 +18,7 @@ import androidx.navigation3.runtime.result.ResultEffect
 import com.philkes.notallyx.core.common.extensions.shareNote
 import com.philkes.notallyx.core.common.extensions.viewFile
 import com.philkes.notallyx.core.common.extensions.wrapWithChooser
+import com.philkes.notallyx.core.platform.PlatformUri
 import com.philkes.notallyx.core.preference.NotallyXPreferences
 import com.philkes.notallyx.core.ui.extensions.checkNotificationPermission
 import com.philkes.notallyx.core.ui.extensions.exportNote
@@ -69,7 +70,11 @@ fun EditNoteRoute(
                         emptyArray()
                     }
                 if (uris.isNotEmpty()) {
-                    viewModel.onAction(EditNoteAction.ImagesPicked(uris))
+                    viewModel.onAction(
+                        EditNoteAction.ImagesPicked(
+                            uris.map { PlatformUri(it.toString()) }.toTypedArray()
+                        )
+                    )
                 }
             }
         }
@@ -88,7 +93,11 @@ fun EditNoteRoute(
                         emptyArray()
                     }
                 if (uris.isNotEmpty()) {
-                    viewModel.onAction(EditNoteAction.FilesPicked(uris))
+                    viewModel.onAction(
+                        EditNoteAction.FilesPicked(
+                            uris.map { PlatformUri(it.toString()) }.toTypedArray()
+                        )
+                    )
                 }
             }
         }
@@ -97,7 +106,7 @@ fun EditNoteRoute(
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
             if (res.resultCode == Activity.RESULT_OK) {
                 res.data?.data?.let { uri ->
-                    viewModel.onAction(EditNoteAction.ExportFilePicked(uri))
+                    viewModel.onAction(EditNoteAction.ExportFilePicked(PlatformUri(uri.toString())))
                 }
             }
         }
@@ -158,7 +167,7 @@ fun EditNoteRoute(
                 is EditNoteSideEffect.ExportFile -> {
                     activity?.let { act ->
                         viewModel.exportNoteToFile(
-                            effect.uri,
+                            effect.uri.uriString.toUri(),
                             effect.note,
                             act.findViewById(android.R.id.content),
                         )
@@ -219,7 +228,7 @@ fun EditNoteRoute(
                     )
                 }
                 is EditNoteSideEffect.ViewAttachmentFile -> {
-                    context.viewFile(effect.uri, effect.mimeType)
+                    context.viewFile(effect.uri.uriString.toUri(), effect.mimeType)
                 }
                 is EditNoteSideEffect.NavigateBack -> {
                     onBackClick()
