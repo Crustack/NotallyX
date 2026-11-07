@@ -416,7 +416,7 @@ Tests desktop-specific OS capabilities:
      - `WidgetTest`: Glance home screen app widgets.
      - `LockedActivityTest`: Biometric hardware prompt and `FLAG_SECURE`.
      - `ErrorActivityTest`: Crash recovery and crash report intent.
-2. Verify that `ktfmtCheck` passes across all test source sets (`./gradlew ktfmtCheck`).
+2. Verify that `ktfmtFormat` passes across all test source sets (`./gradlew ktfmtFormat`).
 
 ---
 

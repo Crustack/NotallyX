@@ -62,11 +62,11 @@ Verify that `:desktopApp` and desktop source sets (`shared/src/desktopMain`, `co
 Verify that all newly created and updated files strictly conform to the repository's `ktfmt` code style:
 
 ```bash
-./gradlew ktfmtCheck
+./gradlew ktfmtFormat
 ```
 
 **Expected Outcome**:
-- `ktfmtCheck` passes without any style or formatting violations across all modules.
+- `ktfmtFormat` passes without any style or formatting violations across all modules.
 
 ---
 

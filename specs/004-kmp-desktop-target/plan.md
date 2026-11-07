@@ -16,7 +16,7 @@ Expand **NotallyX** to support a desktop target on **Kotlin Multiplatform (KMP)*
 **Language/Version**: Kotlin 2.4.20 / JVM Target 17  
 **Primary Dependencies**: Kotlin Multiplatform Gradle Plugin (`2.4.20`), Compose Multiplatform for Desktop (`org.jetbrains.compose`), Android Gradle Plugin (`9.4.1`), Jetpack Compose / Compose Multiplatform Material 3, Room 3 (`3.0.3`) + `sqlite-bundled` (`2.7.1`), Koin 4.x (`4.2.2`) + Koin Compiler Plugin (`1.2.1`), `kotlinx-serialization-json` (`1.11.0`), Coil 3 (`3.1.0`), `jsoup` (`1.23.2`), `commonmark` (`0.30.0`), `PrettyTime` (`4.0.6.Final`)  
 **Storage**: Room 3 SQLite via `BundledSQLiteDriver` (`NotallyDatabase` v11 schema exported to `shared/schemas/`), standard OS application data directory (`~/.local/share/NotallyX` on Linux, `~/Library/Application Support/NotallyX` on macOS, `%APPDATA%\NotallyX` on Windows), filesystem attachments via `DesktopPathProvider` and `DesktopFileStorage`  
-**Testing**: Cross-platform Compose UI testing via `runComposeUiTest` in `composeApp/src/commonTest/`, pure-JVM unit tests with `BundledSQLiteDriver` in `:shared` (`NotallyDatabaseJvmTest`), platform-specific tests in `:app:androidTest` (Android OS APIs) and `:desktopApp:desktopTest`, and `./gradlew ktfmtCheck`  
+**Testing**: Cross-platform Compose UI testing via `runComposeUiTest` in `composeApp/src/commonTest/`, pure-JVM unit tests with `BundledSQLiteDriver` in `:shared` (`NotallyDatabaseJvmTest`), platform-specific tests in `:app:androidTest` (Android OS APIs) and `:desktopApp:desktopTest`, and `./gradlew ktfmtFormat`  
 **Target Platform**: Desktop JVM (Linux, macOS, Windows; 64-bit JVM 17+); Android target (`:app`) preserved intact; iOS and other targets explicitly out of scope  
 **Project Type**: Multi-module Kotlin Multiplatform desktop application (`:desktopApp`) sharing `:shared` and `:composeApp` with `:app`  
 **Performance Goals**: Desktop window startup latency < 2.0s, 60 FPS Compose rendering, zero UI stutter, instantaneous search over local SQLite database  
@@ -33,7 +33,7 @@ Expand **NotallyX** to support a desktop target on **Kotlin Multiplatform (KMP)*
 - **Principle IV: Privacy-First & Offline-First Security**: **PASS**. Desktop operates 100% offline-first with local-only SQLite storage in the user's OS application directory. Zero telemetry, zero unauthorized network calls.
 - **Principle V: Strict Thread & Concurrency Discipline**: **PASS**. Database operations and disk I/O execute on `Dispatchers.IO`; note formatting and search parsing on `Dispatchers.Default`; UI state emissions on `Dispatchers.Main`.
 - **Principle VI: Comprehensive Multi-Layer Testing**: **PASS**. Room database operations on desktop are verified through pure-JVM tests (`NotallyDatabaseJvmTest`). UI interactions across shared routes are decoupled from Android `ActivityScenario` and `Context` to execute cross-platform via `runComposeUiTest` in `commonTest`, leaving only platform-specific OS interactions in `app/src/androidTest`.
-- **Principle VII: Code Health, Formatting & Idiomatic Kotlin**: **PASS**. All newly introduced code conforms to `ktfmt` standard style (`./gradlew ktfmtCheck`) and Koin 4.x safe DI conventions.
+- **Principle VII: Code Health, Formatting & Idiomatic Kotlin**: **PASS**. All newly introduced code conforms to `ktfmt` standard style (`./gradlew ktfmtFormat`) and Koin 4.x safe DI conventions.
 
 ## Project Structure
 

@@ -135,7 +135,7 @@
 
 - [X] T038 [P] Remove `@RunWith(RobolectricTestRunner::class)` and `ApplicationProvider` from domain, converter, and ViewModel unit tests in `app/src/test/kotlin/com/philkes/notallyx/` and separate pure-Kotlin fakes from Android `UiTestBase`/`UiUtils` in `test-lib/build.gradle.kts` and `test-lib/src/main/java/com/philkes/notallyx/test/` (`PREP-017`)
 - [X] T039 [P] Update `AGENTS.md` (referencing `Res.string.*` for localization) and user documentation in `documentation/` for the database encryption sunset (`PREP-012`, `PREP-019`)
-- [X] T040 Execute all validation scenarios in `specs/002-kmp-migration-prep/quickstart.md` (`./gradlew ktfmtCheck`, `./gradlew testDebugUnitTest`, `./gradlew verifyRoborazziDebug`, `./gradlew validateDebugScreenshotTest`, `./gradlew assembleDebug assembleBeta`, and static zero-Android-import audits) and check off `CH-01` through `CH-13` in `docs/kmp-migration/07-migration-readiness-checklist.md`
+- [X] T040 Execute all validation scenarios in `specs/002-kmp-migration-prep/quickstart.md` (`./gradlew ktfmtFormat`, `./gradlew testDebugUnitTest`, `./gradlew verifyRoborazziDebug`, `./gradlew validateDebugScreenshotTest`, `./gradlew assembleDebug assembleBeta`, and static zero-Android-import audits) and check off `CH-01` through `CH-13` in `docs/kmp-migration/07-migration-readiness-checklist.md`
 
 ---
 

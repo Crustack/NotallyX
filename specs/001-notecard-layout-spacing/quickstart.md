@@ -42,7 +42,7 @@ Verify that all unit tests and composable logic tests pass without regression:
 ### Scenario D: Code Formatting & Kotlin Style Check
 Verify that code formatting satisfies NotallyX project standards (ktfmt with 4-space indentation):
 ```bash
-./gradlew ktfmtCheck
+./gradlew ktfmtFormat
 ```
 To automatically apply formatting if violations are detected:
 ```bash

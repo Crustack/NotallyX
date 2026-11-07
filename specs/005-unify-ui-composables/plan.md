@@ -15,7 +15,7 @@ Disconnected duplicate screen stubs (`CommonEditNoteScreen`, `CommonEditListScre
 **Language/Version**: Kotlin 2.4.20 / JVM Target 17  
 **Primary Dependencies**: Kotlin Multiplatform Gradle Plugin (`2.4.20`), Compose Multiplatform (`1.12.2`), Android Gradle Plugin (`9.4.1`), Jetpack Compose / Compose Multiplatform Material 3 (`1.9.0`), Jetpack Navigation 3 (`1.2.0`), Koin 4.x (`4.2.2`) + Koin Compiler Plugin (`1.2.1`), Coil 3 (`3.1.0`), Compose Multiplatform Resources  
 **Storage**: Room 3 (`3.0.3`) SQLite via `BundledSQLiteDriver` (`NotallyDatabase`), Jetpack DataStore preferences, filesystem attachments via platform storage abstractions  
-**Testing**: Cross-platform Compose UI testing via `runComposeUiTest` in `composeApp/src/commonTest/`, ViewModel unit tests in `:composeApp:testAndroidHostTest`, Roborazzi screenshot verification (`./gradlew verifyRoborazziDebug`), Compose screenshot tests (`./gradlew validateDebugScreenshotTest`), and `ktfmt` compliance (`./gradlew ktfmtCheck`)  
+**Testing**: Cross-platform Compose UI testing via `runComposeUiTest` in `composeApp/src/commonTest/`, ViewModel unit tests in `:composeApp:testAndroidHostTest`, Roborazzi screenshot verification (`./gradlew verifyRoborazziDebug`), Compose screenshot tests (`./gradlew validateDebugScreenshotTest`), and `ktfmt` compliance (`./gradlew ktfmtFormat`)  
 **Target Platform**: Android (Min SDK 24, Target SDK 37) and Desktop JVM (Linux, macOS, Windows; 64-bit JVM 17+)  
 **Project Type**: Multi-module Kotlin Multiplatform application (`:shared`, `:composeApp`, `:app`, `:desktopApp`)  
 **Performance Goals**: 60/120 FPS UI rendering without dropped frames, instantaneous search filtering, sub-16ms UI action handling, zero UI stutter  
@@ -32,7 +32,7 @@ Disconnected duplicate screen stubs (`CommonEditNoteScreen`, `CommonEditListScre
 - **Principle IV: Privacy-First & Offline-First Security**: **PASS**. 100% offline-first presentation. Zero telemetry, zero external tracking.
 - **Principle V: Strict Thread & Concurrency Discipline**: **PASS**. Coroutine dispatchers respected (`Dispatchers.Main` for UI emissions, `Dispatchers.IO` for storage/file operations, `Dispatchers.Default` for parsing/search).
 - **Principle VI: Comprehensive Multi-Layer Testing**: **PASS**. Shared screens allow cross-platform Compose UI tests in `commonTest`, unit tests in `androidHostTest`, and existing Roborazzi screenshot tests in `:app` remain guarded against regressions.
-- **Principle VII: Code Health, Formatting & Idiomatic Kotlin**: **PASS**. All migrated and newly introduced files conform to `ktfmt` standard style (`./gradlew ktfmtCheck`) and Koin 4.x safe DI conventions.
+- **Principle VII: Code Health, Formatting & Idiomatic Kotlin**: **PASS**. All migrated and newly introduced files conform to `ktfmt` standard style (`./gradlew ktfmtFormat`) and Koin 4.x safe DI conventions.
 
 ## Project Structure
 

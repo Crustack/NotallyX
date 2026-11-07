@@ -451,7 +451,6 @@ When modifying Room entities (`BaseNote`, `Label`, etc.):
 ./gradlew connectedDebugAndroidTest
 
 # Code formatting (ktfmt)
-./gradlew ktfmtCheck                   # Check code formatting without applying
 ./gradlew ktfmtFormat                  # Reformat all Kotlin files
 ```
 

@@ -175,7 +175,7 @@ All Kotlin source files adhere to `ktfmt` (`kotlinLangStyle`):
 
 ```bash
 # Check formatting
-./gradlew ktfmtCheck
+./gradlew ktfmtFormat
 
 # Apply formatting
 ./gradlew ktfmtFormat

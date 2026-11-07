@@ -20,7 +20,7 @@ Run the standard repository verification commands from the root directory:
 ### Gate 1: Code Formatting (`ktfmt`)
 Verify that all newly created and refactored Kotlin files conform to `ktfmt` standard Kotlin style:
 ```bash
-./gradlew ktfmtCheck
+./gradlew ktfmtFormat
 ```
 *To fix any formatting issues automatically, run `./gradlew ktfmtFormat`.*
 

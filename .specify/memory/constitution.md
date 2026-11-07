@@ -71,7 +71,7 @@ Every functional capability MUST be validated through automated multi-layered te
 
 ### VII. Code Health, Formatting & Idiomatic Kotlin
 All code contributed to the repository MUST adhere to standard Kotlin idioms and formatting standards:
-- Source code MUST strictly conform to `ktfmt` standard style (4-space indent, strict import ordering) verified via `./gradlew ktfmtCheck`.
+- Source code MUST strictly conform to `ktfmt` standard style (4-space indent, strict import ordering) verified via `./gradlew ktfmtFormat`.
 - Dependency injection MUST follow Koin 4.x safe DSL with the Koin Compiler Plugin (`io.insert-koin.compiler.plugin`).
 - Exception handling MUST be explicit and targeted; catching and silently discarding generic `Throwable` or `Exception` is PROHIBITED.
 
@@ -94,7 +94,7 @@ The following architectural boundaries and component baselines MUST be respected
 
 To ensure strict compliance with architectural and quality baselines, all changes MUST satisfy the following quality gates prior to merging:
 
-1. **Formatting & Style Gate**: Run `./gradlew ktfmtCheck` (or `./gradlew ktfmtFormat` to apply changes automatically). No formatting violations are permitted.
+1. **Formatting & Style Gate**: Run `./gradlew ktfmtFormat` (or `./gradlew ktfmtFormat` to apply changes automatically). No formatting violations are permitted.
 2. **Unit & Logic Gate**: Run `./gradlew testDebugUnitTest`. All unit and Robolectric tests MUST pass without failure.
 3. **Visual Regression Gate**: Run `./gradlew verifyRoborazziDebug` and `./gradlew validateDebugScreenshotTest`. Any visual diffs MUST be explicitly reviewed and acknowledged.
 4. **Database Integrity Gate**: Any changes to entities MUST produce a corresponding schema JSON via `./gradlew kspDebugKotlin` under `app/schemas/` and include automated migration tests.

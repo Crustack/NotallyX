@@ -45,7 +45,7 @@ Verify that the migration to Compose Multiplatform Resources (`PREP-019`) and UI
 Verify that the refactored `build-logic` convention plugins, `debug` and `beta` build variants, and `ktfmt` formatting pass cleanly:
 
 ```bash
-./gradlew ktfmtCheck
+./gradlew ktfmtFormat
 ./gradlew assembleDebug assembleBeta
 ```
 

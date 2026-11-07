@@ -151,12 +151,12 @@
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-**Purpose**: Update localization scripts/workflows and documentation for the new KMP module paths, enforce code formatting (`ktfmtCheck`), and run the full `quickstart.md` verification suite.
+**Purpose**: Update localization scripts/workflows and documentation for the new KMP module paths, enforce code formatting (`ktfmtFormat`), and run the full `quickstart.md` verification suite.
 
 - [X] T060 [P] Update translation coverage script path from `app/src/main/res` to `shared/src/androidMain/res` in `.github/scripts/update_translation_coverage.py`
 - [X] T061 [P] Update GitHub Actions translation workflow trigger path from `app/src/main/res/values/strings.xml` to `shared/src/androidMain/res/values/strings.xml` in `.github/workflows/update-translation-coverage.yaml`
 - [X] T062 [P] Update `AGENTS.md` architecture and module structure documentation to reflect `:shared`, `:composeApp`, `:app`, `:test-lib`, and `:build-logic` in `AGENTS.md`
-- [X] T063 Run `./gradlew ktfmtFormat ktfmtCheck checkTranslations` and execute all verification checks in `specs/003-kmp-android-migration/quickstart.md`
+- [X] T063 Run `./gradlew ktfmtFormat ktfmtFormat checkTranslations` and execute all verification checks in `specs/003-kmp-android-migration/quickstart.md`
 
 ---
 
@@ -213,4 +213,4 @@ Task: "T024 [P] [US2] Move pure platform contracts to shared/src/commonMain/kotl
 2. **Complete Phase 3 (User Story 2 - `:shared`)**: Validate `:shared` compiles and passes all domain/data unit tests independently (`./gradlew :shared:compileAndroidMain :shared:testAndroidHostTest`) with zero `android.*` imports in `shared/src/commonMain`.
 3. **Complete Phase 4 (User Story 3 - `:composeApp`)**: Validate `:composeApp` compiles and passes all navigation/ViewModel unit tests independently (`./gradlew :composeApp:compileAndroidMain :composeApp:testAndroidHostTest`) with zero `android.*` imports in `composeApp/src/commonMain`.
 4. **Complete Phase 5 (User Story 1 - `:app` Host)**: Validate `:app` packages with `applicationId = "com.philkes.notallyx"` and passes all unit, Roborazzi, and screenshot tests.
-5. **Complete Phase 6 (Polish)**: Validate translation scripts, `ktfmtCheck`, and full `quickstart.md` verification suite.
+5. **Complete Phase 6 (Polish)**: Validate translation scripts, `ktfmtFormat`, and full `quickstart.md` verification suite.

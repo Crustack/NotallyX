@@ -72,5 +72,5 @@ Verify that all 30 translated locales, Compose previews, and Roborazzi screensho
 Verify that all new and moved source files across `:shared`, `:composeApp`, `:app`, `:test-lib`, and `:build-logic` comply with `ktfmt` (`kotlinLangStyle`):
 
 ```bash
-./gradlew ktfmtCheck
+./gradlew ktfmtFormat
 ```

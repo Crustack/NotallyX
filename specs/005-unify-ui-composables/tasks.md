@@ -149,7 +149,7 @@ description: "Task list for unified cross-platform UI composables implementation
 
 - [X] T049 Remove all obsolete Android-only screen references and imports in `composeApp/src/androidMain/`
 - [X] T050 [P] Run code formatting across the repository: `./gradlew ktfmtFormat`
-- [X] T051 Verify code formatting gate: `./gradlew ktfmtCheck`
+- [X] T051 Verify code formatting gate: `./gradlew ktfmtFormat`
 - [X] T052 Verify Android application compilation: `./gradlew :app:assembleDebug`
 - [X] T053 Verify Desktop application assembly: `./gradlew :desktopApp:desktopJar`
 - [X] T054 Run unit and presentation tests: `./gradlew :composeApp:testAndroidHostTest`

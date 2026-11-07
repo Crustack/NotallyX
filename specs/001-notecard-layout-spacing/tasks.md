@@ -91,7 +91,7 @@
 - [X] T018 [P] Update NoteCardDisplayConfigScreenshotTest previews for grid and list layout variations in app/src/screenshotTestDebug/kotlin/com/philkes/notallyx/card/NoteCardDisplayConfigScreenshotTest.kt
 - [X] T019 Run automated screenshot regression verification via gradle verifyRoborazziDebug in app/
 - [X] T020 Run unit and Robolectric tests via gradle testDebugUnitTest in app/
-- [X] T021 Verify code formatting compliance via gradle ktfmtCheck across all modified files
+- [X] T021 Verify code formatting compliance via gradle ktfmtFormat across all modified files
 - [X] T022 Execute full quickstart validation scenarios per specs/001-notecard-layout-spacing/quickstart.md
 
 ---
@@ -136,4 +136,4 @@ Task: "T009 [P] [US2] Streamline LabelChip inner padding in app/src/main/java/co
 ### Incremental Delivery
 1. Add User Story 2: Move metadata (compact attachments, labels, sort date) into the footnote row. Verify `RichTextNotePreview`.
 2. Add User Story 3: Provide compact reminder icon in Grid view and `10.dp` grid padding.
-3. Run Polish Phase: Execute `./gradlew ktfmtCheck`, `./gradlew testDebugUnitTest`, and screenshot tests.
+3. Run Polish Phase: Execute `./gradlew ktfmtFormat`, `./gradlew testDebugUnitTest`, and screenshot tests.

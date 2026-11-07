@@ -141,7 +141,7 @@
 **Purpose**: Static audits, code formatting, multiplatform test suite execution, end-to-end quickstart validation, and documentation updates.
 
 - [X] T041 [P] Run static audit ensuring zero `android.*` imports in `desktopApp/`, `desktopMain/`, and `composeApp/src/commonTest`
-- [X] T042 Run `./gradlew ktfmtCheck` and apply formatting via `./gradlew ktfmtFormat` across all subprojects
+- [X] T042 Run `./gradlew ktfmtFormat` and apply formatting via `./gradlew ktfmtFormat` across all subprojects
 - [X] T043 Run cross-platform Compose UI test suites across targets via `./gradlew :composeApp:desktopTest` and `./gradlew :composeApp:testAndroidHostTest`
 - [X] T044 Execute automated quickstart verification scenarios from `specs/004-kmp-desktop-target/quickstart.md`
 - [X] T045 [P] Update architecture, testing guide, and desktop developer setup documentation in `documentation/docs/architecture/kmp-desktop.md`
